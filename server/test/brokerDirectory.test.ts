@@ -5,15 +5,15 @@ describe('Piece 2: Multi-Broker Directory & Investor Authentication', () => {
   const directory = BrokerDirectory.getInstance();
 
   it('correctly resolves broker identity from server name for Exness, XM, Axiory, Vantage', () => {
-    expect(directory.resolveBroker('Exness-MT5Real')).toBe('EXNESS');
+    expect(directory.resolveBroker('Exness-MT5Real')).toBe('Exness');
     expect(directory.resolveBroker('XMGlobal-Real 55')).toBe('XM');
-    expect(directory.resolveBroker('Axiory-Live')).toBe('AXIORY');
-    expect(directory.resolveBroker('VantageFX-Live')).toBe('VANTAGE');
+    expect(directory.resolveBroker('Axiory-Live')).toBe('Axiory');
+    expect(directory.resolveBroker('VantageFX-Live')).toBe('Vantage');
     expect(directory.resolveBroker('UnknownFx-Server')).toBe('OTHER');
   });
 
   it('filters supported servers by broker and distinguishes demo from real', () => {
-    const exnessServers = directory.getSupportedServers('EXNESS');
+    const exnessServers = directory.getSupportedServers('Exness');
     expect(exnessServers.length).toBeGreaterThanOrEqual(3);
     const hasDemo = exnessServers.some(s => s.isDemo);
     const hasReal = exnessServers.some(s => !s.isDemo);
@@ -30,7 +30,7 @@ describe('Piece 2: Multi-Broker Directory & Investor Authentication', () => {
     });
 
     expect(res.valid).toBe(true);
-    expect(res.broker).toBe('EXNESS');
+    expect(res.broker).toBe('Exness');
     expect(res.accountDetails?.accountNumber).toBe('8829104');
     expect(res.accountDetails?.isReadOnly).toBe(true);
   });

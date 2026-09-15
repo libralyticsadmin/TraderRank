@@ -16,6 +16,7 @@ import { TournamentArena } from './components/TournamentArena.tsx';
 import { RewardsBadges } from './components/RewardsBadges.tsx';
 import { CommunityFeed } from './components/CommunityFeed.tsx';
 import { TraderProfileModal, TraderProfileData } from './components/TraderProfileModal.tsx';
+import { LandingPage } from './components/LandingPage.tsx';
 import {
   TrendingUp,
   Plus,
@@ -48,6 +49,7 @@ interface MarketStatus {
 }
 
 export const App: React.FC = () => {
+  const [currentView, setCurrentView] = useState<'landing' | 'app'>('landing');
   const [activeTab, setActiveTab] = useState<
     'overview' | 'ranking' | 'tournaments' | 'rewards' | 'community' | 'positions' | 'security'
   >('overview');
@@ -211,6 +213,27 @@ export const App: React.FC = () => {
     });
   };
 
+  if (currentView === 'landing') {
+    return (
+      <>
+        <LandingPage
+          onEnterApp={() => setCurrentView('app')}
+          onOpenConnectWizard={() => {
+            setCurrentView('app');
+            setIsWizardOpen(true);
+          }}
+        />
+        {/* Connection Wizard Modal if triggered from landing page */}
+        {isWizardOpen && (
+          <ConnectionWizard
+            onClose={() => setIsWizardOpen(false)}
+            onSuccess={handleAccountConnected}
+          />
+        )}
+      </>
+    );
+  }
+
   return (
     <div className="app-container">
       {/* Top Header Banner */}
@@ -243,6 +266,14 @@ export const App: React.FC = () => {
         </div>
 
         <div className="header-actions">
+          <button
+            className="btn-secondary"
+            onClick={() => setCurrentView('landing')}
+            title="Return to Marketing Landing Page"
+            style={{ border: '1px solid rgba(255,255,255,0.15)' }}
+          >
+            <Globe2 size={16} /> Landing Portal
+          </button>
           <button className="btn-secondary" onClick={() => setIsWizardOpen(true)}>
             <Layers size={16} /> Fast Connect
           </button>
