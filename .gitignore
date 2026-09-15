@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Production builds
+dist/
+build/
+.vercel
+
+# Environment variables & secrets
+.env*
+!.env.example
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+*.log
