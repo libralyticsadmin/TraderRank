@@ -1,4 +1,4 @@
-import { createServer } from '../server/dist/api/server.js';
+import { createServer } from '../server/dist/server/src/api/server.js';
 
 const { app } = createServer();
 
