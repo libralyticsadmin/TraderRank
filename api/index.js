@@ -1,5 +1,18 @@
 import { createServer } from '../server/dist/server/src/api/server.js';
 
-const { app } = createServer();
+let appInstance = null;
 
-export default app;
+function getApp() {
+  if (!appInstance) {
+    const { app } = createServer();
+    appInstance = app;
+  }
+  return appInstance;
+}
+
+export default function handler(req, res) {
+  const app = getApp();
+  return app(req, res);
+}
+
+export { getApp };
