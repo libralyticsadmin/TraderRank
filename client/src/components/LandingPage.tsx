@@ -631,10 +631,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
       {/* Footer */}
       <footer style={{ padding: '40px 24px', borderTop: '1px solid rgba(255, 255, 255, 0.06)', backgroundColor: '#040a0d', textAlign: 'center' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <BrandMark size={22} variant="glyph" />
             <strong style={{ fontSize: '15px' }}>TraderRank FX</strong>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>© 2026 TraderRank Inc. All rights reserved.</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>© {new Date().getFullYear()} TraderRank Global. All rights reserved.</span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Powered by</span>
+            <span
+              style={{
+                color: 'var(--accent-cyan)',
+                fontWeight: 800,
+                fontSize: '12px',
+                padding: '4px 12px',
+                borderRadius: '6px',
+                background: 'rgba(10, 186, 181, 0.12)',
+                border: '1px solid rgba(10, 186, 181, 0.25)',
+              }}
+            >
+              Libralytic Co.,Ltd
+            </span>
           </div>
 
           <div style={{ display: 'flex', gap: '20px', fontSize: '12px', color: 'var(--text-muted)' }}>

@@ -18,7 +18,7 @@ import { RewardsBadges } from './components/RewardsBadges.tsx';
 import { CommunityFeed } from './components/CommunityFeed.tsx';
 import { TraderProfileModal, TraderProfileData } from './components/TraderProfileModal.tsx';
 import { LandingPage } from './components/LandingPage.tsx';
-import { BrandLogo } from './components/BrandLogo.tsx';
+import { BrandLogo, BrandMark } from './components/BrandLogo.tsx';
 import { LiveTradeBulletin } from './components/LiveTradeBulletin.tsx';
 import { LiveCandleChart } from './components/LiveCandleChart.tsx';
 import { DailyAnalysisHub } from './components/DailyAnalysisHub.tsx';
@@ -575,6 +575,52 @@ export const App: React.FC = () => {
           setIsSubscriptionModalOpen(false);
         }}
       />
+
+      {/* Global Application Footer */}
+      <footer
+        style={{
+          marginTop: '60px',
+          padding: '24px 20px',
+          borderTop: '1px solid rgba(129, 216, 208, 0.12)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '16px',
+          fontSize: '13px',
+          color: 'var(--text-muted)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <BrandMark size={20} variant="glyph" />
+          <span>
+            <strong style={{ color: '#fff' }}>TraderRank FX</strong> • Global Verified Trading Platform
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span>Powered by</span>
+          <span
+            style={{
+              color: 'var(--accent-cyan)',
+              fontWeight: 800,
+              letterSpacing: '0.3px',
+              padding: '4px 12px',
+              borderRadius: '6px',
+              background: 'rgba(10, 186, 181, 0.12)',
+              border: '1px solid rgba(10, 186, 181, 0.25)',
+            }}
+          >
+            Libralytic Co.,Ltd
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', gap: '16px', fontSize: '12px' }}>
+          <span>© {new Date().getFullYear()} All Rights Reserved</span>
+          <span>•</span>
+          <span>256-Bit SSL Isolated Vault</span>
+        </div>
+      </footer>
     </div>
   );
 };
