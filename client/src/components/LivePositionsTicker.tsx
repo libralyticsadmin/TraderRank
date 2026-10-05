@@ -15,7 +15,7 @@ export const LivePositionsTicker: React.FC<LivePositionsTickerProps> = ({ positi
     <div className="card-panel">
       <div className="panel-header">
         <h3 className="panel-title">
-          <Activity size={18} color="#10b981" />
+          <Activity size={18} color="#0abab5" />
           Live Position Ingestion Feed
           <span className="status-pill status-connected" style={{ fontSize: '11px' }}>
             <span className="status-dot"></span> Sub-Second Stream
@@ -79,7 +79,7 @@ export const LivePositionsTicker: React.FC<LivePositionsTickerProps> = ({ positi
                           borderRadius: '4px',
                           fontSize: '11px',
                           fontWeight: 700,
-                          background: pos.type === 'BUY' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)',
+                          background: pos.type === 'BUY' ? 'rgba(10, 186, 181, 0.15)' : 'rgba(244, 63, 94, 0.15)',
                           color: pos.type === 'BUY' ? 'var(--accent-green)' : 'var(--accent-red)',
                         }}
                       >
@@ -102,9 +102,9 @@ export const LivePositionsTicker: React.FC<LivePositionsTickerProps> = ({ positi
                           borderRadius: '6px',
                           fontSize: '13px',
                           fontWeight: 800,
-                          background: isPositive ? 'rgba(16, 185, 129, 0.12)' : 'rgba(244, 63, 94, 0.12)',
+                          background: isPositive ? 'rgba(10, 186, 181, 0.12)' : 'rgba(244, 63, 94, 0.12)',
                           color: isPositive ? 'var(--accent-green)' : 'var(--accent-red)',
-                          border: `1px solid ${isPositive ? 'rgba(16, 185, 129, 0.3)' : 'rgba(244, 63, 94, 0.3)'}`,
+                          border: `1px solid ${isPositive ? 'rgba(10, 186, 181, 0.3)' : 'rgba(244, 63, 94, 0.3)'}`,
                         }}
                       >
                         {isPositive ? `+${pos.profitPips}` : pos.profitPips}

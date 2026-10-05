@@ -63,7 +63,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
           maxHeight: '90vh',
           overflowY: 'auto',
           background: 'linear-gradient(180deg, #131b2e 0%, #0d1322 100%)',
-          border: '1px solid rgba(6, 182, 212, 0.3)',
+          border: '1px solid rgba(129, 216, 208, 0.3)',
           borderRadius: '24px',
           padding: '28px',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
@@ -83,9 +83,9 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                     fontWeight: 800,
                     padding: '2px 8px',
                     borderRadius: '10px',
-                    background: 'rgba(16, 185, 129, 0.2)',
+                    background: 'rgba(10, 186, 181, 0.2)',
                     color: 'var(--accent-green)',
-                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                    border: '1px solid rgba(10, 186, 181, 0.4)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px',
@@ -129,7 +129,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                 border: trader.rank <= 3 ? '1px solid rgba(245, 158, 11, 0.4)' : '1px solid var(--border-subtle)',
               }}
             >
-              #{trader.rank} Island Ranking
+              #{trader.rank} Global Ranking
             </span>
           </div>
 
@@ -142,7 +142,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
               fontWeight: 800,
               cursor: 'pointer',
               border: isFollowing ? '1px solid var(--accent-cyan)' : 'none',
-              background: isFollowing ? 'rgba(6, 182, 212, 0.15)' : 'linear-gradient(135deg, var(--accent-cyan), #0284c7)',
+              background: isFollowing ? 'rgba(129, 216, 208, 0.15)' : 'linear-gradient(135deg, var(--accent-cyan), #0284c7)',
               color: isFollowing ? 'var(--accent-cyan)' : '#000000',
               display: 'flex',
               alignItems: 'center',
@@ -237,7 +237,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                     fontWeight: 800,
                     padding: '2px 6px',
                     borderRadius: '4px',
-                    background: trade.type === 'BUY' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                    background: trade.type === 'BUY' ? 'rgba(10, 186, 181, 0.2)' : 'rgba(239, 68, 68, 0.2)',
                     color: trade.type === 'BUY' ? 'var(--accent-green)' : '#ef4444',
                   }}
                 >

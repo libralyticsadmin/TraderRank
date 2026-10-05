@@ -4,7 +4,10 @@ import { BrokerDirectory } from '../src/connector/brokerDirectory.js';
 describe('Piece 2: Multi-Broker Directory & Investor Authentication', () => {
   const directory = BrokerDirectory.getInstance();
 
-  it('correctly resolves broker identity from server name for Exness, XM, Axiory, Vantage', () => {
+  it('correctly resolves broker identity from server name for IC Markets, Exness, XM, Axiory, Vantage', () => {
+    expect(directory.resolveBroker('ICMarketsSC-Live01')).toBe('IC_MARKETS');
+    expect(directory.resolveBroker('ICMarkets-Live 01')).toBe('IC_MARKETS');
+    expect(directory.resolveBroker('ICTrading-Live01')).toBe('IC_MARKETS');
     expect(directory.resolveBroker('Exness-MT5Real')).toBe('Exness');
     expect(directory.resolveBroker('XMGlobal-Real 55')).toBe('XM');
     expect(directory.resolveBroker('Axiory-Live')).toBe('Axiory');
@@ -12,11 +15,16 @@ describe('Piece 2: Multi-Broker Directory & Investor Authentication', () => {
     expect(directory.resolveBroker('UnknownFx-Server')).toBe('OTHER');
   });
 
-  it('filters supported servers by broker and distinguishes demo from real', () => {
-    const exnessServers = directory.getSupportedServers('Exness');
-    expect(exnessServers.length).toBeGreaterThanOrEqual(3);
-    const hasDemo = exnessServers.some(s => s.isDemo);
-    const hasReal = exnessServers.some(s => !s.isDemo);
+  it('provides official website links including IC Markets referral URL', () => {
+    expect(directory.getBrokerWebsite('IC_MARKETS')).toBe('https://www.ic.com/en/?camp=57406');
+    expect(directory.getBrokerWebsite('Exness')).toBe('https://www.exness.com');
+  });
+
+  it('filters supported servers by broker and distinguishes demo from real for IC Markets', () => {
+    const icServers = directory.getSupportedServers('IC_MARKETS');
+    expect(icServers.length).toBeGreaterThanOrEqual(8);
+    const hasDemo = icServers.some(s => s.isDemo);
+    const hasReal = icServers.some(s => !s.isDemo);
     expect(hasDemo).toBe(true);
     expect(hasReal).toBe(true);
   });

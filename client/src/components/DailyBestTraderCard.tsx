@@ -117,7 +117,7 @@ export const DailyBestTraderCard: React.FC<DailyBestTraderCardProps> = ({
               color: 'var(--text-muted)',
             }}
           >
-            <Clock size={13} color="#06b6d4" />
+            <Clock size={13} color="#81d8d0" />
             <span>Rollover: <strong className="tabular" style={{ color: '#fff' }}>{timeLeft} UTC</strong></span>
           </div>
 
@@ -208,7 +208,7 @@ export const DailyBestTraderCard: React.FC<DailyBestTraderCardProps> = ({
                 ))}
               </div>
               <span>•</span>
-              <span>Win Rate: <strong style={{ color: '#10b981' }}>{champion.dailyWinRate}%</strong> ({champion.dailyWinningTrades}/{champion.dailyTradesCount} trades)</span>
+              <span>Win Rate: <strong style={{ color: '#0abab5' }}>{champion.dailyWinRate}%</strong> ({champion.dailyWinningTrades}/{champion.dailyTradesCount} trades)</span>
             </div>
           </div>
 

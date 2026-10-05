@@ -5,6 +5,7 @@
  */
 
 import { MarketSimulator } from '../workers/marketSimulator.js';
+import { AllTickAdapter } from './alltickAdapter.js';
 
 export interface MarketQuote {
   symbol: string;
@@ -26,6 +27,7 @@ export interface LiveMarketStatus {
 export class LiveMarketFeedService {
   private static instance: LiveMarketFeedService;
   private simulator = MarketSimulator.getInstance();
+  private alltickAdapter = new AllTickAdapter();
   private timer: NodeJS.Timeout | null = null;
   private isPolling = false;
   private feedStatus: 'LIVE_NETWORK' | 'FALLBACK_SYNTHETIC' = 'FALLBACK_SYNTHETIC';
@@ -35,6 +37,20 @@ export class LiveMarketFeedService {
   private cachedQuotes = new Map<string, MarketQuote>();
 
   private constructor() {
+    // Listen for live push ticks from AllTick if connected
+    this.alltickAdapter.onTick((symbol, price) => {
+      const spread = symbol === 'USDJPY' ? 0.018 : symbol === 'BTCUSD' ? 12.0 : 0.00012;
+      this.applyLiveRate(symbol, price, spread);
+      this.feedStatus = 'LIVE_NETWORK';
+      this.lastSyncAt = new Date().toISOString();
+      this.successfulSyncCount++;
+    });
+
+    // Try AllTick WebSocket if token is configured
+    if (this.alltickAdapter.getToken()) {
+      this.alltickAdapter.connect().catch(() => {});
+    }
+
     // Initial fetch and start background sync
     this.fetchRealRates().catch(() => {});
     this.startBackgroundSync();
@@ -69,6 +85,30 @@ export class LiveMarketFeedService {
     this.isPolling = true;
 
     try {
+      // 1. Try AllTick Real-Time API as primary tier if token is configured
+      if (this.alltickAdapter.getToken()) {
+        try {
+          const alltickRes = await this.alltickAdapter.fetchLatestQuotes(['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'XAUUSD', 'MCL1!', 'BTCUSD']);
+          if (alltickRes.success && alltickRes.data && alltickRes.data.length > 0) {
+            for (const tick of alltickRes.data) {
+              const price = typeof tick.price === 'string' ? parseFloat(tick.price) : Number(tick.price);
+              if (!isNaN(price) && price > 0) {
+                const spread = tick.code === 'USDJPY' ? 0.018 : tick.code === 'BTCUSD' ? 12.0 : tick.code === 'XAUUSD' || tick.code === 'GOLD' ? 0.25 : tick.code === 'MCL1!' || tick.code === 'USOIL' ? 0.03 : 0.00012;
+                const standardSymbol = AllTickAdapter.fromAllTickCode(tick.code);
+                this.applyLiveRate(standardSymbol, price, spread);
+              }
+            }
+            this.feedStatus = 'LIVE_NETWORK';
+            this.lastSyncAt = new Date().toISOString();
+            this.successfulSyncCount++;
+            this.lastError = undefined;
+            return true;
+          }
+        } catch {
+          // Fall through to public exchange rate fallback
+        }
+      }
+
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 6000);
 
@@ -105,6 +145,18 @@ export class LiveMarketFeedService {
         if (rates.JPY && rates.JPY > 0) {
           const usdjpy = Number((rates.JPY).toFixed(3));
           this.applyLiveRate('USDJPY', usdjpy, 0.018);
+        }
+
+        // AUDUSD = 1 / AUD rate
+        if (rates.AUD && rates.AUD > 0) {
+          const audusd = Number((1 / rates.AUD).toFixed(5));
+          this.applyLiveRate('AUDUSD', audusd, 0.00014);
+        }
+
+        // USDCAD = CAD rate
+        if (rates.CAD && rates.CAD > 0) {
+          const usdcad = Number((rates.CAD).toFixed(5));
+          this.applyLiveRate('USDCAD', usdcad, 0.00015);
         }
       }
 
@@ -163,8 +215,9 @@ export class LiveMarketFeedService {
 
   private applyLiveRate(symbol: string, rate: number, spread: number): void {
     const halfSpread = spread / 2;
-    const bid = Number((rate - halfSpread).toFixed(symbol === 'USDJPY' ? 3 : symbol === 'BTCUSD' || symbol === 'XAUUSD' ? 2 : 5));
-    const ask = Number((rate + halfSpread).toFixed(symbol === 'USDJPY' ? 3 : symbol === 'BTCUSD' || symbol === 'XAUUSD' ? 2 : 5));
+    const isTwoDecimals = symbol === 'BTCUSD' || symbol === 'XAUUSD' || symbol === 'GOLD' || symbol === 'MCL1!' || symbol === 'USOIL';
+    const bid = Number((rate - halfSpread).toFixed(symbol === 'USDJPY' ? 3 : isTwoDecimals ? 2 : 5));
+    const ask = Number((rate + halfSpread).toFixed(symbol === 'USDJPY' ? 3 : isTwoDecimals ? 2 : 5));
 
     this.simulator.updatePrice(symbol, bid, ask);
 
@@ -176,6 +229,18 @@ export class LiveMarketFeedService {
       source: 'LIVE_API',
       timestamp: new Date().toISOString(),
     });
+  }
+
+  public async fetchCandlesticks(symbol = 'USDJPY', timeframe: any = '1m', count = 50) {
+    return this.alltickAdapter.fetchCandlesticks(symbol, timeframe, count);
+  }
+
+  public onCandleUpdate(callback: (symbol: string, timeframe: any, bar: any) => void): void {
+    this.alltickAdapter.onCandleUpdate(callback);
+  }
+
+  public getAllTickAdapter(): AllTickAdapter {
+    return this.alltickAdapter;
   }
 
   public getStatus(): LiveMarketStatus {
@@ -203,3 +268,4 @@ export class LiveMarketFeedService {
     };
   }
 }
+

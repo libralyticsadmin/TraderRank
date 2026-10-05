@@ -34,14 +34,14 @@ export const SecurityVaultDrawer: React.FC = () => {
   }, []);
 
   return (
-    <div className="card-panel" style={{ borderTop: '2px solid #06b6d4' }}>
+    <div className="card-panel" style={{ borderTop: '2px solid #81d8d0' }}>
       <div className="panel-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <ShieldCheck size={20} color="#06b6d4" />
+          <ShieldCheck size={20} color="#81d8d0" />
           <h3 className="panel-title" style={{ margin: 0 }}>
             Secrets Vault Security &amp; Audit Log
           </h3>
-          <span className="brand-badge" style={{ background: 'rgba(6, 182, 212, 0.15)', color: '#06b6d4', borderColor: 'rgba(6, 182, 212, 0.3)' }}>
+          <span className="brand-badge" style={{ background: 'rgba(129, 216, 208, 0.15)', color: '#81d8d0', borderColor: 'rgba(129, 216, 208, 0.3)' }}>
             AES-256-GCM
           </span>
         </div>
@@ -91,7 +91,7 @@ export const SecurityVaultDrawer: React.FC = () => {
                       borderRadius: '4px',
                       fontWeight: 700,
                       fontSize: '10px',
-                      background: log.action === 'STORE' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(6, 182, 212, 0.2)',
+                      background: log.action === 'STORE' ? 'rgba(10, 186, 181, 0.2)' : 'rgba(129, 216, 208, 0.2)',
                       color: log.action === 'STORE' ? 'var(--accent-green)' : 'var(--accent-cyan)',
                     }}>
                       {log.action}

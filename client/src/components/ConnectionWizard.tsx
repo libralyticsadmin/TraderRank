@@ -29,7 +29,8 @@ interface ConnectionWizardProps {
   onSuccess: (account: TradingAccount) => void;
 }
 
-const BROKERS: { id: Broker; name: string; tag: string; desc: string }[] = [
+const BROKERS: { id: Broker; name: string; tag: string; desc: string; url?: string }[] = [
+  { id: 'IC_MARKETS', name: 'IC Markets / IC Trading', tag: 'Raw Spread ECN', desc: 'World leader in True ECN raw spread trading & MT4/MT5 accounts', url: 'https://www.ic.com/en/?camp=57406' },
   { id: 'XM', name: 'XM Global', tag: 'MT4 / MT5', desc: 'Connect via MT4/MT5 Gateway with Investor Password' },
   { id: 'Axiory', name: 'Axiory', tag: 'MT4 / MT5', desc: 'Direct bridge via broker-agnostic Gateway' },
   { id: 'Exness', name: 'Exness', tag: 'Dual Path', desc: 'Official Native REST/WS API or MT4/MT5 Gateway' },
@@ -39,12 +40,12 @@ const BROKERS: { id: Broker; name: string; tag: string; desc: string }[] = [
 
 export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onSuccess }) => {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
-  const [selectedBroker, setSelectedBroker] = useState<Broker>('XM');
+  const [selectedBroker, setSelectedBroker] = useState<Broker>('IC_MARKETS');
   const [selectedPath, setSelectedPath] = useState<IntegrationType>('mt_gateway');
   const [platform, setPlatform] = useState<Platform>('MT5');
 
   // Form states - Gateway
-  const [serverName, setServerName] = useState('XMGlobal-Real 55');
+  const [serverName, setServerName] = useState('ICMarketsSC-Live01');
   const [login, setLogin] = useState('10982341');
   const [investorPassword, setInvestorPassword] = useState('ReadOnlyInvestorPass99!');
 
@@ -65,6 +66,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
       setSelectedPath('exness_native');
     } else {
       setSelectedPath('mt_gateway');
+      if (broker === 'IC_MARKETS') setServerName('ICMarketsSC-Live01');
       if (broker === 'XM') setServerName('XMGlobal-Real 55');
       if (broker === 'Axiory') setServerName('Axiory-Live 01');
       if (broker === 'Vantage') setServerName('VantageFX-Live 2');
@@ -236,7 +238,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                   className={`broker-card ${selectedPath === 'exness_native' ? 'selected' : ''}`}
                   onClick={() => setSelectedPath('exness_native')}
                 >
-                  <Zap size={28} color="#06b6d4" />
+                  <Zap size={28} color="#81d8d0" />
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <strong>Exness Native API (Recommended)</strong>
@@ -252,7 +254,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                   className={`broker-card ${selectedPath === 'mt_gateway' ? 'selected' : ''}`}
                   onClick={() => setSelectedPath('mt_gateway')}
                 >
-                  <Server size={28} color="#10b981" />
+                  <Server size={28} color="#0abab5" />
                   <div>
                     <strong>MT4/MT5 Gateway (Fallback)</strong>
                     <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
@@ -263,7 +265,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
               </div>
             ) : (
               <div className="broker-card selected" style={{ cursor: 'default' }}>
-                <Server size={28} color="#10b981" />
+                <Server size={28} color="#0abab5" />
                 <div>
                   <strong>Broker-Agnostic MT4/MT5 Gateway</strong>
                   <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
@@ -317,10 +319,49 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                       className="form-input"
                       value={serverName}
                       onChange={e => setServerName(e.target.value)}
-                      placeholder="e.g. XMGlobal-Real 55"
+                      placeholder={selectedBroker === 'IC_MARKETS' ? 'e.g. ICMarketsSC-Live01' : 'e.g. XMGlobal-Real 55'}
                     />
                   </div>
                 </div>
+
+                {selectedBroker === 'IC_MARKETS' && (
+                  <div style={{ marginBottom: '14px', marginTop: '-4px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                      Popular IC Markets / IC Trading Servers:
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {['ICMarketsSC-Live01', 'ICMarketsSC-Live02', 'ICMarkets-Live 01', 'ICMarketsGlobal-Live01', 'ICTrading-Live01'].map(srv => (
+                        <button
+                          key={srv}
+                          type="button"
+                          onClick={() => setServerName(srv)}
+                          style={{
+                            padding: '3px 8px',
+                            borderRadius: '5px',
+                            background: serverName === srv ? 'rgba(10, 186, 181, 0.25)' : 'rgba(255, 255, 255, 0.04)',
+                            border: `1px solid ${serverName === srv ? '#0abab5' : 'var(--border-subtle)'}`,
+                            color: serverName === srv ? '#81d8d0' : 'var(--text-muted)',
+                            fontSize: '11px',
+                            fontFamily: 'monospace',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {srv}
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: '11px', marginTop: '6px' }}>
+                      <a
+                        href="https://www.ic.com/en/?camp=57406"
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ color: '#0abab5', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        Find your IC Markets server / Create Raw Spread Account (ic.com) →
+                      </a>
+                    </div>
+                  </div>
+                )}
 
                 <div className="form-group">
                   <label className="form-label">Account Login / Number</label>
@@ -342,7 +383,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                     placeholder="Investor password only"
                   />
                   <span className="form-tip">
-                    <ShieldCheck size={14} color="#10b981" /> Never enter your master trading password.
+                    <ShieldCheck size={14} color="#0abab5" /> Never enter your master trading password. Read-only investor password only.
                   </span>
                 </div>
               </div>
@@ -376,7 +417,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                     placeholder="Secret Key"
                   />
                   <span className="form-tip">
-                    <Key size={14} color="#06b6d4" /> Generated from Exness Settings &gt; API Access after KYC Tier-2.
+                    <Key size={14} color="#81d8d0" /> Generated from Exness Settings &gt; API Access after KYC Tier-2.
                   </span>
                 </div>
               </div>
@@ -416,7 +457,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
             }}>
               {isValidating ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 0', gap: '12px' }}>
-                  <Loader2 size={36} color="#10b981" className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
+                  <Loader2 size={36} color="#0abab5" className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
                   <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Pinging broker server &amp; testing read permissions...</p>
                 </div>
               ) : validationResult?.success ? (

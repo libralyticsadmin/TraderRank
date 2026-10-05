@@ -133,7 +133,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, letterSpacing: '-0.02em' }}>
-                  Trade Island Ranking
+                  Global Verified Leaderboard
                 </h3>
                 <span
                   style={{
@@ -141,9 +141,9 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                     fontWeight: 700,
                     padding: '2px 8px',
                     borderRadius: '12px',
-                    background: 'rgba(16, 185, 129, 0.15)',
+                    background: 'rgba(10, 186, 181, 0.15)',
                     color: 'var(--accent-green)',
-                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    border: '1px solid rgba(10, 186, 181, 0.3)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px',
@@ -158,7 +158,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             </div>
           </div>
 
-          {/* Period Selector Tabs (Trade Island Style) */}
+          {/* Period Selector Tabs (Daily / Weekly / All-Time) */}
           <div
             style={{
               display: 'flex',
@@ -186,7 +186,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                     borderRadius: '7px',
                     border: 'none',
                     cursor: 'pointer',
-                    background: active ? 'linear-gradient(135deg, #10b981, #059669)' : 'transparent',
+                    background: active ? 'linear-gradient(135deg, #0abab5, #078c88)' : 'transparent',
                     color: active ? '#ffffff' : 'var(--text-muted)',
                     display: 'flex',
                     alignItems: 'center',
@@ -216,7 +216,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             border: '1px solid var(--border-subtle)',
           }}
         >
-          {/* Metric Sort Buttons (Trade Island 収益額 / 収益率 / pips) */}
+          {/* Metric Sort Buttons (Winning Pips / Profit / Rate) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>Ranking Metric:</span>
             <div style={{ display: 'flex', gap: '4px' }}>
@@ -236,8 +236,8 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                       fontSize: '12px',
                       fontWeight: 600,
                       borderRadius: '6px',
-                      border: active ? '1px solid rgba(6, 182, 212, 0.5)' : '1px solid transparent',
-                      background: active ? 'rgba(6, 182, 212, 0.15)' : 'transparent',
+                      border: active ? '1px solid rgba(129, 216, 208, 0.5)' : '1px solid transparent',
+                      background: active ? 'rgba(129, 216, 208, 0.15)' : 'transparent',
                       color: active ? 'var(--accent-cyan)' : 'var(--text-muted)',
                       cursor: 'pointer',
                       display: 'flex',

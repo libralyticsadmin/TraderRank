@@ -24,8 +24,11 @@ export class MarketSimulator {
     this.prices.set('EURUSD', { bid: 1.08520, ask: 1.08530, spread: 0.00010 });
     this.prices.set('GBPUSD', { bid: 1.27210, ask: 1.27225, spread: 0.00015 });
     this.prices.set('USDJPY', { bid: 155.320, ask: 155.335, spread: 0.015 });
-    this.prices.set('XAUUSD', { bid: 2354.20, ask: 2354.50, spread: 0.30 });
-    this.prices.set('BTCUSD', { bid: 65420.00, ask: 65435.00, spread: 15.00 });
+    this.prices.set('AUDUSD', { bid: 0.65820, ask: 0.65832, spread: 0.00012 });
+    this.prices.set('USDCAD', { bid: 1.36520, ask: 1.36535, spread: 0.00015 });
+    this.prices.set('XAUUSD', { bid: 4131.20, ask: 4131.50, spread: 0.30 });
+    this.prices.set('MCL1!', { bid: 90.15, ask: 90.18, spread: 0.03 });
+    this.prices.set('BTCUSD', { bid: 95420.00, ask: 95435.00, spread: 15.00 });
 
     this.startPriceEngine();
   }
@@ -46,6 +49,7 @@ export class MarketSimulator {
         let volatility = 0.00008;
         if (symbol === 'USDJPY') volatility = 0.015;
         if (symbol === 'XAUUSD') volatility = 0.25;
+        if (symbol === 'MCL1!' || symbol === 'USOIL') volatility = 0.04;
         if (symbol === 'BTCUSD') volatility = 8.5;
 
         const delta = (Math.random() - 0.49) * volatility;
@@ -103,7 +107,13 @@ export class MarketSimulator {
       const openPrice = Math.max(0.01, market.bid + offset);
       const currentPrice = isBuy ? market.bid : market.ask;
 
-      const profit = (isBuy ? (currentPrice - openPrice) : (openPrice - currentPrice)) * volume * 100000;
+      // Asset-specific contract sizes: Forex = 100k, Gold = 100 oz, Crypto = 1, Index = 1
+      const contractSize = sym === 'XAUUSD' ? 100 : sym === 'BTCUSD' || sym === 'US30' ? 1 : 100000;
+      const priceDiff = isBuy ? (currentPrice - openPrice) : (openPrice - currentPrice);
+      let profit = priceDiff * volume * contractSize;
+      if (sym === 'USDJPY' && currentPrice > 0) {
+        profit = profit / currentPrice;
+      }
 
       positions.push({
         accountId,
@@ -140,7 +150,7 @@ export class MarketSimulator {
       const isBuy = Math.random() > 0.35; // 65% win bias for demo fun
       const isWin = Math.random() > 0.32;
       const volume = Number((0.2 + Math.random() * 0.8).toFixed(2));
-      const basePrice = sym === 'XAUUSD' ? 2340 : sym === 'USDJPY' ? 154.5 : 1.082;
+      const basePrice = sym === 'XAUUSD' ? 4130 : sym === 'USDJPY' ? 154.5 : 1.082;
 
       const openPrice = basePrice;
       const delta = (isWin ? 1 : -1) * (Math.random() * 0.006 + 0.001);

@@ -68,6 +68,19 @@ export class BrokerDirectory {
     { broker: 'Vantage', serverName: 'VantageFX-Live', platform: 'MT5', isDemo: false },
     { broker: 'Vantage', serverName: 'VantageFX-Demo', platform: 'MT5', isDemo: true },
     { broker: 'Vantage', serverName: 'VantageInternational-Live', platform: 'MT5', isDemo: false },
+
+    // IC Markets / IC Trading (IC.com) MT5 / MT4
+    { broker: 'IC_MARKETS', serverName: 'ICMarketsSC-Live01', platform: 'MT5', isDemo: false, pingHost: 'sc-live01.icmarkets.com' },
+    { broker: 'IC_MARKETS', serverName: 'ICMarketsSC-Live02', platform: 'MT5', isDemo: false, pingHost: 'sc-live02.icmarkets.com' },
+    { broker: 'IC_MARKETS', serverName: 'ICMarketsSC-Live20', platform: 'MT5', isDemo: false, pingHost: 'sc-live20.icmarkets.com' },
+    { broker: 'IC_MARKETS', serverName: 'ICMarkets-Live 01', platform: 'MT4', isDemo: false, pingHost: 'live01.icmarkets.com' },
+    { broker: 'IC_MARKETS', serverName: 'ICMarkets-Live 05', platform: 'MT4', isDemo: false, pingHost: 'live05.icmarkets.com' },
+    { broker: 'IC_MARKETS', serverName: 'ICMarkets-Live 20', platform: 'MT4', isDemo: false, pingHost: 'live20.icmarkets.com' },
+    { broker: 'IC_MARKETS', serverName: 'ICMarketsGlobal-Live01', platform: 'MT5', isDemo: false, pingHost: 'global-live01.icmarkets.com' },
+    { broker: 'IC_MARKETS', serverName: 'ICTrading-Live01', platform: 'MT5', isDemo: false, pingHost: 'live01.ic.com' },
+    { broker: 'IC_MARKETS', serverName: 'ICTrading-Live02', platform: 'MT4', isDemo: false, pingHost: 'live02.ic.com' },
+    { broker: 'IC_MARKETS', serverName: 'ICMarketsSC-Demo01', platform: 'MT5', isDemo: true },
+    { broker: 'IC_MARKETS', serverName: 'ICMarkets-Demo01', platform: 'MT4', isDemo: true },
   ];
 
   public static getInstance(): BrokerDirectory {
@@ -82,11 +95,29 @@ export class BrokerDirectory {
    */
   public resolveBroker(serverName: string): Broker {
     const s = serverName.toLowerCase();
+    if (s.includes('icmarket') || s.includes('ic market') || s.includes('ic.com') || s.includes('ictrading') || s.includes('ic trading')) return 'IC_MARKETS';
     if (s.includes('exness')) return 'Exness';
     if (s.includes('xm') || s.includes('xmglobal')) return 'XM';
     if (s.includes('axiory')) return 'Axiory';
     if (s.includes('vantage')) return 'Vantage';
     return 'OTHER';
+  }
+
+  public getBrokerWebsite(broker: Broker): string {
+    switch (broker) {
+      case 'IC_MARKETS':
+        return 'https://www.ic.com/en/?camp=57406';
+      case 'Exness':
+        return 'https://www.exness.com';
+      case 'XM':
+        return 'https://www.xm.com';
+      case 'Axiory':
+        return 'https://www.axiory.com';
+      case 'Vantage':
+        return 'https://www.vantagemarkets.com';
+      default:
+        return 'https://www.ic.com/en/?camp=57406';
+    }
   }
 
   public getSupportedServers(broker?: Broker): BrokerServerProfile[] {

@@ -85,6 +85,24 @@ export const TournamentArena: React.FC = () => {
       },
     },
     {
+      id: 'tourney_gold_rush',
+      title: 'Global Gold Rush Masters',
+      subtitle: 'Precision XAUUSD & Precious Metals Gauntlet',
+      type: 'WEEKLY_SPRINT',
+      prizePoolUsd: 10000,
+      prizePoolXp: 30000,
+      entrantsCount: 420,
+      startsAt: '2026-09-15T00:00:00Z',
+      endsAt: '2026-09-20T23:59:59Z',
+      status: 'ACTIVE',
+      rules: {
+        maxDailyLossPct: 4.5,
+        maxTrailingDrawdownPct: 9.0,
+        minTradesCount: 8,
+        scoringFormula: 'TraderScore = Gold Pips * (WinRate / 100)',
+      },
+    },
+    {
       id: 'tourney_daily_rush',
       title: 'Tokyo-London Overlap Rush',
       subtitle: 'Fast-paced 8-hour session battle on GBP & EUR pairs',
@@ -106,73 +124,36 @@ export const TournamentArena: React.FC = () => {
 
   const currentTourney = tournaments.find(t => t.id === selectedTournamentId) || tournaments[0];
 
-  const participants: TournamentParticipant[] = [
-    {
-      rank: 1,
-      userId: 'u_fx_sniper',
-      username: 'FX_Sniper',
-      broker: 'Exness',
-      avatarSymbol: 'EURUSD',
-      netPips: 88.4,
-      tradesCount: 14,
-      drawdownPct: 1.8,
-      winRate: 78.5,
-      status: 'ACTIVE',
-      estimatedPrize: '$2,000 + 5,000 XP',
-    },
-    {
-      rank: 2,
-      userId: 'u_gold_bug',
-      username: 'GoldBug_JP',
-      broker: 'XM',
-      avatarSymbol: 'XAUUSD',
-      netPips: 74.2,
-      tradesCount: 11,
-      drawdownPct: 2.4,
-      winRate: 72.7,
-      status: 'ACTIVE',
-      estimatedPrize: '$1,200 + 3,500 XP',
-    },
-    {
-      rank: 3,
-      userId: 'u_alpha_wave',
-      username: 'AlphaWave',
-      broker: 'Axiory',
-      avatarSymbol: 'USDJPY',
-      netPips: 61.9,
-      tradesCount: 9,
-      drawdownPct: 2.1,
-      winRate: 66.7,
-      status: 'ACTIVE',
-      estimatedPrize: '$800 + 2,000 XP',
-    },
-    {
-      rank: 4,
-      userId: 'u_zen_scalp',
-      username: 'ZenScalper',
-      broker: 'Vantage',
-      avatarSymbol: 'GBPUSD',
-      netPips: 49.3,
-      tradesCount: 16,
-      drawdownPct: 3.2,
-      winRate: 62.5,
-      status: 'ACTIVE',
-      estimatedPrize: '$400 + 1,000 XP',
-    },
-    {
-      rank: 5,
-      userId: 'u_reckless_bull',
-      username: 'RiskMaximus',
-      broker: 'Exness',
-      avatarSymbol: 'BTCUSD',
-      netPips: 112.5,
-      tradesCount: 4,
-      drawdownPct: 7.2,
-      winRate: 50.0,
-      status: 'DISQUALIFIED',
-      estimatedPrize: 'DQ (Max DD Exceeded)',
-    },
-  ];
+  const participantRosters: Record<string, TournamentParticipant[]> = {
+    tourney_weekly_blitz: [
+      { rank: 1, userId: 'u_fx_sniper', username: 'FX_Sniper', broker: 'Exness', avatarSymbol: 'EURUSD', netPips: 88.4, tradesCount: 14, drawdownPct: 1.8, winRate: 78.5, status: 'ACTIVE', estimatedPrize: '$2,000 + 5,000 XP' },
+      { rank: 2, userId: 'u_gold_bug', username: 'GoldBug_JP', broker: 'XM', avatarSymbol: 'XAUUSD', netPips: 74.2, tradesCount: 11, drawdownPct: 2.4, winRate: 72.7, status: 'ACTIVE', estimatedPrize: '$1,200 + 3,500 XP' },
+      { rank: 3, userId: 'u_alpha_wave', username: 'AlphaWave', broker: 'Axiory', avatarSymbol: 'USDJPY', netPips: 61.9, tradesCount: 9, drawdownPct: 2.1, winRate: 66.7, status: 'ACTIVE', estimatedPrize: '$800 + 2,000 XP' },
+      { rank: 4, userId: 'u_zen_scalp', username: 'ZenScalper', broker: 'Vantage', avatarSymbol: 'GBPUSD', netPips: 49.3, tradesCount: 16, drawdownPct: 3.2, winRate: 62.5, status: 'ACTIVE', estimatedPrize: '$400 + 1,000 XP' },
+      { rank: 5, userId: 'u_reckless_bull', username: 'RiskMaximus', broker: 'Exness', avatarSymbol: 'BTCUSD', netPips: 112.5, tradesCount: 4, drawdownPct: 7.2, winRate: 50.0, status: 'DISQUALIFIED', estimatedPrize: 'DQ (Max DD Exceeded)' },
+    ],
+    tourney_monthly_prop: [
+      { rank: 1, userId: 'u_marcus_v', username: 'Marcus_V', broker: 'Axiory', avatarSymbol: 'EURUSD', netPips: 248.6, tradesCount: 42, drawdownPct: 3.1, winRate: 81.0, status: 'ACTIVE', estimatedPrize: '$10,000 + 30,000 XP' },
+      { rank: 2, userId: 'u_sarah_fx', username: 'Sarah_FX', broker: 'Exness', avatarSymbol: 'GBPUSD', netPips: 198.4, tradesCount: 38, drawdownPct: 2.8, winRate: 76.3, status: 'ACTIVE', estimatedPrize: '$6,000 + 20,000 XP' },
+      { rank: 3, userId: 'u_hiroshi_k', username: 'Hiroshi_K', broker: 'XM', avatarSymbol: 'USDJPY', netPips: 182.1, tradesCount: 29, drawdownPct: 3.4, winRate: 72.4, status: 'ACTIVE', estimatedPrize: '$4,000 + 12,000 XP' },
+      { rank: 4, userId: 'u_elena_scalps', username: 'Elena_Scalps', broker: 'Vantage', avatarSymbol: 'XAUUSD', netPips: 165.7, tradesCount: 35, drawdownPct: 3.9, winRate: 68.6, status: 'ACTIVE', estimatedPrize: '$2,500 + 8,000 XP' },
+      { rank: 5, userId: 'u_david_gold', username: 'David_Gold', broker: 'XM', avatarSymbol: 'XAUUSD', netPips: 142.0, tradesCount: 31, drawdownPct: 4.1, winRate: 64.5, status: 'ACTIVE', estimatedPrize: '$1,500 + 5,000 XP' },
+    ],
+    tourney_gold_rush: [
+      { rank: 1, userId: 'u_gold_bug', username: 'GoldBug_JP', broker: 'XM', avatarSymbol: 'XAUUSD', netPips: 134.5, tradesCount: 19, drawdownPct: 2.1, winRate: 84.2, status: 'ACTIVE', estimatedPrize: '$4,500 + 12,000 XP' },
+      { rank: 2, userId: 'u_viktor_m', username: 'Viktor_Metals', broker: 'Exness', avatarSymbol: 'XAUUSD', netPips: 118.2, tradesCount: 15, drawdownPct: 2.6, winRate: 73.3, status: 'ACTIVE', estimatedPrize: '$2,500 + 8,000 XP' },
+      { rank: 3, userId: 'u_david_gold', username: 'David_Gold', broker: 'Axiory', avatarSymbol: 'XAUUSD', netPips: 96.4, tradesCount: 12, drawdownPct: 3.0, winRate: 66.7, status: 'ACTIVE', estimatedPrize: '$1,500 + 5,000 XP' },
+      { rank: 4, userId: 'u_swiss_vault', username: 'SwissVault', broker: 'Vantage', avatarSymbol: 'XAUUSD', netPips: 82.1, tradesCount: 14, drawdownPct: 3.5, winRate: 64.3, status: 'ACTIVE', estimatedPrize: '$1,000 + 3,000 XP' },
+    ],
+    tourney_daily_rush: [
+      { rank: 1, userId: 'u_kenshi_t', username: 'Kenshi_Tokyo', broker: 'XM', avatarSymbol: 'USDJPY', netPips: 44.8, tradesCount: 7, drawdownPct: 1.1, winRate: 85.7, status: 'ACTIVE', estimatedPrize: '$700 + 2,500 XP' },
+      { rank: 2, userId: 'u_london_j', username: 'LondonFX_James', broker: 'Vantage', avatarSymbol: 'GBPUSD', netPips: 38.2, tradesCount: 6, drawdownPct: 1.4, winRate: 83.3, status: 'ACTIVE', estimatedPrize: '$450 + 1,500 XP' },
+      { rank: 3, userId: 'u_sofia_q', username: 'Sofia_Quant', broker: 'Axiory', avatarSymbol: 'EURUSD', netPips: 31.0, tradesCount: 8, drawdownPct: 1.9, winRate: 75.0, status: 'ACTIVE', estimatedPrize: '$250 + 750 XP' },
+      { rank: 4, userId: 'u_alex_s', username: 'Alex_Scalps', broker: 'Exness', avatarSymbol: 'EURGBP', netPips: 27.5, tradesCount: 5, drawdownPct: 2.2, winRate: 60.0, status: 'ACTIVE', estimatedPrize: '$100 + 250 XP' },
+    ],
+  };
+
+  const participants: TournamentParticipant[] = participantRosters[selectedTournamentId] || participantRosters.tourney_weekly_blitz;
 
   // Countdown timer tick simulation
   useEffect(() => {
@@ -200,14 +181,14 @@ export const TournamentArena: React.FC = () => {
               onClick={() => setSelectedTournamentId(t.id)}
               style={{
                 background: isSelected
-                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.8) 100%)'
+                  ? 'linear-gradient(135deg, rgba(10, 186, 181, 0.15) 0%, rgba(15, 23, 42, 0.8) 100%)'
                   : 'rgba(15, 23, 42, 0.6)',
-                border: isSelected ? '1px solid rgba(16, 185, 129, 0.5)' : '1px solid var(--border-subtle)',
+                border: isSelected ? '1px solid rgba(10, 186, 181, 0.5)' : '1px solid var(--border-subtle)',
                 borderRadius: '16px',
                 padding: '18px 20px',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
-                boxShadow: isSelected ? '0 10px 25px -5px rgba(16, 185, 129, 0.2)' : 'none',
+                boxShadow: isSelected ? '0 10px 25px -5px rgba(10, 186, 181, 0.2)' : 'none',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
@@ -217,9 +198,9 @@ export const TournamentArena: React.FC = () => {
                     fontWeight: 800,
                     padding: '3px 8px',
                     borderRadius: '6px',
-                    background: t.type === 'WEEKLY_SPRINT' ? 'rgba(6, 182, 212, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                    background: t.type === 'WEEKLY_SPRINT' ? 'rgba(129, 216, 208, 0.2)' : 'rgba(245, 158, 11, 0.2)',
                     color: t.type === 'WEEKLY_SPRINT' ? 'var(--accent-cyan)' : '#fbbf24',
-                    border: `1px solid ${t.type === 'WEEKLY_SPRINT' ? 'rgba(6, 182, 212, 0.4)' : 'rgba(245, 158, 11, 0.4)'}`,
+                    border: `1px solid ${t.type === 'WEEKLY_SPRINT' ? 'rgba(129, 216, 208, 0.4)' : 'rgba(245, 158, 11, 0.4)'}`,
                   }}
                 >
                   {t.type.replace('_', ' ')}
@@ -295,8 +276,8 @@ export const TournamentArena: React.FC = () => {
                 borderRadius: '10px',
                 cursor: 'pointer',
                 background: isUserEntered
-                  ? 'rgba(16, 185, 129, 0.2)'
-                  : 'linear-gradient(135deg, var(--accent-green), #059669)',
+                  ? 'rgba(10, 186, 181, 0.2)'
+                  : 'linear-gradient(135deg, var(--accent-green), #078c88)',
                 color: isUserEntered ? 'var(--accent-green)' : '#000000',
                 border: isUserEntered ? '1px solid var(--accent-green)' : 'none',
                 display: 'flex',
@@ -376,12 +357,12 @@ export const TournamentArena: React.FC = () => {
                   background: isDq
                     ? 'rgba(239, 68, 68, 0.05)'
                     : isTop3
-                    ? 'rgba(16, 185, 129, 0.04)'
+                    ? 'rgba(10, 186, 181, 0.04)'
                     : 'rgba(255, 255, 255, 0.02)',
                   border: isDq
                     ? '1px solid rgba(239, 68, 68, 0.3)'
                     : isTop3
-                    ? '1px solid rgba(16, 185, 129, 0.3)'
+                    ? '1px solid rgba(10, 186, 181, 0.3)'
                     : '1px solid var(--border-subtle)',
                   opacity: isDq ? 0.7 : 1,
                 }}

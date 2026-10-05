@@ -12,6 +12,12 @@ describe('PipCalculator - Gauntlet Quality Verification', () => {
 
     // BUY GBPUSD from 1.27123 to 1.27273 = +15.0 pips
     expect(PipCalculator.calculatePips('GBPUSD', 'BUY', 1.27123, 1.27273)).toBe(15.0);
+
+    // BUY AUDUSD from 0.65820 to 0.65920 = +10.0 pips
+    expect(PipCalculator.calculatePips('AUDUSD', 'BUY', 0.65820, 0.65920)).toBe(10.0);
+
+    // SELL USDCAD from 1.36500 to 1.36250 = +25.0 pips
+    expect(PipCalculator.calculatePips('USDCAD', 'SELL', 1.36500, 1.36250)).toBe(25.0);
   });
 
   it('should calculate 3-digit JPY pairs pips correctly (USDJPY, EURJPY)', () => {

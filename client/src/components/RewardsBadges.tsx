@@ -27,7 +27,7 @@ export const RewardsBadges: React.FC = () => {
       name: 'Risk Guardian',
       description: 'Completed a 5-day tournament with under 2.0% maximum drawdown.',
       icon: Shield,
-      color: '#10b981',
+      color: '#0abab5',
       unlocked: true,
       unlockedAt: 'Yesterday',
       rarity: 'EPIC',
@@ -38,7 +38,7 @@ export const RewardsBadges: React.FC = () => {
       name: 'Precision Sniper',
       description: 'Achieved > 70% win rate across a minimum of 10 closed trades.',
       icon: Target,
-      color: '#06b6d4',
+      color: '#81d8d0',
       unlocked: true,
       unlockedAt: '3 days ago',
       rarity: 'RARE',
@@ -104,8 +104,8 @@ export const RewardsBadges: React.FC = () => {
       <div
         className="card-panel"
         style={{
-          background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, rgba(15, 23, 42, 0.9) 100%)',
-          border: '1px solid rgba(6, 182, 212, 0.3)',
+          background: 'linear-gradient(135deg, rgba(129, 216, 208, 0.12) 0%, rgba(15, 23, 42, 0.9) 100%)',
+          border: '1px solid rgba(129, 216, 208, 0.3)',
           padding: '28px',
           borderRadius: '20px',
         }}
@@ -119,14 +119,14 @@ export const RewardsBadges: React.FC = () => {
                   fontWeight: 800,
                   padding: '3px 10px',
                   borderRadius: '12px',
-                  background: 'rgba(6, 182, 212, 0.2)',
+                  background: 'rgba(129, 216, 208, 0.2)',
                   color: 'var(--accent-cyan)',
-                  border: '1px solid rgba(6, 182, 212, 0.4)',
+                  border: '1px solid rgba(129, 216, 208, 0.4)',
                 }}
               >
                 LEVEL {currentLevel} TRADER
               </span>
-              <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>TraderRank Island Rank</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>TraderRank Global Rank</span>
             </div>
             <h2 style={{ margin: 0, fontSize: '28px', fontWeight: 900, letterSpacing: '-0.02em' }}>
               {currentTier}
@@ -182,12 +182,12 @@ export const RewardsBadges: React.FC = () => {
                 borderRadius: '12px',
                 textAlign: 'center',
                 background: s.claimed
-                  ? 'rgba(16, 185, 129, 0.1)'
+                  ? 'rgba(10, 186, 181, 0.1)'
                   : s.current
                   ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(15, 23, 42, 0.8))'
                   : 'rgba(255, 255, 255, 0.02)',
                 border: s.claimed
-                  ? '1px solid rgba(16, 185, 129, 0.3)'
+                  ? '1px solid rgba(10, 186, 181, 0.3)'
                   : s.current
                   ? '1px solid rgba(245, 158, 11, 0.5)'
                   : '1px solid var(--border-subtle)',

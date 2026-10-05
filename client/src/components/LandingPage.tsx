@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  TrendingUp,
   Shield,
   Trophy,
   Swords,
@@ -8,20 +7,24 @@ import {
   Zap,
   Lock,
   ArrowRight,
-  Flame,
   Radio,
   ChevronRight,
   Play,
 } from 'lucide-react';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { TraderAvatar } from './TraderAvatar.tsx';
+import { BrandLogo, BrandMark } from './BrandLogo.tsx';
+import { LiveTradeBulletin } from './LiveTradeBulletin.tsx';
+import { MarketLivePricesTicker } from './MarketLivePricesTicker.tsx';
+import { LiveCandleChart } from './LiveCandleChart.tsx';
 
 interface LandingPageProps {
   onEnterApp: () => void;
   onOpenConnectWizard: () => void;
+  onSelectTrader?: (trader: { username: string; broker?: any; rank?: number; score?: number }) => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConnectWizard }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConnectWizard, onSelectTrader }) => {
   const [activeTabRanking, setActiveTabRanking] = useState<'pips' | 'profit' | 'rate'>('pips');
 
   const topPodiumTraders = [
@@ -69,60 +72,36 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
     },
   ];
 
-  const recentTradePulses = [
-    { trader: 'FX_Sniper', broker: 'Exness' as const, pair: 'EURUSD', pips: '+38.4', time: 'Just now' },
-    { trader: 'ZenScalper', broker: 'Vantage' as const, pair: 'GBPUSD', pips: '+24.1', time: '2m ago' },
-    { trader: 'TokyoRider', broker: 'XM' as const, pair: 'USDJPY', pips: '+19.8', time: '4m ago' },
-    { trader: 'GoldBug_JP', broker: 'XM' as const, pair: 'XAUUSD', pips: '+42.0', time: '7m ago' },
-  ];
-
   return (
-    <div style={{ backgroundColor: '#070b14', color: '#f8fafc', minHeight: '100vh', overflowX: 'hidden' }}>
+    <div style={{ backgroundColor: '#060d11', color: '#f8fafc', minHeight: '100vh', overflowX: 'hidden' }}>
       {/* Top Floating Glass Navigation */}
       <header
         style={{
           position: 'sticky',
           top: 0,
           zIndex: 100,
-          backgroundColor: 'rgba(7, 11, 20, 0.85)',
+          backgroundColor: 'rgba(6, 13, 17, 0.85)',
           backdropFilter: 'blur(12px)',
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           padding: '16px 24px',
         }}
       >
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={onEnterApp}>
-            <div
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <BrandLogo size={38} textSize={20} onClick={onEnterApp} />
+            <span
               style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 0 15px rgba(16, 185, 129, 0.4)',
+                fontSize: '10px',
+                fontWeight: 800,
+                padding: '2px 6px',
+                borderRadius: '6px',
+                background: 'rgba(245, 158, 11, 0.2)',
+                color: '#fbbf24',
+                border: '1px solid rgba(245, 158, 11, 0.4)',
               }}
             >
-              <TrendingUp size={22} color="#ffffff" />
-            </div>
-            <div>
-              <span style={{ fontSize: '20px', fontWeight: 900, letterSpacing: '-0.03em' }}>TraderRank</span>
-              <span
-                style={{
-                  fontSize: '10px',
-                  fontWeight: 800,
-                  marginLeft: '8px',
-                  padding: '2px 6px',
-                  borderRadius: '6px',
-                  background: 'rgba(245, 158, 11, 0.2)',
-                  color: '#fbbf24',
-                  border: '1px solid rgba(245, 158, 11, 0.4)',
-                }}
-              >
-                ISLAND ARENA
-              </span>
-            </div>
+              PRO LEAGUE
+            </span>
           </div>
 
           <nav style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
@@ -160,7 +139,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
             <button
               onClick={onEnterApp}
               style={{
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                background: 'linear-gradient(135deg, #0abab5 0%, #078c88 100%)',
                 border: 'none',
                 color: '#000000',
                 padding: '9px 20px',
@@ -171,7 +150,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)',
+                boxShadow: '0 4px 15px rgba(10, 186, 181, 0.3)',
               }}
             >
               <Play size={14} fill="#000" /> Launch Terminal
@@ -180,8 +159,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
         </div>
       </header>
 
+      {/* Live Moving Trade Bulletin (Motion Graphic Spot Ticker) */}
+      <div style={{ maxWidth: '1240px', margin: '14px auto 0', padding: '0 20px' }}>
+        <LiveTradeBulletin onSelectTrader={onSelectTrader} />
+      </div>
+
       {/* Hero Section */}
-      <section style={{ position: 'relative', padding: '80px 24px 60px', overflow: 'hidden' }}>
+      <section style={{ position: 'relative', padding: '60px 24px 60px', overflow: 'hidden' }}>
         {/* Ambient Glows */}
         <div
           style={{
@@ -192,7 +176,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
             width: '800px',
             height: '400px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, rgba(6, 182, 212, 0.08) 40%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(10, 186, 181, 0.15) 0%, rgba(129, 216, 208, 0.08) 40%, transparent 70%)',
             filter: 'blur(60px)',
             pointerEvents: 'none',
           }}
@@ -206,8 +190,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
               gap: '8px',
               padding: '6px 14px',
               borderRadius: '24px',
-              background: 'rgba(16, 185, 129, 0.12)',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
+              background: 'rgba(10, 186, 181, 0.12)',
+              border: '1px solid rgba(10, 186, 181, 0.3)',
               fontSize: '12px',
               fontWeight: 800,
               color: 'var(--accent-green)',
@@ -215,7 +199,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
             }}
           >
             <Radio size={14} className="animate-pulse" />
-            INSPIRED BY TRADE ISLAND JAPAN — VERIFIED MULTI-BROKER ESPORTS
+            GLOBAL MULTI-BROKER ESPORTS & VERIFIED PRO ARENA
           </div>
 
           <h1
@@ -231,7 +215,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
             }}
           >
             Where Real Traders Battle.<br />
-            <span style={{ background: 'linear-gradient(90deg, #10b981, #06b6d4, #fbbf24)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <span style={{ background: 'linear-gradient(90deg, #0abab5, #81d8d0, #fbbf24)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               Zero Execution Risk. Pure Skill.
             </span>
           </h1>
@@ -245,14 +229,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
               lineHeight: '1.6',
             }}
           >
-            Connect your <strong>MT4 / MT5</strong> account with safe <strong>read-only investor credentials</strong> across Exness, XM, Axiory, and Vantage. Compete in weekly prop-style battle leagues, verify your win rate, and climb the global Hall of Fame.
+            Connect your <strong>MT4 / MT5</strong> account with safe <strong>read-only investor credentials</strong> across IC Markets, Exness, XM, Axiory, and Vantage. Compete in weekly prop-style battle leagues, verify your win rate, and climb the global Hall of Fame.
           </p>
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap', marginBottom: '48px' }}>
             <button
               onClick={onOpenConnectWizard}
               style={{
-                background: 'linear-gradient(135deg, var(--accent-green) 0%, #059669 100%)',
+                background: 'linear-gradient(135deg, var(--accent-green) 0%, #078c88 100%)',
                 border: 'none',
                 color: '#000000',
                 padding: '16px 32px',
@@ -263,7 +247,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
                 display: 'flex',
                 alignItems: 'center',
                 gap: '10px',
-                boxShadow: '0 10px 30px -5px rgba(16, 185, 129, 0.4)',
+                boxShadow: '0 10px 30px -5px rgba(10, 186, 181, 0.4)',
                 transition: 'transform 0.2s',
               }}
               onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)')}
@@ -315,45 +299,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
             </div>
             <div>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Supported Brokers</div>
-              <div style={{ fontSize: '26px', fontWeight: 900, color: 'var(--accent-cyan)' }}>4 Global</div>
+              <div style={{ fontSize: '26px', fontWeight: 900, color: 'var(--accent-cyan)' }}>5 Major (IC Markets, Exness...)</div>
             </div>
             <div>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Security Guarantee</div>
-              <div style={{ fontSize: '26px', fontWeight: 900, color: '#10b981' }}>100% Read-Only</div>
+              <div style={{ fontSize: '26px', fontWeight: 900, color: '#0abab5' }}>100% Read-Only</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Live Trade Pulse Stream Ticker */}
-      <div
-        style={{
-          borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-          background: 'rgba(0, 0, 0, 0.3)',
-          padding: '12px 24px',
-        }}
-      >
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: 800, color: '#fbbf24' }}>
-            <Flame size={16} /> LIVE TRADE BULLETIN:
-          </div>
+      {/* Market Live Prices Ticker (Top Performance Trading Pairs) */}
+      <MarketLivePricesTicker />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap', fontSize: '13px' }}>
-            {recentTradePulses.map((p, idx) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>{p.time}</span>
-                <strong>{p.trader}</strong>
-                <BrokerSymbol broker={p.broker} />
-                <span style={{ color: 'var(--accent-cyan)' }}>{p.pair}</span>
-                <strong style={{ color: 'var(--accent-green)' }}>{p.pips} pips</strong>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      {/* Live Candlestick & Market Execution Feed (AllTick Real-Time API) */}
+      <section style={{ maxWidth: '1200px', margin: '40px auto 0', padding: '0 24px' }}>
+        <LiveCandleChart initialSymbol="USDJPY" initialTimeframe="1m" height={360} />
+      </section>
 
-      {/* Section 2: Trade Island Ranking & Podium Preview */}
+      {/* Section 2: Global Verified Ranking & Podium Preview */}
       <section id="rankings" style={{ padding: '80px 24px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '48px' }}>
@@ -361,7 +325,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
               <Trophy size={16} /> TRANSPARENT REPUTATION
             </div>
             <h2 style={{ fontSize: '36px', fontWeight: 900, margin: '0 0 12px' }}>
-              The Trade Island Ranking Standard
+              The Verified Global Ranking Standard
             </h2>
             <p style={{ fontSize: '16px', color: 'var(--text-muted)', maxWidth: '640px', margin: '0 auto' }}>
               Rankings verified directly from MT4/MT5 server ledgers. No manual screenshots, no inspect element manipulation.
@@ -497,14 +461,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px', marginBottom: '48px' }}>
             <div
               style={{
-                background: 'linear-gradient(180deg, rgba(6, 182, 212, 0.1) 0%, rgba(15, 23, 42, 0.8) 100%)',
-                border: '1px solid rgba(6, 182, 212, 0.3)',
+                background: 'linear-gradient(180deg, rgba(129, 216, 208, 0.1) 0%, rgba(15, 23, 42, 0.8) 100%)',
+                border: '1px solid rgba(129, 216, 208, 0.3)',
                 borderRadius: '20px',
                 padding: '30px',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 800, padding: '3px 8px', borderRadius: '6px', background: 'rgba(6, 182, 212, 0.2)', color: 'var(--accent-cyan)' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, padding: '3px 8px', borderRadius: '6px', background: 'rgba(129, 216, 208, 0.2)', color: 'var(--accent-cyan)' }}>
                   WEEKLY SPRINT
                 </span>
                 <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Monday – Friday</span>
@@ -577,7 +541,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
             <div style={{ padding: '28px', borderRadius: '18px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(10, 186, 181, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
                 <Lock size={20} color="var(--accent-green)" />
               </div>
               <h3 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 8px' }}>Investor Passwords Only</h3>
@@ -587,7 +551,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
             </div>
 
             <div style={{ padding: '28px', borderRadius: '18px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(6, 182, 212, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(129, 216, 208, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
                 <Shield size={20} color="var(--accent-cyan)" />
               </div>
               <h3 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 8px' }}>Isolated Secrets Vault</h3>
@@ -610,7 +574,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
       </section>
 
       {/* Section 5: 3-Step Onboarding CTA */}
-      <section style={{ padding: '80px 24px', background: 'linear-gradient(180deg, rgba(7, 11, 20, 1) 0%, rgba(13, 27, 42, 0.9) 100%)', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+      <section style={{ padding: '80px 24px', background: 'linear-gradient(180deg, rgba(6, 13, 17, 1) 0%, rgba(13, 27, 42, 0.9) 100%)', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
           <h2 style={{ fontSize: '36px', fontWeight: 900, margin: '0 0 16px' }}>
             Ready to Prove Your Rank?
@@ -648,7 +612,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
           <button
             onClick={onOpenConnectWizard}
             style={{
-              background: 'linear-gradient(135deg, var(--accent-green) 0%, #059669 100%)',
+              background: 'linear-gradient(135deg, var(--accent-green) 0%, #078c88 100%)',
               border: 'none',
               color: '#000000',
               padding: '16px 36px',
@@ -656,7 +620,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
               fontSize: '17px',
               fontWeight: 900,
               cursor: 'pointer',
-              boxShadow: '0 10px 30px -5px rgba(16, 185, 129, 0.4)',
+              boxShadow: '0 10px 30px -5px rgba(10, 186, 181, 0.4)',
             }}
           >
             Start Free Verification Now
@@ -665,11 +629,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
       </section>
 
       {/* Footer */}
-      <footer style={{ padding: '40px 24px', borderTop: '1px solid rgba(255, 255, 255, 0.06)', backgroundColor: '#050810', textAlign: 'center' }}>
+      <footer style={{ padding: '40px 24px', borderTop: '1px solid rgba(255, 255, 255, 0.06)', backgroundColor: '#040a0d', textAlign: 'center' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <TrendingUp size={18} color="var(--accent-green)" />
-            <strong style={{ fontSize: '15px' }}>TraderRank</strong>
+            <BrandMark size={22} variant="glyph" />
+            <strong style={{ fontSize: '15px' }}>TraderRank FX</strong>
             <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>© 2026 TraderRank Inc. All rights reserved.</span>
           </div>
 

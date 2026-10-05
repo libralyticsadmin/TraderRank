@@ -43,7 +43,7 @@ export class SymbolNormalizer {
     clean = clean.replace(/(\.ECN|\.R|\.PRO|\.STD|\.RAW|_I|MICRO|\#|\+)$/i, '');
 
     // Exness standard mini/micro symbol suffix: e.g. EURUSDm or XAUUSDm (length 7 ending with M)
-    if (clean.length >= 7 && clean.endsWith('M')) {
+    if (clean.length >= 7 && clean.endsWith('M') && !clean.startsWith('MCL')) {
       clean = clean.slice(0, -1);
     }
 
@@ -62,7 +62,7 @@ export class SymbolNormalizer {
     }
 
     // Commodities / Oil
-    if (s.includes('OIL') || s.includes('BRENT') || s.includes('WTI') || s.includes('NGAS')) {
+    if (s.includes('OIL') || s.includes('BRENT') || s.includes('WTI') || s.includes('NGAS') || s.includes('MCL') || s.includes('CL')) {
       return 'COMMODITY';
     }
 

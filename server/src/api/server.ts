@@ -17,6 +17,9 @@ import { Broker, AccountCredentials } from '../../../shared/src/types.js';
 
 import { BrokerDirectory } from '../connector/brokerDirectory.js';
 import { ZeroWriteGuard, IllegalWriteOperationError } from '../connector/zeroWriteGuard.js';
+import { AiChartAnalyzer } from '../market/aiChartAnalyzer.js';
+import { ForexFactoryService } from '../market/forexFactoryService.js';
+import { DailyIntelService } from '../market/dailyIntelService.js';
 
 export function createServer() {
   const app = express();
@@ -55,6 +58,9 @@ export function createServer() {
   const metaApiClient = new MetaApiClient();
   const exnessApiClient = new ExnessApiClient();
   const brokerDir = BrokerDirectory.getInstance();
+  const aiAnalyzer = new AiChartAnalyzer(marketFeed.getAllTickAdapter());
+  const forexFactory = ForexFactoryService.getInstance();
+  const dailyIntel = DailyIntelService.getInstance();
 
   // Connected WebSocket clients
   const clients = new Set<WebSocket>();
@@ -110,6 +116,24 @@ export function createServer() {
       }
     }
   });
+
+  // Broadcast real-time Candlestick updates from AllTick WebSocket ticks
+  marketFeed.onCandleUpdate((symbol, timeframe, bar) => {
+    const payload = JSON.stringify({
+      type: 'CANDLESTICK_UPDATE',
+      data: {
+        symbol,
+        timeframe,
+        bar,
+      },
+    });
+    for (const client of clients) {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(payload);
+      }
+    }
+  });
+
 
   // Periodically stream live position updates to WS clients
   const streamInterval = setInterval(async () => {
@@ -254,8 +278,15 @@ export function createServer() {
     const broker = req.query.broker as Broker | undefined;
     const servers = brokerDir.getSupportedServers(broker);
     res.json({
-      supportedBrokers: ['EXNESS', 'XM', 'AXIORY', 'VANTAGE'],
+      supportedBrokers: ['IC_MARKETS', 'EXNESS', 'XM', 'AXIORY', 'VANTAGE'],
       totalServers: servers.length,
+      officialLinks: {
+        IC_MARKETS: 'https://www.ic.com/en/?camp=57406',
+        EXNESS: 'https://www.exness.com',
+        XM: 'https://www.xm.com',
+        AXIORY: 'https://www.axiory.com',
+        VANTAGE: 'https://www.vantagemarkets.com',
+      },
       servers,
     });
   });
@@ -341,6 +372,131 @@ export function createServer() {
       broker: 'Exness OpenAPI',
       ...health,
     });
+  });
+
+  // 14. Candlestick (K-Line) API (AllTick REST & In-Memory Live Feed)
+  app.get('/api/market/candlesticks', async (req: Request, res: Response) => {
+    const symbol = ((req.query.symbol as string) || 'USDJPY').toUpperCase();
+    const timeframe = ((req.query.timeframe as string) || '1m') as any;
+    const count = req.query.count ? parseInt(req.query.count as string, 10) : 50;
+
+    const data = await marketFeed.fetchCandlesticks(symbol, timeframe, count);
+    res.json(data);
+  });
+
+  // 15. AllTick Integration Status & 7-Day Trial Telemetry
+  app.get('/api/market/alltick/status', (_req: Request, res: Response) => {
+    const adapter = marketFeed.getAllTickAdapter();
+    res.json({
+      provider: 'AllTick Real-Time Financial Data API',
+      tokenMasked: '4554c41c6fc5...-c-app',
+      validity: '7-Day Token',
+      websocketConnected: adapter.getIsConnected(),
+      supportedEndpoints: {
+        websocketQuoteStream: 'wss://quote.alltick.co/quote-b-ws-api',
+        candlestickApi: 'https://quote.alltick.co/quote-b-api/kline',
+        realtimeTickApi: 'https://quote.alltick.co/quote-b-api/trade-tick',
+      },
+      activeSymbols: ['USDJPY', 'EURUSD', 'GBPUSD', 'AUDUSD', 'USDCAD', 'XAUUSD', 'MCL1!', 'BTCUSD'],
+      status: 'OPERATIONAL',
+    });
+  });
+
+  // 16. AI Multi-Timeframe Chart Analysis (15m, 4h, 1D, 1W)
+  app.get('/api/market/ai-analysis', async (req: Request, res: Response) => {
+    try {
+      const symbol = ((req.query.symbol as string) || 'USDJPY').toUpperCase();
+      const forceRefresh = req.query.refresh === 'true';
+      const report = await aiAnalyzer.analyzeSymbol(symbol, forceRefresh);
+      res.json(report);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ success: false, error: msg });
+    }
+  });
+
+  // 17. ForexFactory Economic Calendar & Macro Releases (High / Med / Low)
+  app.get('/api/market/economic-calendar', async (req: Request, res: Response) => {
+    try {
+      const country = (req.query.country as string) || (req.query.currency as string) || 'ALL';
+      const impact = req.query.impact as any;
+      const forceRefresh = req.query.refresh === 'true';
+
+      const data = await forexFactory.getCalendar({
+        country,
+        impact,
+        forceRefresh,
+      });
+      res.json(data);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ success: false, error: msg });
+    }
+  });
+
+  // 18. Daily Trading Intelligence & Highlights Summary (Technical + Fundamental + News)
+  app.get('/api/market/daily-intel', async (req: Request, res: Response) => {
+    try {
+      const date = req.query.date as string | undefined;
+      const isSubscriber = req.query.isSubscriber !== 'false';
+      const report = await dailyIntel.getDailyReport(date, isSubscriber);
+      res.json(report);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ success: false, error: msg });
+    }
+  });
+
+  // 19. Custom Trading Strategic Timeframe & Analysis Generator
+  app.post('/api/market/custom-daily-analysis', (req: Request, res: Response) => {
+    try {
+      const input = req.body;
+      const result = dailyIntel.generateCustomStrategy(input);
+      res.json(result);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      res.status(400).json({ success: false, error: msg });
+    }
+  });
+
+  // 20. Pro Subscription Plans ($9/mo)
+  app.get('/api/subscription/plans', (_req: Request, res: Response) => {
+    const plans = dailyIntel.getSubscriptionPlans();
+    res.json(plans);
+  });
+
+  // 21. Pro Subscription Activation Simulation
+  app.post('/api/subscription/subscribe', (req: Request, res: Response) => {
+    try {
+      const { tier = 'PRO_MONTHLY', paymentMethod = 'SIMULATED_CARD' } = req.body;
+      const now = new Date();
+      const isAnnual = tier === 'PRO_ANNUAL';
+      const expiresAt = new Date(now.getTime() + (isAnnual ? 365 : 30) * 24 * 60 * 60 * 1000).toISOString();
+
+      res.json({
+        success: true,
+        subscription: {
+          isActive: true,
+          tier,
+          planName: isAnnual ? 'Pro Annual All-Access' : 'Pro Daily Intelligence',
+          priceMonthly: isAnnual ? 6.58 : 9.00,
+          startedAt: now.toISOString(),
+          expiresAt,
+          paymentMethod,
+          features: [
+            'Full Daily Technical & Fundamental Summaries',
+            'ForexFactory High-Impact News Breakdown & Impact Notes',
+            'Custom Strategic Timeframe Generator (1m - 1W)',
+            'SMC Institutional Order Block & Demand/Supply Key Levels',
+            'Tactical Stop Loss, Entry Zones & Multi-Take Profit Targets',
+            'Optimal Trading Session Windows (London, NY, Asian)',
+          ],
+        },
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      res.status(400).json({ success: false, error: msg });
+    }
   });
 
   return { app, server };

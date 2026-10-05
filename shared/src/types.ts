@@ -3,7 +3,7 @@
  * Compliant with PRD v1 and Infrastructure Design v1
  */
 
-export type Broker = 'XM' | 'Axiory' | 'Exness' | 'Vantage' | 'OTHER';
+export type Broker = 'XM' | 'Axiory' | 'Exness' | 'Vantage' | 'IC_MARKETS' | 'OTHER';
 
 export type IntegrationType = 'mt_gateway' | 'exness_native';
 
@@ -350,16 +350,248 @@ export interface TraderProfileDetail {
 }
 
 /**
- * Real-Time Community Broadcast Event
+ * Candlestick / K-Line Data Bar Contract (AllTick REST & WebSocket K-Line Stream)
  */
-export interface CommunityBroadcast {
-  id: string;
-  timestamp: string;
-  type: 'TOURNAMENT_OVERTAKE' | 'BADGE_UNLOCKED' | 'CHALLENGER_JOINED' | 'DAILY_LEADER_CROWNED';
-  title: string;
-  description: string;
-  traderName: string;
-  traderSymbol: string;
-  meta?: Record<string, any>;
+export type CandlestickTimeframe = '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1D' | '1W' | '1M';
+
+export interface CandlestickBar {
+  timestamp: number; // UNIX timestamp in seconds
+  timeString?: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  turnover?: number;
 }
 
+export interface MarketCandlestickResponse {
+  symbol: string;
+  timeframe: CandlestickTimeframe;
+  bars: CandlestickBar[];
+  source: 'ALLTICK_LIVE' | 'ALLTICK_CACHED' | 'SYNTHETIC_FALLBACK';
+  lastUpdated: string;
+}
+
+/**
+ * AI Multi-Timeframe Chart Analysis Data Contracts (15m, 4h, 1D, 1W)
+ */
+export type AiBiasType = 'STRONG_BUY' | 'BUY' | 'NEUTRAL' | 'SELL' | 'STRONG_SELL';
+export type TrendSentiment = 'BULLISH' | 'BEARISH' | 'RANGING' | 'BREAKOUT';
+
+export interface TimeframeAnalysisResult {
+  timeframe: '15m' | '4h' | '1D' | '1W';
+  label: string;
+  sentiment: TrendSentiment;
+  strengthScore: number; // 0 - 100
+  currentPrice: number;
+  emaTrend: string;
+  rsi: number;
+  rsiState: 'OVERSOLD' | 'BEARISH' | 'NEUTRAL' | 'BULLISH' | 'OVERBOUGHT';
+  volatility: string;
+  keyObservation: string;
+  structure: 'HIGHER_HIGHS' | 'LOWER_LOWS' | 'CONSOLIDATION' | 'ORDER_BLOCK_TEST';
+}
+
+export interface AiKeyLevels {
+  r2: number;
+  r1: number;
+  pivot: number;
+  s1: number;
+  s2: number;
+  entryZone: [number, number];
+  stopLoss: number;
+  tp1: number;
+  tp2: number;
+  tp3: number;
+}
+
+export interface AiChartAnalysisReport {
+  symbol: string;
+  timestamp: string;
+  bias: AiBiasType;
+  confluenceScore: number; // 0 - 100%
+  summary: string;
+  tacticalPlan: string;
+  riskToRewardRatio: string;
+  timeframes: {
+    m15: TimeframeAnalysisResult;
+    h4: TimeframeAnalysisResult;
+    d1: TimeframeAnalysisResult;
+    w1: TimeframeAnalysisResult;
+  };
+  keyLevels: AiKeyLevels;
+  catalystsAndRisks: string[];
+}
+
+/**
+ * ForexFactory Economic Calendar & News Feed Data Contracts
+ */
+export type NewsImpact = 'HIGH' | 'MEDIUM' | 'LOW' | 'HOLIDAY';
+
+export interface ForexFactoryEvent {
+  id: string;
+  title: string;
+  country: string; // USD, EUR, GBP, JPY, CAD, AUD, CHF, CNY, NZD
+  date: string; // ISO 8601 string
+  timeString: string; // e.g. "8:30am", "2:00pm"
+  timestamp: number; // Unix timestamp in seconds
+  impact: NewsImpact;
+  actual?: string;
+  forecast?: string;
+  previous?: string;
+  isHighImpact: boolean;
+  hasPassed: boolean;
+  isUpcomingSoon: boolean; // within 60 minutes
+  timeUntilFormatted: string; // e.g. "in 42 mins" or "2 hours ago"
+}
+
+export interface EconomicCalendarResponse {
+  events: ForexFactoryEvent[];
+  totalCount: number;
+  highImpactCount: number;
+  mediumImpactCount: number;
+  nextHighImpactEvent?: ForexFactoryEvent | null;
+  source: 'FOREX_FACTORY_LIVE' | 'FOREX_FACTORY_CACHED' | 'FALLBACK';
+  lastUpdated: string;
+}
+
+/**
+ * Subscription & Membership Contracts
+ * $9/mo Pro Tier for Daily Trading Intel & Custom Strategic Timeframe Analysis
+ */
+export type SubscriptionTier = 'FREE' | 'PRO_MONTHLY' | 'PRO_ANNUAL';
+
+export interface SubscriptionStatus {
+  isActive: boolean;
+  tier: SubscriptionTier;
+  planName: string;
+  priceMonthly: number;
+  expiresAt: string;
+  startedAt: string;
+  paymentMethod?: string;
+  features: string[];
+}
+
+export interface SubscriptionPlanOption {
+  id: SubscriptionTier;
+  name: string;
+  price: number;
+  period: 'month' | 'year';
+  savingsText?: string;
+  badge?: string;
+  features: string[];
+}
+
+/**
+ * Daily Trading Intelligence & Market Highlights Contracts
+ */
+export interface DailyAssetAnalysis {
+  symbol: string;
+  name: string;
+  currentPrice: number;
+  bias: 'STRONG_BULLISH' | 'BULLISH' | 'NEUTRAL' | 'BEARISH' | 'STRONG_BEARISH';
+  technicalSummary: string;
+  fundamentalSummary: string;
+  newsCatalysts: string[];
+  orderBlocks: {
+    demandZone: [number, number];
+    supplyZone: [number, number];
+  };
+  supportResistance: {
+    s2: number;
+    s1: number;
+    pivot: number;
+    r1: number;
+    r2: number;
+  };
+  sessionVolatilityForecast: 'LOW' | 'NORMAL' | 'HIGH' | 'EXTREME';
+}
+
+export interface DailyIntelReport {
+  date: string; // "2026-10-06"
+  formattedDate: string; // "Tuesday, October 6, 2026"
+  headline: string;
+  marketRegime: string;
+  macroSentimentScore: number; // 0 - 100
+  macroSentimentLabel: string;
+  executiveSummary: {
+    overview: string;
+    technicalHighlights: string[];
+    fundamentalThemes: string[];
+    riskWarnings: string[];
+  };
+  forexFactoryDigest: {
+    todayEvents: ForexFactoryEvent[];
+    highImpactCount: number;
+    marketReactionSummary: string;
+  };
+  assetAnalyses: DailyAssetAnalysis[];
+  isLockedForFreeUser: boolean;
+}
+
+/**
+ * Custom Strategic Timeframe & Analysis Contracts
+ */
+export type StrategicTimeframe = '1m' | '5m' | '15m' | '1H' | '4H' | '1D' | '1W';
+export type TradingStyle = 'SCALPER' | 'INTRADAY' | 'SWING' | 'POSITION';
+export type StrategyModel =
+  | 'SMC_ORDER_BLOCK'
+  | 'TREND_FOLLOWING'
+  | 'BREAKOUT_MOMENTUM'
+  | 'MEAN_REVERSION'
+  | 'NEWS_VOLATILITY';
+export type RiskTolerance = 'CONSERVATIVE' | 'MODERATE' | 'AGGRESSIVE' | 'RR_1_3' | 'RR_1_5' | 'RR_1_7';
+export type SessionFocus = 'LONDON' | 'NEW_YORK' | 'ASIAN' | 'ALL_SESSIONS';
+export type TradeQualificationStatus = 'TRADE_QUALIFIED' | 'NO_TRADE_DISQUALIFIED' | 'HIGH_CONFLUENCE';
+
+export interface CustomStrategyInput {
+  symbol: string;
+  timeframe: StrategicTimeframe;
+  tradingStyle: TradingStyle;
+  strategyModel: StrategyModel;
+  riskTolerance: RiskTolerance;
+  sessionFocus: SessionFocus;
+  accountSize?: number;
+  minRRRequired?: '1:3' | '1:5' | '1:7';
+}
+
+export interface CustomStrategyOutput {
+  planId: string;
+  symbol: string;
+  timeframe: StrategicTimeframe;
+  tradingStyle: TradingStyle;
+  strategyModel: StrategyModel;
+  generatedAt: string;
+  validUntil: string;
+  bias: 'STRONG_BULLISH' | 'BULLISH' | 'NEUTRAL' | 'BEARISH' | 'STRONG_BEARISH';
+  confluenceScore: number; // 0 - 100%
+  tradeQualification: {
+    status: TradeQualificationStatus;
+    canEnter: boolean;
+    targetRR: '1:3' | '1:5' | '1:7';
+    actualRRRatio: string;
+    directive: string;
+    reason: string;
+    alternativePairSuggestions: string[];
+  };
+  tacticalLevels: {
+    currentPrice: number;
+    entryZone: [number, number];
+    stopLoss: number;
+    takeProfit1: number; // 1:3 RR
+    takeProfit2: number; // 1:5 RR
+    takeProfit3: number; // 1:7 RR Runner
+    riskRewardRatio: string;
+    suggestedLotSize: number;
+  };
+  strategyNarrative: {
+    marketStructureContext: string;
+    entryTriggerRule: string;
+    invalidationScenario: string;
+    macroFundamentalImpact: string;
+    optimalSessionWindow: string;
+    noTradeWarning?: string;
+  };
+  checklist: Array<{ step: string; status: 'CONFIRMED' | 'WATCH' | 'CAUTION' }>;
+}

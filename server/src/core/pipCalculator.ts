@@ -59,6 +59,10 @@ export class PipCalculator {
     USOIL: { pipSize: 0.01, digits: 2, category: 'commodities' },
     UKOIL: { pipSize: 0.01, digits: 2, category: 'commodities' },
     XTIUSD: { pipSize: 0.01, digits: 2, category: 'commodities' },
+    MCL1: { pipSize: 0.01, digits: 2, category: 'commodities' },
+    'MCL1!': { pipSize: 0.01, digits: 2, category: 'commodities' },
+    OIL: { pipSize: 0.01, digits: 2, category: 'commodities' },
+    WTI: { pipSize: 0.01, digits: 2, category: 'commodities' },
   };
 
   /**
@@ -77,6 +81,7 @@ export class PipCalculator {
     // Common aliases
     if (clean === 'XAUUSD' || clean === 'GOLD') return 'XAUUSD';
     if (clean === 'XAGUSD' || clean === 'SILVER') return 'XAGUSD';
+    if (clean === 'MCL1!' || clean === 'MCL1' || clean === 'MCL' || clean === 'USOIL' || clean === 'WTI' || clean === 'OIL' || clean === 'CL') return 'MCL1!';
     if (clean === 'DJ30' || clean === 'WALLSTREET30' || clean === 'US30') return 'US30';
     if (clean === 'USTEC' || clean === 'NAS100' || clean === 'US100') return 'NAS100';
     if (clean === 'US500' || clean === 'SPX500') return 'SPX500';

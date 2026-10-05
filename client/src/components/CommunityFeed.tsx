@@ -172,7 +172,7 @@ export const CommunityFeed: React.FC = () => {
               style={{
                 width: '72.8%',
                 height: '100%',
-                background: 'linear-gradient(90deg, #fbbf24, #10b981)',
+                background: 'linear-gradient(90deg, #fbbf24, #0abab5)',
                 borderRadius: '4px',
               }}
             />
@@ -189,7 +189,7 @@ export const CommunityFeed: React.FC = () => {
                 width: '32px',
                 height: '32px',
                 borderRadius: '8px',
-                background: 'rgba(16, 185, 129, 0.15)',
+                background: 'rgba(10, 186, 181, 0.15)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

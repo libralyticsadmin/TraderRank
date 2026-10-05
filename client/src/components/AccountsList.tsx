@@ -13,7 +13,7 @@ export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconne
     <div className="card-panel">
       <div className="panel-header">
         <h3 className="panel-title">
-          <Server size={18} color="#06b6d4" />
+          <Server size={18} color="#81d8d0" />
           Connected Accounts
           <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 400 }}>
             ({accounts.length} active)

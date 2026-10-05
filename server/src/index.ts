@@ -1,6 +1,5 @@
-/**
- * TraderRank Server Entrypoint
- */
+import dotenv from 'dotenv';
+dotenv.config();
 
 import { createServer } from './api/server.js';
 

@@ -5,6 +5,7 @@ import {
   LeaderboardEntry,
   DailyLeaderboardResult,
   Broker,
+  SubscriptionStatus,
 } from '../../shared/src/types.ts';
 import { ConnectionWizard } from './components/ConnectionWizard.tsx';
 import { AccountsList } from './components/AccountsList.tsx';
@@ -17,12 +18,17 @@ import { RewardsBadges } from './components/RewardsBadges.tsx';
 import { CommunityFeed } from './components/CommunityFeed.tsx';
 import { TraderProfileModal, TraderProfileData } from './components/TraderProfileModal.tsx';
 import { LandingPage } from './components/LandingPage.tsx';
+import { BrandLogo } from './components/BrandLogo.tsx';
+import { LiveTradeBulletin } from './components/LiveTradeBulletin.tsx';
+import { LiveCandleChart } from './components/LiveCandleChart.tsx';
+import { DailyAnalysisHub } from './components/DailyAnalysisHub.tsx';
+import { SubscriptionModal } from './components/SubscriptionModal.tsx';
 import {
-  TrendingUp,
   Plus,
   Shield,
   Layers,
   BarChart3,
+  BarChart2,
   Radio,
   RefreshCw,
   Globe2,
@@ -30,6 +36,7 @@ import {
   Swords,
   Award,
   Users,
+  Crown,
 } from 'lucide-react';
 
 interface MarketQuote {
@@ -51,9 +58,32 @@ interface MarketStatus {
 export const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<'landing' | 'app'>('landing');
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'ranking' | 'tournaments' | 'rewards' | 'community' | 'positions' | 'security'
+    'overview' | 'daily-analysis' | 'charts' | 'ranking' | 'tournaments' | 'rewards' | 'community' | 'positions' | 'security'
   >('overview');
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+
+  // Pro Subscription State persisted in localStorage
+  const [subscription, setSubscription] = useState<SubscriptionStatus>(() => {
+    try {
+      const saved = localStorage.getItem('traderrank_sub_status_v1');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error('Failed to parse subscription from localStorage', e);
+    }
+    return {
+      isActive: false,
+      tier: 'FREE',
+      planName: 'Free Account',
+      priceMonthly: 0,
+      startedAt: new Date().toISOString(),
+      expiresAt: new Date().toISOString(),
+      features: ['Standard Leaderboard Viewing', 'Basic Charts'],
+    };
+  });
+
   const [accounts, setAccounts] = useState<TradingAccount[]>([]);
   const [positions, setPositions] = useState<CanonicalPosition[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -239,19 +269,20 @@ export const App: React.FC = () => {
       {/* Top Header Banner */}
       <header className="header-banner">
         <div className="brand-wrapper">
-          <div className="brand-icon">
-            <TrendingUp size={24} color="#ffffff" />
-          </div>
+          <BrandLogo size={44} showWordmark={false} onClick={() => setCurrentView('landing')} />
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h1 className="brand-title">TraderRank</h1>
-              <span className="brand-badge">Trade Island Arena</span>
+              <h1 className="brand-wordmark" style={{ fontSize: '24px' }}>
+                Trader<span className="brand-wordmark-accent">Rank</span>
+                <span className="brand-fx-pill">FX</span>
+              </h1>
+              <span className="brand-badge">Verified Pro Arena</span>
               <span
                 className="status-pill"
                 style={{
-                  background: wsConnected ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)',
+                  background: wsConnected ? 'rgba(10, 186, 181, 0.15)' : 'rgba(244, 63, 94, 0.15)',
                   color: wsConnected ? 'var(--accent-green)' : 'var(--accent-red)',
-                  border: `1px solid ${wsConnected ? 'rgba(16, 185, 129, 0.3)' : 'rgba(244, 63, 94, 0.3)'}`,
+                  border: `1px solid ${wsConnected ? 'rgba(10, 186, 181, 0.3)' : 'rgba(244, 63, 94, 0.3)'}`,
                   fontSize: '11px',
                 }}
               >
@@ -266,6 +297,20 @@ export const App: React.FC = () => {
         </div>
 
         <div className="header-actions">
+          <button
+            className="btn-secondary"
+            onClick={() => setIsSubscriptionModalOpen(true)}
+            title="TraderRank Pro Daily Intelligence ($9/mo)"
+            style={{
+              border: `1px solid ${subscription.isActive ? 'rgba(10, 186, 181, 0.4)' : 'rgba(255, 215, 0, 0.4)'}`,
+              background: subscription.isActive ? 'rgba(10, 186, 181, 0.12)' : 'rgba(255, 215, 0, 0.08)',
+              color: subscription.isActive ? 'var(--accent-cyan)' : '#ffd700',
+              fontWeight: 700,
+            }}
+          >
+            <Crown size={15} color={subscription.isActive ? 'var(--accent-cyan)' : '#ffd700'} />
+            {subscription.isActive ? '👑 Pro Unlocked' : '👑 Pro ($9/mo)'}
+          </button>
           <button
             className="btn-secondary"
             onClick={() => setCurrentView('landing')}
@@ -283,16 +328,19 @@ export const App: React.FC = () => {
         </div>
       </header>
 
-      {/* Live Market API Ticker Strip */}
+      {/* Live Moving Trade Bulletin (Motion Graphic Spot Ticker) */}
+      <LiveTradeBulletin onSelectTrader={handleSelectTrader} />
+
+      {/* Live Market API Ticker Strip (Smooth Slow Leftward Moving Tape) */}
       <div className="market-strip">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Globe2 size={16} color="var(--accent-cyan)" />
+        <div className="market-strip-pinned-left">
+          <Globe2 size={15} color="var(--accent-cyan)" />
           <span
             className="status-pill"
             style={{
-              background: marketStatus?.feedStatus === 'LIVE_NETWORK' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(6, 182, 212, 0.15)',
+              background: marketStatus?.feedStatus === 'LIVE_NETWORK' ? 'rgba(10, 186, 181, 0.15)' : 'rgba(129, 216, 208, 0.15)',
               color: marketStatus?.feedStatus === 'LIVE_NETWORK' ? 'var(--accent-green)' : 'var(--accent-cyan)',
-              border: `1px solid ${marketStatus?.feedStatus === 'LIVE_NETWORK' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(6, 182, 212, 0.3)'}`,
+              border: `1px solid ${marketStatus?.feedStatus === 'LIVE_NETWORK' ? 'rgba(10, 186, 181, 0.3)' : 'rgba(129, 216, 208, 0.3)'}`,
               fontSize: '11px',
               padding: '3px 8px',
             }}
@@ -301,38 +349,69 @@ export const App: React.FC = () => {
           </span>
         </div>
 
-        <div className="market-pills-container">
-          {marketStatus?.quotes && Object.entries(marketStatus.quotes).map(([sym, q]) => (
-            <div key={sym} className="market-pill">
-              <strong>{sym}</strong>
-              <span className="bid-ask">
-                {q.bid.toLocaleString(undefined, { minimumFractionDigits: sym === 'USDJPY' ? 3 : sym === 'BTCUSD' ? 2 : 5 })} / {q.ask.toLocaleString(undefined, { minimumFractionDigits: sym === 'USDJPY' ? 3 : sym === 'BTCUSD' ? 2 : 5 })}
-              </span>
-              <span style={{ fontSize: '10px', color: 'var(--text-faint)' }}>
-                {q.source === 'LIVE_API' ? '🌐 Live' : '⚡ Sim'}
-              </span>
-            </div>
-          ))}
+        <div className="market-strip-track-window">
+          <div className="market-strip-marquee">
+            {marketStatus?.quotes &&
+              [...Object.entries(marketStatus.quotes), ...Object.entries(marketStatus.quotes)].map(([sym, q], idx) => (
+                <div key={`${sym}-${idx}`} className="market-pill">
+                  <strong>{sym}</strong>
+                  <span className="bid-ask tabular">
+                    {q.bid.toLocaleString(undefined, { minimumFractionDigits: sym === 'USDJPY' ? 3 : sym === 'BTCUSD' ? 2 : 5 })} / {q.ask.toLocaleString(undefined, { minimumFractionDigits: sym === 'USDJPY' ? 3 : sym === 'BTCUSD' ? 2 : 5 })}
+                  </span>
+                  <span style={{ fontSize: '10px', color: 'var(--text-faint)' }}>
+                    {q.source === 'LIVE_API' ? '🌐 Live' : '⚡ Sim'}
+                  </span>
+                </div>
+              ))}
+          </div>
         </div>
 
-        <button
-          className="market-refresh-btn"
-          onClick={handleRefreshMarketRates}
-          disabled={isRefreshingMarket}
-          title="Force refresh live rates from public APIs"
-        >
-          <RefreshCw size={13} className={isRefreshingMarket ? 'animate-spin' : ''} style={{ animation: isRefreshingMarket ? 'spin 1s linear infinite' : 'none' }} />
-          {isRefreshingMarket ? 'Syncing...' : 'Sync Rates'}
-        </button>
+        <div className="market-strip-pinned-right">
+          <button
+            className="market-refresh-btn"
+            onClick={handleRefreshMarketRates}
+            disabled={isRefreshingMarket}
+            title="Force refresh live rates from public APIs"
+          >
+            <RefreshCw size={13} className={isRefreshingMarket ? 'animate-spin' : ''} style={{ animation: isRefreshingMarket ? 'spin 1s linear infinite' : 'none' }} />
+            {isRefreshingMarket ? 'Syncing...' : 'Sync Rates'}
+          </button>
+        </div>
       </div>
 
-      {/* Modern Multi-Tab Navigation (Trade Island Feature Suite) */}
+      {/* Modern Multi-Tab Navigation */}
       <nav className="tabs-nav">
         <button
           className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
           onClick={() => setActiveTab('overview')}
         >
           <BarChart3 size={16} /> Overview
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'daily-analysis' ? 'active' : ''}`}
+          onClick={() => setActiveTab('daily-analysis')}
+          style={{ position: 'relative' }}
+        >
+          <Crown size={16} color={activeTab === 'daily-analysis' ? 'var(--accent-cyan)' : '#ffd700'} /> Daily Intel
+          <span
+            style={{
+              fontSize: '10px',
+              padding: '1px 6px',
+              borderRadius: '8px',
+              background: subscription.isActive ? 'rgba(10, 186, 181, 0.2)' : 'rgba(255, 215, 0, 0.2)',
+              color: subscription.isActive ? 'var(--accent-cyan)' : '#ffd700',
+              fontWeight: 800,
+              border: `1px solid ${subscription.isActive ? 'rgba(10, 186, 181, 0.4)' : 'rgba(255, 215, 0, 0.4)'}`,
+            }}
+          >
+            {subscription.isActive ? 'PRO' : '$9/mo'}
+          </span>
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'charts' ? 'active' : ''}`}
+          onClick={() => setActiveTab('charts')}
+        >
+          <BarChart2 size={16} /> Live Charts (AllTick)
         </button>
         <button
           className={`tab-button ${activeTab === 'ranking' ? 'active' : ''}`}
@@ -380,6 +459,7 @@ export const App: React.FC = () => {
             totalDailyPips={dailyResult?.totalDailyPips || 0}
             activeTradersToday={dailyResult?.activeTradersToday || 0}
           />
+          <LiveCandleChart initialSymbol="USDJPY" initialTimeframe="1m" height={320} />
           <div className="grid-main">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <AccountsList
@@ -401,7 +481,23 @@ export const App: React.FC = () => {
         </div>
       )}
 
-      {/* Tab 2: Trade Island Ranking */}
+      {/* Tab 1a: Dedicated Daily Trading Intelligence & Custom Strategic Hub */}
+      {activeTab === 'daily-analysis' && (
+        <DailyAnalysisHub
+          subscription={subscription}
+          onOpenSubscriptionModal={() => setIsSubscriptionModalOpen(true)}
+        />
+      )}
+
+      {/* Tab 1b: Live Candlestick Charts & AllTick Market Feed */}
+      {activeTab === 'charts' && (
+        <div style={{ maxWidth: '1080px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <LiveCandleChart initialSymbol="USDJPY" initialTimeframe="1m" height={440} />
+          <LivePositionsTicker positions={positions} />
+        </div>
+      )}
+
+      {/* Tab 2: Global Verified Ranking */}
       {activeTab === 'ranking' && (
         <div style={{ maxWidth: '1080px', margin: '0 auto', width: '100%' }}>
           <DailyBestTraderCard
@@ -467,6 +563,18 @@ export const App: React.FC = () => {
           onClose={() => setSelectedTrader(null)}
         />
       )}
+
+      {/* Pro Subscription Unlock Modal ($9/mo) */}
+      <SubscriptionModal
+        isOpen={isSubscriptionModalOpen}
+        onClose={() => setIsSubscriptionModalOpen(false)}
+        subscription={subscription}
+        onSubscriptionChange={setSubscription}
+        onNavigateToDailyIntel={() => {
+          setActiveTab('daily-analysis');
+          setIsSubscriptionModalOpen(false);
+        }}
+      />
     </div>
   );
 };
