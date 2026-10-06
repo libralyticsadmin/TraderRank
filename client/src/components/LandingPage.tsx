@@ -7,7 +7,6 @@ import {
   Zap,
   Lock,
   ArrowRight,
-  Radio,
   ChevronRight,
   Play,
 } from 'lucide-react';
@@ -17,6 +16,8 @@ import { BrandLogo, BrandMark } from './BrandLogo.tsx';
 import { LiveTradeBulletin } from './LiveTradeBulletin.tsx';
 import { MarketLivePricesTicker } from './MarketLivePricesTicker.tsx';
 import { LiveCandleChart } from './LiveCandleChart.tsx';
+import { useTranslation } from '../context/LanguageContext.tsx';
+import { LanguageSelector } from './LanguageSelector.tsx';
 
 interface LandingPageProps {
   onEnterApp: () => void;
@@ -25,6 +26,7 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConnectWizard, onSelectTrader }) => {
+  const { t } = useTranslation();
   const [activeTabRanking, setActiveTabRanking] = useState<'pips' | 'profit' | 'rate'>('pips');
 
   const topPodiumTraders = [
@@ -73,99 +75,116 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
   ];
 
   return (
-    <div style={{ backgroundColor: '#060d11', color: '#f8fafc', minHeight: '100vh', overflowX: 'hidden' }}>
+    <div style={{ backgroundColor: '#080b11', color: '#ffffff', minHeight: '100vh', overflowX: 'hidden' }}>
       {/* Top Floating Glass Navigation */}
       <header
         style={{
           position: 'sticky',
           top: 0,
           zIndex: 100,
-          backgroundColor: 'rgba(6, 13, 17, 0.85)',
-          backdropFilter: 'blur(12px)',
+          backgroundColor: 'rgba(8, 11, 17, 0.88)',
+          backdropFilter: 'blur(16px)',
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-          padding: '16px 24px',
+          padding: '14px 24px',
         }}
       >
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <BrandLogo size={38} textSize={20} onClick={onEnterApp} />
             <span
               style={{
                 fontSize: '10px',
                 fontWeight: 800,
-                padding: '2px 6px',
+                padding: '3px 8px',
                 borderRadius: '6px',
-                background: 'rgba(245, 158, 11, 0.2)',
-                color: '#fbbf24',
-                border: '1px solid rgba(245, 158, 11, 0.4)',
+                background: 'rgba(0, 240, 255, 0.12)',
+                color: '#00F0FF',
+                border: '1px solid rgba(0, 240, 255, 0.3)',
+                letterSpacing: '0.5px',
               }}
             >
-              PRO LEAGUE
+              {t.nav.proLeague}
             </span>
           </div>
 
-          <nav style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
-            <a href="#rankings" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>
-              Rankings
+          <nav style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            <a href="#rankings" style={{ color: '#848E9C', textDecoration: 'none', fontSize: '13px', fontWeight: 600, transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={(e) => (e.currentTarget.style.color = '#848E9C')}>
+              {t.nav.rankings}
             </a>
-            <a href="#tournaments" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>
-              Tournaments
+            <a href="#tournaments" style={{ color: '#848E9C', textDecoration: 'none', fontSize: '13px', fontWeight: 600, transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={(e) => (e.currentTarget.style.color = '#848E9C')}>
+              {t.nav.tournaments}
             </a>
-            <a href="#security" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>
-              Zero-Write Safety
+            <a href="#security" style={{ color: '#848E9C', textDecoration: 'none', fontSize: '13px', fontWeight: 600, transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={(e) => (e.currentTarget.style.color = '#848E9C')}>
+              {t.nav.securityVault}
             </a>
-            <a href="#rewards" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>
-              Rewards &amp; Badges
+            <a href="#rewards" style={{ color: '#848E9C', textDecoration: 'none', fontSize: '13px', fontWeight: 600, transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={(e) => (e.currentTarget.style.color = '#848E9C')}>
+              {t.nav.rewards}
             </a>
           </nav>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <LanguageSelector />
             <button
               onClick={onOpenConnectWizard}
               style={{
-                background: 'rgba(255, 255, 255, 0.05)',
+                background: 'rgba(255, 255, 255, 0.06)',
                 border: '1px solid rgba(255, 255, 255, 0.15)',
                 color: '#ffffff',
-                padding: '9px 18px',
-                borderRadius: '10px',
+                padding: '8px 16px',
+                borderRadius: '8px',
                 fontSize: '13px',
                 fontWeight: 700,
                 cursor: 'pointer',
                 transition: 'all 0.2s',
               }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+              }}
             >
-              Fast Connect
+              {t.landing.connectBrokerBtn}
             </button>
             <button
               onClick={onEnterApp}
               style={{
-                background: 'linear-gradient(135deg, #0abab5 0%, #078c88 100%)',
+                background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 50%, #0891b2 100%)',
                 border: 'none',
-                color: '#000000',
-                padding: '9px 20px',
-                borderRadius: '10px',
+                color: '#080b11',
+                padding: '8px 18px',
+                borderRadius: '8px',
                 fontSize: '13px',
                 fontWeight: 800,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                boxShadow: '0 4px 15px rgba(10, 186, 181, 0.3)',
+                boxShadow: '0 4px 18px rgba(0, 240, 255, 0.35)',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 6px 24px rgba(0, 240, 255, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 18px rgba(0, 240, 255, 0.35)';
               }}
             >
-              <Play size={14} fill="#000" /> Launch Terminal
+              <Play size={14} fill="#080b11" /> {t.landing.enterArenaBtn}
             </button>
           </div>
         </div>
       </header>
 
       {/* Live Moving Trade Bulletin (Motion Graphic Spot Ticker) */}
-      <div style={{ maxWidth: '1240px', margin: '14px auto 0', padding: '0 20px' }}>
+      <div style={{ maxWidth: '1280px', margin: '14px auto 0', padding: '0 20px' }}>
         <LiveTradeBulletin onSelectTrader={onSelectTrader} />
       </div>
 
       {/* Hero Section */}
-      <section style={{ position: 'relative', padding: '60px 24px 60px', overflow: 'hidden' }}>
+      <section style={{ position: 'relative', padding: '64px 24px 60px', overflow: 'hidden' }}>
         {/* Ambient Glows */}
         <div
           style={{
@@ -173,11 +192,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
             top: '-150px',
             left: '50%',
             transform: 'translateX(-50%)',
-            width: '800px',
-            height: '400px',
+            width: '900px',
+            height: '450px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(10, 186, 181, 0.15) 0%, rgba(129, 216, 208, 0.08) 40%, transparent 70%)',
-            filter: 'blur(60px)',
+            background: 'radial-gradient(circle, rgba(0, 240, 255, 0.18) 0%, rgba(0, 218, 198, 0.08) 40%, transparent 70%)',
+            filter: 'blur(70px)',
             pointerEvents: 'none',
           }}
         />
@@ -190,89 +209,96 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
               gap: '8px',
               padding: '6px 14px',
               borderRadius: '24px',
-              background: 'rgba(10, 186, 181, 0.12)',
-              border: '1px solid rgba(10, 186, 181, 0.3)',
+              background: 'rgba(0, 240, 255, 0.10)',
+              border: '1px solid rgba(0, 240, 255, 0.3)',
               fontSize: '12px',
               fontWeight: 800,
-              color: 'var(--accent-green)',
+              color: '#00F0FF',
               marginBottom: '24px',
+              letterSpacing: '0.4px',
             }}
           >
-            <Radio size={14} className="animate-pulse" />
-            GLOBAL MULTI-BROKER ESPORTS & VERIFIED PRO ARENA
+            <Zap size={14} style={{ color: '#00F0FF' }} />
+            {t.landing.badge}
           </div>
 
           <h1
             style={{
               fontSize: 'clamp(36px, 5.5vw, 64px)',
               fontWeight: 900,
-              lineHeight: '1.1',
-              letterSpacing: '-0.03em',
+              lineHeight: 1.12,
+              letterSpacing: '-1.5px',
               margin: '0 0 20px',
-              background: 'linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
+              color: '#FFFFFF',
             }}
           >
-            Where Real Traders Battle.<br />
-            <span style={{ background: 'linear-gradient(90deg, #0abab5, #81d8d0, #fbbf24)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              Zero Execution Risk. Pure Skill.
+            {t.landing.heroTitlePrefix}
+            <span
+              style={{
+                background: 'linear-gradient(135deg, #6df4ff 0%, #00DAC6 50%, #00F0FF 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textShadow: '0 0 40px rgba(0, 240, 255, 0.4)',
+              }}
+            >
+              {t.landing.heroTitleAccent}
             </span>
           </h1>
 
           <p
             style={{
-              fontSize: 'clamp(16px, 2vw, 19px)',
-              color: 'var(--text-muted)',
-              maxWidth: '780px',
+              fontSize: '16px',
+              lineHeight: 1.6,
+              color: '#848E9C',
+              maxWidth: '820px',
               margin: '0 auto 36px',
-              lineHeight: '1.6',
+              fontWeight: 500,
             }}
           >
-            Connect your <strong>MT4 / MT5</strong> account with safe <strong>read-only investor credentials</strong> across IC Markets, Exness, XM, Axiory, and Vantage. Compete in weekly prop-style battle leagues, verify your win rate, and climb the global Hall of Fame.
+            {t.landing.heroSubtitle}
           </p>
 
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap', marginBottom: '48px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', flexWrap: 'wrap', marginBottom: '48px' }}>
             <button
-              onClick={onOpenConnectWizard}
+              onClick={onEnterApp}
               style={{
-                background: 'linear-gradient(135deg, var(--accent-green) 0%, #078c88 100%)',
+                background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 100%)',
                 border: 'none',
-                color: '#000000',
-                padding: '16px 32px',
-                borderRadius: '14px',
-                fontSize: '16px',
-                fontWeight: 800,
+                color: '#080b11',
+                padding: '16px 36px',
+                borderRadius: '12px',
+                fontSize: '15px',
+                fontWeight: 900,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '10px',
-                boxShadow: '0 10px 30px -5px rgba(10, 186, 181, 0.4)',
-                transition: 'transform 0.2s',
+                boxShadow: '0 8px 30px rgba(0, 240, 255, 0.4)',
+                transition: 'all 0.2s',
               }}
-              onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)')}
-              onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
             >
-              <Zap size={18} fill="#000" /> Connect in 60 Seconds
+              <Trophy size={18} /> {t.landing.enterArenaBtn} <ArrowRight size={18} />
             </button>
 
             <button
-              onClick={onEnterApp}
+              onClick={onOpenConnectWizard}
               style={{
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                color: '#ffffff',
+                background: 'rgba(14, 20, 31, 0.9)',
+                border: '1px solid rgba(0, 240, 255, 0.3)',
+                color: '#FFFFFF',
                 padding: '16px 30px',
-                borderRadius: '14px',
-                fontSize: '16px',
+                borderRadius: '12px',
+                fontSize: '15px',
                 fontWeight: 700,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
+                gap: '10px',
+                backdropFilter: 'blur(10px)',
+                transition: 'all 0.2s',
               }}
             >
-              Explore Live Arena <ArrowRight size={18} />
+              <Shield size={18} style={{ color: '#00F0FF' }} /> {t.landing.connectBrokerBtn}
             </button>
           </div>
 
@@ -280,30 +306,31 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
               gap: '16px',
               padding: '24px 32px',
-              borderRadius: '20px',
-              background: 'rgba(15, 23, 42, 0.6)',
-              border: '1px solid var(--border-subtle)',
-              backdropFilter: 'blur(10px)',
+              borderRadius: '16px',
+              background: 'rgba(14, 20, 31, 0.85)',
+              border: '1px solid rgba(0, 240, 255, 0.15)',
+              backdropFilter: 'blur(16px)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
             }}
           >
             <div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Verified Trades Synced</div>
-              <div style={{ fontSize: '26px', fontWeight: 900, color: 'var(--accent-green)' }}>54,200+</div>
+              <div style={{ fontSize: '12px', color: '#848E9C', marginBottom: '4px', fontWeight: 600 }}>{t.landing.verifiedPnlBadge}</div>
+              <div style={{ fontSize: '24px', fontWeight: 900, color: '#00F0FF' }}>54,200+</div>
             </div>
             <div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Total Monthly Prize Pools</div>
-              <div style={{ fontSize: '26px', fontWeight: 900, color: '#fbbf24' }}>$31,500</div>
+              <div style={{ fontSize: '12px', color: '#848E9C', marginBottom: '4px', fontWeight: 600 }}>{t.arena.prizePool}</div>
+              <div style={{ fontSize: '24px', fontWeight: 900, color: '#F0B90B' }}>$31,500 USD</div>
             </div>
             <div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Supported Brokers</div>
-              <div style={{ fontSize: '26px', fontWeight: 900, color: 'var(--accent-cyan)' }}>5 Major (IC Markets, Exness...)</div>
+              <div style={{ fontSize: '12px', color: '#848E9C', marginBottom: '4px', fontWeight: 600 }}>{t.landing.liveBrokersCount}</div>
+              <div style={{ fontSize: '24px', fontWeight: 900, color: '#00DAC6' }}>5 Tier-1 Brokers</div>
             </div>
             <div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Security Guarantee</div>
-              <div style={{ fontSize: '26px', fontWeight: 900, color: '#0abab5' }}>100% Read-Only</div>
+              <div style={{ fontSize: '12px', color: '#848E9C', marginBottom: '4px', fontWeight: 600 }}>{t.nav.viewOnlyBadge}</div>
+              <div style={{ fontSize: '24px', fontWeight: 900, color: '#FFFFFF' }}>100% Zero-Write</div>
             </div>
           </div>
         </div>
@@ -313,30 +340,30 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
       <MarketLivePricesTicker />
 
       {/* Live Candlestick & Market Execution Feed (AllTick Real-Time API) */}
-      <section style={{ maxWidth: '1200px', margin: '40px auto 0', padding: '0 24px' }}>
+      <section style={{ maxWidth: '1280px', margin: '40px auto 0', padding: '0 24px' }}>
         <LiveCandleChart initialSymbol="USDJPY" initialTimeframe="1m" height={360} />
       </section>
 
       {/* Section 2: Global Verified Ranking & Podium Preview */}
       <section id="rankings" style={{ padding: '80px 24px' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 800, color: '#fbbf24', marginBottom: '8px' }}>
-              <Trophy size={16} /> TRANSPARENT REPUTATION
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 800, color: '#F0B90B', marginBottom: '8px', letterSpacing: '0.5px' }}>
+              <Trophy size={16} /> {t.landing.badge}
             </div>
-            <h2 style={{ fontSize: '36px', fontWeight: 900, margin: '0 0 12px' }}>
-              The Verified Global Ranking Standard
+            <h2 style={{ fontSize: '36px', fontWeight: 900, margin: '0 0 12px', color: '#FFFFFF' }}>
+              {t.landing.topPerformersTitle}
             </h2>
-            <p style={{ fontSize: '16px', color: 'var(--text-muted)', maxWidth: '640px', margin: '0 auto' }}>
-              Rankings verified directly from MT4/MT5 server ledgers. No manual screenshots, no inspect element manipulation.
+            <p style={{ fontSize: '15px', color: '#848E9C', maxWidth: '640px', margin: '0 auto' }}>
+              {t.landing.topPerformersSubtitle}
             </p>
 
             {/* Metric Switcher */}
-            <div style={{ display: 'inline-flex', gap: '6px', background: 'rgba(255, 255, 255, 0.04)', padding: '4px', borderRadius: '10px', marginTop: '24px', border: '1px solid var(--border-subtle)' }}>
+            <div style={{ display: 'inline-flex', gap: '6px', background: 'rgba(255, 255, 255, 0.04)', padding: '4px', borderRadius: '10px', marginTop: '24px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
               {[
-                { id: 'pips', label: 'Winning Pips' },
-                { id: 'profit', label: 'Profit Amount ($)' },
-                { id: 'rate', label: 'Profit Rate (%)' },
+                { id: 'pips', label: t.landing.tabPips },
+                { id: 'profit', label: t.landing.tabProfit },
+                { id: 'rate', label: t.landing.tabWinRate },
               ].map(m => (
                 <button
                   key={m.id}
@@ -348,8 +375,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
                     fontWeight: 700,
                     border: 'none',
                     cursor: 'pointer',
-                    background: activeTabRanking === m.id ? 'var(--accent-cyan)' : 'transparent',
-                    color: activeTabRanking === m.id ? '#000000' : 'var(--text-muted)',
+                    background: activeTabRanking === m.id ? 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 100%)' : 'transparent',
+                    color: activeTabRanking === m.id ? '#080b11' : '#848E9C',
+                    transition: 'all 0.2s',
                   }}
                 >
                   {m.label}
@@ -364,13 +392,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
               <div
                 key={trader.rank}
                 style={{
-                  background: `linear-gradient(180deg, ${trader.glow}15 0%, rgba(15, 23, 42, 0.9) 100%)`,
-                  border: `1px solid ${trader.glow}50`,
-                  borderRadius: '20px',
+                  background: 'rgba(14, 20, 31, 0.85)',
+                  border: trader.rank === 1 ? '1px solid rgba(0, 240, 255, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '16px',
                   padding: '28px',
                   position: 'relative',
                   overflow: 'hidden',
-                  boxShadow: trader.rank === 1 ? `0 15px 35px -5px ${trader.glow}25` : 'none',
+                  boxShadow: trader.rank === 1 ? '0 12px 36px rgba(0, 240, 255, 0.15)' : 'none',
+                  backdropFilter: 'blur(16px)',
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -380,7 +409,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
                       fontWeight: 800,
                       padding: '4px 10px',
                       borderRadius: '8px',
-                      background: `${trader.glow}25`,
+                      background: `${trader.glow}20`,
                       color: trader.glow,
                       display: 'flex',
                       alignItems: 'center',
@@ -395,23 +424,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
                   <TraderAvatar username={trader.username} symbol={trader.avatarSymbol} size={56} />
                   <div>
-                    <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>{trader.username}</h3>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                      {trader.tier} • {trader.trades} Trades Synced
+                    <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#FFFFFF' }}>{trader.username}</h3>
+                    <div style={{ fontSize: '12px', color: '#848E9C', marginTop: '2px' }}>
+                      {trader.tier} • {trader.trades} Trades
                     </div>
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '14px', borderRadius: '12px', background: 'rgba(0, 0, 0, 0.4)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '14px', borderRadius: '10px', background: 'rgba(8, 11, 17, 0.7)', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
                   <div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Net Pips</div>
-                    <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--accent-green)' }}>
+                    <div style={{ fontSize: '11px', color: '#848E9C' }}>{t.landing.gainCol}</div>
+                    <div style={{ fontSize: '20px', fontWeight: 900, color: '#00F0FF' }}>
                       +{trader.pips.toFixed(1)}
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Win Rate</div>
-                    <div style={{ fontSize: '20px', fontWeight: 800, color: '#fbbf24' }}>
+                    <div style={{ fontSize: '11px', color: '#848E9C' }}>{t.landing.winRateCol}</div>
+                    <div style={{ fontSize: '20px', fontWeight: 900, color: '#F0B90B' }}>
                       {trader.winRate}%
                     </div>
                   </div>
@@ -424,66 +453,73 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
             <button
               onClick={onEnterApp}
               style={{
-                background: 'transparent',
-                border: '1px solid var(--border-subtle)',
-                color: 'var(--text-main)',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(0, 240, 255, 0.3)',
+                color: '#FFFFFF',
                 padding: '12px 28px',
-                borderRadius: '12px',
+                borderRadius: '10px',
                 fontSize: '14px',
                 fontWeight: 700,
                 cursor: 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(0, 240, 255, 0.12)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
               }}
             >
-              View Complete All-Time &amp; Daily Standings <ChevronRight size={16} />
+              {t.arena.tournamentsTitle} <ChevronRight size={16} />
             </button>
           </div>
         </div>
       </section>
 
-      {/* Section 3: Prop Battles & Tournament Arena */}
-      <section id="tournaments" style={{ padding: '80px 24px', backgroundColor: 'rgba(15, 23, 42, 0.4)' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 800, color: 'var(--accent-green)', marginBottom: '8px' }}>
-              <Swords size={16} /> COMPETITIVE TOURNAMENTS
+      {/* Section 3: Tournaments Preview */}
+      <section id="tournaments" style={{ padding: '80px 24px', backgroundColor: '#0b0f17', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 800, color: '#00F0FF', marginBottom: '8px' }}>
+              <Swords size={16} /> {t.arena.tournamentsTitle}
             </div>
-            <h2 style={{ fontSize: '36px', fontWeight: 900, margin: '0 0 12px' }}>
-              Prop-Style Battle Leagues with Institutional Risk Rules
+            <h2 style={{ fontSize: '36px', fontWeight: 900, margin: '0 0 12px', color: '#FFFFFF' }}>
+              {t.arena.liveContests}
             </h2>
-            <p style={{ fontSize: '16px', color: 'var(--text-muted)', maxWidth: '640px', margin: '0 auto' }}>
-              We reward risk-controlled mastery, not lot-size gamblers. Strict trailing drawdown limits ensure only elite disciplined traders take the podium.
+            <p style={{ fontSize: '15px', color: '#848E9C', maxWidth: '640px', margin: '0 auto' }}>
+              {t.arena.tournamentsSubtitle}
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px', marginBottom: '48px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px' }}>
             <div
               style={{
-                background: 'linear-gradient(180deg, rgba(129, 216, 208, 0.1) 0%, rgba(15, 23, 42, 0.8) 100%)',
-                border: '1px solid rgba(129, 216, 208, 0.3)',
-                borderRadius: '20px',
+                background: 'rgba(14, 20, 31, 0.85)',
+                border: '1px solid rgba(0, 240, 255, 0.25)',
+                borderRadius: '16px',
                 padding: '30px',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 800, padding: '3px 8px', borderRadius: '6px', background: 'rgba(129, 216, 208, 0.2)', color: 'var(--accent-cyan)' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, padding: '3px 8px', borderRadius: '6px', background: 'rgba(0, 240, 255, 0.15)', color: '#00F0FF' }}>
                   WEEKLY SPRINT
                 </span>
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Monday – Friday</span>
+                <span style={{ fontSize: '12px', color: '#848E9C' }}>Monday – Friday</span>
               </div>
-              <h3 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 8px' }}>Weekly FX Blitz League</h3>
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 20px', lineHeight: '1.5' }}>
-                Fast 5-day sprint for EUR, GBP, and Gold traders. Top 3 finishers claim USD prizes and tier boosts.
+              <h3 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 8px', color: '#FFFFFF' }}>Weekly FX Blitz League</h3>
+              <p style={{ fontSize: '13px', color: '#848E9C', margin: '0 0 20px', lineHeight: '1.5' }}>
+                Fast 5-day sprint for EUR, GBP, and Gold traders. Top 3 claim USD prizes and tier boosts.
               </p>
 
-              <div style={{ padding: '14px', borderRadius: '12px', background: 'rgba(0, 0, 0, 0.3)', marginBottom: '20px' }}>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Prize Pool</div>
-                <div style={{ fontSize: '24px', fontWeight: 900, color: '#fbbf24' }}>$5,000 USD <span style={{ fontSize: '14px', color: 'var(--accent-cyan)' }}>+ 15,000 XP</span></div>
+              <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(8, 11, 17, 0.7)', marginBottom: '20px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                <div style={{ fontSize: '12px', color: '#848E9C' }}>{t.arena.prizePool}</div>
+                <div style={{ fontSize: '24px', fontWeight: 900, color: '#F0B90B' }}>$5,000 USD <span style={{ fontSize: '14px', color: '#00F0FF' }}>+ 15,000 XP</span></div>
               </div>
 
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ fontSize: '12px', color: '#848E9C', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div>✓ Max Daily Loss: 5.0% Equity</div>
                 <div>✓ Max Trailing DD: 10.0%</div>
                 <div>✓ Min. 5 Trades to Qualify</div>
@@ -492,29 +528,29 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
 
             <div
               style={{
-                background: 'linear-gradient(180deg, rgba(245, 158, 11, 0.1) 0%, rgba(15, 23, 42, 0.8) 100%)',
-                border: '1px solid rgba(245, 158, 11, 0.4)',
-                borderRadius: '20px',
+                background: 'rgba(14, 20, 31, 0.85)',
+                border: '1px solid rgba(240, 185, 11, 0.3)',
+                borderRadius: '16px',
                 padding: '30px',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 800, padding: '3px 8px', borderRadius: '6px', background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, padding: '3px 8px', borderRadius: '6px', background: 'rgba(240, 185, 11, 0.15)', color: '#F0B90B' }}>
                   MONTHLY CHAMPIONSHIP
                 </span>
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>30-Day Gauntlet</span>
+                <span style={{ fontSize: '12px', color: '#848E9C' }}>30-Day Gauntlet</span>
               </div>
-              <h3 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 8px' }}>Apex Prop Championship</h3>
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 20px', lineHeight: '1.5' }}>
+              <h3 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 8px', color: '#FFFFFF' }}>Apex Prop Championship</h3>
+              <p style={{ fontSize: '13px', color: '#848E9C', margin: '0 0 20px', lineHeight: '1.5' }}>
                 The flagship endurance competition. Multi-factor scoring combines net pips with Sharpe ratio stability.
               </p>
 
-              <div style={{ padding: '14px', borderRadius: '12px', background: 'rgba(0, 0, 0, 0.3)', marginBottom: '20px' }}>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Prize Pool</div>
-                <div style={{ fontSize: '24px', fontWeight: 900, color: '#fbbf24' }}>$25,000 USD <span style={{ fontSize: '14px', color: 'var(--accent-cyan)' }}>+ 75,000 XP</span></div>
+              <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(8, 11, 17, 0.7)', marginBottom: '20px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                <div style={{ fontSize: '12px', color: '#848E9C' }}>{t.arena.prizePool}</div>
+                <div style={{ fontSize: '24px', fontWeight: 900, color: '#F0B90B' }}>$25,000 USD <span style={{ fontSize: '14px', color: '#00F0FF' }}>+ 75,000 XP</span></div>
               </div>
 
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ fontSize: '12px', color: '#848E9C', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div>✓ Max Daily Loss: 4.0% Equity</div>
                 <div>✓ Max Trailing DD: 8.0%</div>
                 <div>✓ Min. 20 Trades to Qualify</div>
@@ -526,142 +562,116 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
 
       {/* Section 4: Zero-Write Security & Trust Architecture */}
       <section id="security" style={{ padding: '80px 24px' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 800, color: 'var(--accent-green)', marginBottom: '8px' }}>
-              <Shield size={16} /> 100% READ-ONLY VERIFICATION
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 800, color: '#00F0FF', marginBottom: '8px' }}>
+              <Shield size={16} /> {t.nav.viewOnlyBadge}
             </div>
-            <h2 style={{ fontSize: '36px', fontWeight: 900, margin: '0 0 12px' }}>
-              Built Around Institutional Zero-Write Security
+            <h2 style={{ fontSize: '36px', fontWeight: 900, margin: '0 0 12px', color: '#FFFFFF' }}>
+              {t.landing.feature1Title}
             </h2>
-            <p style={{ fontSize: '16px', color: 'var(--text-muted)', maxWidth: '640px', margin: '0 auto' }}>
-              We never ask for your master trading password. Your funds and trades remain 100% untouchable.
+            <p style={{ fontSize: '15px', color: '#848E9C', maxWidth: '640px', margin: '0 auto' }}>
+              {t.connector.zeroWriteDesc}
             </p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-            <div style={{ padding: '28px', borderRadius: '18px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(10, 186, 181, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
-                <Lock size={20} color="var(--accent-green)" />
+            <div style={{ padding: '28px', borderRadius: '16px', background: 'rgba(14, 20, 31, 0.85)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(0, 240, 255, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                <Lock size={20} color="#00F0FF" />
               </div>
-              <h3 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 8px' }}>Investor Passwords Only</h3>
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.6', margin: 0 }}>
-                TraderRank accepts only investor (read-only) passwords. Master trading passwords are mathematically rejected at pre-flight validation.
+              <h3 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 8px', color: '#FFFFFF' }}>{t.landing.feature1Title}</h3>
+              <p style={{ fontSize: '13px', color: '#848E9C', lineHeight: '1.6', margin: 0 }}>
+                {t.landing.feature1Desc}
               </p>
             </div>
 
-            <div style={{ padding: '28px', borderRadius: '18px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(129, 216, 208, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
-                <Shield size={20} color="var(--accent-cyan)" />
+            <div style={{ padding: '28px', borderRadius: '16px', background: 'rgba(14, 20, 31, 0.85)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(0, 218, 198, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                <Shield size={20} color="#00DAC6" />
               </div>
-              <h3 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 8px' }}>Isolated Secrets Vault</h3>
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.6', margin: 0 }}>
-                Credentials are encrypted using AES-256 in an isolated hardware vault. Application database records only store sanitized references, never keys.
+              <h3 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 8px', color: '#FFFFFF' }}>{t.landing.feature2Title}</h3>
+              <p style={{ fontSize: '13px', color: '#848E9C', lineHeight: '1.6', margin: 0 }}>
+                {t.landing.feature2Desc}
               </p>
             </div>
 
-            <div style={{ padding: '28px', borderRadius: '18px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
-                <Zap size={20} color="#fbbf24" />
+            <div style={{ padding: '28px', borderRadius: '16px', background: 'rgba(14, 20, 31, 0.85)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(240, 185, 11, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                <Zap size={20} color="#F0B90B" />
               </div>
-              <h3 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 8px' }}>Zero-Write API Middleware</h3>
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.6', margin: 0 }}>
-                Every API endpoint is guarded against order creation, cancellation, or modification. Any write attempt immediately triggers an HTTP 403 Forbidden.
+              <h3 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 8px', color: '#FFFFFF' }}>{t.landing.feature3Title}</h3>
+              <p style={{ fontSize: '13px', color: '#848E9C', lineHeight: '1.6', margin: 0 }}>
+                {t.landing.feature3Desc}
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Section 5: 3-Step Onboarding CTA */}
-      <section style={{ padding: '80px 24px', background: 'linear-gradient(180deg, rgba(6, 13, 17, 1) 0%, rgba(13, 27, 42, 0.9) 100%)', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+      {/* Section 5: CTA */}
+      <section style={{ padding: '80px 24px', background: 'linear-gradient(180deg, #080b11 0%, #0d131d 100%)', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ fontSize: '36px', fontWeight: 900, margin: '0 0 16px' }}>
-            Ready to Prove Your Rank?
+          <h2 style={{ fontSize: '36px', fontWeight: 900, margin: '0 0 16px', color: '#FFFFFF' }}>
+            {t.landing.ctaHeading}
           </h2>
-          <p style={{ fontSize: '16px', color: 'var(--text-muted)', margin: '0 0 40px' }}>
-            Join thousands of verified traders across Exness, XM, Axiory, and Vantage in 3 simple steps.
+          <p style={{ fontSize: '15px', color: '#848E9C', margin: '0 0 40px' }}>
+            {t.landing.ctaSubtitle}
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '48px', textAlign: 'left' }}>
-            <div style={{ padding: '20px', borderRadius: '14px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-subtle)' }}>
-              <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--accent-green)', marginBottom: '6px' }}>STEP 01</div>
-              <strong style={{ fontSize: '15px' }}>Choose Your Broker</strong>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '6px 0 0' }}>
-                Select Exness, XM, Axiory, or Vantage on MT4 or MT5.
-              </p>
-            </div>
-
-            <div style={{ padding: '20px', borderRadius: '14px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-subtle)' }}>
-              <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--accent-cyan)', marginBottom: '6px' }}>STEP 02</div>
-              <strong style={{ fontSize: '15px' }}>Enter Read-Only Pass</strong>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '6px 0 0' }}>
-                Provide your server name and read-only investor password.
-              </p>
-            </div>
-
-            <div style={{ padding: '20px', borderRadius: '14px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-subtle)' }}>
-              <div style={{ fontSize: '12px', fontWeight: 800, color: '#fbbf24', marginBottom: '6px' }}>STEP 03</div>
-              <strong style={{ fontSize: '15px' }}>Enter the Arena</strong>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '6px 0 0' }}>
-                Watch your trades sync live and start climbing the leaderboards.
-              </p>
-            </div>
-          </div>
-
           <button
-            onClick={onOpenConnectWizard}
+            onClick={onEnterApp}
             style={{
-              background: 'linear-gradient(135deg, var(--accent-green) 0%, #078c88 100%)',
+              background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 100%)',
               border: 'none',
-              color: '#000000',
-              padding: '16px 36px',
-              borderRadius: '14px',
-              fontSize: '17px',
+              color: '#080b11',
+              padding: '16px 40px',
+              borderRadius: '12px',
+              fontSize: '16px',
               fontWeight: 900,
               cursor: 'pointer',
-              boxShadow: '0 10px 30px -5px rgba(10, 186, 181, 0.4)',
+              boxShadow: '0 8px 32px rgba(0, 240, 255, 0.4)',
+              transition: 'all 0.2s',
             }}
           >
-            Start Free Verification Now
+            {t.landing.ctaButton}
           </button>
         </div>
       </section>
 
       {/* Footer */}
-      <footer style={{ padding: '40px 24px', borderTop: '1px solid rgba(255, 255, 255, 0.06)', backgroundColor: '#040a0d', textAlign: 'center' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      <footer style={{ padding: '40px 24px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: '#05070a', textAlign: 'center' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <BrandMark size={22} variant="glyph" />
-            <strong style={{ fontSize: '15px' }}>TraderRank FX</strong>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>© {new Date().getFullYear()} TraderRank Global. All rights reserved.</span>
+            <strong style={{ fontSize: '15px', color: '#FFFFFF' }}>TraderRank FX</strong>
+            <span style={{ fontSize: '12px', color: '#848E9C' }}>© {new Date().getFullYear()} TraderRank. {t.footer.allRightsReserved}.</span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Powered by</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '12px', color: '#848E9C' }}>{t.footer.poweredBy}</span>
             <span
               style={{
-                color: 'var(--accent-cyan)',
+                color: '#00F0FF',
                 fontWeight: 800,
                 fontSize: '12px',
                 padding: '4px 12px',
                 borderRadius: '6px',
-                background: 'rgba(10, 186, 181, 0.12)',
-                border: '1px solid rgba(10, 186, 181, 0.25)',
+                background: 'rgba(0, 240, 255, 0.12)',
+                border: '1px solid rgba(0, 240, 255, 0.3)',
               }}
             >
-              Libralytic Co.,Ltd
+              {t.footer.companyName}
             </span>
           </div>
 
-          <div style={{ display: 'flex', gap: '20px', fontSize: '12px', color: 'var(--text-muted)' }}>
-            <span>Read-Only Ingestion</span>
-            <span>MetaApi Cloud Gateway</span>
-            <span>Exness OpenAPI</span>
-            <span>Terms of Competition</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <LanguageSelector variant="footer" />
+            <span style={{ fontSize: '12px', color: '#848E9C' }}>{t.footer.systemStatus}</span>
           </div>
         </div>
       </footer>
     </div>
   );
 };
+

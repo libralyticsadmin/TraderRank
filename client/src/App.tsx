@@ -23,6 +23,8 @@ import { LiveTradeBulletin } from './components/LiveTradeBulletin.tsx';
 import { LiveCandleChart } from './components/LiveCandleChart.tsx';
 import { DailyAnalysisHub } from './components/DailyAnalysisHub.tsx';
 import { SubscriptionModal } from './components/SubscriptionModal.tsx';
+import { LanguageSelector } from './components/LanguageSelector.tsx';
+import { useTranslation } from './context/LanguageContext.tsx';
 import {
   Plus,
   Shield,
@@ -56,6 +58,7 @@ interface MarketStatus {
 }
 
 export const App: React.FC = () => {
+  const { t } = useTranslation();
   const [currentView, setCurrentView] = useState<'landing' | 'app'>('landing');
   const [activeTab, setActiveTab] = useState<
     'overview' | 'daily-analysis' | 'charts' | 'ranking' | 'tournaments' | 'rewards' | 'community' | 'positions' | 'security'
@@ -276,18 +279,18 @@ export const App: React.FC = () => {
                 Trader<span className="brand-wordmark-accent">Rank</span>
                 <span className="brand-fx-pill">FX</span>
               </h1>
-              <span className="brand-badge">Verified Pro Arena</span>
+              <span className="brand-badge">{t.landing.badge}</span>
               <span
                 className="status-pill"
                 style={{
-                  background: wsConnected ? 'rgba(10, 186, 181, 0.15)' : 'rgba(244, 63, 94, 0.15)',
+                  background: wsConnected ? 'rgba(0, 218, 198, 0.15)' : 'rgba(246, 70, 93, 0.15)',
                   color: wsConnected ? 'var(--accent-green)' : 'var(--accent-red)',
-                  border: `1px solid ${wsConnected ? 'rgba(10, 186, 181, 0.3)' : 'rgba(244, 63, 94, 0.3)'}`,
+                  border: `1px solid ${wsConnected ? 'rgba(0, 218, 198, 0.3)' : 'rgba(246, 70, 93, 0.3)'}`,
                   fontSize: '11px',
                 }}
               >
                 <Radio size={12} className={wsConnected ? 'animate-pulse' : ''} />
-                {wsConnected ? 'Live WS Connected' : 'Connecting WS...'}
+                {wsConnected ? t.nav.wsConnected : t.nav.wsConnecting}
               </span>
             </div>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -297,33 +300,36 @@ export const App: React.FC = () => {
         </div>
 
         <div className="header-actions">
+          {/* Language Selector Dropdown (Bitget Inspired) */}
+          <LanguageSelector />
+
           <button
             className="btn-secondary"
             onClick={() => setIsSubscriptionModalOpen(true)}
             title="TraderRank Pro Daily Intelligence ($9/mo)"
             style={{
-              border: `1px solid ${subscription.isActive ? 'rgba(10, 186, 181, 0.4)' : 'rgba(255, 215, 0, 0.4)'}`,
-              background: subscription.isActive ? 'rgba(10, 186, 181, 0.12)' : 'rgba(255, 215, 0, 0.08)',
-              color: subscription.isActive ? 'var(--accent-cyan)' : '#ffd700',
+              border: `1px solid ${subscription.isActive ? 'rgba(0, 218, 198, 0.4)' : 'rgba(240, 185, 11, 0.4)'}`,
+              background: subscription.isActive ? 'rgba(0, 218, 198, 0.12)' : 'rgba(240, 185, 11, 0.08)',
+              color: subscription.isActive ? 'var(--accent-cyan)' : 'var(--accent-gold)',
               fontWeight: 700,
             }}
           >
-            <Crown size={15} color={subscription.isActive ? 'var(--accent-cyan)' : '#ffd700'} />
-            {subscription.isActive ? '👑 Pro Unlocked' : '👑 Pro ($9/mo)'}
+            <Crown size={15} color={subscription.isActive ? 'var(--accent-cyan)' : 'var(--accent-gold)'} />
+            {subscription.isActive ? `👑 ${t.nav.proPlanActive}` : `👑 ${t.nav.unlockPro}`}
           </button>
           <button
             className="btn-secondary"
             onClick={() => setCurrentView('landing')}
-            title="Return to Marketing Landing Page"
+            title={t.nav.landing}
             style={{ border: '1px solid rgba(255,255,255,0.15)' }}
           >
-            <Globe2 size={16} /> Landing Portal
+            <Globe2 size={16} /> {t.nav.landing}
           </button>
           <button className="btn-secondary" onClick={() => setIsWizardOpen(true)}>
-            <Layers size={16} /> Fast Connect
+            <Layers size={16} /> {t.connector.selectBroker}
           </button>
           <button className="btn-primary" onClick={() => setIsWizardOpen(true)}>
-            <Plus size={16} /> Connect Trading Account
+            <Plus size={16} /> {t.nav.connectAccount}
           </button>
         </div>
       </header>
@@ -338,9 +344,9 @@ export const App: React.FC = () => {
           <span
             className="status-pill"
             style={{
-              background: marketStatus?.feedStatus === 'LIVE_NETWORK' ? 'rgba(10, 186, 181, 0.15)' : 'rgba(129, 216, 208, 0.15)',
+              background: marketStatus?.feedStatus === 'LIVE_NETWORK' ? 'rgba(0, 218, 198, 0.15)' : 'rgba(0, 240, 255, 0.15)',
               color: marketStatus?.feedStatus === 'LIVE_NETWORK' ? 'var(--accent-green)' : 'var(--accent-cyan)',
-              border: `1px solid ${marketStatus?.feedStatus === 'LIVE_NETWORK' ? 'rgba(10, 186, 181, 0.3)' : 'rgba(129, 216, 208, 0.3)'}`,
+              border: `1px solid ${marketStatus?.feedStatus === 'LIVE_NETWORK' ? 'rgba(0, 218, 198, 0.3)' : 'rgba(0, 240, 255, 0.3)'}`,
               fontSize: '11px',
               padding: '3px 8px',
             }}
@@ -371,10 +377,10 @@ export const App: React.FC = () => {
             className="market-refresh-btn"
             onClick={handleRefreshMarketRates}
             disabled={isRefreshingMarket}
-            title="Force refresh live rates from public APIs"
+            title={t.nav.refreshRates}
           >
             <RefreshCw size={13} className={isRefreshingMarket ? 'animate-spin' : ''} style={{ animation: isRefreshingMarket ? 'spin 1s linear infinite' : 'none' }} />
-            {isRefreshingMarket ? 'Syncing...' : 'Sync Rates'}
+            {isRefreshingMarket ? 'Syncing...' : t.nav.refreshRates}
           </button>
         </div>
       </div>
@@ -385,23 +391,23 @@ export const App: React.FC = () => {
           className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
           onClick={() => setActiveTab('overview')}
         >
-          <BarChart3 size={16} /> Overview
+          <BarChart3 size={16} /> {t.nav.overview}
         </button>
         <button
           className={`tab-button ${activeTab === 'daily-analysis' ? 'active' : ''}`}
           onClick={() => setActiveTab('daily-analysis')}
           style={{ position: 'relative' }}
         >
-          <Crown size={16} color={activeTab === 'daily-analysis' ? 'var(--accent-cyan)' : '#ffd700'} /> Daily Intel
+          <Crown size={16} color={activeTab === 'daily-analysis' ? 'var(--accent-cyan)' : 'var(--accent-gold)'} /> {t.nav.dailyIntel}
           <span
             style={{
               fontSize: '10px',
               padding: '1px 6px',
               borderRadius: '8px',
-              background: subscription.isActive ? 'rgba(10, 186, 181, 0.2)' : 'rgba(255, 215, 0, 0.2)',
-              color: subscription.isActive ? 'var(--accent-cyan)' : '#ffd700',
+              background: subscription.isActive ? 'rgba(0, 218, 198, 0.2)' : 'rgba(240, 185, 11, 0.2)',
+              color: subscription.isActive ? 'var(--accent-cyan)' : 'var(--accent-gold)',
               fontWeight: 800,
-              border: `1px solid ${subscription.isActive ? 'rgba(10, 186, 181, 0.4)' : 'rgba(255, 215, 0, 0.4)'}`,
+              border: `1px solid ${subscription.isActive ? 'rgba(0, 218, 198, 0.4)' : 'rgba(240, 185, 11, 0.4)'}`,
             }}
           >
             {subscription.isActive ? 'PRO' : '$9/mo'}
@@ -411,43 +417,43 @@ export const App: React.FC = () => {
           className={`tab-button ${activeTab === 'charts' ? 'active' : ''}`}
           onClick={() => setActiveTab('charts')}
         >
-          <BarChart2 size={16} /> Live Charts (AllTick)
+          <BarChart2 size={16} /> {t.nav.liveCharts}
         </button>
         <button
           className={`tab-button ${activeTab === 'ranking' ? 'active' : ''}`}
           onClick={() => setActiveTab('ranking')}
         >
-          <Trophy size={16} /> Rankings
+          <Trophy size={16} /> {t.nav.rankings}
         </button>
         <button
           className={`tab-button ${activeTab === 'tournaments' ? 'active' : ''}`}
           onClick={() => setActiveTab('tournaments')}
         >
-          <Swords size={16} /> Tournaments &amp; Battles
+          <Swords size={16} /> {t.nav.tournaments}
         </button>
         <button
           className={`tab-button ${activeTab === 'rewards' ? 'active' : ''}`}
           onClick={() => setActiveTab('rewards')}
         >
-          <Award size={16} /> Rewards &amp; Badges
+          <Award size={16} /> {t.nav.rewards}
         </button>
         <button
           className={`tab-button ${activeTab === 'community' ? 'active' : ''}`}
           onClick={() => setActiveTab('community')}
         >
-          <Users size={16} /> Community Feed
+          <Users size={16} /> {t.nav.community}
         </button>
         <button
           className={`tab-button ${activeTab === 'positions' ? 'active' : ''}`}
           onClick={() => setActiveTab('positions')}
         >
-          <Radio size={16} /> Positions ({positions.length})
+          <Radio size={16} /> {t.nav.positions} ({positions.length})
         </button>
         <button
           className={`tab-button ${activeTab === 'security' ? 'active' : ''}`}
           onClick={() => setActiveTab('security')}
         >
-          <Shield size={16} /> Security Vault
+          <Shield size={16} /> {t.nav.securityVault}
         </button>
       </nav>
 
@@ -581,7 +587,7 @@ export const App: React.FC = () => {
         style={{
           marginTop: '60px',
           padding: '24px 20px',
-          borderTop: '1px solid rgba(129, 216, 208, 0.12)',
+          borderTop: '1px solid rgba(0, 240, 255, 0.12)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -594,29 +600,33 @@ export const App: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <BrandMark size={20} variant="glyph" />
           <span>
-            <strong style={{ color: '#fff' }}>TraderRank FX</strong> • Global Verified Trading Platform
+            <strong style={{ color: '#fff' }}>TraderRank FX</strong> • {t.landing.badge}
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span>Powered by</span>
-          <span
-            style={{
-              color: 'var(--accent-cyan)',
-              fontWeight: 800,
-              letterSpacing: '0.3px',
-              padding: '4px 12px',
-              borderRadius: '6px',
-              background: 'rgba(10, 186, 181, 0.12)',
-              border: '1px solid rgba(10, 186, 181, 0.25)',
-            }}
-          >
-            Libralytic Co.,Ltd
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>{t.footer.poweredBy}</span>
+            <span
+              style={{
+                color: 'var(--accent-cyan)',
+                fontWeight: 800,
+                letterSpacing: '0.3px',
+                padding: '4px 12px',
+                borderRadius: '6px',
+                background: 'rgba(0, 218, 198, 0.12)',
+                border: '1px solid rgba(0, 240, 255, 0.25)',
+              }}
+            >
+              {t.footer.companyName}
+            </span>
+          </div>
+
+          <LanguageSelector />
         </div>
 
         <div style={{ display: 'flex', gap: '16px', fontSize: '12px' }}>
-          <span>© {new Date().getFullYear()} All Rights Reserved</span>
+          <span>© {new Date().getFullYear()} {t.footer.allRightsReserved}</span>
           <span>•</span>
           <span>256-Bit SSL Isolated Vault</span>
         </div>

@@ -1,31 +1,56 @@
 :root {
-  /* Brand — Tiffany Blue */
-  --tiffany: #0abab5;
-  --tiffany-light: #81d8d0;
-  --tiffany-pale: #c9f0ec;
-  --tiffany-deep: #078c88;
-  --tiffany-gradient: linear-gradient(135deg, #81d8d0 0%, #0abab5 50%, #078c88 100%);
+  /* Brand — Bitget Inspired Tiffany Blue / Aqua Electric */
+  --tiffany: #00DAC6;
+  --tiffany-electric: #00F0FF;
+  --tiffany-light: #6df4ff;
+  --tiffany-pale: #c5f9fc;
+  --tiffany-deep: #08837e;
+  --tiffany-gradient: linear-gradient(135deg, #6df4ff 0%, #00DAC6 50%, #078c88 100%);
+  --tiffany-glow: 0 0 24px rgba(0, 240, 255, 0.35);
 
-  --bg-primary: #060d11;
-  --bg-secondary: #0b1a1f;
-  --bg-card: rgba(12, 28, 33, 0.75);
-  --bg-card-hover: rgba(18, 42, 48, 0.85);
-  --bg-glass: rgba(10, 24, 29, 0.65);
-  --border-subtle: rgba(129, 216, 208, 0.10);
-  --border-focus: rgba(10, 186, 181, 0.4);
-  --text-main: #f4fbfa;
-  --text-muted: #94aeb0;
-  --text-faint: #5f7a7d;
-  --accent-green: #0abab5;
-  --accent-green-glow: rgba(10, 186, 181, 0.25);
-  --accent-cyan: #81d8d0;
-  --accent-cyan-glow: rgba(129, 216, 208, 0.25);
-  --accent-red: #f43f5e;
-  --accent-red-glow: rgba(244, 63, 94, 0.25);
-  --accent-gold: #f59e0b;
-  --accent-purple: #8b5cf6;
+  /* Deep Sleek Dark / Obsidian Black Backgrounds */
+  --bg-primary: #080b11;
+  --bg-secondary: #0d131d;
+  --bg-tertiary: #131b28;
+  --bg-card: rgba(14, 20, 31, 0.85);
+  --bg-card-hover: rgba(22, 32, 48, 0.95);
+  --bg-glass: rgba(10, 16, 26, 0.75);
+  --bg-pure-black: #000000;
+
+  /* Crisp High-Contrast Borders */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-card: rgba(0, 240, 255, 0.12);
+  --border-focus: rgba(0, 240, 255, 0.5);
+
+  /* Pure White & High-Contrast Typography */
+  --text-main: #FFFFFF;
+  --text-secondary: #F1F5F9;
+  --text-muted: #848E9C;
+  --text-faint: #4E586E;
+
+  /* Trading State Colors */
+  --accent-green: #00DAC6;
+  --accent-green-glow: rgba(0, 218, 198, 0.3);
+  --accent-cyan: #00F0FF;
+  --accent-cyan-glow: rgba(0, 240, 255, 0.3);
+  --accent-red: #F6465D;
+  --accent-red-glow: rgba(246, 70, 93, 0.3);
+  --accent-gold: #F0B90B;
+  --accent-gold-glow: rgba(240, 185, 11, 0.3);
+  --accent-purple: #8B5CF6;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 * {
@@ -41,8 +66,8 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   background-image: 
-    radial-gradient(circle at 15% 15%, rgba(129, 216, 208, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 85% 85%, rgba(10, 186, 181, 0.06) 0%, transparent 40%);
+    radial-gradient(circle at 10% 10%, rgba(0, 240, 255, 0.07) 0%, transparent 45%),
+    radial-gradient(circle at 90% 80%, rgba(0, 218, 198, 0.05) 0%, transparent 45%);
   -webkit-font-smoothing: antialiased;
 }
 
