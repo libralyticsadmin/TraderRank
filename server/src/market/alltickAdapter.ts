@@ -296,19 +296,19 @@ export class AllTickAdapter {
     count: number = 50
   ): CandlestickBar[] {
     const basePrices: Record<string, number> = {
-      EURUSD: 1.0865,
-      GBPUSD: 1.2755,
-      USDJPY: 158.03,
-      AUDUSD: 0.6585,
-      USDCAD: 1.3650,
+      EURUSD: 1.1225,
+      GBPUSD: 1.3220,
+      USDJPY: 158.15,
+      AUDUSD: 0.6970,
+      USDCAD: 1.4256,
       XAUUSD: 4174.50,
       GOLD: 4174.50,
-      'MCL1!': 90.15,
-      MCL1: 90.15,
-      USOIL: 90.15,
-      WTICOUSD: 90.15,
-      OIL: 90.15,
-      BTCUSD: 95400.0,
+      'MCL1!': 87.65,
+      MCL1: 87.65,
+      USOIL: 87.65,
+      WTICOUSD: 87.65,
+      OIL: 87.65,
+      BTCUSD: 85850.0,
     };
 
     const base = basePrices[symbol] || 1.0000;

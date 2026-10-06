@@ -8,14 +8,14 @@ export interface SymbolMarketMetadata {
 }
 
 export const SYMBOL_METADATA_MAP: Record<string, SymbolMarketMetadata> = {
-  USDJPY: { basePrice: 155.32, decimals: 3, tickVolatility: 0.015, spread: 0.018 },
-  EURUSD: { basePrice: 1.0852, decimals: 5, tickVolatility: 0.0001, spread: 0.00012 },
-  GBPUSD: { basePrice: 1.2721, decimals: 5, tickVolatility: 0.00014, spread: 0.00015 },
-  AUDUSD: { basePrice: 0.6582, decimals: 5, tickVolatility: 0.00011, spread: 0.00012 },
-  USDCAD: { basePrice: 1.3652, decimals: 5, tickVolatility: 0.00012, spread: 0.00015 },
+  USDJPY: { basePrice: 158.150, decimals: 3, tickVolatility: 0.018, spread: 0.015 },
+  EURUSD: { basePrice: 1.12250, decimals: 5, tickVolatility: 0.00012, spread: 0.00011 },
+  GBPUSD: { basePrice: 1.32200, decimals: 5, tickVolatility: 0.00015, spread: 0.00014 },
+  AUDUSD: { basePrice: 0.69700, decimals: 5, tickVolatility: 0.00012, spread: 0.00012 },
+  USDCAD: { basePrice: 1.42560, decimals: 5, tickVolatility: 0.00014, spread: 0.00015 },
   XAUUSD: { basePrice: 4174.50, decimals: 2, tickVolatility: 0.65, spread: 0.30 },
-  'MCL1!': { basePrice: 72.85, decimals: 2, tickVolatility: 0.04, spread: 0.03 },
-  BTCUSD: { basePrice: 95420.0, decimals: 2, tickVolatility: 12.5, spread: 15.0 },
+  'MCL1!': { basePrice: 87.65, decimals: 2, tickVolatility: 0.05, spread: 0.03 },
+  BTCUSD: { basePrice: 85850.00, decimals: 2, tickVolatility: 12.0, spread: 15.0 },
 };
 
 export const getTimeframeDurationSeconds = (timeframe: CandlestickTimeframe): number => {

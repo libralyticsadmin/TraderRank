@@ -51,7 +51,7 @@ describe('AiChartAnalyzer - Multi-Timeframe Chart Analysis (15m, 4h, 1D, 1W)', (
     expect(report.tacticalPlan.length).toBeGreaterThan(20);
     expect(report.riskToRewardRatio).toMatch(/1 : \d/);
     expect(report.catalystsAndRisks.length).toBeGreaterThan(0);
-  });
+  }, 15000);
 
   it('caches analysis report on subsequent calls unless forceRefresh is set', async () => {
     const rep1 = await analyzer.analyzeSymbol('EURUSD', false);

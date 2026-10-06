@@ -21,14 +21,14 @@ export class MarketSimulator {
 
   constructor() {
     // Initial benchmark prices
-    this.prices.set('EURUSD', { bid: 1.08520, ask: 1.08530, spread: 0.00010 });
-    this.prices.set('GBPUSD', { bid: 1.27210, ask: 1.27225, spread: 0.00015 });
-    this.prices.set('USDJPY', { bid: 155.320, ask: 155.335, spread: 0.015 });
-    this.prices.set('AUDUSD', { bid: 0.65820, ask: 0.65832, spread: 0.00012 });
-    this.prices.set('USDCAD', { bid: 1.36520, ask: 1.36535, spread: 0.00015 });
+    this.prices.set('EURUSD', { bid: 1.12245, ask: 1.12255, spread: 0.00010 });
+    this.prices.set('GBPUSD', { bid: 1.32195, ask: 1.32210, spread: 0.00015 });
+    this.prices.set('USDJPY', { bid: 158.140, ask: 158.155, spread: 0.015 });
+    this.prices.set('AUDUSD', { bid: 0.69695, ask: 0.69707, spread: 0.00012 });
+    this.prices.set('USDCAD', { bid: 1.42555, ask: 1.42570, spread: 0.00015 });
     this.prices.set('XAUUSD', { bid: 4174.20, ask: 4174.50, spread: 0.30 });
-    this.prices.set('MCL1!', { bid: 90.15, ask: 90.18, spread: 0.03 });
-    this.prices.set('BTCUSD', { bid: 95420.00, ask: 95435.00, spread: 15.00 });
+    this.prices.set('MCL1!', { bid: 87.62, ask: 87.65, spread: 0.03 });
+    this.prices.set('BTCUSD', { bid: 85845.00, ask: 85855.00, spread: 10.00 });
 
     this.startPriceEngine();
   }
@@ -150,7 +150,7 @@ export class MarketSimulator {
       const isBuy = Math.random() > 0.35; // 65% win bias for demo fun
       const isWin = Math.random() > 0.32;
       const volume = Number((0.2 + Math.random() * 0.8).toFixed(2));
-      const basePrice = sym === 'XAUUSD' ? 4174 : sym === 'USDJPY' ? 154.5 : 1.082;
+      const basePrice = sym === 'XAUUSD' ? 4174 : sym === 'USDJPY' ? 158.15 : sym === 'BTCUSD' ? 85850 : 1.122;
 
       const openPrice = basePrice;
       const delta = (isWin ? 1 : -1) * (Math.random() * 0.006 + 0.001);

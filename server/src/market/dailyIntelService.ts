@@ -96,13 +96,13 @@ export class DailyIntelService {
     const quotes = marketStatus.quotes || {};
 
     const goldBid = quotes['XAUUSD']?.bid || 4174.50;
-    const oilBid = quotes['MCL1!']?.bid || quotes['USOIL']?.bid || 90.15;
-    const eurusdBid = quotes['EURUSD']?.bid || 1.0875;
-    const gbpusdBid = quotes['GBPUSD']?.bid || 1.2980;
-    const audusdBid = quotes['AUDUSD']?.bid || 0.6582;
-    const usdcadBid = quotes['USDCAD']?.bid || 1.3652;
-    const usdjpyBid = quotes['USDJPY']?.bid || 153.45;
-    const btcusdBid = quotes['BTCUSD']?.bid || 95400.00;
+    const oilBid = quotes['MCL1!']?.bid || quotes['USOIL']?.bid || 87.65;
+    const eurusdBid = quotes['EURUSD']?.bid || 1.1225;
+    const gbpusdBid = quotes['GBPUSD']?.bid || 1.3220;
+    const audusdBid = quotes['AUDUSD']?.bid || 0.6970;
+    const usdcadBid = quotes['USDCAD']?.bid || 1.4256;
+    const usdjpyBid = quotes['USDJPY']?.bid || 158.15;
+    const btcusdBid = quotes['BTCUSD']?.bid || 85850.00;
 
     const assetAnalyses: DailyAssetAnalysis[] = [
       {
@@ -359,14 +359,14 @@ export class DailyIntelService {
     let basePrice = quote ? quote.bid : 4174.50;
 
     if (!quote) {
-      if (symbol.includes('EUR')) basePrice = 1.0875;
-      else if (symbol.includes('GBP')) basePrice = 1.2980;
-      else if (symbol.includes('AUD')) basePrice = 0.6582;
-      else if (symbol.includes('CAD')) basePrice = 1.3652;
-      else if (symbol.includes('JPY')) basePrice = 153.45;
-      else if (symbol.includes('BTC')) basePrice = 95400.00;
+      if (symbol.includes('EUR')) basePrice = 1.1225;
+      else if (symbol.includes('GBP')) basePrice = 1.3220;
+      else if (symbol.includes('AUD')) basePrice = 0.6970;
+      else if (symbol.includes('CAD')) basePrice = 1.4256;
+      else if (symbol.includes('JPY')) basePrice = 158.15;
+      else if (symbol.includes('BTC')) basePrice = 85850.00;
       else if (symbol.includes('XAU') || symbol.includes('GOLD')) basePrice = 4174.50;
-      else if (symbol.includes('MCL') || symbol.includes('OIL') || symbol.includes('WTI') || symbol.includes('WTICO')) basePrice = 90.15;
+      else if (symbol.includes('MCL') || symbol.includes('OIL') || symbol.includes('WTI') || symbol.includes('WTICO')) basePrice = 87.65;
     }
 
     const isGold = symbol.includes('XAU') || symbol.includes('GOLD');
