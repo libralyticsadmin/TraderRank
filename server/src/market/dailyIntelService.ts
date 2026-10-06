@@ -95,7 +95,7 @@ export class DailyIntelService {
     const marketStatus = this.marketFeed.getStatus();
     const quotes = marketStatus.quotes || {};
 
-    const goldBid = quotes['XAUUSD']?.bid || 4131.50;
+    const goldBid = quotes['XAUUSD']?.bid || 4174.50;
     const oilBid = quotes['MCL1!']?.bid || quotes['USOIL']?.bid || 90.15;
     const eurusdBid = quotes['EURUSD']?.bid || 1.0875;
     const gbpusdBid = quotes['GBPUSD']?.bid || 1.2980;
@@ -356,7 +356,7 @@ export class DailyIntelService {
     // Determine Anchor Price
     const marketStatus = this.marketFeed.getStatus();
     const quote = marketStatus.quotes?.[symbol];
-    let basePrice = quote ? quote.bid : 4131.50;
+    let basePrice = quote ? quote.bid : 4174.50;
 
     if (!quote) {
       if (symbol.includes('EUR')) basePrice = 1.0875;
@@ -365,7 +365,7 @@ export class DailyIntelService {
       else if (symbol.includes('CAD')) basePrice = 1.3652;
       else if (symbol.includes('JPY')) basePrice = 153.45;
       else if (symbol.includes('BTC')) basePrice = 95400.00;
-      else if (symbol.includes('XAU') || symbol.includes('GOLD')) basePrice = 4131.50;
+      else if (symbol.includes('XAU') || symbol.includes('GOLD')) basePrice = 4174.50;
       else if (symbol.includes('MCL') || symbol.includes('OIL') || symbol.includes('WTI') || symbol.includes('WTICO')) basePrice = 90.15;
     }
 

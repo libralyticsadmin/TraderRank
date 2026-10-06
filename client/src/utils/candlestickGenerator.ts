@@ -13,7 +13,7 @@ export const SYMBOL_METADATA_MAP: Record<string, SymbolMarketMetadata> = {
   GBPUSD: { basePrice: 1.2721, decimals: 5, tickVolatility: 0.00014, spread: 0.00015 },
   AUDUSD: { basePrice: 0.6582, decimals: 5, tickVolatility: 0.00011, spread: 0.00012 },
   USDCAD: { basePrice: 1.3652, decimals: 5, tickVolatility: 0.00012, spread: 0.00015 },
-  XAUUSD: { basePrice: 2748.5, decimals: 2, tickVolatility: 0.35, spread: 0.25 },
+  XAUUSD: { basePrice: 4174.50, decimals: 2, tickVolatility: 0.65, spread: 0.30 },
   'MCL1!': { basePrice: 72.85, decimals: 2, tickVolatility: 0.04, spread: 0.03 },
   BTCUSD: { basePrice: 95420.0, decimals: 2, tickVolatility: 12.5, spread: 15.0 },
 };
