@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm --prefix client run build",
+  "buildCommand": "npm run --workspace=traderrank-client build",
   "outputDirectory": "client/dist",
   "rewrites": [
     {
