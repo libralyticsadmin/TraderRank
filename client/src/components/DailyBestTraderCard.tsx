@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DailyTraderStats, DailyChampionRecord } from '../../../shared/src/types.ts';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
+import { useTranslation } from '../context/LanguageContext.tsx';
 import { Trophy, Award, Clock, History } from 'lucide-react';
 
 interface DailyBestTraderCardProps {
@@ -15,6 +16,7 @@ export const DailyBestTraderCard: React.FC<DailyBestTraderCardProps> = ({
   totalDailyPips,
   activeTradersToday,
 }) => {
+  const { t } = useTranslation();
   const [timeLeft, setTimeLeft] = useState('');
   const [showHistory, setShowHistory] = useState(false);
   const [championsHistory, setChampionsHistory] = useState<DailyChampionRecord[]>([]);
@@ -80,7 +82,7 @@ export const DailyBestTraderCard: React.FC<DailyBestTraderCardProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
             <Trophy size={18} color="#f59e0b" />
             <strong style={{ fontSize: '13px', color: '#f59e0b', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-              Daily Winning Pips Spotlight
+              {t.dailyBest.spotlight}
             </strong>
             <span
               className="status-pill"
@@ -92,14 +94,14 @@ export const DailyBestTraderCard: React.FC<DailyBestTraderCardProps> = ({
                 padding: '2px 8px',
               }}
             >
-              24h Cross-Platform Window
+              {t.dailyBest.window}
             </span>
           </div>
           <h2 style={{ fontSize: '20px', fontWeight: 800, margin: 0, color: '#fff' }}>
-            Trader of the Day
+            {t.dailyBest.traderOfTheDay}
           </h2>
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Highest net pip performance across XM, Axiory, Exness, and Vantage today
+            {t.dailyBest.subtitle}
           </p>
         </div>
 
@@ -118,7 +120,7 @@ export const DailyBestTraderCard: React.FC<DailyBestTraderCardProps> = ({
             }}
           >
             <Clock size={13} color="#81d8d0" />
-            <span>Rollover: <strong className="tabular" style={{ color: '#fff' }}>{timeLeft} UTC</strong></span>
+            <span>{t.dailyBest.rollover} <strong className="tabular" style={{ color: '#fff' }}>{timeLeft} UTC</strong></span>
           </div>
 
           <button
@@ -127,7 +129,7 @@ export const DailyBestTraderCard: React.FC<DailyBestTraderCardProps> = ({
             style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
             <History size={13} />
-            {showHistory ? 'Hide Hall of Fame' : 'Daily Champions'}
+            {showHistory ? t.dailyBest.hideHallOfFame : t.dailyBest.dailyChampions}
           </button>
         </div>
       </div>
@@ -182,12 +184,12 @@ export const DailyBestTraderCard: React.FC<DailyBestTraderCardProps> = ({
                   border: '1px solid rgba(245, 158, 11, 0.3)',
                 }}
               >
-                DAILY CROWN
+                {t.dailyBest.dailyCrown}
               </span>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', color: 'var(--text-muted)' }}>
-              <span>Platforms Traded:</span>
+              <span>{t.dailyBest.platformsTraded}</span>
               <div style={{ display: 'flex', gap: '6px' }}>
                 {champion.brokers.map(b => (
                   <span
@@ -208,32 +210,32 @@ export const DailyBestTraderCard: React.FC<DailyBestTraderCardProps> = ({
                 ))}
               </div>
               <span>•</span>
-              <span>Win Rate: <strong style={{ color: '#0abab5' }}>{champion.dailyWinRate}%</strong> ({champion.dailyWinningTrades}/{champion.dailyTradesCount} trades)</span>
+              <span>{t.dailyBest.winRate} <strong style={{ color: '#0abab5' }}>{champion.dailyWinRate}%</strong> ({champion.dailyWinningTrades}/{champion.dailyTradesCount} {t.dailyBest.trades})</span>
             </div>
           </div>
 
           <div style={{ textAlign: 'right' }}>
             <span style={{ fontSize: '11px', color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Today's Net Gain
+              {t.dailyBest.todayNetGain}
             </span>
             <div className="tabular pip-positive" style={{ fontSize: '24px', fontWeight: 900 }}>
-              +{champion.dailyTotalPips.toLocaleString()} <span style={{ fontSize: '14px' }}>pips</span>
+              +{champion.dailyTotalPips.toLocaleString()} <span style={{ fontSize: '14px' }}>{t.dailyBest.pips}</span>
             </div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-              Closed: +{champion.dailyClosedPips} | Float: {champion.dailyFloatingPips >= 0 ? `+${champion.dailyFloatingPips}` : champion.dailyFloatingPips}
+              {t.dailyBest.closed} +{champion.dailyClosedPips} | {t.dailyBest.float} {champion.dailyFloatingPips >= 0 ? `+${champion.dailyFloatingPips}` : champion.dailyFloatingPips}
             </div>
           </div>
         </div>
       ) : (
         <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
-          <p style={{ fontSize: '14px' }}>No winning pips recorded yet for today's session.</p>
+          <p style={{ fontSize: '14px' }}>{t.dailyBest.noTrades}</p>
         </div>
       )}
 
       {/* Global Day Stats Footnote */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px', fontSize: '12px', color: 'var(--text-faint)' }}>
-        <span>Total Pips Generated Today: <strong className="tabular" style={{ color: '#fff' }}>+{totalDailyPips.toLocaleString()} pips</strong></span>
-        <span>Active Competing Traders: <strong className="tabular" style={{ color: '#fff' }}>{activeTradersToday}</strong></span>
+        <span>{t.dailyBest.totalPipsGenerated} <strong className="tabular" style={{ color: '#fff' }}>+{totalDailyPips.toLocaleString()} {t.dailyBest.pips}</strong></span>
+        <span>{t.dailyBest.activeCompeting} <strong className="tabular" style={{ color: '#fff' }}>{activeTradersToday}</strong></span>
       </div>
 
       {/* Historical Daily Champions Drawer */}
@@ -247,7 +249,7 @@ export const DailyBestTraderCard: React.FC<DailyBestTraderCardProps> = ({
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
             <Award size={15} color="#fbbf24" />
-            <strong style={{ fontSize: '13px', color: '#e2e8f0' }}>Hall of Fame — Previous Daily Best Traders</strong>
+            <strong style={{ fontSize: '13px', color: '#e2e8f0' }}>{t.dailyBest.hallOfFameTitle}</strong>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
             {championsHistory.map(rec => (
@@ -274,10 +276,10 @@ export const DailyBestTraderCard: React.FC<DailyBestTraderCardProps> = ({
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div className="tabular pip-positive" style={{ fontSize: '14px', fontWeight: 800 }}>
-                    +{rec.pipsWon} pips
+                    +{rec.pipsWon} {t.dailyBest.pips}
                   </div>
                   <div style={{ fontSize: '10px', color: 'var(--text-faint)' }}>
-                    {rec.winRate}% win rate
+                    {rec.winRate}% {t.leaderboard.winRate}
                   </div>
                 </div>
               </div>

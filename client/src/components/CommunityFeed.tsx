@@ -3,6 +3,7 @@ import { Award, TrendingUp, Zap, Radio, Target, Flame } from 'lucide-react';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { Broker } from '../../../shared/src/types.ts';
+import { useTranslation } from '../context/LanguageContext.tsx';
 
 export interface FeedEvent {
   id: string;
@@ -26,6 +27,7 @@ export interface FeedEvent {
 }
 
 export const CommunityFeed: React.FC = () => {
+  const { t } = useTranslation();
   const [filter, setFilter] = useState<'ALL' | 'WINS' | 'BADGES' | 'TOURNAMENTS'>('ALL');
   const [events, setEvents] = useState<FeedEvent[]>([
     {
@@ -144,17 +146,17 @@ export const CommunityFeed: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
               <Target size={18} color="#fbbf24" />
               <span style={{ fontSize: '11px', fontWeight: 800, color: '#fbbf24', letterSpacing: '0.05em' }}>
-                COMMUNITY CO-OP CHALLENGE
+                {t.community.coopChallengeTitle}
               </span>
             </div>
-            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>The 5,000 Pips Global Harvest</h3>
+            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>{t.community.challengeTitle}</h3>
             <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
-              All traders unite: harvest 5,000 collective winning pips this week to unlock +500 Bonus XP for all participants!
+              {t.community.challengeDesc}
             </p>
           </div>
 
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Collective Harvest</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t.community.collectiveHarvest}</div>
             <div style={{ fontSize: '22px', fontWeight: 900, color: '#fbbf24' }}>
               3,640 <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>/ 5,000 Pips</span>
             </div>
@@ -164,8 +166,8 @@ export const CommunityFeed: React.FC = () => {
         {/* Progress Bar */}
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px' }}>
-            <span>72.8% Completed</span>
-            <span>Ends in 3 days</span>
+            <span>72.8% {t.community.completed}</span>
+            <span>{t.community.endsInDays}</span>
           </div>
           <div style={{ width: '100%', height: '8px', borderRadius: '4px', background: 'rgba(255, 255, 255, 0.08)', overflow: 'hidden' }}>
             <div
@@ -198,9 +200,9 @@ export const CommunityFeed: React.FC = () => {
               <Radio size={18} color="var(--accent-green)" />
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800 }}>Live Trade Bulletin &amp; Cheers</h3>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800 }}>{t.community.liveBulletinTitle}</h3>
               <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>
-                Real-time stream of verified broker executions, rank climbs, and badges
+                {t.community.liveBulletinDesc}
               </p>
             </div>
           </div>
@@ -208,10 +210,10 @@ export const CommunityFeed: React.FC = () => {
           {/* Activity Filters */}
           <div style={{ display: 'flex', gap: '4px', background: 'rgba(0, 0, 0, 0.4)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
             {[
-              { id: 'ALL', label: 'All Activity' },
-              { id: 'WINS', label: 'Winning Trades' },
-              { id: 'BADGES', label: 'Badges & Ranks' },
-              { id: 'TOURNAMENTS', label: 'Battles' },
+              { id: 'ALL', label: t.community.filterAll },
+              { id: 'WINS', label: t.community.filterWins },
+              { id: 'BADGES', label: t.community.filterBadges },
+              { id: 'TOURNAMENTS', label: t.community.filterTournaments },
             ].map(f => (
               <button
                 key={f.id}
@@ -261,9 +263,9 @@ export const CommunityFeed: React.FC = () => {
 
                   {ev.type === 'TRADE_WIN' && (
                     <div style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span>Closed</span>
+                      <span>{t.community.closedTradeText}</span>
                       <strong style={{ color: 'var(--accent-cyan)' }}>{ev.details.symbol}</strong>
-                      <span>with</span>
+                      <span>{t.community.withPips}</span>
                       <strong style={{ color: 'var(--accent-green)' }}>+{ev.details.pips} pips</strong>
                       <span style={{ color: 'var(--text-muted)' }}>(+${ev.details.profit})</span>
                     </div>
@@ -272,25 +274,23 @@ export const CommunityFeed: React.FC = () => {
                   {ev.type === 'BADGE_UNLOCKED' && (
                     <div style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <Award size={14} color="#fbbf24" />
-                      <span>Unlocked the</span>
+                      <span>{t.community.unlockedBadgeText}</span>
                       <strong style={{ color: '#fbbf24' }}>{ev.details.badgeName}</strong>
-                      <span>Honor Badge!</span>
                     </div>
                   )}
 
                   {ev.type === 'RANK_PROMOTION' && (
                     <div style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <TrendingUp size={14} color="var(--accent-green)" />
-                      <span>Climbed to</span>
+                      <span>{t.community.climbedRankText}</span>
                       <strong style={{ color: 'var(--accent-green)' }}>#{ev.details.newRank}</strong>
-                      <span>on the Daily Leaderboard!</span>
                     </div>
                   )}
 
                   {ev.type === 'TOURNAMENT_JOIN' && (
                     <div style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <Zap size={14} color="var(--accent-cyan)" />
-                      <span>Enlisted into</span>
+                      <span>{t.community.enlistedTournamentText}</span>
                       <strong style={{ color: 'var(--accent-cyan)' }}>{ev.details.tournamentName}</strong>
                     </div>
                   )}
@@ -316,7 +316,7 @@ export const CommunityFeed: React.FC = () => {
                 }}
               >
                 <Flame size={14} color={ev.hasCheered ? '#fbbf24' : 'var(--text-muted)'} />
-                <span>Cheer</span>
+                <span>{t.community.cheerBtn}</span>
                 <span style={{ fontSize: '11px', opacity: 0.8 }}>({ev.cheersCount})</span>
               </button>
             </div>

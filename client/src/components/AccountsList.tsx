@@ -1,6 +1,8 @@
+import React from 'react';
 import { TradingAccount } from '../../../shared/src/types.ts';
 import { Shield, Trash2, Server } from 'lucide-react';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
+import { useTranslation } from '../context/LanguageContext.tsx';
 
 interface AccountsListProps {
   accounts: TradingAccount[];
@@ -9,26 +11,28 @@ interface AccountsListProps {
 }
 
 export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconnect, onOpenWizard }) => {
+  const { t } = useTranslation();
+
   return (
     <div className="card-panel">
       <div className="panel-header">
         <h3 className="panel-title">
           <Server size={18} color="#81d8d0" />
-          Connected Accounts
+          {t.accounts.connectedAccounts}
           <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 400 }}>
-            ({accounts.length} active)
+            ({accounts.length} {t.accounts.activeAccounts})
           </span>
         </h3>
         <button className="btn-secondary" onClick={onOpenWizard} style={{ padding: '6px 12px', fontSize: '13px' }}>
-          + Add Account
+          + {t.accounts.addAccount}
         </button>
       </div>
 
       {accounts.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--text-muted)' }}>
-          <p style={{ marginBottom: '12px', fontSize: '14px' }}>No trading accounts connected yet.</p>
+          <p style={{ marginBottom: '12px', fontSize: '14px' }}>{t.accounts.noAccountsDesc}</p>
           <button className="btn-primary" onClick={onOpenWizard}>
-            Connect XM, Axiory, Exness or Vantage
+            {t.connector.selectBroker} (IC Markets, XM, Axiory, Exness)
           </button>
         </div>
       ) : (
@@ -68,20 +72,20 @@ export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconne
                       {acc.integrationType === 'exness_native' ? 'Exness Native API' : `MT Gateway (${acc.platform})`}
                     </span>
                     <span className="status-pill status-connected">
-                      <span className="status-dot"></span> Active Feed
+                      <span className="status-dot"></span> {t.accounts.activeFeed}
                     </span>
                   </div>
                   <div style={{ display: 'flex', gap: '14px', fontSize: '12px', color: 'var(--text-muted)' }}>
-                    <span>Account: <strong className="tabular" style={{ color: '#fff' }}>{acc.accountNumber}</strong></span>
-                    {acc.serverName && <span>Server: <strong style={{ color: '#fff' }}>{acc.serverName}</strong></span>}
-                    <span>Leverage: <strong className="tabular" style={{ color: '#fff' }}>1:{acc.leverage}</strong></span>
+                    <span>{t.accounts.accountLabel}: <strong className="tabular" style={{ color: '#fff' }}>{acc.accountNumber}</strong></span>
+                    {acc.serverName && <span>{t.accounts.serverLabel}: <strong style={{ color: '#fff' }}>{acc.serverName}</strong></span>}
+                    <span>{t.accounts.leverageLabel}: <strong className="tabular" style={{ color: '#fff' }}>1:{acc.leverage}</strong></span>
                   </div>
                 </div>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Equity / Balance</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{t.accounts.equityBalance}</div>
                   <div className="tabular" style={{ fontSize: '15px', fontWeight: 700 }}>
                     ${acc.equity.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </div>
@@ -90,14 +94,14 @@ export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconne
                 <div style={{ display: 'flex', gap: '6px' }}>
                   <button
                     className="btn-secondary"
-                    title="Vault Secret Reference"
+                    title={t.accounts.vaultSecretRef}
                     style={{ padding: '8px', color: 'var(--accent-cyan)' }}
                   >
                     <Shield size={16} />
                   </button>
                   <button
                     className="btn-secondary"
-                    title="Disconnect Account"
+                    title={t.accounts.disconnectTitle}
                     onClick={() => onDisconnect(acc.id)}
                     style={{ padding: '8px', color: 'var(--accent-red)' }}
                   >

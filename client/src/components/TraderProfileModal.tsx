@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, ShieldCheck, CheckCircle2, UserPlus } from 'lucide-react';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { Broker } from '../../../shared/src/types.ts';
+import { useTranslation } from '../context/LanguageContext.tsx';
 
 export interface TraderProfileData {
   userId: string;
@@ -29,6 +30,7 @@ interface TraderProfileModalProps {
 }
 
 export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, onClose }) => {
+  const { t } = useTranslation();
   if (!trader) return null;
 
   const [isFollowing, setIsFollowing] = useState(trader.isFollowing ?? false);
@@ -91,11 +93,11 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                     gap: '4px',
                   }}
                 >
-                  <ShieldCheck size={12} /> {trader.broker} VERIFIED
+                  <ShieldCheck size={12} /> {trader.broker} {t.profile.verifiedSince}
                 </span>
               </div>
               <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                {trader.tier} • Level {trader.level} ({trader.xp.toLocaleString()} XP) • Verified Since {trader.verifiedSince}
+                {trader.tier} • {t.profile.levelLabel} {trader.level} ({trader.xp.toLocaleString()} XP) • {t.profile.verifiedSinceLabel} {trader.verifiedSince}
               </div>
             </div>
           </div>
@@ -129,7 +131,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                 border: trader.rank <= 3 ? '1px solid rgba(245, 158, 11, 0.4)' : '1px solid var(--border-subtle)',
               }}
             >
-              #{trader.rank} Global Ranking
+              #{trader.rank} {t.profile.globalRankingBadge}
             </span>
           </div>
 
@@ -152,11 +154,11 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
           >
             {isFollowing ? (
               <>
-                <CheckCircle2 size={14} /> FOLLOWING
+                <CheckCircle2 size={14} /> {t.profile.followingBtn}
               </>
             ) : (
               <>
-                <UserPlus size={14} /> FOLLOW TRADER
+                <UserPlus size={14} /> {t.profile.followBtn}
               </>
             )}
           </button>
@@ -172,42 +174,42 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
           }}
         >
           <div style={{ padding: '14px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Net Winning Pips</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.profile.netWinningPips}</div>
             <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--accent-green)', marginTop: '2px' }}>
               +{trader.netPips.toFixed(1)}
             </div>
           </div>
 
           <div style={{ padding: '14px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Win Rate</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.profile.winRate}</div>
             <div style={{ fontSize: '20px', fontWeight: 800, color: '#fbbf24', marginTop: '2px' }}>
               {trader.winRate}%
             </div>
           </div>
 
           <div style={{ padding: '14px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Profit Factor</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.profile.profitFactor}</div>
             <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--accent-cyan)', marginTop: '2px' }}>
               {trader.profitFactor.toFixed(2)}
             </div>
           </div>
 
           <div style={{ padding: '14px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Max Drawdown</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.profile.maxDrawdown}</div>
             <div style={{ fontSize: '18px', fontWeight: 800, color: trader.maxDrawdown > 5 ? '#ef4444' : 'var(--text-main)', marginTop: '2px' }}>
               {trader.maxDrawdown}%
             </div>
           </div>
 
           <div style={{ padding: '14px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Total Trades</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.profile.totalTrades}</div>
             <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-main)', marginTop: '2px' }}>
               {trader.totalTrades}
             </div>
           </div>
 
           <div style={{ padding: '14px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Best Trade</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.profile.bestTrade}</div>
             <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent-green)', marginTop: '2px' }}>
               +{trader.bestTradePips} pips
             </div>
@@ -215,7 +217,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
         </div>
 
         {/* Recent Verified Trades */}
-        <h4 style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: 800 }}>Recent Verified Executions</h4>
+        <h4 style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: 800 }}>{t.profile.recentVerifiedExecutions}</h4>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {mockRecentTrades.map(trade => (
             <div

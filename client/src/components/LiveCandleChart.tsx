@@ -42,6 +42,7 @@ import {
 import { CustomIndicatorModal } from './CustomIndicatorModal.tsx';
 import { AiChartAnalysisModal } from './AiChartAnalysisModal.tsx';
 import { ForexFactoryCalendarModal } from './ForexFactoryCalendarModal.tsx';
+import { useTranslation } from '../context/LanguageContext.tsx';
 
 interface LiveCandleChartProps {
   initialSymbol?: string;
@@ -93,6 +94,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
   initialTimeframe = '1m',
   height = 430,
 }) => {
+  const { t } = useTranslation();
   const [symbol, setSymbol] = useState<string>(initialSymbol);
   const [timeframe, setTimeframe] = useState<CandlestickTimeframe>(initialTimeframe);
   const [bars, setBars] = useState<CandlestickBar[]>([]);
@@ -1336,7 +1338,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
               }}
             >
               <Sliders size={13} />
-              Indicators ({activeOverlayCount + (indicators.subIndicator !== 'NONE' ? 1 : 0)})
+              {t.chart.indicators} ({activeOverlayCount + (indicators.subIndicator !== 'NONE' ? 1 : 0)})
               <ChevronDown size={13} />
             </button>
 
@@ -1376,8 +1378,8 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Code size={16} color="#0abab5" />
                     <div>
-                      <div style={{ fontSize: '12px', fontWeight: 800, color: '#fff' }}>+ Create Custom Indicator</div>
-                      <div style={{ fontSize: '10px', color: '#81d8d0' }}>TradingView Pine Script Studio</div>
+                      <div style={{ fontSize: '12px', fontWeight: 800, color: '#fff' }}>{t.chart.createCustomIndicator}</div>
+                      <div style={{ fontSize: '10px', color: '#81d8d0' }}>{t.chart.pineScriptStudio}</div>
                     </div>
                   </div>
                   <Sparkles size={14} color="#0abab5" />
@@ -1386,13 +1388,13 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
                 {/* Smart Money Concepts (SMC) Section */}
                 <div style={{ fontSize: '10px', fontWeight: 800, color: '#0abab5', marginBottom: '6px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <Layers size={12} color="#0abab5" />
-                  Smart Money Concepts (SMC)
+                  {t.chart.smcSectionTitle}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '12px' }}>
                   {[
-                    { key: 'demandSupply', label: '⚡ Demand & Supply Zones', desc: 'Institutional unmitigated Order Blocks', color: '#0abab5' },
-                    { key: 'bos', label: '📊 Break of Structure (BOS / CHoCH)', desc: 'Swing fractals & structural breaks', color: '#38bdf8' },
+                    { key: 'demandSupply', label: t.chart.demandSupplyLabel, desc: t.chart.demandSupplyDesc, color: '#0abab5' },
+                    { key: 'bos', label: t.chart.bosLabel, desc: t.chart.bosDesc, color: '#38bdf8' },
                   ].map(item => {
                     const isChecked = indicators[item.key as keyof Omit<IndicatorConfig, 'subIndicator'>];
                     return (
@@ -1439,7 +1441,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
                 {customIndicators.length > 0 && (
                   <div style={{ marginBottom: '12px' }}>
                     <div style={{ fontSize: '10px', fontWeight: 800, color: '#ec4899', marginBottom: '6px', textTransform: 'uppercase' }}>
-                      My Custom Indicators ({customIndicators.length})
+                      {t.chart.myCustomIndicators} ({customIndicators.length})
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       {customIndicators.map(c => {
@@ -1501,7 +1503,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
 
                 {/* Built-in Overlays Section */}
                 <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--accent-cyan)', marginBottom: '6px', textTransform: 'uppercase' }}>
-                  Overlay Indicators (Main Chart)
+                  {t.chart.overlayIndicators}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '12px' }}>
@@ -1554,7 +1556,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
 
                 {/* Built-in Oscillator Sub-Panels */}
                 <div style={{ fontSize: '10px', fontWeight: 800, color: '#fbbf24', marginBottom: '6px', textTransform: 'uppercase' }}>
-                  Oscillator Sub-Panel
+                  {t.chart.oscillatorSubPanel}
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
@@ -1563,7 +1565,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
                     { id: 'MACD', label: 'MACD (12,26,9)' },
                     { id: 'STOCH', label: 'Stoch (14,3,3)' },
                     { id: 'ATR', label: 'ATR (14)' },
-                    { id: 'NONE', label: 'Hide Sub' },
+                    { id: 'NONE', label: t.chart.hideSub },
                   ].map(item => {
                     const isSelected = indicators.subIndicator === item.id;
                     return (
@@ -1625,7 +1627,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
             }}
           >
             <Layers size={13} color={indicators.bos || indicators.demandSupply ? '#0abab5' : 'currentColor'} />
-            <span>SMC (BOS • Demand)</span>
+            <span>{t.chart.smcQuickBtn}</span>
             {(indicators.bos || indicators.demandSupply) && (
               <span
                 style={{
@@ -1656,7 +1658,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
               cursor: 'pointer',
             }}
           >
-            <Code size={13} /> + Pine Script
+            <Code size={13} /> {t.chart.pineScriptQuickBtn}
           </button>
 
           {/* AI Multi-Timeframe Analysis Launcher Button (15m, 4h, 1D, 1W) */}
@@ -1678,7 +1680,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
             }}
           >
             <Brain size={14} color="#c084fc" />
-            <span>AI Multi-TF (15m • 4h • 1D • 1W)</span>
+            <span>{t.chart.aiMultiTfQuickBtn}</span>
             <Sparkles size={12} color="#0abab5" />
           </button>
 
@@ -1700,7 +1702,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
             }}
           >
             <Calendar size={13} color="#ef4444" />
-            <span>ForexFactory ({calendarData?.highImpactCount || 0} Red Folders)</span>
+            <span>{t.chart.forexFactoryQuickBtn} ({calendarData?.highImpactCount || 0} {t.forexCalendar.redFolders})</span>
             <Flame size={12} fill="#ef4444" />
           </button>
         </div>
@@ -1721,7 +1723,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
               gap: '6px',
             }}
           >
-            <Zap size={12} fill="#0abab5" /> AllTick Stream Active (7-Day Token)
+            <Zap size={12} fill="#0abab5" /> {t.chart.allTickLiveBadge}
           </span>
 
           <button
@@ -1739,7 +1741,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
               gap: '4px',
               fontSize: '11px',
             }}
-            title="Refresh Candlesticks"
+            title={t.chart.refreshCandles}
           >
             <RefreshCw size={12} className={isLoading ? 'animate-spin' : ''} />
           </button>
@@ -1757,7 +1759,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
           fontSize: '11px',
         }}
       >
-        <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Quick Indicators:</span>
+        <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{t.chart.quickIndicators}</span>
         <button
           onClick={() => toggleIndicator('bollinger')}
           style={{
@@ -1881,7 +1883,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
           }}
         >
           <Target size={12} />
-          {isAiPlottedOnChart ? 'AI Levels (Active)' : 'AI Key Levels'}
+          {isAiPlottedOnChart ? t.chart.aiLevelsActive : t.chart.aiKeyLevels}
         </button>
 
         {/* ForexFactory Red Folder Quick Pill */}
@@ -1902,7 +1904,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
           }}
         >
           <Flame size={12} fill="#ef4444" />
-          <span>News Calendar</span>
+          <span>{t.chart.newsCalendar}</span>
         </button>
 
         {/* Custom Indicators Quick Buttons */}
@@ -2074,7 +2076,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-cyan)', fontSize: '13px', fontWeight: 700 }}>
-              <RefreshCw size={16} className="animate-spin" /> Loading AllTick K-Line Stream...
+              <RefreshCw size={16} className="animate-spin" /> {t.chart.loadingKLine}
             </div>
           </div>
         )}
@@ -2095,7 +2097,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
               onClick={() => setSubIndicator('NONE')}
               style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '10px' }}
             >
-              ✕ Close Sub-Panel
+              {t.chart.closeSubPanel}
             </button>
           </div>
           <div style={{ position: 'relative', width: '100%', height: '90px' }}>
@@ -2115,10 +2117,10 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', fontSize: '11px', color: '#64748b' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#0abab5', boxShadow: '0 0 6px #0abab5' }} />
-          <span>AllTick Live Stream: <strong>ForexFactory Red Folder Calendar & AI Engine Active</strong></span>
+          <span>{t.chart.liveStreamActive}</span>
         </div>
         <div>
-          Token: <span style={{ color: 'var(--accent-cyan)' }}>4554c41c...-c-app</span> (7-Day Trial)
+          {t.chart.tokenTrial}
         </div>
       </div>
 

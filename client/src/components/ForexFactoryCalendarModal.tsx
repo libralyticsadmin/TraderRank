@@ -10,6 +10,7 @@ import {
   ForexFactoryEvent,
   NewsImpact,
 } from '../../../shared/src/types.ts';
+import { useTranslation } from '../context/LanguageContext.tsx';
 
 interface ForexFactoryCalendarModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
   onClose,
   defaultCurrency = 'ALL',
 }) => {
+  const { t } = useTranslation();
   const [data, setData] = useState<EconomicCalendarResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
@@ -191,7 +193,7 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>
-                  ForexFactory Economic Calendar
+                  {t.forexCalendar.modalTitle}
                 </h2>
                 <span
                   style={{
@@ -208,11 +210,11 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
                     gap: '4px',
                   }}
                 >
-                  <Flame size={12} fill="#ef4444" /> Live Red Folder Feed
+                  <Flame size={12} fill="#ef4444" /> {t.forexCalendar.liveRedFolderFeed}
                 </span>
               </div>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                Real-time macroeconomic news, interest rate decisions, inflation &amp; employment data
+                {t.forexCalendar.subtitleDetailed}
               </p>
             </div>
           </div>
@@ -234,10 +236,10 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
                 fontWeight: 700,
                 cursor: 'pointer',
               }}
-              title="Refresh ForexFactory calendar feed"
+              title={t.forexCalendar.refreshCalendar}
             >
               <RefreshCw size={13} className={isRefreshing ? 'animate-spin' : ''} />
-              Refresh
+              {t.forexCalendar.refreshCalendar}
             </button>
 
             <button
@@ -290,7 +292,7 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
                   gap: '4px',
                 }}
               >
-                <AlertTriangle size={13} color="#000" /> NEXT HIGH IMPACT
+                <AlertTriangle size={13} color="#000" /> {t.forexCalendar.nextHighImpact}
               </span>
               <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>
                 [{data.nextHighImpactEvent.country}] {data.nextHighImpactEvent.title}
@@ -299,16 +301,16 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '12px', fontFamily: 'monospace' }}>
               <span style={{ color: 'var(--text-muted)' }}>
-                Time: <strong style={{ color: '#fff' }}>{data.nextHighImpactEvent.timeString}</strong> ({data.nextHighImpactEvent.timeUntilFormatted})
+                {t.forexCalendar.time} <strong style={{ color: '#fff' }}>{data.nextHighImpactEvent.timeString}</strong> ({data.nextHighImpactEvent.timeUntilFormatted})
               </span>
               {data.nextHighImpactEvent.forecast && (
                 <span style={{ color: '#81d8d0' }}>
-                  Forecast: <strong>{data.nextHighImpactEvent.forecast}</strong>
+                  {t.forexCalendar.forecast}: <strong>{data.nextHighImpactEvent.forecast}</strong>
                 </span>
               )}
               {data.nextHighImpactEvent.previous && (
                 <span style={{ color: '#94a3b8' }}>
-                  Previous: <strong>{data.nextHighImpactEvent.previous}</strong>
+                  {t.forexCalendar.previous}: <strong>{data.nextHighImpactEvent.previous}</strong>
                 </span>
               )}
             </div>
@@ -331,7 +333,7 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
           {/* Impact Filter Chips */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, marginRight: '4px' }}>
-              Impact:
+              {t.forexCalendar.impact}
             </span>
             <button
               onClick={() => setSelectedImpact('ALL')}
@@ -346,7 +348,7 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
                 cursor: 'pointer',
               }}
             >
-              All Events ({data?.totalCount || 0})
+              {t.forexCalendar.allEvents} ({data?.totalCount || 0})
             </button>
             <button
               onClick={() => setSelectedImpact('HIGH')}
@@ -361,7 +363,7 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
                 cursor: 'pointer',
               }}
             >
-              🔴 High Impact ({data?.highImpactCount || 0})
+              🔴 {t.forexCalendar.highImpact} ({data?.highImpactCount || 0})
             </button>
             <button
               onClick={() => setSelectedImpact('MEDIUM')}
@@ -376,7 +378,7 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
                 cursor: 'pointer',
               }}
             >
-              🟠 Medium ({data?.mediumImpactCount || 0})
+              🟠 {t.forexCalendar.mediumImpact} ({data?.mediumImpactCount || 0})
             </button>
             <button
               onClick={() => setSelectedImpact('LOW')}
@@ -391,7 +393,7 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
                 cursor: 'pointer',
               }}
             >
-              🟡 Low
+              🟡 {t.forexCalendar.lowImpact}
             </button>
           </div>
 
@@ -404,7 +406,7 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
                 onChange={e => setHidePassed(e.target.checked)}
                 style={{ accentColor: '#0abab5', cursor: 'pointer' }}
               />
-              Hide Past Releases
+              {t.forexCalendar.hidePast}
             </label>
           </div>
         </div>
@@ -422,7 +424,7 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
           }}
         >
           <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, marginRight: '4px' }}>
-            Currency:
+            {t.forexCalendar.currency}
           </span>
           {CURRENCIES.map(curr => {
             const active = selectedCurrency === curr;
@@ -453,12 +455,12 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
           {isLoading ? (
             <div style={{ padding: '60px 0', textAlign: 'center' }}>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', color: 'var(--accent-cyan)', fontSize: '14px', fontWeight: 700 }}>
-                <RefreshCw size={18} className="animate-spin" /> Ingesting ForexFactory Economic Calendar...
+                <RefreshCw size={18} className="animate-spin" /> {t.forexCalendar.ingesting}
               </div>
             </div>
           ) : filteredEvents.length === 0 ? (
             <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
-              No economic releases matching the selected filter criteria.
+              {t.forexCalendar.noEventsMatching}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -480,7 +482,7 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
                   >
                     <Calendar size={13} color="#0abab5" />
                     <span style={{ fontSize: '12px', fontWeight: 800, color: '#fff' }}>{dateStr}</span>
-                    <span style={{ fontSize: '11px', color: '#64748b' }}>({events.length} events)</span>
+                    <span style={{ fontSize: '11px', color: '#64748b' }}>({events.length} {t.forexCalendar.eventsCount})</span>
                   </div>
 
                   {/* Events Table Container */}
@@ -495,13 +497,13 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                       <thead>
                         <tr style={{ background: 'rgba(0, 0, 0, 0.4)', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', textAlign: 'left', color: 'var(--text-muted)', fontSize: '10px', textTransform: 'uppercase' }}>
-                          <th style={{ padding: '10px 14px', width: '110px' }}>Time</th>
-                          <th style={{ padding: '10px 10px', width: '70px' }}>Cur</th>
-                          <th style={{ padding: '10px 10px', width: '80px' }}>Impact</th>
-                          <th style={{ padding: '10px 14px' }}>Event</th>
-                          <th style={{ padding: '10px 14px', width: '90px', textAlign: 'right' }}>Actual</th>
-                          <th style={{ padding: '10px 14px', width: '90px', textAlign: 'right' }}>Forecast</th>
-                          <th style={{ padding: '10px 14px', width: '90px', textAlign: 'right' }}>Previous</th>
+                          <th style={{ padding: '10px 14px', width: '110px' }}>{t.forexCalendar.timeCol}</th>
+                          <th style={{ padding: '10px 10px', width: '70px' }}>{t.forexCalendar.curCol}</th>
+                          <th style={{ padding: '10px 10px', width: '80px' }}>{t.forexCalendar.impactCol}</th>
+                          <th style={{ padding: '10px 14px' }}>{t.forexCalendar.eventCol}</th>
+                          <th style={{ padding: '10px 14px', width: '90px', textAlign: 'right' }}>{t.forexCalendar.actualCol}</th>
+                          <th style={{ padding: '10px 14px', width: '90px', textAlign: 'right' }}>{t.forexCalendar.forecastCol}</th>
+                          <th style={{ padding: '10px 14px', width: '90px', textAlign: 'right' }}>{t.forexCalendar.previousCol}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -609,10 +611,10 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#ef4444', boxShadow: '0 0 6px #ef4444' }} />
-            <span>ForexFactory Live Economic Feed Active • Automatic 5-minute sync</span>
+            <span>{t.forexCalendar.feedActive}</span>
           </div>
           <div>
-            Data Source: <strong style={{ color: '#81d8d0' }}>ForexFactory / FairEconomy</strong>
+            {t.forexCalendar.dataSource} <strong style={{ color: '#81d8d0' }}>ForexFactory / FairEconomy</strong>
           </div>
         </div>
       </div>

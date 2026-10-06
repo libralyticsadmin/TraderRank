@@ -3,6 +3,7 @@ import { Swords, Clock, CheckCircle2, Zap, ChevronRight, Users, Flame } from 'lu
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { Broker } from '../../../shared/src/types.ts';
+import { useTranslation } from '../context/LanguageContext.tsx';
 
 export interface Tournament {
   id: string;
@@ -38,6 +39,7 @@ export interface TournamentParticipant {
 }
 
 export const TournamentArena: React.FC = () => {
+  const { t } = useTranslation();
   const [selectedTournamentId, setSelectedTournamentId] = useState<string>('tourney_weekly_blitz');
   const [isUserEntered, setIsUserEntered] = useState<boolean>(false);
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({
@@ -173,12 +175,12 @@ export const TournamentArena: React.FC = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Tournament Selector Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
-        {tournaments.map(t => {
-          const isSelected = t.id === selectedTournamentId;
+        {tournaments.map(tourney => {
+          const isSelected = tourney.id === selectedTournamentId;
           return (
             <div
-              key={t.id}
-              onClick={() => setSelectedTournamentId(t.id)}
+              key={tourney.id}
+              onClick={() => setSelectedTournamentId(tourney.id)}
               style={{
                 background: isSelected
                   ? 'linear-gradient(135deg, rgba(10, 186, 181, 0.15) 0%, rgba(15, 23, 42, 0.8) 100%)'
@@ -198,26 +200,26 @@ export const TournamentArena: React.FC = () => {
                     fontWeight: 800,
                     padding: '3px 8px',
                     borderRadius: '6px',
-                    background: t.type === 'WEEKLY_SPRINT' ? 'rgba(129, 216, 208, 0.2)' : 'rgba(245, 158, 11, 0.2)',
-                    color: t.type === 'WEEKLY_SPRINT' ? 'var(--accent-cyan)' : '#fbbf24',
-                    border: `1px solid ${t.type === 'WEEKLY_SPRINT' ? 'rgba(129, 216, 208, 0.4)' : 'rgba(245, 158, 11, 0.4)'}`,
+                    background: tourney.type === 'WEEKLY_SPRINT' ? 'rgba(129, 216, 208, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                    color: tourney.type === 'WEEKLY_SPRINT' ? 'var(--accent-cyan)' : '#fbbf24',
+                    border: `1px solid ${tourney.type === 'WEEKLY_SPRINT' ? 'rgba(129, 216, 208, 0.4)' : 'rgba(245, 158, 11, 0.4)'}`,
                   }}
                 >
-                  {t.type.replace('_', ' ')}
+                  {tourney.type === 'WEEKLY_SPRINT' ? t.arena.weeklySprint : t.arena.monthlyChampionship}
                 </span>
                 <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Users size={13} /> {t.entrantsCount} Traders
+                  <Users size={13} /> {tourney.entrantsCount} {t.arena.participants}
                 </span>
               </div>
 
-              <h4 style={{ margin: '0 0 6px', fontSize: '18px', fontWeight: 800 }}>{t.title}</h4>
-              <p style={{ margin: '0 0 14px', fontSize: '12px', color: 'var(--text-muted)' }}>{t.subtitle}</p>
+              <h4 style={{ margin: '0 0 6px', fontSize: '18px', fontWeight: 800 }}>{tourney.title}</h4>
+              <p style={{ margin: '0 0 14px', fontSize: '12px', color: 'var(--text-muted)' }}>{tourney.subtitle}</p>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
                 <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Prize Pool</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.arena.prizePool}</div>
                   <div style={{ fontSize: '16px', fontWeight: 800, color: '#fbbf24' }}>
-                    ${t.prizePoolUsd.toLocaleString()} <span style={{ fontSize: '12px', color: 'var(--accent-cyan)' }}>+{t.prizePoolXp} XP</span>
+                    ${tourney.prizePoolUsd.toLocaleString()} <span style={{ fontSize: '12px', color: 'var(--accent-cyan)' }}>+{tourney.prizePoolXp} XP</span>
                   </div>
                 </div>
                 <ChevronRight size={18} color={isSelected ? 'var(--accent-green)' : 'var(--text-muted)'} />
@@ -248,11 +250,11 @@ export const TournamentArena: React.FC = () => {
                   gap: '4px',
                 }}
               >
-                <Flame size={12} /> LIVE BATTLE
+                <Flame size={12} /> {t.arena.liveBattleBadge}
               </span>
             </div>
             <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
-              {currentTourney.subtitle} • Anti-Gambling Max Drawdown {currentTourney.rules.maxTrailingDrawdownPct}%
+              {currentTourney.subtitle} • {t.arena.antiGamblingRules} {t.arena.maxTrailingDD} {currentTourney.rules.maxTrailingDrawdownPct}%
             </p>
           </div>
 
@@ -260,7 +262,7 @@ export const TournamentArena: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
-                <Clock size={12} /> Battle Ends In:
+                <Clock size={12} /> {t.arena.battleEndsIn}:
               </div>
               <div style={{ fontSize: '18px', fontWeight: 800, fontFamily: 'monospace', color: 'var(--accent-cyan)' }}>
                 {String(timeLeft.days).padStart(2, '0')}d : {String(timeLeft.hours).padStart(2, '0')}h : {String(timeLeft.minutes).padStart(2, '0')}m : {String(timeLeft.seconds).padStart(2, '0')}s
@@ -288,11 +290,11 @@ export const TournamentArena: React.FC = () => {
             >
               {isUserEntered ? (
                 <>
-                  <CheckCircle2 size={16} /> ENTERED (TRACKING)
+                  <CheckCircle2 size={16} /> {t.arena.enteredTracking}
                 </>
               ) : (
                 <>
-                  <Zap size={16} /> ENTER TOURNAMENT
+                  <Zap size={16} /> {t.arena.enterTournament}
                 </>
               )}
             </button>
@@ -313,19 +315,19 @@ export const TournamentArena: React.FC = () => {
           }}
         >
           <div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Max Daily Loss</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.arena.maxDailyLoss}</div>
             <div style={{ fontSize: '14px', fontWeight: 700, color: '#f59e0b' }}>
               ≤ {currentTourney.rules.maxDailyLossPct}% Equity Loss
             </div>
           </div>
           <div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Max Trailing Drawdown</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.arena.maxTrailingDD}</div>
             <div style={{ fontSize: '14px', fontWeight: 700, color: '#ef4444' }}>
               ≤ {currentTourney.rules.maxTrailingDrawdownPct}% Peak DD
             </div>
           </div>
           <div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Min. Closed Trades</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.arena.minTradesReq}</div>
             <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--accent-cyan)' }}>
               {currentTourney.rules.minTradesCount} Trades to Qualify
             </div>
@@ -339,7 +341,7 @@ export const TournamentArena: React.FC = () => {
         </div>
 
         {/* Standings Leaderboard */}
-        <h4 style={{ margin: '0 0 14px', fontSize: '16px', fontWeight: 700 }}>Battle Standings &amp; Prize Positions</h4>
+        <h4 style={{ margin: '0 0 14px', fontSize: '16px', fontWeight: 700 }}>{t.arena.standingsTitle}</h4>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {participants.map(p => {
             const isTop3 = p.rank <= 3;
@@ -406,7 +408,7 @@ export const TournamentArena: React.FC = () => {
                             border: '1px solid rgba(239, 68, 68, 0.4)',
                           }}
                         >
-                          DISQUALIFIED
+                          {t.arena.disqualifiedBadge}
                         </span>
                       )}
                     </div>
@@ -418,14 +420,14 @@ export const TournamentArena: React.FC = () => {
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '24px', textAlign: 'right' }}>
                   <div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Net Pips</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.arena.netPips}</div>
                     <div style={{ fontSize: '16px', fontWeight: 800, color: isDq ? 'var(--text-muted)' : 'var(--accent-green)' }}>
                       +{p.netPips.toFixed(1)}
                     </div>
                   </div>
 
                   <div style={{ minWidth: '140px' }}>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Est. Prize</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.arena.estimatedPrize}</div>
                     <div style={{ fontSize: '14px', fontWeight: 700, color: isDq ? '#ef4444' : '#fbbf24' }}>
                       {p.estimatedPrize}
                     </div>

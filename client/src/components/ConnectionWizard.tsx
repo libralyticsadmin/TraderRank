@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 
 import { BrokerSymbol } from './BrokerSymbol.tsx';
+import { useTranslation } from '../context/LanguageContext.tsx';
 
 interface ConnectionWizardProps {
   onClose: () => void;
@@ -39,6 +40,7 @@ const BROKERS: { id: Broker; name: string; tag: string; desc: string; url?: stri
 ];
 
 export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onSuccess }) => {
+  const { t } = useTranslation();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [selectedBroker, setSelectedBroker] = useState<Broker>('IC_MARKETS');
   const [selectedPath, setSelectedPath] = useState<IntegrationType>('mt_gateway');
@@ -177,28 +179,28 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
         <div className="stepper-header">
           <div className="stepper-step">
             <div className={`step-bubble ${step === 1 ? 'active' : step > 1 ? 'completed' : ''}`}>1</div>
-            <span className="step-label">Broker</span>
+            <span className="step-label">{t.connector.stepBroker}</span>
           </div>
           <div className="stepper-step">
             <div className={`step-bubble ${step === 2 ? 'active' : step > 2 ? 'completed' : ''}`}>2</div>
-            <span className="step-label">Route</span>
+            <span className="step-label">{t.connector.routeTitle}</span>
           </div>
           <div className="stepper-step">
             <div className={`step-bubble ${step === 3 ? 'active' : step > 3 ? 'completed' : ''}`}>3</div>
-            <span className="step-label">Credentials</span>
+            <span className="step-label">{t.connector.stepCredentials}</span>
           </div>
           <div className="stepper-step">
             <div className={`step-bubble ${step === 4 ? 'active' : ''}`}>4</div>
-            <span className="step-label">Verify</span>
+            <span className="step-label">{t.connector.stepVerification}</span>
           </div>
         </div>
 
         {/* Step 1: Broker Selection */}
         {step === 1 && (
           <div>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '6px' }}>Select Trading Broker</h2>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '6px' }}>{t.connector.selectBroker}</h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '16px' }}>
-              Choose the broker hosting your trading account to route to the optimal connector.
+              {t.connector.selectBrokerDesc}
             </p>
 
             <div className="broker-cards-grid">
@@ -227,9 +229,9 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
         {/* Step 2: Route Selection */}
         {step === 2 && (
           <div>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '6px' }}>Integration Path for {selectedBroker}</h2>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '6px' }}>{t.connector.routeTitle} ({selectedBroker})</h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '18px' }}>
-              Per TraderRank PRD §5.3 routing logic, select the connector architecture.
+              {t.connector.routeDesc}
             </p>
 
             {selectedBroker === 'Exness' ? (
@@ -241,11 +243,11 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                   <Zap size={28} color="#81d8d0" />
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <strong>Exness Native API (Recommended)</strong>
+                      <strong>{t.connector.exnessNativeTitle}</strong>
                       <span className="brand-badge">Optimized</span>
                     </div>
                     <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                      Direct official REST & WebSocket feed. Zero gateway latency, zero third-party subscription fees.
+                      {t.connector.exnessNativeDesc}
                     </p>
                   </div>
                 </div>
@@ -256,9 +258,9 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                 >
                   <Server size={28} color="#0abab5" />
                   <div>
-                    <strong>MT4/MT5 Gateway (Fallback)</strong>
+                    <strong>{t.connector.mtGatewayTitle}</strong>
                     <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                      Standard connector for Exness MT4/MT5 accounts without an issued API key.
+                      {t.connector.mtGatewayDesc}
                     </p>
                   </div>
                 </div>
@@ -267,9 +269,9 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
               <div className="broker-card selected" style={{ cursor: 'default' }}>
                 <Server size={28} color="#0abab5" />
                 <div>
-                  <strong>Broker-Agnostic MT4/MT5 Gateway</strong>
+                  <strong>{t.connector.brokerAgnosticTitle}</strong>
                   <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    Standard connector covering {selectedBroker} through cloud investor-password bridge.
+                    {t.connector.brokerAgnosticDesc}
                   </p>
                 </div>
               </div>
@@ -277,10 +279,10 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '28px' }}>
               <button className="btn-secondary" onClick={() => setStep(1)}>
-                <ArrowLeft size={16} /> Back
+                <ArrowLeft size={16} /> {t.connector.backStep}
               </button>
               <button className="btn-primary" onClick={() => setStep(3)}>
-                Next: Credentials <ArrowRight size={16} />
+                {t.connector.nextStep} <ArrowRight size={16} />
               </button>
             </div>
           </div>
@@ -289,13 +291,13 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
         {/* Step 3: Credential Entry */}
         {step === 3 && (
           <div>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '6px' }}>Enter Read-Only Credentials</h2>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '6px' }}>{t.connector.credentialsTitle}</h2>
             
             {/* Security Guarantee Notice */}
             <div className="security-callout">
               <Lock size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
               <div>
-                <strong>Zero Trade-Placement Risk:</strong> TraderRank only requires read-only access. Investor passwords cannot open or close trades. Credentials are encrypted via AES-256-GCM in the isolated Secrets Vault.
+                <strong>{t.connector.securityCalloutTitle}:</strong> {t.connector.securityCalloutDesc}
               </div>
             </div>
 
@@ -303,7 +305,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
               <div>
                 <div className="form-group" style={{ display: 'flex', gap: '12px' }}>
                   <div style={{ flex: 1 }}>
-                    <label className="form-label">Platform</label>
+                    <label className="form-label">{t.connector.platform}</label>
                     <select
                       className="form-input"
                       value={platform}
@@ -314,7 +316,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                     </select>
                   </div>
                   <div style={{ flex: 2 }}>
-                    <label className="form-label">Broker Server Name</label>
+                    <label className="form-label">{t.connector.brokerServerName}</label>
                     <input
                       className="form-input"
                       value={serverName}
@@ -327,7 +329,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                 {selectedBroker === 'IC_MARKETS' && (
                   <div style={{ marginBottom: '14px', marginTop: '-4px' }}>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px' }}>
-                      Popular IC Markets / IC Trading Servers:
+                      {t.connector.popularServers}:
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                       {['ICMarketsSC-Live01', 'ICMarketsSC-Live02', 'ICMarkets-Live 01', 'ICMarketsGlobal-Live01', 'ICTrading-Live01'].map(srv => (
@@ -357,14 +359,14 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                         rel="noreferrer"
                         style={{ color: '#0abab5', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                       >
-                        Find your IC Markets server / Create Raw Spread Account (ic.com) →
+                        {t.connector.findIcServer} →
                       </a>
                     </div>
                   </div>
                 )}
 
                 <div className="form-group">
-                  <label className="form-label">Account Login / Number</label>
+                  <label className="form-label">{t.connector.accountLoginNumber}</label>
                   <input
                     className="form-input tabular"
                     value={login}
@@ -374,7 +376,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Investor (Read-Only) Password</label>
+                  <label className="form-label">{t.connector.investorPassword}</label>
                   <input
                     type="password"
                     className="form-input tabular"
@@ -383,14 +385,14 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                     placeholder="Investor password only"
                   />
                   <span className="form-tip">
-                    <ShieldCheck size={14} color="#0abab5" /> Never enter your master trading password. Read-only investor password only.
+                    <ShieldCheck size={14} color="#0abab5" /> {t.connector.neverMasterPassword}
                   </span>
                 </div>
               </div>
             ) : (
               <div>
                 <div className="form-group">
-                  <label className="form-label">Exness Account ID (Optional)</label>
+                  <label className="form-label">{t.connector.exnessAccountId}</label>
                   <input
                     className="form-input tabular"
                     value={accountId}
@@ -399,7 +401,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Exness API Key</label>
+                  <label className="form-label">{t.connector.exnessApiKey}</label>
                   <input
                     className="form-input tabular"
                     value={apiKey}
@@ -408,7 +410,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Exness Secret Key</label>
+                  <label className="form-label">{t.connector.exnessApiSecret}</label>
                   <input
                     type="password"
                     className="form-input tabular"
@@ -417,7 +419,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                     placeholder="Secret Key"
                   />
                   <span className="form-tip">
-                    <Key size={14} color="#81d8d0" /> Generated from Exness Settings &gt; API Access after KYC Tier-2.
+                    <Key size={14} color="#81d8d0" /> {t.connector.exnessApiHint}
                   </span>
                 </div>
               </div>
@@ -425,7 +427,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '24px' }}>
               <button className="btn-secondary" onClick={() => setStep(2)}>
-                <ArrowLeft size={16} /> Back
+                <ArrowLeft size={16} /> {t.connector.backStep}
               </button>
               <button
                 className="btn-primary"
@@ -434,7 +436,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                   handleRunPreflightCheck();
                 }}
               >
-                Verify &amp; Connect <ArrowRight size={16} />
+                {t.connector.runPreflight} <ArrowRight size={16} />
               </button>
             </div>
           </div>
@@ -443,9 +445,9 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
         {/* Step 4: Verification Diagnostic & Final Save */}
         {step === 4 && (
           <div>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '6px' }}>Connection Diagnostics</h2>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '6px' }}>{t.connector.diagnosticsTitle}</h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '20px' }}>
-              Running synchronous test read call per PRD §6 step 4 before persisting to database.
+              {t.connector.diagnosticsDesc}
             </p>
 
             <div style={{
@@ -458,28 +460,28 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
               {isValidating ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 0', gap: '12px' }}>
                   <Loader2 size={36} color="#0abab5" className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
-                  <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Pinging broker server &amp; testing read permissions...</p>
+                  <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{t.connector.pingingBroker}</p>
                 </div>
               ) : validationResult?.success ? (
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--accent-green)', marginBottom: '14px' }}>
                     <CheckCircle2 size={24} />
-                    <strong style={{ fontSize: '16px' }}>Pre-Flight Connection Passed</strong>
+                    <strong style={{ fontSize: '16px' }}>{t.connector.preflightPassedTitle}</strong>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '13px' }}>
-                    <div><span style={{ color: 'var(--text-muted)' }}>Broker:</span> <strong>{selectedBroker}</strong></div>
-                    <div><span style={{ color: 'var(--text-muted)' }}>Integration:</span> <strong>{selectedPath === 'mt_gateway' ? 'MT Gateway' : 'Exness Native'}</strong></div>
-                    <div><span style={{ color: 'var(--text-muted)' }}>Account:</span> <span className="tabular">{validationResult.accountDetails?.accountNumber}</span></div>
-                    <div><span style={{ color: 'var(--text-muted)' }}>Balance:</span> <span className="tabular">${validationResult.accountDetails?.balance.toLocaleString()} {validationResult.accountDetails?.currency}</span></div>
-                    <div><span style={{ color: 'var(--text-muted)' }}>Equity:</span> <span className="tabular">${validationResult.accountDetails?.equity.toLocaleString()}</span></div>
-                    <div><span style={{ color: 'var(--text-muted)' }}>Leverage:</span> <span className="tabular">1:{validationResult.accountDetails?.leverage}</span></div>
+                    <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.brokerLabel}:</span> <strong>{selectedBroker}</strong></div>
+                    <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.integrationLabel}:</span> <strong>{selectedPath === 'mt_gateway' ? 'MT Gateway' : 'Exness Native'}</strong></div>
+                    <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.accountLabel}:</span> <span className="tabular">{validationResult.accountDetails?.accountNumber}</span></div>
+                    <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.balanceLabel}:</span> <span className="tabular">${validationResult.accountDetails?.balance.toLocaleString()} {validationResult.accountDetails?.currency}</span></div>
+                    <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.equityLabel}:</span> <span className="tabular">${validationResult.accountDetails?.equity.toLocaleString()}</span></div>
+                    <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.leverageLabel}:</span> <span className="tabular">1:{validationResult.accountDetails?.leverage}</span></div>
                   </div>
                 </div>
               ) : (
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--accent-red)', marginBottom: '10px' }}>
                     <AlertCircle size={24} />
-                    <strong style={{ fontSize: '16px' }}>Connection Failed</strong>
+                    <strong style={{ fontSize: '16px' }}>{t.connector.connectionFailedTitle}</strong>
                   </div>
                   <p style={{ fontSize: '13px', color: '#fca5a5', lineHeight: 1.4 }}>
                     {errorMessage || 'Broker server rejected connection credentials.'}
@@ -490,7 +492,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
 
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <button className="btn-secondary" onClick={() => setStep(3)}>
-                <ArrowLeft size={16} /> Edit Credentials
+                <ArrowLeft size={16} /> {t.connector.editCredentials}
               </button>
               {validationResult?.success && (
                 <button
@@ -500,11 +502,11 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 size={16} className="animate-spin" /> Persisting to Vault...
+                      <Loader2 size={16} className="animate-spin" /> {t.connector.persistingToVault}
                     </>
                   ) : (
                     <>
-                      <CheckCircle2 size={16} /> Confirm &amp; Ingest Trades
+                      <CheckCircle2 size={16} /> {t.connector.confirmIngestTrades}
                     </>
                   )}
                 </button>

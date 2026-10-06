@@ -10,6 +10,7 @@ import {
   RiskTolerance,
   SessionFocus,
 } from '../../../shared/src/types.ts';
+import { useTranslation } from '../context/LanguageContext.tsx';
 import {
   Calendar,
   Sparkles,
@@ -34,6 +35,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
   subscription,
   onOpenSubscriptionModal,
 }) => {
+  const { t } = useTranslation();
   const [report, setReport] = useState<DailyIntelReport | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedAsset, setSelectedAsset] = useState<string>('XAUUSD');
@@ -157,15 +159,15 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
             </div>
             <div>
               <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#fff', margin: 0 }}>
-                Daily Trading Intelligence Hub
+                {t.intel.title}
               </h2>
               <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                {report?.formattedDate || 'Today\'s Market Summary'} • Separate from Live Chart
+                {report?.formattedDate || t.intel.todayMarketSummary} • {t.intel.separateFromChart}
               </span>
             </div>
           </div>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0 0', maxWidth: '600px' }}>
-            Macro fundamental trends, ForexFactory news releases, institutional SMC order blocks, and custom strategic timeframe trade setups.
+            {t.intel.subtitle}
           </p>
         </div>
 
@@ -186,7 +188,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
               }}
             >
               <Crown size={16} color="#ffd700" />
-              <span>PRO UNLOCKED ($9/mo)</span>
+              <span>{t.intel.proUnlocked}</span>
             </div>
           ) : (
             <button
@@ -204,7 +206,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
                 boxShadow: '0 4px 20px rgba(10, 186, 181, 0.4)',
               }}
             >
-              <Crown size={16} /> Unlock Pro for $9/Month
+              <Crown size={16} /> {t.intel.unlockProBtn}
             </button>
           )}
 
@@ -212,7 +214,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
             onClick={fetchDailyReport}
             disabled={isLoading}
             className="btn-secondary"
-            title="Refresh Daily Intel"
+            title={t.intel.refreshReport}
             style={{ padding: '10px 14px' }}
           >
             <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
@@ -238,7 +240,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
               <Flame size={16} color="#f59e0b" />
               <span style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)', fontWeight: 600 }}>
-                Today's Market Regime
+                {t.intel.marketRegime}
               </span>
             </div>
             <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent-cyan)', margin: '0 0 6px 0' }}>
@@ -258,7 +260,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Macro Sentiment Index</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t.intel.macroSentimentIndex}</span>
               <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent-green)' }}>
                 {report.macroSentimentLabel}
               </span>
@@ -293,11 +295,11 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Sliders size={20} color="var(--accent-cyan)" />
               <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#fff', margin: 0 }}>
-                Custom Strategic Timeframe Generator
+                {t.intel.customTimeframeEngine}
               </h3>
             </div>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-              Input your preferred trading timeframe (1m - 1W) &amp; strategy model to generate a custom tactical execution card.
+              {t.intel.customTimeframeDesc}
             </p>
           </div>
 
@@ -316,7 +318,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
             }}
           >
             <Sparkles size={13} />
-            <span>AI Multi-Timeframe Confluence Engine</span>
+            <span>{t.intel.confluenceEngineBadge}</span>
           </div>
         </div>
 
@@ -333,7 +335,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
             {/* 1. Asset / Symbol */}
             <div>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
-                Asset Focus
+                {t.intel.assetFocus}
               </label>
               <select
                 value={customSymbol}
@@ -363,7 +365,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
             {/* 2. Strategic Timeframe */}
             <div>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
-                Strategic Timeframe
+                {t.intel.strategicTimeframe}
               </label>
               <select
                 value={customTimeframe}
@@ -392,7 +394,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
             {/* 3. Trading Style */}
             <div>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
-                Trading Style
+                {t.intel.tradingStyle}
               </label>
               <select
                 value={customStyle}
@@ -417,7 +419,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
             {/* 4. Strategy Model */}
             <div>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
-                Strategy Model
+                {t.intel.strategyModel}
               </label>
               <select
                 value={customModel}
@@ -443,7 +445,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
             {/* 5. Risk / Reward Target (1:3, 1:5, 1:7) */}
             <div>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
-                Risk / Reward Target
+                {t.intel.riskRewardTarget}
               </label>
               <select
                 value={customRisk}
@@ -459,19 +461,16 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
                   fontSize: '13px',
                 }}
               >
-                <option value="RR_1_3">1:3 R:R (Standard Scalp &amp; Intraday)</option>
-                <option value="RR_1_5">1:5 R:R (High Probability SMC Expansion)</option>
-                <option value="RR_1_7">1:7 R:R (Maximum Asymmetric Runner)</option>
-                <option value="CONSERVATIVE">Conservative (1:3 Minimum R:R)</option>
-                <option value="MODERATE">Moderate (1:5 Target R:R)</option>
-                <option value="AGGRESSIVE">Aggressive (1:7 Maximum R:R)</option>
+                <option value="RR_1_3">{t.intel.rr1_3}</option>
+                <option value="RR_1_5">{t.intel.rr1_5}</option>
+                <option value="RR_1_7">{t.intel.rr1_7}</option>
               </select>
             </div>
 
             {/* 6. Target Session */}
             <div>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
-                Session Window
+                {t.intel.sessionWindow}
               </label>
               <select
                 value={customSession}
@@ -497,7 +496,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
           {/* Action Row */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Account Size for 1% Risk:</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t.intel.accountSize}</span>
               <input
                 type="number"
                 value={accountSize}
@@ -536,7 +535,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
               }}
             >
               <Zap size={16} />
-              {isGeneratingStrategy ? 'Synthesizing Confluence...' : 'Generate Custom Daily Strategy'}
+              {isGeneratingStrategy ? t.intel.synthesizingConfluence : t.intel.generateCustomStrategy}
             </button>
           </div>
         </form>
@@ -585,8 +584,8 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
                       }}
                     >
                       {generatedPlan.tradeQualification?.canEnter
-                        ? `TRADE SETUP QUALIFIED • TARGET ${generatedPlan.tradeQualification?.targetRR || '1:5'} R:R VALIDATED`
-                        : `⛔ DO NOT ENTER TRADE • INSUFFICIENT ${generatedPlan.tradeQualification?.targetRR || '1:5'} R:R`}
+                        ? t.intel.tradeSetupQualified.replace('{targetRR}', generatedPlan.tradeQualification?.targetRR || '1:5')
+                        : t.intel.doNotEnterTrade.replace('{targetRR}', generatedPlan.tradeQualification?.targetRR || '1:5')}
                     </h4>
                     <p style={{ fontSize: '13px', color: '#cbd5e1', margin: '4px 0 0 0', lineHeight: 1.4 }}>
                       {generatedPlan.tradeQualification?.directive}
@@ -605,7 +604,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
                     color: '#ffd700',
                   }}
                 >
-                  R:R Targets: 1:3 • 1:5 • 1:7
+                  {t.intel.rrTargetsLabel}
                 </div>
               </div>
 
@@ -622,7 +621,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', fontSize: '12px', color: '#f59e0b', fontWeight: 700 }}>
                     <ArrowRightLeft size={14} />
-                    <span>Find Another Pair For Trading (Recommended High-Confluence Scans):</span>
+                    <span>{t.intel.findAnotherPair}</span>
                   </div>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     {(generatedPlan.tradeQualification?.alternativePairSuggestions?.length
@@ -643,7 +642,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
                           cursor: 'pointer',
                         }}
                       >
-                        ⚡ Switch &amp; Scan {pair}
+                        {t.intel.switchScan} {pair}
                       </button>
                     ))}
                   </div>
@@ -669,12 +668,12 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
                 </div>
 
                 <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                  Model: <strong>{generatedPlan.strategyModel.replace('_', ' ')}</strong>
+                  {t.intel.strategyModel}: <strong>{generatedPlan.strategyModel.replace('_', ' ')}</strong>
                 </span>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Confluence Score:</span>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t.intel.confluenceScore}</span>
                 <span
                   style={{
                     padding: '4px 10px',
@@ -700,42 +699,42 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
               }}
             >
               <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Optimal Entry Zone</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>{t.intel.optimalEntryZone}</span>
                 <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--accent-cyan)' }}>
                   {generatedPlan.tacticalLevels.entryZone[0]} - {generatedPlan.tacticalLevels.entryZone[1]}
                 </span>
               </div>
 
               <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                <span style={{ fontSize: '11px', color: '#f87171', display: 'block', marginBottom: '4px' }}>Stop Loss (Invalidation)</span>
+                <span style={{ fontSize: '11px', color: '#f87171', display: 'block', marginBottom: '4px' }}>{t.intel.stopLoss}</span>
                 <span style={{ fontSize: '15px', fontWeight: 800, color: '#f87171' }}>
                   {generatedPlan.tacticalLevels.stopLoss}
                 </span>
               </div>
 
               <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                <span style={{ fontSize: '11px', color: 'var(--accent-green)', display: 'block', marginBottom: '4px' }}>Take Profit 1 (1:3 R:R)</span>
+                <span style={{ fontSize: '11px', color: 'var(--accent-green)', display: 'block', marginBottom: '4px' }}>{t.intel.takeProfit1}</span>
                 <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--accent-green)' }}>
                   {generatedPlan.tacticalLevels.takeProfit1}
                 </span>
               </div>
 
               <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                <span style={{ fontSize: '11px', color: 'var(--accent-green)', display: 'block', marginBottom: '4px' }}>Take Profit 2 (1:5 R:R)</span>
+                <span style={{ fontSize: '11px', color: 'var(--accent-green)', display: 'block', marginBottom: '4px' }}>{t.intel.takeProfit2}</span>
                 <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--accent-green)' }}>
                   {generatedPlan.tacticalLevels.takeProfit2}
                 </span>
               </div>
 
               <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                <span style={{ fontSize: '11px', color: 'var(--accent-green)', display: 'block', marginBottom: '4px' }}>Take Profit 3 (1:7 Runner)</span>
+                <span style={{ fontSize: '11px', color: 'var(--accent-green)', display: 'block', marginBottom: '4px' }}>{t.intel.takeProfit3}</span>
                 <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--accent-green)' }}>
                   {generatedPlan.tacticalLevels.takeProfit3}
                 </span>
               </div>
 
               <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Risk : Reward &amp; Lots</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>{t.intel.riskRewardLots}</span>
                 <span style={{ fontSize: '13px', fontWeight: 800, color: '#ffd700' }}>
                   {generatedPlan.tacticalLevels.riskRewardRatio} ({generatedPlan.tacticalLevels.suggestedLotSize} Lots)
                 </span>
@@ -746,7 +745,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '20px' }}>
               <div style={{ background: 'rgba(0,0,0,0.25)', padding: '14px 18px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <h5 style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--accent-cyan)', margin: '0 0 6px 0' }}>
-                  Market Structure Context
+                  {t.intel.marketStructureContext}
                 </h5>
                 <p style={{ fontSize: '13px', color: '#e2e8f0', margin: 0, lineHeight: 1.5 }}>
                   {generatedPlan.strategyNarrative.marketStructureContext}
@@ -755,7 +754,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
 
               <div style={{ background: 'rgba(0,0,0,0.25)', padding: '14px 18px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <h5 style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--accent-green)', margin: '0 0 6px 0' }}>
-                  Entry Trigger Rule
+                  {t.intel.entryTriggerRule}
                 </h5>
                 <p style={{ fontSize: '13px', color: '#e2e8f0', margin: 0, lineHeight: 1.5 }}>
                   {generatedPlan.strategyNarrative.entryTriggerRule}
@@ -767,7 +766,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '20px' }}>
               <div style={{ background: 'rgba(239, 68, 68, 0.05)', padding: '14px 18px', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
                 <h5 style={{ fontSize: '12px', textTransform: 'uppercase', color: '#f87171', margin: '0 0 6px 0' }}>
-                  Strict Invalidation Scenario
+                  {t.intel.strictInvalidationScenario}
                 </h5>
                 <p style={{ fontSize: '13px', color: '#fca5a5', margin: 0, lineHeight: 1.5 }}>
                   {generatedPlan.strategyNarrative.invalidationScenario}
@@ -776,7 +775,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
 
               <div style={{ background: 'rgba(0,0,0,0.25)', padding: '14px 18px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <h5 style={{ fontSize: '12px', textTransform: 'uppercase', color: '#ffd700', margin: '0 0 6px 0' }}>
-                  Optimal Session Execution Window
+                  {t.intel.optimalSessionExecution}
                 </h5>
                 <p style={{ fontSize: '13px', color: '#e2e8f0', margin: 0, lineHeight: 1.5 }}>
                   {generatedPlan.strategyNarrative.optimalSessionWindow}
@@ -787,7 +786,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
             {/* Checklist */}
             <div style={{ background: 'rgba(0,0,0,0.3)', padding: '14px 18px', borderRadius: '10px' }}>
               <h5 style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 10px 0' }}>
-                Pre-Execution Trader Checklist:
+                {t.intel.preExecutionChecklist}
               </h5>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {generatedPlan.checklist.map((item, idx) => (
@@ -840,10 +839,10 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
             </div>
 
             <h4 style={{ fontSize: '22px', fontWeight: 800, color: '#fff', margin: '0 0 8px 0' }}>
-              Unlock Custom Strategic Timeframe Generator
+              {t.intel.unlockGeneratorModalTitle}
             </h4>
             <p style={{ color: 'var(--text-muted)', fontSize: '14px', maxWidth: '460px', marginBottom: '20px' }}>
-              Subscribe to TraderRank Pro ($9 / month) to generate bespoke high-probability setups with exact Entry, Invalidation Stop Loss, and Take Profit targets across all timeframes (1m, 5m, 15m, 1H, 4H, 1D, 1W).
+              {t.intel.unlockGeneratorModalDesc}
             </p>
 
             <button
@@ -863,7 +862,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
                 boxShadow: '0 4px 20px rgba(10, 186, 181, 0.4)',
               }}
             >
-              <Crown size={16} /> Unlock for $9 / Month
+              <Crown size={16} /> {t.intel.unlockBtn}
             </button>
           </div>
         )}
@@ -883,7 +882,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Globe2 size={18} color="var(--accent-cyan)" />
               <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#fff', margin: 0 }}>
-                Today's ForexFactory Macro Releases &amp; News Digest
+                {t.intel.forexFactoryReleasesTitle}
               </h3>
             </div>
             <span
@@ -897,7 +896,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
                 border: '1px solid rgba(239, 68, 68, 0.3)',
               }}
             >
-              {report.forexFactoryDigest.highImpactCount} High-Impact Releases Today
+              {t.intel.highImpactReleasesToday.replace('{count}', String(report.forexFactoryDigest.highImpactCount))}
             </span>
           </div>
 
@@ -939,10 +938,10 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '12px' }}>
                   <span style={{ color: 'var(--text-muted)' }}>
-                    Forecast: <strong style={{ color: '#fff' }}>{evt.forecast || 'N/A'}</strong>
+                    {t.intel.forecast} <strong style={{ color: '#fff' }}>{evt.forecast || 'N/A'}</strong>
                   </span>
                   <span style={{ color: 'var(--text-muted)' }}>
-                    Previous: <strong style={{ color: '#fff' }}>{evt.previous || 'N/A'}</strong>
+                    {t.intel.previous} <strong style={{ color: '#fff' }}>{evt.previous || 'N/A'}</strong>
                   </span>
                   <span style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>
                     {evt.timeString || evt.timeUntilFormatted}
@@ -967,10 +966,10 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
             <div>
               <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#fff', margin: 0 }}>
-                Daily Technical &amp; Fundamental Asset Breakdown
+                {t.intel.dailyBreakdownTitle}
               </h3>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-                Select an asset to inspect institutional Order Blocks, Pivot levels, and macro catalysts.
+                {t.intel.dailyBreakdownDesc}
               </p>
             </div>
 
@@ -1025,12 +1024,12 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
                     </span>
                   </div>
                   <span style={{ fontSize: '13px', color: 'var(--accent-cyan)', fontWeight: 600 }}>
-                    Live Anchor: ${activeAssetData.currentPrice.toLocaleString()}
+                    {t.intel.liveAnchor} ${activeAssetData.currentPrice.toLocaleString()}
                   </span>
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Volatility:</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t.intel.volatility}</span>
                   <span
                     style={{
                       padding: '2px 8px',
@@ -1050,7 +1049,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px', marginBottom: '20px' }}>
                 <div style={{ background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
                   <h5 style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--accent-cyan)', margin: '0 0 6px 0' }}>
-                    Technical Market Structure
+                    {t.intel.technicalMarketStructure}
                   </h5>
                   <p style={{ fontSize: '13px', color: '#cbd5e1', margin: 0, lineHeight: 1.5 }}>
                     {activeAssetData.technicalSummary}
@@ -1059,7 +1058,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
 
                 <div style={{ background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
                   <h5 style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--accent-green)', margin: '0 0 6px 0' }}>
-                    Fundamental Drivers
+                    {t.intel.fundamentalDrivers}
                   </h5>
                   <p style={{ fontSize: '13px', color: '#cbd5e1', margin: 0, lineHeight: 1.5 }}>
                     {activeAssetData.fundamentalSummary}
@@ -1071,7 +1070,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
                 <div style={{ padding: '12px 14px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
                   <span style={{ fontSize: '11px', color: 'var(--accent-green)', fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                    Institutional Demand Block (SMC Zone)
+                    {t.intel.institutionalDemandBlock}
                   </span>
                   <span style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>
                     {activeAssetData.orderBlocks.demandZone[0]} - {activeAssetData.orderBlocks.demandZone[1]}
@@ -1080,7 +1079,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
 
                 <div style={{ padding: '12px 14px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
                   <span style={{ fontSize: '11px', color: '#f87171', fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                    Institutional Supply Block (Resistance Zone)
+                    {t.intel.institutionalSupplyBlock}
                   </span>
                   <span style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>
                     {activeAssetData.orderBlocks.supplyZone[0]} - {activeAssetData.orderBlocks.supplyZone[1]}
@@ -1089,7 +1088,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
 
                 <div style={{ padding: '12px 14px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                    Pivot Levels (S1 / Pivot / R1)
+                    {t.intel.pivotLevels}
                   </span>
                   <span style={{ fontSize: '13px', fontWeight: 700, color: '#ffd700' }}>
                     {activeAssetData.supportResistance.s1} • {activeAssetData.supportResistance.pivot} • {activeAssetData.supportResistance.r1}

@@ -3,6 +3,7 @@ import {
   SubscriptionTier,
   SubscriptionStatus,
 } from '../../../shared/src/types.ts';
+import { useTranslation } from '../context/LanguageContext.tsx';
 import {
   Crown,
   CheckCircle2,
@@ -38,6 +39,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   onSubscriptionChange,
   onNavigateToDailyIntel,
 }) => {
+  const { t } = useTranslation();
   const [selectedTier, setSelectedTier] = useState<SubscriptionTier>('PRO_MONTHLY');
   const [paymentMethod, setPaymentMethod] = useState<'CARD' | 'APPLE_PAY' | 'CRYPTO'>('CARD');
   const [selectedCrypto, setSelectedCrypto] = useState<CryptoNetwork>('USDT_TRC20');
@@ -193,7 +195,7 @@ Customer Status:  ACTIVE PRO SUBSCRIBER
 Plan:             ${selectedTier === 'PRO_ANNUAL' ? 'Pro Annual ($79.00 / year)' : 'Pro Monthly ($9.00 / month)'}
 Amount Paid:      ${selectedTier === 'PRO_ANNUAL' ? '$79.00 USD' : '$9.00 USD'}
 Tax / VAT (0%):   $0.00 USD
-Payment Method:   ${paymentMethod === 'CARD' ? 'Credit Card (Simulated)' : paymentMethod === 'APPLE_PAY' ? 'Apple Pay' : 'Cryptocurrency TRC20'}
+Payment Method:   ${paymentMethod === 'CARD' ? 'Credit Card' : paymentMethod === 'APPLE_PAY' ? 'Apple Pay' : 'Cryptocurrency TRC20'}
 Billing Period:   30 Days Auto-Renewing
 Status:           PAID & VERIFIED (256-BIT SSL)
 
@@ -206,7 +208,7 @@ INCLUDED FEATURES:
 - Live Market Feeds (EUR/USD, GBP/USD, USD/JPY, AUD/USD, USD/CAD, Gold, Oil MCL1!, BTC)
 
 Thank you for subscribing to TraderRank Pro.
-Libralytics / TraderRank Global Trading Platform.
+Libralytic Co.,Ltd / TraderRank FX Global Trading Platform.
 =====================================================`;
 
     const blob = new Blob([invoiceContent], { type: 'text/plain' });
@@ -229,7 +231,7 @@ Libralytics / TraderRank Global Trading Platform.
 
   const isAnnual = selectedTier === 'PRO_ANNUAL';
   const totalAmount = isAnnual ? '$79.00' : '$9.00';
-  const recurringNote = isAnnual ? '$79 billed annually ($6.58/mo)' : '$9 billed monthly (cancel anytime)';
+  const recurringNote = isAnnual ? t.subscription.billedAnnually : t.subscription.billedMonthly;
 
   return (
     <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 1000 }}>
@@ -311,14 +313,14 @@ Libralytics / TraderRank Global Trading Platform.
               }}
             >
               <CheckCircle2 size={15} />
-              <span>PAYMENT CONFIRMED • PRO ACTIVATED</span>
+              <span>{t.subscription.paymentConfirmedBadge}</span>
             </div>
 
             <h2 style={{ fontSize: '28px', fontWeight: 800, color: '#fff', margin: '0 0 10px 0' }}>
-              🎉 Welcome to TraderRank Pro!
+              {t.subscription.congratsTitle}
             </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '14px', maxWidth: '540px', margin: '0 auto 24px auto', lineHeight: 1.5 }}>
-              Your Pro Daily Trading Intelligence and bespoke Multi-Timeframe Strategy Generator have been successfully unlocked and verified.
+              {t.subscription.congratsSubtitle}
             </p>
 
             {/* Receipt Summary Card */}
@@ -334,19 +336,19 @@ Libralytics / TraderRank Global Trading Platform.
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '10px', marginBottom: '12px' }}>
-                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Subscription Plan:</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t.subscription.subscriptionPlan}</span>
                 <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--accent-cyan)' }}>
                   {isAnnual ? 'Pro Annual ($79.00 / yr)' : 'Pro Monthly ($9.00 / mo)'}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '10px', marginBottom: '12px' }}>
-                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Member License ID:</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t.subscription.memberLicenseId}</span>
                 <span style={{ fontSize: '13px', fontFamily: 'monospace', color: '#fff' }}>
                   TR-PRO-{Math.floor(100000 + Math.random() * 900000)}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '10px', marginBottom: '12px' }}>
-                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Next Auto-Renewal:</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t.subscription.nextAutoRenewal}</span>
                 <span style={{ fontSize: '13px', color: '#e2e8f0' }}>
                   {new Date(Date.now() + (isAnnual ? 365 : 30) * 86400000).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
                 </span>
@@ -398,7 +400,7 @@ Libralytics / TraderRank Global Trading Platform.
                   boxShadow: '0 4px 25px rgba(10, 186, 181, 0.4)',
                 }}
               >
-                <span>Launch Daily Trading Intelligence</span>
+                <span>{t.subscription.launchIntelBtn}</span>
                 <ArrowRight size={16} />
               </button>
 
@@ -419,7 +421,7 @@ Libralytics / TraderRank Global Trading Platform.
                 }}
               >
                 <Download size={15} />
-                <span>{receiptDownloaded ? 'Receipt Saved!' : 'Download Invoice Receipt'}</span>
+                <span>{receiptDownloaded ? t.subscription.receiptSaved : t.subscription.downloadReceipt}</span>
               </button>
             </div>
           </div>
@@ -445,13 +447,13 @@ Libralytics / TraderRank Global Trading Platform.
                 }}
               >
                 <Crown size={16} color="#ffd700" />
-                <span>PRO MEMBERSHIP ACTIVE</span>
+                <span>{t.subscription.membershipActiveBadge}</span>
               </div>
               <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#fff', margin: '0 0 8px 0' }}>
                 {subscription.planName}
               </h2>
               <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>
-                You have full institutional access to Daily Trading Intelligence, Macro Reports, and Custom Strategy Generation.
+                {t.subscription.membershipActiveDesc}
               </p>
             </div>
 
@@ -470,7 +472,7 @@ Libralytics / TraderRank Global Trading Platform.
             >
               <div>
                 <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-                  Billing Rate
+                  {t.subscription.billingRate}
                 </span>
                 <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent-cyan)' }}>
                   ${subscription.priceMonthly.toFixed(2)} / month
@@ -479,7 +481,7 @@ Libralytics / TraderRank Global Trading Platform.
 
               <div>
                 <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-                  Activation Date
+                  {t.subscription.activationDate}
                 </span>
                 <span style={{ fontSize: '14px', fontWeight: 600, color: '#fff' }}>
                   {new Date(subscription.startedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
@@ -488,7 +490,7 @@ Libralytics / TraderRank Global Trading Platform.
 
               <div>
                 <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-                  Renewal / Expiry Date
+                  {t.subscription.renewalExpiryDate}
                 </span>
                 <span style={{ fontSize: '14px', fontWeight: 600, color: '#fff' }}>
                   {new Date(subscription.expiresAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
@@ -507,7 +509,7 @@ Libralytics / TraderRank Global Trading Platform.
               }}
             >
               <h4 style={{ fontSize: '13px', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 12px 0' }}>
-                Your Active Unlocked Features:
+                {t.subscription.unlockedFeaturesTitle}
               </h4>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '10px' }}>
                 {subscription.features.map((feat, idx) => (
@@ -545,7 +547,7 @@ Libralytics / TraderRank Global Trading Platform.
                   }}
                 >
                   <TrendingUp size={16} />
-                  <span>Open Daily Intelligence Hub</span>
+                  <span>{t.subscription.openDailyIntelBtn}</span>
                 </button>
 
                 <button
@@ -565,7 +567,7 @@ Libralytics / TraderRank Global Trading Platform.
                   }}
                 >
                   <Download size={14} />
-                  <span>{receiptDownloaded ? 'Receipt Downloaded' : 'Download Invoice'}</span>
+                  <span>{receiptDownloaded ? t.subscription.receiptSaved : t.subscription.downloadInvoice}</span>
                 </button>
               </div>
 
@@ -581,7 +583,7 @@ Libralytics / TraderRank Global Trading Platform.
                   padding: '8px',
                 }}
               >
-                Reset to Free Preview Mode
+                {t.subscription.resetToFreeMode}
               </button>
             </div>
           </div>
@@ -608,14 +610,14 @@ Libralytics / TraderRank Global Trading Platform.
                 }}
               >
                 <Crown size={15} color="#ffd700" />
-                <span>TraderRank Pro Instant Unlock</span>
+                <span>TraderRank Pro</span>
               </div>
 
               <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#fff', margin: '0 0 6px 0' }}>
-                Unlock Daily Intelligence &amp; Custom Strategy Engine
+                {t.subscription.modalTitle}
               </h2>
               <p style={{ color: 'var(--text-muted)', fontSize: '13px', maxWidth: '560px', margin: '0 auto' }}>
-                Get institutional-grade daily macro highlights, ForexFactory news breakdowns, and bespoke multi-timeframe trade setups for $9/month.
+                {t.subscription.modalSubtitle}
               </p>
             </div>
 
@@ -642,7 +644,7 @@ Libralytics / TraderRank Global Trading Platform.
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <span style={{ fontWeight: 700, fontSize: '15px', color: '#fff' }}>Pro Monthly</span>
+                  <span style={{ fontWeight: 700, fontSize: '15px', color: '#fff' }}>{t.subscription.monthlyTier}</span>
                   <span
                     style={{
                       background: 'rgba(10, 186, 181, 0.2)',
@@ -653,15 +655,15 @@ Libralytics / TraderRank Global Trading Platform.
                       borderRadius: '8px',
                     }}
                   >
-                    MOST POPULAR
+                    {t.subscription.mostPopular}
                   </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '4px' }}>
                   <span style={{ fontSize: '28px', fontWeight: 800, color: 'var(--accent-cyan)' }}>$9.00</span>
-                  <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>/ month</span>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{t.subscription.perMonth}</span>
                 </div>
                 <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
-                  Full daily market intelligence &amp; custom strategy generator. Cancel anytime.
+                  {t.subscription.monthlyDesc}
                 </p>
               </div>
 
@@ -679,7 +681,7 @@ Libralytics / TraderRank Global Trading Platform.
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <span style={{ fontWeight: 700, fontSize: '15px', color: '#fff' }}>Pro Annual</span>
+                  <span style={{ fontWeight: 700, fontSize: '15px', color: '#fff' }}>{t.subscription.annualTier}</span>
                   <span
                     style={{
                       background: 'rgba(255, 215, 0, 0.2)',
@@ -690,7 +692,7 @@ Libralytics / TraderRank Global Trading Platform.
                       borderRadius: '8px',
                     }}
                   >
-                    SAVE 27%
+                    {t.subscription.save27}
                   </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '4px' }}>
@@ -698,7 +700,7 @@ Libralytics / TraderRank Global Trading Platform.
                   <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>/ year ($6.58/mo)</span>
                 </div>
                 <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
-                  All Pro features + Priority Alpha Discord group &amp; Historical Archives.
+                  {t.subscription.annualDesc}
                 </p>
               </div>
             </div>
@@ -706,7 +708,7 @@ Libralytics / TraderRank Global Trading Platform.
             {/* STEP 2: Payment Method Tabs */}
             <div style={{ marginBottom: '18px' }}>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>
-                Select Payment Gateway:
+                {t.subscription.selectPaymentGateway}
               </label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
                 <button
@@ -728,7 +730,7 @@ Libralytics / TraderRank Global Trading Platform.
                   }}
                 >
                   <CreditCard size={16} color={paymentMethod === 'CARD' ? 'var(--accent-cyan)' : 'currentColor'} />
-                  <span>Card / Debit</span>
+                  <span>{t.subscription.creditCard}</span>
                 </button>
 
                 <button
@@ -750,7 +752,7 @@ Libralytics / TraderRank Global Trading Platform.
                   }}
                 >
                   <Zap size={16} color={paymentMethod === 'APPLE_PAY' ? '#ffd700' : 'currentColor'} />
-                  <span>Apple / GPay</span>
+                  <span>{t.subscription.appleGooglePay}</span>
                 </button>
 
                 <button
@@ -772,7 +774,7 @@ Libralytics / TraderRank Global Trading Platform.
                   }}
                 >
                   <Coins size={16} color={paymentMethod === 'CRYPTO' ? 'var(--accent-green)' : 'currentColor'} />
-                  <span>Crypto (USDT)</span>
+                  <span>{t.subscription.cryptoUsdt}</span>
                 </button>
               </div>
             </div>
@@ -792,7 +794,7 @@ Libralytics / TraderRank Global Trading Platform.
                   {/* Cardholder Name */}
                   <div>
                     <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                      Cardholder Name
+                      {t.subscription.cardholderName}
                     </label>
                     <input
                       type="text"
@@ -814,7 +816,7 @@ Libralytics / TraderRank Global Trading Platform.
                   {/* Card Number */}
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Card Number</label>
+                      <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.subscription.cardNumber}</label>
                       <span style={{ fontSize: '10px', color: 'var(--accent-cyan)', fontWeight: 700 }}>VISA / MASTERCARD</span>
                     </div>
                     <input
@@ -840,7 +842,7 @@ Libralytics / TraderRank Global Trading Platform.
                   {/* Expiry */}
                   <div>
                     <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                      Expiry (MM/YY)
+                      {t.subscription.cardExpiry}
                     </label>
                     <input
                       type="text"
@@ -863,7 +865,7 @@ Libralytics / TraderRank Global Trading Platform.
                   {/* CVC */}
                   <div>
                     <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                      CVC / CVV
+                      {t.subscription.cardCvc}
                     </label>
                     <input
                       type="password"
@@ -887,7 +889,7 @@ Libralytics / TraderRank Global Trading Platform.
                   {/* Country */}
                   <div>
                     <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                      Country
+                      {t.subscription.country}
                     </label>
                     <select
                       value={billingCountry}
@@ -909,6 +911,7 @@ Libralytics / TraderRank Global Trading Platform.
                       <option value="EU">🇪🇺 European Union</option>
                       <option value="SG">🇸🇬 Singapore</option>
                       <option value="JP">🇯🇵 Japan</option>
+                      <option value="CN">🇨🇳 China</option>
                     </select>
                   </div>
                 </div>
@@ -928,7 +931,7 @@ Libralytics / TraderRank Global Trading Platform.
               >
                 <div style={{ marginBottom: '14px' }}>
                   <span style={{ fontSize: '13px', color: '#cbd5e1' }}>
-                    Pay securely with your Apple Wallet or Google Pay linked account.
+                    {t.subscription.applePayDesc}
                   </span>
                 </div>
                 <div
@@ -948,7 +951,7 @@ Libralytics / TraderRank Global Trading Platform.
                   onClick={handleCompletePayment}
                 >
                   <Zap size={16} color="#ffd700" />
-                  <span>Pay {totalAmount} with Pay / GPay</span>
+                  <span>{t.subscription.payWithAppleGpay.replace('{amount}', totalAmount)}</span>
                 </div>
               </div>
             )}
@@ -1007,10 +1010,10 @@ Libralytics / TraderRank Global Trading Platform.
                   <div style={{ flex: 1, minWidth: '220px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                       <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                        Send exactly: <strong style={{ color: 'var(--accent-cyan)' }}>{cryptoWallets[selectedCrypto].amount}</strong>
+                        {t.subscription.sendExactly} <strong style={{ color: 'var(--accent-cyan)' }}>{cryptoWallets[selectedCrypto].amount}</strong>
                       </span>
                       <span style={{ fontSize: '11px', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Clock size={12} /> Rate expires in {formatTimer(cryptoTimerSeconds)}
+                        <Clock size={12} /> {t.subscription.rateExpiresIn} {formatTimer(cryptoTimerSeconds)}
                       </span>
                     </div>
 
@@ -1049,7 +1052,7 @@ Libralytics / TraderRank Global Trading Platform.
                         }}
                       >
                         {copiedAddress ? <Check size={12} /> : <Copy size={12} />}
-                        <span>{copiedAddress ? 'Copied' : 'Copy'}</span>
+                        <span>{copiedAddress ? t.subscription.copied : t.subscription.copyAddress}</span>
                       </button>
                     </div>
 
@@ -1072,15 +1075,15 @@ Libralytics / TraderRank Global Trading Platform.
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--text-muted)', marginBottom: '6px' }}>
-                <span>Subtotal ({isAnnual ? 'Pro Annual Plan' : 'Pro Monthly Plan'})</span>
+                <span>{t.subscription.subtotal} ({isAnnual ? t.subscription.annualTier : t.subscription.monthlyTier})</span>
                 <span>{totalAmount}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                <span>Estimated Tax / VAT (0%)</span>
+                <span>{t.subscription.estimatedTax}</span>
                 <span>$0.00</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '8px' }}>
-                <span style={{ fontWeight: 700, fontSize: '15px', color: '#fff' }}>Total Due Today</span>
+                <span style={{ fontWeight: 700, fontSize: '15px', color: '#fff' }}>{t.subscription.totalDueToday}</span>
                 <span style={{ fontWeight: 800, fontSize: '20px', color: 'var(--accent-cyan)' }}>{totalAmount}</span>
               </div>
               <div style={{ fontSize: '11px', color: 'var(--text-faint)', marginTop: '4px' }}>
@@ -1092,15 +1095,15 @@ Libralytics / TraderRank Global Trading Platform.
             <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
                 <ShieldCheck size={14} color="var(--accent-green)" />
-                <span>256-Bit SSL Encrypted</span>
+                <span>{t.subscription.sslEncrypted}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
                 <CheckCircle2 size={14} color="var(--accent-cyan)" />
-                <span>Instant Pro Activation</span>
+                <span>{t.subscription.instantActivationBadge}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
                 <Lock size={14} color="#ffd700" />
-                <span>14-Day Money-Back Guarantee</span>
+                <span>{t.subscription.moneyBackGuarantee}</span>
               </div>
             </div>
 
@@ -1129,12 +1132,12 @@ Libralytics / TraderRank Global Trading Platform.
               {isProcessing ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <div className="animate-spin" style={{ width: '16px', height: '16px', border: '2px solid #081014', borderTopColor: 'transparent', borderRadius: '50%' }} />
-                  <span>{processingStage || 'Processing Payment...'}</span>
+                  <span>{processingStage || t.subscription.processingPayment}</span>
                 </div>
               ) : (
                 <>
                   <Crown size={18} />
-                  <span>Complete Payment &amp; Unlock Pro ({totalAmount})</span>
+                  <span>{t.subscription.confirmAndUnlock} ({totalAmount})</span>
                   <ArrowRight size={18} />
                 </>
               )}

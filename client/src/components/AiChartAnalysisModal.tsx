@@ -17,6 +17,7 @@ import {
   TrendSentiment,
   AiBiasType,
 } from '../../../shared/src/types.ts';
+import { useTranslation } from '../context/LanguageContext.tsx';
 
 interface AiChartAnalysisModalProps {
   isOpen: boolean;
@@ -33,6 +34,7 @@ export const AiChartAnalysisModal: React.FC<AiChartAnalysisModalProps> = ({
   onTogglePlotLevels,
   isPlottedOnChart,
 }) => {
+  const { t } = useTranslation();
   const [report, setReport] = useState<AiChartAnalysisReport | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
@@ -169,7 +171,7 @@ export const AiChartAnalysisModal: React.FC<AiChartAnalysisModalProps> = ({
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>
-                  AI Multi-Timeframe Chart Analysis
+                  {t.aiModal.multiTfTitle}
                 </h2>
                 <span
                   style={{
@@ -187,7 +189,7 @@ export const AiChartAnalysisModal: React.FC<AiChartAnalysisModalProps> = ({
                 </span>
               </div>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                Real-time algorithmic synthesis scanning institutional order flow, swing structure, and momentum confluence
+                {t.aiModal.multiTfSubtitle}
               </p>
             </div>
           </div>
@@ -212,7 +214,7 @@ export const AiChartAnalysisModal: React.FC<AiChartAnalysisModalProps> = ({
               title="Re-scan and recalculate AI model"
             >
               <RefreshCw size={13} className={isRefreshing ? 'animate-spin' : ''} />
-              Re-Scan AI
+              {t.aiModal.reScanAi}
             </button>
 
             <button
@@ -242,7 +244,7 @@ export const AiChartAnalysisModal: React.FC<AiChartAnalysisModalProps> = ({
           {isLoading ? (
             <div style={{ padding: '60px 0', textAlign: 'center' }}>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', color: 'var(--accent-cyan)', fontSize: '14px', fontWeight: 700 }}>
-                <RefreshCw size={20} className="animate-spin" /> Synthesizing 15m, 4h, 1D, and 1W market structures for {symbol}...
+                <RefreshCw size={20} className="animate-spin" /> {t.aiModal.scanningAsset} {symbol}...
               </div>
             </div>
           ) : report ? (
@@ -262,7 +264,7 @@ export const AiChartAnalysisModal: React.FC<AiChartAnalysisModalProps> = ({
                 {/* Overall Verdict */}
                 <div>
                   <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                    PRIMARY AI BIAS
+                    {t.aiModal.primaryAiBias}
                   </span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
                     <span
@@ -287,7 +289,7 @@ export const AiChartAnalysisModal: React.FC<AiChartAnalysisModalProps> = ({
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                      CONFLUENCE SCORE
+                      {t.aiModal.confluenceScoreLabel}
                     </span>
                     <span style={{ fontSize: '14px', fontWeight: 900, color: '#81d8d0' }}>
                       {report.confluenceScore}%
@@ -314,20 +316,20 @@ export const AiChartAnalysisModal: React.FC<AiChartAnalysisModalProps> = ({
                     />
                   </div>
                   <div style={{ fontSize: '10px', color: '#94aeb0', marginTop: '4px' }}>
-                    High-probability agreement across all 4 time horizons
+                    {t.aiModal.highProbAgreement}
                   </div>
                 </div>
 
                 {/* Risk to Reward */}
                 <div>
                   <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                    RISK / REWARD RATIO
+                    {t.aiModal.riskRewardRatioLabel}
                   </span>
                   <div style={{ fontSize: '18px', fontWeight: 900, color: '#fbbf24', marginTop: '4px' }}>
                     {report.riskToRewardRatio}
                   </div>
                   <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-                    Calculated to Swing Target (TP2)
+                    {t.aiModal.swingTargetTp2}
                   </div>
                 </div>
 
@@ -355,7 +357,7 @@ export const AiChartAnalysisModal: React.FC<AiChartAnalysisModalProps> = ({
                     }}
                   >
                     <Target size={15} />
-                    {isPlottedOnChart ? '✓ AI Levels Plotted on Chart' : 'Plot AI Key Levels on Chart'}
+                    {isPlottedOnChart ? t.aiModal.plottedOnChartBtn : t.aiModal.plotOnChartBtn}
                   </button>
                 </div>
               </div>
@@ -364,7 +366,7 @@ export const AiChartAnalysisModal: React.FC<AiChartAnalysisModalProps> = ({
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                   <h3 style={{ fontSize: '14px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Multi-Timeframe Structure Breakdown
+                    {t.aiModal.multiTfStructureBreakdown}
                   </h3>
                   <div style={{ display: 'flex', gap: '4px' }}>
                     {['ALL', '15m', '4h', '1D', '1W'].map(tab => (
@@ -499,7 +501,7 @@ export const AiChartAnalysisModal: React.FC<AiChartAnalysisModalProps> = ({
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                     <Compass size={16} color="#0abab5" />
                     <h4 style={{ fontSize: '13px', fontWeight: 800, color: '#fff', textTransform: 'uppercase' }}>
-                      Tactical Execution Blueprint
+                      {t.aiModal.tacticalBlueprintTitle}
                     </h4>
                   </div>
                   <p style={{ fontSize: '12px', color: '#cbd5e1', lineHeight: '1.5', marginBottom: '14px' }}>
@@ -508,19 +510,19 @@ export const AiChartAnalysisModal: React.FC<AiChartAnalysisModalProps> = ({
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', fontFamily: 'monospace' }}>
                     <div style={{ background: 'rgba(255,255,255,0.03)', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>ENTRY ZONE</div>
+                      <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{t.intel.entryZone}</div>
                       <div style={{ fontSize: '12px', fontWeight: 800, color: '#81d8d0', marginTop: '2px' }}>
                         {report.keyLevels.entryZone[0]} - {report.keyLevels.entryZone[1]}
                       </div>
                     </div>
                     <div style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239,68,68,0.2)', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '10px', color: '#f87171' }}>STOP LOSS (SL)</div>
+                      <div style={{ fontSize: '10px', color: '#f87171' }}>{t.intel.stopLoss} (SL)</div>
                       <div style={{ fontSize: '12px', fontWeight: 800, color: '#ef4444', marginTop: '2px' }}>
                         {report.keyLevels.stopLoss}
                       </div>
                     </div>
                     <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16,185,129,0.2)', padding: '8px', borderRadius: '8px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '10px', color: '#6ee7b7' }}>SWING TP2</div>
+                      <div style={{ fontSize: '10px', color: '#6ee7b7' }}>{t.intel.takeProfit2}</div>
                       <div style={{ fontSize: '12px', fontWeight: 800, color: '#10b981', marginTop: '2px' }}>
                         {report.keyLevels.tp2}
                       </div>
@@ -540,7 +542,7 @@ export const AiChartAnalysisModal: React.FC<AiChartAnalysisModalProps> = ({
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                     <Layers size={16} color="#fbbf24" />
                     <h4 style={{ fontSize: '13px', fontWeight: 800, color: '#fff', textTransform: 'uppercase' }}>
-                      Multi-Timeframe Key Levels Matrix
+                      {t.aiModal.keyLevelsMatrixTitle}
                     </h4>
                   </div>
 
@@ -581,7 +583,7 @@ export const AiChartAnalysisModal: React.FC<AiChartAnalysisModalProps> = ({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                   <Sparkles size={15} color="#0abab5" />
                   <span style={{ fontSize: '12px', fontWeight: 800, color: '#81d8d0', textTransform: 'uppercase' }}>
-                    Institutional AI Market Commentary
+                    {t.aiModal.institutionalCommentaryTitle}
                   </span>
                 </div>
                 <p style={{ fontSize: '12px', color: '#e2e8f0', lineHeight: '1.6' }}>
@@ -601,7 +603,7 @@ export const AiChartAnalysisModal: React.FC<AiChartAnalysisModalProps> = ({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                   <ShieldAlert size={15} color="#f59e0b" />
                   <span style={{ fontSize: '11px', fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase' }}>
-                    Risk Factors & Macro Catalysts
+                    {t.aiModal.riskFactorsTitle}
                   </span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>

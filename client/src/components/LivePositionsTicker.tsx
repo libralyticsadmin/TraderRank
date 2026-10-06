@@ -1,12 +1,14 @@
 import React from 'react';
 import { CanonicalPosition } from '../../../shared/src/types.ts';
 import { Activity, TrendingUp, TrendingDown, Clock } from 'lucide-react';
+import { useTranslation } from '../context/LanguageContext.tsx';
 
 interface LivePositionsTickerProps {
   positions: CanonicalPosition[];
 }
 
 export const LivePositionsTicker: React.FC<LivePositionsTickerProps> = ({ positions }) => {
+  const { t } = useTranslation();
   const totalFloatingPips = Number(
     positions.reduce((acc, p) => acc + p.profitPips, 0).toFixed(1)
   );
@@ -16,13 +18,13 @@ export const LivePositionsTicker: React.FC<LivePositionsTickerProps> = ({ positi
       <div className="panel-header">
         <h3 className="panel-title">
           <Activity size={18} color="#0abab5" />
-          Live Position Ingestion Feed
+          {t.positions.liveIngestionFeed}
           <span className="status-pill status-connected" style={{ fontSize: '11px' }}>
-            <span className="status-dot"></span> Sub-Second Stream
+            <span className="status-dot"></span> {t.positions.subSecondStream}
           </span>
         </h3>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Net Floating PnL:</span>
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t.positions.netFloatingPnl}:</span>
           <span
             className={`tabular ${totalFloatingPips >= 0 ? 'pip-positive' : 'pip-negative'}`}
             style={{ fontSize: '16px', fontWeight: 800 }}
@@ -35,21 +37,21 @@ export const LivePositionsTicker: React.FC<LivePositionsTickerProps> = ({ positi
       {positions.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text-muted)' }}>
           <Clock size={28} style={{ opacity: 0.4, margin: '0 auto 8px auto' }} />
-          <p style={{ fontSize: '13px' }}>No open positions currently detected on connected accounts.</p>
+          <p style={{ fontSize: '13px' }}>{t.positions.noPositionsDesc}</p>
         </div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-faint)', textAlign: 'left' }}>
-                <th style={{ padding: '10px 8px' }}>Ticket</th>
-                <th style={{ padding: '10px 8px' }}>Instrument</th>
-                <th style={{ padding: '10px 8px' }}>Side</th>
-                <th style={{ padding: '10px 8px' }}>Volume</th>
-                <th style={{ padding: '10px 8px' }}>Open Price</th>
-                <th style={{ padding: '10px 8px' }}>Live Price</th>
-                <th style={{ padding: '10px 8px', textAlign: 'right' }}>Normalized Pips</th>
-                <th style={{ padding: '10px 8px', textAlign: 'right' }}>Profit (USD)</th>
+                <th style={{ padding: '10px 8px' }}>{t.positions.ticketCol}</th>
+                <th style={{ padding: '10px 8px' }}>{t.positions.instrumentCol}</th>
+                <th style={{ padding: '10px 8px' }}>{t.positions.sideCol}</th>
+                <th style={{ padding: '10px 8px' }}>{t.positions.volumeCol}</th>
+                <th style={{ padding: '10px 8px' }}>{t.positions.openPriceCol}</th>
+                <th style={{ padding: '10px 8px' }}>{t.positions.livePriceCol}</th>
+                <th style={{ padding: '10px 8px', textAlign: 'right' }}>{t.positions.normalizedPipsCol}</th>
+                <th style={{ padding: '10px 8px', textAlign: 'right' }}>{t.positions.profitUsdCol}</th>
               </tr>
             </thead>
             <tbody>

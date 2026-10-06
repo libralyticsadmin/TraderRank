@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Broker } from '../../../shared/src/types.ts';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { TrendingUp, TrendingDown, Flame } from 'lucide-react';
+import { useTranslation } from '../context/LanguageContext.tsx';
 
 export interface BulletinTradeItem {
   id: string;
@@ -14,6 +15,7 @@ export interface BulletinTradeItem {
   profitUsd: number;
   timeAgo: string;
   tag?: string;
+  tagKey?: string;
   isHot?: boolean;
 }
 
@@ -33,7 +35,7 @@ const INITIAL_BULLETIN_TRADES: BulletinTradeItem[] = [
     lotSize: 0.85,
     profitUsd: 384.0,
     timeAgo: 'Just now',
-    tag: 'SCALP WIN',
+    tagKey: 'scalpWin',
     isHot: true,
   },
   {
@@ -46,7 +48,7 @@ const INITIAL_BULLETIN_TRADES: BulletinTradeItem[] = [
     lotSize: 0.50,
     profitUsd: 2100.0,
     timeAgo: '12s ago',
-    tag: 'GOLD RUSH',
+    tagKey: 'goldRush',
     isHot: true,
   },
   {
@@ -59,7 +61,7 @@ const INITIAL_BULLETIN_TRADES: BulletinTradeItem[] = [
     lotSize: 1.20,
     profitUsd: 156.4,
     timeAgo: '35s ago',
-    tag: 'LONDON BREAKOUT',
+    tagKey: 'londonBreakout',
   },
   {
     id: 'blt_4',
@@ -71,7 +73,7 @@ const INITIAL_BULLETIN_TRADES: BulletinTradeItem[] = [
     lotSize: 0.60,
     profitUsd: 241.0,
     timeAgo: '1m ago',
-    tag: 'SWING PULLBACK',
+    tagKey: 'swingPullback',
   },
   {
     id: 'blt_5',
@@ -83,7 +85,7 @@ const INITIAL_BULLETIN_TRADES: BulletinTradeItem[] = [
     lotSize: 0.40,
     profitUsd: 156.0,
     timeAgo: '2m ago',
-    tag: 'VERIFIED DEAL',
+    tagKey: 'verifiedDeal',
   },
   {
     id: 'blt_6',
@@ -95,7 +97,7 @@ const INITIAL_BULLETIN_TRADES: BulletinTradeItem[] = [
     lotSize: 0.10,
     profitUsd: 185.0,
     timeAgo: '3m ago',
-    tag: 'WEEKLY HIGH',
+    tagKey: 'weeklyHigh',
     isHot: true,
   },
   {
@@ -108,7 +110,7 @@ const INITIAL_BULLETIN_TRADES: BulletinTradeItem[] = [
     lotSize: 1.00,
     profitUsd: 5240.0,
     timeAgo: '4m ago',
-    tag: 'TOURNAMENT LEAD',
+    tagKey: 'tournamentLead',
     isHot: true,
   },
   {
@@ -121,7 +123,7 @@ const INITIAL_BULLETIN_TRADES: BulletinTradeItem[] = [
     lotSize: 0.75,
     profitUsd: 98.2,
     timeAgo: '5m ago',
-    tag: 'M15 PULLBACK',
+    tagKey: 'm15Pullback',
   },
 ];
 
@@ -129,14 +131,22 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
   onSelectTrader,
   speed = 'normal',
 }) => {
+  const { t } = useTranslation();
   const [trades, setTrades] = useState<BulletinTradeItem[]>(INITIAL_BULLETIN_TRADES);
+
+  const getTagLabel = (item: BulletinTradeItem) => {
+    if (item.tagKey && (t.bulletin as any)[item.tagKey]) {
+      return (t.bulletin as any)[item.tagKey];
+    }
+    return item.tag || t.bulletin.verifiedBridge;
+  };
 
   // Periodic random live tick generator to simulate incoming WebSocket trade executions
   useEffect(() => {
     const symbols = ['EURUSD', 'GBPUSD', 'USDJPY', 'XAUUSD', 'BTCUSD'];
     const traders = ['FX_Sniper', 'GoldBug_JP', 'ZenScalper', 'TokyoRider', 'AlphaWave', 'ApexTrader', 'NovaFX'];
     const brokers: Broker[] = ['Exness', 'XM', 'Axiory', 'Vantage'];
-    const tags = ['LIVE EXECUTION', 'TAKE PROFIT', 'PIPS SURGE', 'NEW TOP 10', 'VERIFIED BRIDGE'];
+    const tagKeys = ['liveExecution', 'takeProfit', 'pipsSurge', 'newTop10', 'verifiedBridge'];
 
     const interval = setInterval(() => {
       const sym = symbols[Math.floor(Math.random() * symbols.length)];
@@ -146,6 +156,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
       const pips = Number((5 + Math.random() * 45).toFixed(1));
       const lotSize = Number((0.1 + Math.random() * 1.5).toFixed(2));
       const profitUsd = sym === 'XAUUSD' ? Number((pips * lotSize * 10).toFixed(1)) : Number((pips * lotSize * 10).toFixed(1));
+      const selectedKey = tagKeys[Math.floor(Math.random() * tagKeys.length)];
 
       const newItem: BulletinTradeItem = {
         id: `blt_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
@@ -156,8 +167,8 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
         pips,
         lotSize,
         profitUsd,
-        timeAgo: 'Just now',
-        tag: tags[Math.floor(Math.random() * tags.length)],
+        timeAgo: t.bulletin.justNow,
+        tagKey: selectedKey,
         isHot: pips > 30,
       };
 
@@ -165,7 +176,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
     }, 6500);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [t]);
 
   const getDuration = () => {
     if (speed === 'fast') return '18s';
@@ -182,8 +193,8 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
           <span className="bulletin-radar-dot"></span>
         </div>
         <div className="bulletin-badge-text">
-          <span className="bulletin-title">LIVE TRADE BULLETIN</span>
-          <span className="bulletin-subtitle">REAL-TIME EXECUTION SPOT</span>
+          <span className="bulletin-title">{t.bulletin.badgeTitle}</span>
+          <span className="bulletin-subtitle">{t.bulletin.badgeSubtitle}</span>
         </div>
       </div>
 
@@ -238,14 +249,14 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                       <TrendingDown size={12} color="var(--accent-red)" />
                     )}
                     <span className="tabular font-bold">
-                      +{item.pips} <small>pips</small>
+                      +{item.pips} <small>{t.bulletin.pips}</small>
                     </span>
                   </div>
                 </div>
 
                 {/* Spot Footer: Micro Tag & Time */}
                 <div className="bulletin-card-footer">
-                  <span className="bulletin-tag">{item.tag || 'VERIFIED'}</span>
+                  <span className="bulletin-tag">{getTagLabel(item)}</span>
                   <span className="bulletin-time">{item.timeAgo}</span>
                 </div>
 

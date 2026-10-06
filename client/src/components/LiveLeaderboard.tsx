@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { LeaderboardEntry, DailyLeaderboardResult, Broker } from '../../../shared/src/types.ts';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
+import { useTranslation } from '../context/LanguageContext.tsx';
 import {
   Trophy,
   Award,
@@ -28,6 +29,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
   dailyResult,
   onSelectTrader,
 }) => {
+  const { t } = useTranslation();
   const [metric, setMetric] = useState<RankingMetric>('pips');
   const [period, setPeriod] = useState<RankingPeriod>('daily');
   const [brokerFilter, setBrokerFilter] = useState<string>('ALL');
@@ -133,7 +135,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, letterSpacing: '-0.02em' }}>
-                  Global Verified Leaderboard
+                  {t.leaderboard.title}
                 </h3>
                 <span
                   style={{
@@ -149,11 +151,11 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                     gap: '4px',
                   }}
                 >
-                  <Zap size={12} /> LIVE VERIFIED
+                  <Zap size={12} /> {t.leaderboard.liveVerified}
                 </span>
               </div>
               <p style={{ margin: '2px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
-                Multi-broker verified performance ranked by pure skill &amp; normalized pips
+                {t.leaderboard.subtitle}
               </p>
             </div>
           </div>
@@ -169,9 +171,9 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             }}
           >
             {[
-              { id: 'daily', label: 'Daily Sprint', icon: Calendar },
-              { id: 'weekly', label: 'Weekly League', icon: Trophy },
-              { id: 'all_time', label: 'All-Time Legends', icon: Flame },
+              { id: 'daily', label: t.leaderboard.dailySprint, icon: Calendar },
+              { id: 'weekly', label: t.leaderboard.weeklyLeague, icon: Trophy },
+              { id: 'all_time', label: t.leaderboard.allTimeLegends, icon: Flame },
             ].map(tab => {
               const Icon = tab.icon;
               const active = period === tab.id;
@@ -218,12 +220,12 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
         >
           {/* Metric Sort Buttons (Winning Pips / Profit / Rate) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>Ranking Metric:</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>{t.leaderboard.rankingMetric}</span>
             <div style={{ display: 'flex', gap: '4px' }}>
               {[
-                { id: 'pips', label: 'Winning Pips', icon: TrendingUp },
-                { id: 'profit', label: 'Profit Amount ($)', icon: Trophy },
-                { id: 'rate', label: 'Profit Rate (%)', icon: Percent },
+                { id: 'pips', label: t.leaderboard.winningPips, icon: TrendingUp },
+                { id: 'profit', label: t.leaderboard.profitAmount, icon: Trophy },
+                { id: 'rate', label: t.leaderboard.profitRate, icon: Percent },
               ].map(m => {
                 const Icon = m.icon;
                 const active = metric === m.id;
@@ -259,7 +261,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               <Search size={14} style={{ position: 'absolute', left: '10px', top: '9px', color: 'var(--text-muted)' }} />
               <input
                 type="text"
-                placeholder="Search trader..."
+                placeholder={t.leaderboard.searchPlaceholder}
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 style={{
@@ -290,11 +292,12 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                 cursor: 'pointer',
               }}
             >
-              <option value="ALL">All Brokers</option>
+              <option value="ALL">{t.leaderboard.allBrokers}</option>
               <option value="Exness">Exness</option>
               <option value="XM">XM Global</option>
               <option value="Axiory">Axiory</option>
               <option value="Vantage">Vantage</option>
+              <option value="IC_MARKETS">IC Markets</option>
             </select>
           </div>
         </div>
@@ -314,7 +317,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             const is1 = trader.displayRank === 1;
             const is2 = trader.displayRank === 2;
             const glowColor = is1 ? '#fbbf24' : is2 ? '#94a3b8' : '#d97706';
-            const badgeTitle = is1 ? 'Gold Champion' : is2 ? 'Silver Contender' : 'Bronze Master';
+            const badgeTitle = is1 ? t.leaderboard.goldChampion : is2 ? t.leaderboard.silverContender : t.leaderboard.bronzeMaster;
 
             return (
               <div
@@ -359,7 +362,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                   <div>
                     <h4 style={{ margin: 0, fontSize: '17px', fontWeight: 800 }}>{trader.username}</h4>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                      {trader.tier} • {trader.tradesCount} Trades
+                      {trader.tier} • {trader.tradesCount} {t.leaderboard.trades}
                     </div>
                   </div>
                 </div>
@@ -375,13 +378,13 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Winning Pips</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.winningPips}</div>
                     <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--accent-green)' }}>
                       +{trader.winningPips.toFixed(1)}
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Est. Profit</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.estProfit}</div>
                     <div style={{ fontSize: '16px', fontWeight: 800, color: '#fbbf24' }}>
                       +${trader.profitAmount.toLocaleString()}
                     </div>
@@ -437,29 +440,29 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>• {trader.tier}</span>
                   </div>
                   <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                    <span>Win Rate: <strong style={{ color: 'var(--text-main)' }}>{trader.winRate}%</strong></span>
-                    <span>XP: <strong style={{ color: 'var(--accent-cyan)' }}>{trader.xp}</strong></span>
+                    <span>{t.leaderboard.winRate} <strong style={{ color: 'var(--text-main)' }}>{trader.winRate}%</strong></span>
+                    <span>{t.leaderboard.xp} <strong style={{ color: 'var(--accent-cyan)' }}>{trader.xp}</strong></span>
                   </div>
                 </div>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '24px', textAlign: 'right' }}>
                 <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Net Pips</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.netPips}</div>
                   <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--accent-green)' }}>
                     +{trader.winningPips.toFixed(1)}
                   </div>
                 </div>
 
                 <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Profit ($)</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.profit}</div>
                   <div style={{ fontSize: '16px', fontWeight: 800, color: '#fbbf24' }}>
                     +${trader.profitAmount.toLocaleString()}
                   </div>
                 </div>
 
                 <div style={{ minWidth: '70px' }}>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Rate</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.rate}</div>
                   <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--accent-cyan)' }}>
                     +{trader.profitRate}%
                   </div>

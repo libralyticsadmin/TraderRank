@@ -23,6 +23,7 @@ import {
   IndicatorPlotType,
   CustomIndicatorParam,
 } from '../utils/customIndicatorEngine.ts';
+import { useTranslation } from '../context/LanguageContext.tsx';
 
 interface CustomIndicatorModalProps {
   isOpen: boolean;
@@ -56,6 +57,7 @@ export const CustomIndicatorModal: React.FC<CustomIndicatorModalProps> = ({
   onUpdateIndicatorsList,
   editingIndicatorId,
 }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'TEMPLATES' | 'EDITOR' | 'MY_LIBRARY' | 'DOCS'>('TEMPLATES');
   const [savedIndicators, setSavedIndicators] = useState<CustomIndicatorDefinition[]>([]);
 
@@ -334,7 +336,7 @@ function calculate(bars, params, indicators) {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h2 style={{ fontSize: '19px', fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>
-                  Custom Indicator Studio
+                  {t.customStudio.modalTitle}
                 </h2>
                 <span
                   style={{
@@ -348,11 +350,11 @@ function calculate(bars, params, indicators) {
                     border: '1px solid rgba(10, 186, 181, 0.4)',
                   }}
                 >
-                  TradingView Sandbox
+                  {t.customStudio.sandboxBadge}
                 </span>
               </div>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                Create, customize and backtest your proprietary Pine / JavaScript trading indicators
+                {t.customStudio.modalSubtitle}
               </p>
             </div>
           </div>
@@ -389,10 +391,10 @@ function calculate(bars, params, indicators) {
           }}
         >
           {[
-            { id: 'TEMPLATES', label: 'Preset Templates', icon: Sparkles },
-            { id: 'EDITOR', label: 'Pine / JS Editor', icon: Code },
-            { id: 'MY_LIBRARY', label: `My Library (${savedIndicators.length})`, icon: Layers },
-            { id: 'DOCS', label: 'API Reference & CheatSheet', icon: BookOpen },
+            { id: 'TEMPLATES', label: t.customStudio.tabTemplates, icon: Sparkles },
+            { id: 'EDITOR', label: t.customStudio.tabEditor, icon: Code },
+            { id: 'MY_LIBRARY', label: `${t.customStudio.tabLibrary} (${savedIndicators.length})`, icon: Layers },
+            { id: 'DOCS', label: t.customStudio.tabDocs, icon: BookOpen },
           ].map(tab => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
@@ -439,7 +441,7 @@ function calculate(bars, params, indicators) {
                 boxShadow: '0 0 12px rgba(10, 186, 181, 0.3)',
               }}
             >
-              <Plus size={14} /> + New Indicator
+              <Plus size={14} /> {t.customStudio.newIndicatorBtn}
             </button>
           </div>
         </div>
@@ -451,10 +453,10 @@ function calculate(bars, params, indicators) {
             <div>
               <div style={{ marginBottom: '16px' }}>
                 <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#fff', marginBottom: '4px' }}>
-                  Choose a Ready-to-Use TradingView Template
+                  {t.customStudio.chooseTemplateTitle}
                 </h3>
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  Select from community-tested momentum oscillators, volatility bands, and scalp ribbons to customize.
+                  {t.customStudio.chooseTemplateDesc}
                 </p>
               </div>
 
@@ -499,7 +501,7 @@ function calculate(bars, params, indicators) {
                               border: `1px solid ${preset.pane === 'OVERLAY' ? 'rgba(56, 189, 248, 0.3)' : 'rgba(251, 191, 36, 0.3)'}`,
                             }}
                           >
-                            {preset.pane === 'OVERLAY' ? 'Main Chart Overlay' : 'Sub-Panel Oscillator'}
+                            {preset.pane === 'OVERLAY' ? t.customStudio.mainOverlay : t.customStudio.subPanel}
                           </span>
                           <span
                             style={{
@@ -525,10 +527,10 @@ function calculate(bars, params, indicators) {
 
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
                         <span style={{ fontSize: '11px', color: '#64748b' }}>
-                          {preset.params?.length || 0} Configurable Params
+                          {preset.params?.length || 0} {t.customStudio.parametersTitle}
                         </span>
                         <span style={{ fontSize: '12px', fontWeight: 700, color: '#0abab5', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          Edit & Backtest →
+                          {t.customStudio.useTemplate} →
                         </span>
                       </div>
                     </div>
@@ -555,7 +557,7 @@ function calculate(bars, params, indicators) {
               >
                 <div>
                   <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#81d8d0', marginBottom: '6px' }}>
-                    INDICATOR NAME
+                    {t.customStudio.indicatorName.toUpperCase()}
                   </label>
                   <input
                     type="text"
@@ -577,7 +579,7 @@ function calculate(bars, params, indicators) {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#81d8d0', marginBottom: '6px' }}>
-                      CHART TAG
+                      {t.customStudio.shortLabel.toUpperCase()}
                     </label>
                     <input
                       type="text"
@@ -598,7 +600,7 @@ function calculate(bars, params, indicators) {
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#81d8d0', marginBottom: '6px' }}>
-                      PANE
+                      {t.customStudio.chartPane.toUpperCase()}
                     </label>
                     <select
                       value={pane}
@@ -613,8 +615,8 @@ function calculate(bars, params, indicators) {
                         fontSize: '12px',
                       }}
                     >
-                      <option value="OVERLAY">Main Overlay</option>
-                      <option value="SUBPANEL">Sub-Panel</option>
+                      <option value="OVERLAY">{t.customStudio.mainOverlay}</option>
+                      <option value="SUBPANEL">{t.customStudio.subPanel}</option>
                     </select>
                   </div>
                 </div>
@@ -622,7 +624,7 @@ function calculate(bars, params, indicators) {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#81d8d0', marginBottom: '6px' }}>
-                      PLOT TYPE
+                      {t.customStudio.visualStyle.toUpperCase()}
                     </label>
                     <select
                       value={plotType}
@@ -637,16 +639,16 @@ function calculate(bars, params, indicators) {
                         fontSize: '12px',
                       }}
                     >
-                      <option value="LINE">Line Curve</option>
-                      <option value="HISTOGRAM">Histogram</option>
-                      <option value="DOTS">Scatter Dots</option>
+                      <option value="LINE">{t.customStudio.plotLine}</option>
+                      <option value="HISTOGRAM">{t.customStudio.plotHistogram}</option>
+                      <option value="DOTS">{t.customStudio.plotDots}</option>
                       <option value="AREA">Area Fill</option>
                     </select>
                   </div>
 
                   <div>
                     <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#81d8d0', marginBottom: '6px' }}>
-                      LINE WIDTH
+                      {t.customStudio.lineWidth.toUpperCase()}
                     </label>
                     <select
                       value={lineWidth}
@@ -672,7 +674,7 @@ function calculate(bars, params, indicators) {
                 {/* Color Palette Picker */}
                 <div>
                   <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#81d8d0', marginBottom: '6px' }}>
-                    INDICATOR COLOR
+                    {t.customStudio.colorTheme.toUpperCase()}
                   </label>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '6px' }}>
                     {COLOR_PRESETS.map(cp => (
@@ -712,7 +714,7 @@ function calculate(bars, params, indicators) {
                 {/* Description */}
                 <div>
                   <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#81d8d0', marginBottom: '6px' }}>
-                    DESCRIPTION
+                    {t.customStudio.description.toUpperCase()}
                   </label>
                   <textarea
                     value={description}
@@ -736,7 +738,7 @@ function calculate(bars, params, indicators) {
                 {params.length > 0 && (
                   <div>
                     <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#fbbf24', marginBottom: '6px' }}>
-                      CUSTOM SCRIPT PARAMETERS
+                      {t.customStudio.parametersTitle.toUpperCase()}
                     </label>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {params.map((p, idx) => (
@@ -774,7 +776,7 @@ function calculate(bars, params, indicators) {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '12px', fontWeight: 800, color: '#81d8d0' }}>
-                      Pine Script / JavaScript Sandbox
+                      {t.customStudio.sourceCodeTitle}
                     </span>
                     <span style={{ fontSize: '11px', color: '#64748b' }}>
                       (function calculate(bars, params, indicators))
@@ -902,9 +904,9 @@ function calculate(bars, params, indicators) {
                       <span style={{ fontSize: '12px', fontWeight: 700, color: testResult.tested ? (testResult.success ? '#10b981' : '#ef4444') : '#cbd5e1' }}>
                         {testResult.tested
                           ? testResult.success
-                            ? `Validation Passed: ${testResult.dataPointsCount} Valid Data Points`
-                            : `Validation Failed: ${testResult.error}`
-                          : 'Click "Test & Validate" to evaluate against current market candles'}
+                            ? `${t.customStudio.testPassed}: ${testResult.dataPointsCount} ${t.customStudio.dataPoints}`
+                            : `${t.customStudio.testFailed}: ${testResult.error}`
+                          : t.customStudio.sourceCodeTitle}
                       </span>
                     </div>
 
@@ -924,13 +926,13 @@ function calculate(bars, params, indicators) {
                         cursor: 'pointer',
                       }}
                     >
-                      <Play size={13} fill="#81d8d0" /> Test & Validate
+                      <Play size={13} fill="#81d8d0" /> {t.customStudio.testRunBtn}
                     </button>
                   </div>
 
                   {testResult.tested && testResult.success && (
                     <div style={{ fontSize: '11px', color: '#94aeb0', display: 'flex', gap: '16px', fontFamily: 'monospace' }}>
-                      <span>Range: [{testResult.minVal?.toFixed(4)} → {testResult.maxVal?.toFixed(4)}]</span>
+                      <span>{t.customStudio.range}: [{testResult.minVal?.toFixed(4)} → {testResult.maxVal?.toFixed(4)}]</span>
                       <span>Last 5 Bars: [{testResult.sampleValues.map(v => v !== null ? v.toFixed(2) : 'null').join(', ')}]</span>
                     </div>
                   )}
@@ -951,7 +953,7 @@ function calculate(bars, params, indicators) {
                       cursor: 'pointer',
                     }}
                   >
-                    Cancel
+                    {t.rewards.closeBtn}
                   </button>
                   <button
                     onClick={handleSaveAndApply}
@@ -970,7 +972,7 @@ function calculate(bars, params, indicators) {
                       boxShadow: '0 0 20px rgba(10, 186, 181, 0.4)',
                     }}
                   >
-                    <Save size={15} /> Save & Apply to Live Chart
+                    <Save size={15} /> {t.customStudio.saveApplyBtn}
                   </button>
                 </div>
               </div>
@@ -983,7 +985,7 @@ function calculate(bars, params, indicators) {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <div>
                   <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#fff', marginBottom: '4px' }}>
-                    My Custom Indicator Library
+                    {t.customStudio.tabLibrary}
                   </h3>
                   <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                     Saved indicators stored in your browser local vault, ready to activate on any chart.
@@ -1002,7 +1004,7 @@ function calculate(bars, params, indicators) {
                     cursor: 'pointer',
                   }}
                 >
-                  + Create New Indicator
+                  {t.customStudio.newIndicatorBtn}
                 </button>
               </div>
 
@@ -1075,7 +1077,7 @@ function calculate(bars, params, indicators) {
                           }}
                         >
                           {isActive ? <Eye size={13} /> : <EyeOff size={13} />}
-                          {isActive ? 'Active on Chart' : 'Show on Chart'}
+                          {isActive ? t.customStudio.activeOnChart : t.customStudio.useTemplate}
                         </button>
 
                         <button
@@ -1108,7 +1110,7 @@ function calculate(bars, params, indicators) {
                               color: '#ef4444',
                               cursor: 'pointer',
                             }}
-                            title="Delete custom indicator"
+                            title={t.customStudio.deleteConfirm}
                           >
                             <Trash2 size={13} />
                           </button>

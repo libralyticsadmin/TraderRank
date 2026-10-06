@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ShieldCheck, CheckCircle, AlertTriangle } from 'lucide-react';
+import { useTranslation } from '../context/LanguageContext.tsx';
 
 interface AuditLog {
   id: string;
@@ -12,6 +13,7 @@ interface AuditLog {
 }
 
 export const SecurityVaultDrawer: React.FC = () => {
+  const { t } = useTranslation();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -39,10 +41,10 @@ export const SecurityVaultDrawer: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <ShieldCheck size={20} color="#81d8d0" />
           <h3 className="panel-title" style={{ margin: 0 }}>
-            Secrets Vault Security &amp; Audit Log
+            {t.vault.vaultTitle}
           </h3>
           <span className="brand-badge" style={{ background: 'rgba(129, 216, 208, 0.15)', color: '#81d8d0', borderColor: 'rgba(129, 216, 208, 0.3)' }}>
-            AES-256-GCM
+            {t.vault.aesBadge}
           </span>
         </div>
         <button
@@ -50,12 +52,12 @@ export const SecurityVaultDrawer: React.FC = () => {
           onClick={() => setIsOpen(!isOpen)}
           style={{ padding: '6px 12px', fontSize: '12px' }}
         >
-          {isOpen ? 'Collapse Audit Logs' : `View Live Vault Audit Trail (${logs.length})`}
+          {isOpen ? t.vault.collapseLogs : `${t.vault.viewLiveTrail} (${logs.length})`}
         </button>
       </div>
 
       <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: '14px' }}>
-        TraderRank isolates all Investor Passwords and Exness API Secrets in a dedicated AES-256-GCM Secrets Vault. No plaintext credentials are ever logged, sent to the database, or exposed to downstream services.
+        {t.vault.vaultDesc}
       </p>
 
       {isOpen && (
@@ -69,7 +71,7 @@ export const SecurityVaultDrawer: React.FC = () => {
           fontSize: '12px',
         }}>
           {logs.length === 0 ? (
-            <p style={{ color: 'var(--text-faint)' }}>No audit events logged yet.</p>
+            <p style={{ color: 'var(--text-faint)' }}>{t.vault.noLogsYet}</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {logs.map(log => (
@@ -104,11 +106,11 @@ export const SecurityVaultDrawer: React.FC = () => {
                     <span className="tabular">{new Date(log.timestamp).toLocaleTimeString()}</span>
                     {log.success ? (
                       <span style={{ color: 'var(--accent-green)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <CheckCircle size={12} /> OK
+                        <CheckCircle size={12} /> {t.vault.okStatus}
                       </span>
                     ) : (
                       <span style={{ color: 'var(--accent-red)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <AlertTriangle size={12} /> BLOCKED
+                        <AlertTriangle size={12} /> {t.vault.blockedStatus}
                       </span>
                     )}
                   </div>

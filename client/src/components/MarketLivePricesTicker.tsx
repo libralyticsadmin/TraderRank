@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Zap } from 'lucide-react';
+import { useTranslation } from '../context/LanguageContext.tsx';
 
 export interface MarketPairPrice {
   symbol: string;
@@ -11,7 +12,8 @@ export interface MarketPairPrice {
   spreadPips: string;
   high24h: number;
   low24h: number;
-  tag: string;
+  tag?: string;
+  tagKey?: string;
   source?: 'ALLTICK_LIVE' | 'LIVE_API' | 'SYNTHETIC';
   priceDirection?: 'up' | 'down' | 'neutral';
 }
@@ -27,7 +29,7 @@ const DEFAULT_TOP_PAIRS: MarketPairPrice[] = [
     spreadPips: '0.12 pips',
     high24h: 1.0885,
     low24h: 1.0820,
-    tag: '#1 MOST TRADED',
+    tagKey: 'tagMostTraded',
   },
   {
     symbol: 'USD/JPY',
@@ -39,7 +41,7 @@ const DEFAULT_TOP_PAIRS: MarketPairPrice[] = [
     spreadPips: '1.8 pips',
     high24h: 158.45,
     low24h: 157.20,
-    tag: 'ALLTICK FEED',
+    tagKey: 'tagAlltick',
     source: 'ALLTICK_LIVE',
   },
   {
@@ -52,7 +54,7 @@ const DEFAULT_TOP_PAIRS: MarketPairPrice[] = [
     spreadPips: '0.16 pips',
     high24h: 1.2760,
     low24h: 1.2690,
-    tag: 'HIGH MOMENTUM',
+    tagKey: 'tagHighMomentum',
   },
   {
     symbol: 'XAU/USD',
@@ -64,7 +66,7 @@ const DEFAULT_TOP_PAIRS: MarketPairPrice[] = [
     spreadPips: '0.30 pips',
     high24h: 4148.50,
     low24h: 4118.10,
-    tag: 'TOP PROFIT VOLATILITY',
+    tagKey: 'tagTopVolatility',
   },
   {
     symbol: 'MCL1!',
@@ -76,7 +78,7 @@ const DEFAULT_TOP_PAIRS: MarketPairPrice[] = [
     spreadPips: '0.03 pips',
     high24h: 91.80,
     low24h: 89.10,
-    tag: 'OANDA / NYMEX LIVE',
+    tagKey: 'tagOanda',
     source: 'ALLTICK_LIVE',
   },
   {
@@ -89,7 +91,7 @@ const DEFAULT_TOP_PAIRS: MarketPairPrice[] = [
     spreadPips: '12.0 pips',
     high24h: 66800.0,
     low24h: 64100.0,
-    tag: '24/7 ALPHA CRYPTO',
+    tagKey: 'tagCrypto',
   },
   {
     symbol: 'AUD/USD',
@@ -101,7 +103,7 @@ const DEFAULT_TOP_PAIRS: MarketPairPrice[] = [
     spreadPips: '0.12 pips',
     high24h: 0.6610,
     low24h: 0.6550,
-    tag: 'ASIA-PAC ANCHOR',
+    tagKey: 'tagAsiaPac',
   },
   {
     symbol: 'USD/CAD',
@@ -113,7 +115,7 @@ const DEFAULT_TOP_PAIRS: MarketPairPrice[] = [
     spreadPips: '0.15 pips',
     high24h: 1.3680,
     low24h: 1.3615,
-    tag: 'COMMODITY FX',
+    tagKey: 'tagCommodityFx',
   },
   {
     symbol: 'US30',
@@ -125,13 +127,21 @@ const DEFAULT_TOP_PAIRS: MarketPairPrice[] = [
     spreadPips: '2.5 pts',
     high24h: 41400.0,
     low24h: 40950.0,
-    tag: 'US SESSION VOLUME',
+    tagKey: 'tagUsSession',
   },
 ];
 
 export const MarketLivePricesTicker: React.FC = () => {
+  const { t } = useTranslation();
   const [pairs, setPairs] = useState<MarketPairPrice[]>(DEFAULT_TOP_PAIRS);
   const [lastTickSymbol, setLastTickSymbol] = useState<string | null>(null);
+
+  const getPairTag = (pair: MarketPairPrice) => {
+    if (pair.tagKey && (t.marketTicker as any)[pair.tagKey]) {
+      return (t.marketTicker as any)[pair.tagKey];
+    }
+    return pair.tag || t.marketTicker.topTradingPairs;
+  };
 
   // Fetch live server quotes
   useEffect(() => {
@@ -218,9 +228,9 @@ export const MarketLivePricesTicker: React.FC = () => {
         </div>
         <div className="market-badge-labels">
           <span className="market-badge-title">
-            <Zap size={11} className="market-zap-icon" /> MARKET LIVE PRICES
+            <Zap size={11} className="market-zap-icon" /> {t.marketTicker.badgeTitle}
           </span>
-          <span className="market-badge-sub">TOP TRADING PAIRS</span>
+          <span className="market-badge-sub">{t.marketTicker.badgeSubtitle}</span>
         </div>
       </div>
 
@@ -249,7 +259,7 @@ export const MarketLivePricesTicker: React.FC = () => {
                 {/* Middle Row: Live Bid / Ask */}
                 <div className="market-pair-rates">
                   <div className="rate-col">
-                    <span className="rate-label">BID</span>
+                    <span className="rate-label">{t.marketTicker.bid}</span>
                     <span
                       className={`rate-val tabular ${pair.priceDirection === 'up' ? 'text-tiffany' : pair.priceDirection === 'down' ? 'text-red' : ''}`}
                     >
@@ -260,7 +270,7 @@ export const MarketLivePricesTicker: React.FC = () => {
                   <div className="rate-divider">/</div>
 
                   <div className="rate-col">
-                    <span className="rate-label">ASK</span>
+                    <span className="rate-label">{t.marketTicker.ask}</span>
                     <span className="rate-val tabular text-muted">
                       {formatPrice(pair.symbol, pair.ask)}
                     </span>
@@ -270,9 +280,9 @@ export const MarketLivePricesTicker: React.FC = () => {
                 {/* Bottom Row: Spread & Tag */}
                 <div className="market-pair-footer">
                   <span className="market-spread-tag">
-                    SPR: <strong>{pair.spreadPips}</strong>
+                    {t.marketTicker.spread} <strong>{pair.spreadPips}</strong>
                   </span>
-                  <span className="market-perf-tag">{pair.tag}</span>
+                  <span className="market-perf-tag">{getPairTag(pair)}</span>
                 </div>
               </div>
             );

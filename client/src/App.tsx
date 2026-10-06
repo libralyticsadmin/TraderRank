@@ -299,7 +299,7 @@ export const App: React.FC = () => {
               </span>
             </div>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>
-              Multi-broker verified competitive esports arena for Forex, Commodities &amp; Crypto
+              {t.app.heroSubheading}
             </p>
           </div>
         </div>
@@ -356,7 +356,7 @@ export const App: React.FC = () => {
               padding: '3px 8px',
             }}
           >
-            {marketStatus?.feedStatus === 'LIVE_NETWORK' ? '● Real API Rates Live' : '● Live Market Engine'}
+            {marketStatus?.feedStatus === 'LIVE_NETWORK' ? `● ${t.marketTicker.realApiLive}` : `● ${t.marketTicker.liveEngine}`}
           </span>
         </div>
 
@@ -385,7 +385,7 @@ export const App: React.FC = () => {
             title={t.nav.refreshRates}
           >
             <RefreshCw size={13} className={isRefreshingMarket ? 'animate-spin' : ''} style={{ animation: isRefreshingMarket ? 'spin 1s linear infinite' : 'none' }} />
-            {isRefreshingMarket ? 'Syncing...' : t.nav.refreshRates}
+            {isRefreshingMarket ? t.app.syncing : t.nav.refreshRates}
           </button>
         </div>
       </div>
@@ -633,7 +633,7 @@ export const App: React.FC = () => {
         <div style={{ display: 'flex', gap: '16px', fontSize: '12px' }}>
           <span>© {new Date().getFullYear()} {t.footer.allRightsReserved}</span>
           <span>•</span>
-          <span>256-Bit SSL Isolated Vault</span>
+          <span>{t.app.sslVault}</span>
         </div>
       </footer>
     </div>
