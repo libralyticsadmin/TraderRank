@@ -250,7 +250,12 @@ export const App: React.FC = () => {
     return (
       <>
         <LandingPage
-          onEnterApp={() => setCurrentView('app')}
+          onEnterApp={(tab?: string) => {
+            if (tab) {
+              setActiveTab(tab as any);
+            }
+            setCurrentView('app');
+          }}
           onOpenConnectWizard={() => {
             setCurrentView('app');
             setIsWizardOpen(true);

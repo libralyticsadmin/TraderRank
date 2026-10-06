@@ -204,6 +204,34 @@ export interface TranslationDictionary {
     communityFeedTitle: string;
     liveTradeFeed: string;
   };
+  // Rewards & Badges Hub
+  rewards: {
+    title: string;
+    subtitle: string;
+    currentTier: string;
+    levelTrader: string;
+    currentXp: string;
+    progressTo: string;
+    xpRemaining: string;
+    dailyStreakTitle: string;
+    streakActive: string;
+    claimBtn: string;
+    claimed: string;
+    locked: string;
+    honorBadgesTitle: string;
+    honorBadgesSubtitle: string;
+    unlockedCount: string;
+    rarityCommon: string;
+    rarityRare: string;
+    rarityEpic: string;
+    rarityLegendary: string;
+    badgeModalTitle: string;
+    howToUnlock: string;
+    rewardBonus: string;
+    closeBtn: string;
+    toastClaimed: string;
+    exploreRewardsBtn: string;
+  };
   // Footer
   footer: {
     poweredBy: string;
@@ -410,6 +438,33 @@ export const translations: Record<Language, TranslationDictionary> = {
       communityFeedTitle: 'Live Global Community Stream',
       liveTradeFeed: 'Real-Time Trade Stream',
     },
+    rewards: {
+      title: 'Trader Prestige, XP & Honor Badges',
+      subtitle: 'Earn verified badges through strict risk management, high win rates, and tournament podium finishes.',
+      currentTier: 'Market Veteran',
+      levelTrader: 'LEVEL 3 TRADER',
+      currentXp: 'Current Experience',
+      progressTo: 'Progress to Level 4: Apex Predator',
+      xpRemaining: 'XP remaining to Level Up',
+      dailyStreakTitle: 'Daily Trading Streak Rewards',
+      streakActive: '🔥 4-Day Active Streak!',
+      claimBtn: 'Claim +200 XP',
+      claimed: 'Claimed',
+      locked: 'Locked',
+      honorBadgesTitle: 'Honor Badges & Achievements',
+      honorBadgesSubtitle: 'Earn badges through verified discipline, low drawdown, and podium finishes',
+      unlockedCount: '4 / 6 Badges Unlocked',
+      rarityCommon: 'COMMON',
+      rarityRare: 'RARE',
+      rarityEpic: 'EPIC',
+      rarityLegendary: 'LEGENDARY',
+      badgeModalTitle: 'Badge Details & Verification',
+      howToUnlock: 'Verification Requirement',
+      rewardBonus: 'Prestige XP Reward',
+      closeBtn: 'Close',
+      toastClaimed: '🎉 +200 XP Claimed! Daily Streak Extended.',
+      exploreRewardsBtn: 'Explore All Badges & Streaks →',
+    },
     footer: {
       poweredBy: 'Powered by',
       companyName: 'Libralytic Co.,Ltd',
@@ -614,6 +669,33 @@ export const translations: Record<Language, TranslationDictionary> = {
       communityFeedTitle: 'グローバル・コミュニティストリーム',
       liveTradeFeed: 'リアルタイム取引速報',
     },
+    rewards: {
+      title: 'トレーダープレステージ・XP & 栄誉バッジ',
+      subtitle: '厳格なリスク管理、高勝率、トーナメント上位入賞によって検証済みの栄誉バッジを獲得。',
+      currentTier: 'マーケットベテラン',
+      levelTrader: 'レベル 3 トレーダー',
+      currentXp: '現在の獲得 XP',
+      progressTo: 'レベル 4 (Apex Predator) への進捗',
+      xpRemaining: '次のレベルアップまで残り XP',
+      dailyStreakTitle: 'デイリートレード連続ログイン報酬',
+      streakActive: '🔥 4日連続アクティブストリーク！',
+      claimBtn: '+200 XP を受取る',
+      claimed: '受取済み',
+      locked: '未開放',
+      honorBadgesTitle: '栄誉バッジ & 実績一覧',
+      honorBadgesSubtitle: '規律あるトレード、低ドローダウン、表彰台フィニッシュで解除されます',
+      unlockedCount: '4 / 6 バッジ解除済み',
+      rarityCommon: 'コモン',
+      rarityRare: 'レア',
+      rarityEpic: 'エピック',
+      rarityLegendary: 'レジェンダリー',
+      badgeModalTitle: 'バッジ詳細と実績認定',
+      howToUnlock: '実績解除の認定基準',
+      rewardBonus: 'プレステージ XP 報酬',
+      closeBtn: '閉じる',
+      toastClaimed: '🎉 +200 XP を獲得しました！連続ログインを更新。',
+      exploreRewardsBtn: 'バッジとストリーク一覧を確認 →',
+    },
     footer: {
       poweredBy: 'Powered by',
       companyName: 'Libralytic Co.,Ltd',
@@ -817,6 +899,33 @@ export const translations: Record<Language, TranslationDictionary> = {
       badgesTitle: '荣誉勋章 & 段位体系',
       communityFeedTitle: '全球实盘交易动态流',
       liveTradeFeed: '实时成交快报',
+    },
+    rewards: {
+      title: '交易员段位声誉・XP经验值与荣誉勋章',
+      subtitle: '通过严格的风控纪律、高胜率交易及锦标赛前三名战绩，赢取官方验真的荣誉勋章。',
+      currentTier: '资深交易专家 (Market Veteran)',
+      levelTrader: 'LV.3 认证交易员',
+      currentXp: '当前经验值 (XP)',
+      progressTo: '晋级目标：LV.4 顶级掠食者 (Apex Predator)',
+      xpRemaining: '距下阶段升级所需经验',
+      dailyStreakTitle: '每日交易打卡与连续实盘激励',
+      streakActive: '🔥 4天连续活跃打卡！',
+      claimBtn: '领取 +200 XP',
+      claimed: '已领取',
+      locked: '未解锁',
+      honorBadgesTitle: '荣誉勋章与成就殿堂',
+      honorBadgesSubtitle: '基于只读验真的交易纪律、超低回撤与实盘战绩自动点亮',
+      unlockedCount: '已点亮 4 / 6 枚勋章',
+      rarityCommon: '普通',
+      rarityRare: '稀有',
+      rarityEpic: '史诗',
+      rarityLegendary: '传奇',
+      badgeModalTitle: '荣誉勋章详情与验真标准',
+      howToUnlock: '官方认定解锁条件',
+      rewardBonus: '段位声望 XP 奖励',
+      closeBtn: '关闭',
+      toastClaimed: '🎉 +200 XP 领取成功！连续打卡天数已刷新。',
+      exploreRewardsBtn: '探索全部勋章与打卡奖励 →',
     },
     footer: {
       poweredBy: 'Powered by',

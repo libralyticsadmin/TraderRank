@@ -9,6 +9,8 @@ import {
   ArrowRight,
   ChevronRight,
   Play,
+  Target,
+  Flame,
 } from 'lucide-react';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { TraderAvatar } from './TraderAvatar.tsx';
@@ -20,7 +22,7 @@ import { useTranslation } from '../context/LanguageContext.tsx';
 import { LanguageSelector } from './LanguageSelector.tsx';
 
 interface LandingPageProps {
-  onEnterApp: () => void;
+  onEnterApp: (tab?: string) => void;
   onOpenConnectWizard: () => void;
   onSelectTrader?: (trader: { username: string; broker?: any; rank?: number; score?: number }) => void;
 }
@@ -90,7 +92,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
       >
         <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <BrandLogo size={38} textSize={20} onClick={onEnterApp} />
+            <BrandLogo size={38} textSize={20} onClick={() => onEnterApp()} />
             <span
               style={{
                 fontSize: '10px',
@@ -147,7 +149,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
               {t.landing.connectBrokerBtn}
             </button>
             <button
-              onClick={onEnterApp}
+              onClick={() => onEnterApp()}
               style={{
                 background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 50%, #0891b2 100%)',
                 border: 'none',
@@ -260,7 +262,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
 
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', flexWrap: 'wrap', marginBottom: '48px' }}>
             <button
-              onClick={onEnterApp}
+              onClick={() => onEnterApp()}
               style={{
                 background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 100%)',
                 border: 'none',
@@ -451,7 +453,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
 
           <div style={{ textAlign: 'center' }}>
             <button
-              onClick={onEnterApp}
+              onClick={() => onEnterApp()}
               style={{
                 background: 'rgba(255, 255, 255, 0.05)',
                 border: '1px solid rgba(0, 240, 255, 0.3)',
@@ -560,6 +562,236 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
         </div>
       </section>
 
+      {/* Section 3b: Trader Rewards, Honor Badges & Daily Streaks */}
+      <section id="rewards" style={{ padding: '80px 24px', backgroundColor: '#080b11', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 800, color: '#00F0FF', marginBottom: '8px' }}>
+              <Award size={16} /> {t.nav.rewards}
+            </div>
+            <h2 style={{ fontSize: '36px', fontWeight: 900, margin: '0 0 12px', color: '#FFFFFF' }}>
+              {t.rewards.honorBadgesTitle}
+            </h2>
+            <p style={{ fontSize: '15px', color: '#848E9C', maxWidth: '640px', margin: '0 auto' }}>
+              {t.rewards.honorBadgesSubtitle}
+            </p>
+          </div>
+
+          {/* Daily Streak & XP Progression Card */}
+          <div
+            style={{
+              background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(14, 20, 31, 0.95) 100%)',
+              border: '1px solid rgba(0, 240, 255, 0.25)',
+              borderRadius: '20px',
+              padding: '32px',
+              marginBottom: '32px',
+              boxShadow: '0 12px 40px rgba(0, 0, 0, 0.4)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
+              <div>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    padding: '3px 10px',
+                    borderRadius: '12px',
+                    background: 'rgba(0, 240, 255, 0.15)',
+                    color: '#00F0FF',
+                    border: '1px solid rgba(0, 240, 255, 0.3)',
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  {t.rewards.levelTrader}
+                </span>
+                <h3 style={{ margin: '8px 0 0', fontSize: '24px', fontWeight: 900, color: '#FFFFFF' }}>
+                  {t.rewards.currentTier}
+                </h3>
+              </div>
+
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '12px', color: '#848E9C' }}>{t.rewards.currentXp}</div>
+                <div style={{ fontSize: '24px', fontWeight: 900, color: '#00F0FF' }}>
+                  2,750 <span style={{ fontSize: '14px', color: '#848E9C' }}>/ 5,000 XP</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Daily Streak Days Bar */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '10px', marginTop: '16px' }}>
+              {[
+                { day: 'Day 1', xp: '+50 XP', claimed: true },
+                { day: 'Day 2', xp: '+75 XP', claimed: true },
+                { day: 'Day 3', xp: '+100 XP', claimed: true },
+                { day: 'Day 4', xp: '+150 XP', claimed: true },
+                { day: 'Day 5', xp: '+200 XP', current: true },
+                { day: 'Day 6', xp: '+300 XP', locked: true },
+                { day: 'Day 7', xp: '+500 XP', mystery: true },
+              ].map((s, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    padding: '12px 8px',
+                    borderRadius: '10px',
+                    textAlign: 'center',
+                    background: s.claimed
+                      ? 'rgba(0, 218, 198, 0.1)'
+                      : s.current
+                      ? 'linear-gradient(135deg, rgba(240, 185, 11, 0.25), rgba(15, 23, 42, 0.8))'
+                      : 'rgba(255, 255, 255, 0.02)',
+                    border: s.claimed
+                      ? '1px solid rgba(0, 218, 198, 0.3)'
+                      : s.current
+                      ? '1px solid #F0B90B'
+                      : '1px solid rgba(255, 255, 255, 0.06)',
+                  }}
+                >
+                  <div style={{ fontSize: '10px', color: '#848E9C' }}>{s.day}</div>
+                  <div style={{ fontSize: '13px', fontWeight: 800, color: s.claimed ? '#00DAC6' : s.current ? '#F0B90B' : '#848E9C', margin: '4px 0' }}>
+                    {s.xp}
+                  </div>
+                  <div style={{ fontSize: '10px' }}>
+                    {s.claimed ? (
+                      <span style={{ color: '#00DAC6', fontWeight: 700 }}>✓ Claimed</span>
+                    ) : s.current ? (
+                      <span style={{ color: '#F0B90B', fontWeight: 800 }}>⚡ Active</span>
+                    ) : (
+                      <span style={{ color: '#848E9C' }}>🔒 Locked</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Honor Badges 4-Column Showcase */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '36px' }}>
+            <div
+              style={{
+                background: 'rgba(14, 20, 31, 0.85)',
+                border: '1px solid rgba(0, 218, 198, 0.3)',
+                borderRadius: '16px',
+                padding: '24px',
+                display: 'flex',
+                gap: '14px',
+              }}
+            >
+              <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(0, 218, 198, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Shield size={22} color="#00DAC6" />
+              </div>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#FFFFFF' }}>Risk Guardian</h4>
+                  <span style={{ fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: 'rgba(0, 218, 198, 0.2)', color: '#00DAC6' }}>EPIC</span>
+                </div>
+                <p style={{ fontSize: '12px', color: '#848E9C', margin: '0 0 10px', lineHeight: 1.4 }}>
+                  Completed a 5-day tournament with under 2.0% maximum drawdown.
+                </p>
+                <span style={{ fontSize: '11px', color: '#00F0FF', fontWeight: 700 }}>+500 XP • Verified</span>
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: 'rgba(14, 20, 31, 0.85)',
+                border: '1px solid rgba(0, 240, 255, 0.3)',
+                borderRadius: '16px',
+                padding: '24px',
+                display: 'flex',
+                gap: '14px',
+              }}
+            >
+              <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(0, 240, 255, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Target size={22} color="#00F0FF" />
+              </div>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#FFFFFF' }}>Precision Sniper</h4>
+                  <span style={{ fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: 'rgba(0, 240, 255, 0.2)', color: '#00F0FF' }}>RARE</span>
+                </div>
+                <p style={{ fontSize: '12px', color: '#848E9C', margin: '0 0 10px', lineHeight: 1.4 }}>
+                  Achieved &gt; 70% win rate across a minimum of 10 closed trades.
+                </p>
+                <span style={{ fontSize: '11px', color: '#00F0FF', fontWeight: 700 }}>+350 XP • Verified</span>
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: 'rgba(14, 20, 31, 0.85)',
+                border: '1px solid rgba(240, 185, 11, 0.3)',
+                borderRadius: '16px',
+                padding: '24px',
+                display: 'flex',
+                gap: '14px',
+              }}
+            >
+              <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(240, 185, 11, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Zap size={22} color="#F0B90B" />
+              </div>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#FFFFFF' }}>Century Club</h4>
+                  <span style={{ fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: 'rgba(240, 185, 11, 0.2)', color: '#F0B90B' }}>RARE</span>
+                </div>
+                <p style={{ fontSize: '12px', color: '#848E9C', margin: '0 0 10px', lineHeight: 1.4 }}>
+                  Harvested 100+ net normalized pips within a single trading week.
+                </p>
+                <span style={{ fontSize: '11px', color: '#00F0FF', fontWeight: 700 }}>+400 XP • Verified</span>
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: 'rgba(14, 20, 31, 0.85)',
+                border: '1px solid rgba(246, 70, 93, 0.3)',
+                borderRadius: '16px',
+                padding: '24px',
+                display: 'flex',
+                gap: '14px',
+              }}
+            >
+              <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(246, 70, 93, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Flame size={22} color="#F6465D" />
+              </div>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#FFFFFF' }}>Hall of Fame Titan</h4>
+                  <span style={{ fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: 'rgba(246, 70, 93, 0.2)', color: '#F6465D' }}>LEGENDARY</span>
+                </div>
+                <p style={{ fontSize: '12px', color: '#848E9C', margin: '0 0 10px', lineHeight: 1.4 }}>
+                  Crowned seasonal champion on the All-Time Legends leaderboard.
+                </p>
+                <span style={{ fontSize: '11px', color: '#00F0FF', fontWeight: 700 }}>+2,000 XP • Seasonal</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Button */}
+          <div style={{ textAlign: 'center' }}>
+            <button
+              onClick={() => onEnterApp('rewards')}
+              style={{
+                background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 100%)',
+                border: 'none',
+                color: '#080b11',
+                padding: '14px 32px',
+                borderRadius: '12px',
+                fontSize: '15px',
+                fontWeight: 900,
+                cursor: 'pointer',
+                boxShadow: '0 6px 24px rgba(0, 240, 255, 0.35)',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)')}
+              onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
+            >
+              {t.rewards.exploreRewardsBtn}
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* Section 4: Zero-Write Security & Trust Architecture */}
       <section id="security" style={{ padding: '80px 24px' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
@@ -620,7 +852,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
           </p>
 
           <button
-            onClick={onEnterApp}
+            onClick={() => onEnterApp()}
             style={{
               background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 100%)',
               border: 'none',

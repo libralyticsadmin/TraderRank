@@ -1,10 +1,25 @@
-import React from 'react';
-import { Shield, Target, Trophy, Zap, Star, Flame, CheckCircle, Lock, Gift } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  Shield,
+  Target,
+  Trophy,
+  Zap,
+  Star,
+  Flame,
+  CheckCircle,
+  Lock,
+  Gift,
+  X,
+  Award,
+  Sparkles,
+} from 'lucide-react';
+import { useTranslation } from '../context/LanguageContext.tsx';
 
 export interface HonorBadge {
   id: string;
   name: string;
   description: string;
+  criteria: string;
   icon: typeof Shield;
   color: string;
   unlocked: boolean;
@@ -14,20 +29,34 @@ export interface HonorBadge {
 }
 
 export const RewardsBadges: React.FC = () => {
-  const currentXp = 2750;
-  const currentLevel = 3;
-  const currentTier = 'Market Veteran';
+  const { t } = useTranslation();
+
+  const [currentXp, setCurrentXp] = useState<number>(2750);
   const nextLevelXp = 5000;
   const prevLevelXp = 2001;
-  const progressPct = Math.round(((currentXp - prevLevelXp) / (nextLevelXp - prevLevelXp)) * 100);
+  const progressPct = Math.min(100, Math.round(((currentXp - prevLevelXp) / (nextLevelXp - prevLevelXp)) * 100));
+
+  const [streakDays, setStreakDays] = useState([
+    { day: 'Day 1', xp: 50, claimed: true },
+    { day: 'Day 2', xp: 75, claimed: true },
+    { day: 'Day 3', xp: 100, claimed: true },
+    { day: 'Day 4', xp: 150, claimed: true },
+    { day: 'Day 5', xp: 200, claimed: false, current: true },
+    { day: 'Day 6', xp: 300, claimed: false },
+    { day: 'Day 7', xp: 500, claimed: false, bonus: 'Mystery Badge' },
+  ]);
+
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [selectedBadge, setSelectedBadge] = useState<HonorBadge | null>(null);
 
   const badges: HonorBadge[] = [
     {
       id: 'badge_risk_guardian',
       name: 'Risk Guardian',
       description: 'Completed a 5-day tournament with under 2.0% maximum drawdown.',
+      criteria: 'Verified 5-day trading streak with Max Trailing DD strictly below 2.00% equity.',
       icon: Shield,
-      color: '#0abab5',
+      color: '#00DAC6',
       unlocked: true,
       unlockedAt: 'Yesterday',
       rarity: 'EPIC',
@@ -37,8 +66,9 @@ export const RewardsBadges: React.FC = () => {
       id: 'badge_sniper',
       name: 'Precision Sniper',
       description: 'Achieved > 70% win rate across a minimum of 10 closed trades.',
+      criteria: 'Closed 10+ canonical orders with net win rate exceeding 70.0% on verified live feed.',
       icon: Target,
-      color: '#81d8d0',
+      color: '#00F0FF',
       unlocked: true,
       unlockedAt: '3 days ago',
       rarity: 'RARE',
@@ -48,8 +78,9 @@ export const RewardsBadges: React.FC = () => {
       id: 'badge_century_club',
       name: 'Century Club',
       description: 'Harvested 100+ net normalized pips within a single trading week.',
+      criteria: 'Accumulate 100.0+ normalized pips between Monday 00:00 UTC and Friday 23:59 UTC.',
       icon: Zap,
-      color: '#fbbf24',
+      color: '#F0B90B',
       unlocked: true,
       unlockedAt: 'Sep 12, 2026',
       rarity: 'RARE',
@@ -59,8 +90,9 @@ export const RewardsBadges: React.FC = () => {
       id: 'badge_podium_master',
       name: 'Podium Master',
       description: 'Finished Top 3 in an official verified community tournament.',
+      criteria: 'Place 1st, 2nd, or 3rd on the official final leaderboard of any Pro Arena contest.',
       icon: Trophy,
-      color: '#f59e0b',
+      color: '#F59E0B',
       unlocked: false,
       rarity: 'EPIC',
       xpReward: 750,
@@ -69,8 +101,9 @@ export const RewardsBadges: React.FC = () => {
       id: 'badge_hall_of_fame',
       name: 'Hall of Fame Titan',
       description: 'Crowned seasonal champion on the All-Time Legends leaderboard.',
+      criteria: 'Rank #1 globally at the conclusion of a 90-day competitive trading season.',
       icon: Flame,
-      color: '#ec4899',
+      color: '#F6465D',
       unlocked: false,
       rarity: 'LEGENDARY',
       xpReward: 2000,
@@ -79,8 +112,9 @@ export const RewardsBadges: React.FC = () => {
       id: 'badge_iron_discipline',
       name: 'Iron Discipline',
       description: 'Zero anti-gambling rule infractions across 30 consecutive trades.',
+      criteria: '30 consecutive trades with mandatory SL placement, no revenge trading, and max 2% risk/trade.',
       icon: Star,
-      color: '#8b5cf6',
+      color: '#8B5CF6',
       unlocked: true,
       unlockedAt: 'Last week',
       rarity: 'COMMON',
@@ -88,29 +122,77 @@ export const RewardsBadges: React.FC = () => {
     },
   ];
 
-  const streakDays = [
-    { day: 'Day 1', xp: 50, claimed: true },
-    { day: 'Day 2', xp: 75, claimed: true },
-    { day: 'Day 3', xp: 100, claimed: true },
-    { day: 'Day 4', xp: 150, claimed: true },
-    { day: 'Day 5', xp: 200, claimed: false, current: true },
-    { day: 'Day 6', xp: 300, claimed: false },
-    { day: 'Day 7', xp: 500, claimed: false, bonus: 'Mystery Badge' },
+  const handleClaimStreak = () => {
+    setStreakDays(prev =>
+      prev.map(d => (d.current ? { ...d, claimed: true, current: false } : d))
+    );
+    setCurrentXp(prev => prev + 200);
+    setToastMessage(t.rewards.toastClaimed);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  const tiers = [
+    { level: 1, name: 'Novice Trader', minXp: 0, color: '#848E9C' },
+    { level: 2, name: 'Pro Swing Trader', minXp: 1000, color: '#00DAC6' },
+    { level: 3, name: 'Market Veteran', minXp: 2500, color: '#00F0FF', active: true },
+    { level: 4, name: 'Apex Predator', minXp: 5000, color: '#F0B90B' },
+    { level: 5, name: 'Hall of Fame Titan', minXp: 10000, color: '#F6465D' },
   ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Toast Banner */}
+      {toastMessage && (
+        <div
+          style={{
+            padding: '12px 20px',
+            borderRadius: '12px',
+            background: 'linear-gradient(90deg, rgba(0, 240, 255, 0.2) 0%, rgba(0, 218, 198, 0.2) 100%)',
+            border: '1px solid #00F0FF',
+            color: '#FFFFFF',
+            fontWeight: 700,
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: '0 8px 24px rgba(0, 240, 255, 0.3)',
+            animation: 'fadeInScale 0.25s ease-out',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Sparkles size={18} color="#00F0FF" />
+            <span>{toastMessage}</span>
+          </div>
+          <button
+            onClick={() => setToastMessage(null)}
+            style={{ background: 'none', border: 'none', color: '#848E9C', cursor: 'pointer' }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
       {/* Tier & XP Status Hero Card */}
       <div
         className="card-panel"
         style={{
-          background: 'linear-gradient(135deg, rgba(129, 216, 208, 0.12) 0%, rgba(15, 23, 42, 0.9) 100%)',
-          border: '1px solid rgba(129, 216, 208, 0.3)',
+          background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.12) 0%, rgba(13, 19, 29, 0.95) 100%)',
+          border: '1px solid rgba(0, 240, 255, 0.3)',
           padding: '28px',
           borderRadius: '20px',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', marginBottom: '24px' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '20px',
+            marginBottom: '24px',
+          }}
+        >
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
               <span
@@ -119,57 +201,125 @@ export const RewardsBadges: React.FC = () => {
                   fontWeight: 800,
                   padding: '3px 10px',
                   borderRadius: '12px',
-                  background: 'rgba(129, 216, 208, 0.2)',
-                  color: 'var(--accent-cyan)',
-                  border: '1px solid rgba(129, 216, 208, 0.4)',
+                  background: 'rgba(0, 240, 255, 0.2)',
+                  color: '#00F0FF',
+                  border: '1px solid rgba(0, 240, 255, 0.4)',
+                  letterSpacing: '0.5px',
                 }}
               >
-                LEVEL {currentLevel} TRADER
+                {t.rewards.levelTrader}
               </span>
-              <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>TraderRank Global Rank</span>
+              <span style={{ fontSize: '13px', color: '#848E9C' }}>TraderRank Global Rank</span>
             </div>
-            <h2 style={{ margin: 0, fontSize: '28px', fontWeight: 900, letterSpacing: '-0.02em' }}>
-              {currentTier}
+            <h2 style={{ margin: 0, fontSize: '28px', fontWeight: 900, color: '#FFFFFF', letterSpacing: '-0.02em' }}>
+              {t.rewards.currentTier}
             </h2>
           </div>
 
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Current Experience</div>
-            <div style={{ fontSize: '24px', fontWeight: 900, color: 'var(--accent-cyan)' }}>
-              {currentXp.toLocaleString()} <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>/ {nextLevelXp.toLocaleString()} XP</span>
+            <div style={{ fontSize: '12px', color: '#848E9C' }}>{t.rewards.currentXp}</div>
+            <div style={{ fontSize: '26px', fontWeight: 900, color: '#00F0FF' }}>
+              {currentXp.toLocaleString()}{' '}
+              <span style={{ fontSize: '14px', color: '#848E9C' }}>/ {nextLevelXp.toLocaleString()} XP</span>
             </div>
           </div>
         </div>
 
         {/* Progress Bar */}
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px', color: 'var(--text-muted)' }}>
-            <span>Progress to <strong>Level 4: Apex Predator</strong></span>
-            <span><strong>{progressPct}%</strong> ({nextLevelXp - currentXp} XP remaining)</span>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: '12px',
+              marginBottom: '8px',
+              color: '#848E9C',
+            }}
+          >
+            <span>
+              {t.rewards.progressTo}
+            </span>
+            <span>
+              <strong style={{ color: '#00F0FF' }}>{progressPct}%</strong> ({nextLevelXp - currentXp} XP remaining)
+            </span>
           </div>
-          <div style={{ width: '100%', height: '10px', borderRadius: '5px', background: 'rgba(255, 255, 255, 0.08)', overflow: 'hidden' }}>
+          <div
+            style={{
+              width: '100%',
+              height: '10px',
+              borderRadius: '5px',
+              background: 'rgba(255, 255, 255, 0.08)',
+              overflow: 'hidden',
+            }}
+          >
             <div
               style={{
                 width: `${progressPct}%`,
                 height: '100%',
-                background: 'linear-gradient(90deg, var(--accent-cyan), var(--accent-green))',
+                background: 'linear-gradient(90deg, #00DAC6 0%, #00F0FF 100%)',
                 borderRadius: '5px',
-                transition: 'width 0.5s ease',
+                transition: 'width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                boxShadow: '0 0 12px rgba(0, 240, 255, 0.5)',
               }}
             />
           </div>
         </div>
+
+        {/* Trader Tier Breadcrumb */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+            gap: '10px',
+            marginTop: '20px',
+            paddingTop: '20px',
+            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+          }}
+        >
+          {tiers.map(tItem => (
+            <div
+              key={tItem.level}
+              style={{
+                padding: '8px 12px',
+                borderRadius: '8px',
+                background: tItem.active ? 'rgba(0, 240, 255, 0.15)' : 'rgba(255, 255, 255, 0.02)',
+                border: tItem.active ? '1px solid #00F0FF' : '1px solid rgba(255, 255, 255, 0.06)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              <Award size={14} color={tItem.color} />
+              <div>
+                <div style={{ fontSize: '10px', color: '#848E9C' }}>LV. {tItem.level}</div>
+                <div style={{ fontSize: '11px', fontWeight: 800, color: tItem.active ? '#00F0FF' : '#FFFFFF' }}>
+                  {tItem.name}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Daily Login & Trading Streak Rewards */}
-      <div className="card-panel" style={{ padding: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+      <div
+        className="card-panel"
+        style={{
+          padding: '24px',
+          background: 'rgba(14, 20, 31, 0.85)',
+          border: '1px solid rgba(0, 240, 255, 0.12)',
+          borderRadius: '16px',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Gift size={20} color="#fbbf24" />
-            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800 }}>Daily Trading Streak Rewards</h3>
+            <Gift size={20} color="#F0B90B" />
+            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#FFFFFF' }}>
+              {t.rewards.dailyStreakTitle}
+            </h3>
           </div>
-          <span style={{ fontSize: '12px', color: 'var(--accent-green)', fontWeight: 700 }}>
-            🔥 4-Day Active Streak!
+          <span style={{ fontSize: '12px', color: '#00DAC6', fontWeight: 700 }}>
+            {t.rewards.streakActive}
           </span>
         </div>
 
@@ -182,44 +332,73 @@ export const RewardsBadges: React.FC = () => {
                 borderRadius: '12px',
                 textAlign: 'center',
                 background: s.claimed
-                  ? 'rgba(10, 186, 181, 0.1)'
+                  ? 'rgba(0, 218, 198, 0.1)'
                   : s.current
-                  ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(15, 23, 42, 0.8))'
+                  ? 'linear-gradient(135deg, rgba(240, 185, 11, 0.25), rgba(15, 23, 42, 0.85))'
                   : 'rgba(255, 255, 255, 0.02)',
                 border: s.claimed
-                  ? '1px solid rgba(10, 186, 181, 0.3)'
+                  ? '1px solid rgba(0, 218, 198, 0.35)'
                   : s.current
-                  ? '1px solid rgba(245, 158, 11, 0.5)'
-                  : '1px solid var(--border-subtle)',
+                  ? '1px solid rgba(240, 185, 11, 0.6)'
+                  : '1px solid rgba(255, 255, 255, 0.08)',
+                transition: 'transform 0.2s, border-color 0.2s',
               }}
             >
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>{s.day}</div>
-              <div style={{ fontSize: '16px', fontWeight: 800, color: s.claimed ? 'var(--accent-green)' : s.current ? '#fbbf24' : 'var(--text-muted)' }}>
+              <div style={{ fontSize: '11px', color: '#848E9C', marginBottom: '4px' }}>{s.day}</div>
+              <div
+                style={{
+                  fontSize: '16px',
+                  fontWeight: 800,
+                  color: s.claimed ? '#00DAC6' : s.current ? '#F0B90B' : '#848E9C',
+                }}
+              >
                 +{s.xp} XP
               </div>
-              <div style={{ fontSize: '10px', marginTop: '6px' }}>
+              <div style={{ fontSize: '10px', marginTop: '8px' }}>
                 {s.claimed ? (
-                  <span style={{ color: 'var(--accent-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px' }}>
-                    <CheckCircle size={11} /> Claimed
+                  <span
+                    style={{
+                      color: '#00DAC6',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '3px',
+                      fontWeight: 700,
+                    }}
+                  >
+                    <CheckCircle size={11} /> {t.rewards.claimed}
                   </span>
                 ) : s.current ? (
                   <button
+                    onClick={handleClaimStreak}
                     style={{
-                      padding: '3px 8px',
+                      padding: '4px 12px',
                       borderRadius: '6px',
                       border: 'none',
-                      background: '#fbbf24',
-                      color: '#000',
-                      fontWeight: 800,
-                      fontSize: '10px',
+                      background: 'linear-gradient(135deg, #F0B90B 0%, #FFA000 100%)',
+                      color: '#080b11',
+                      fontWeight: 900,
+                      fontSize: '11px',
                       cursor: 'pointer',
+                      boxShadow: '0 2px 10px rgba(240, 185, 11, 0.4)',
+                      transition: 'transform 0.15s',
                     }}
+                    onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')}
+                    onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
                   >
-                    Claim
+                    {t.rewards.claimBtn}
                   </button>
                 ) : (
-                  <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px' }}>
-                    <Lock size={10} /> Locked
+                  <span
+                    style={{
+                      color: '#848E9C',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '3px',
+                    }}
+                  >
+                    <Lock size={10} /> {t.rewards.locked}
                   </span>
                 )}
               </div>
@@ -229,16 +408,35 @@ export const RewardsBadges: React.FC = () => {
       </div>
 
       {/* Honor Badges Grid */}
-      <div className="card-panel" style={{ padding: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      <div
+        className="card-panel"
+        style={{
+          padding: '24px',
+          background: 'rgba(14, 20, 31, 0.85)',
+          border: '1px solid rgba(0, 240, 255, 0.12)',
+          borderRadius: '16px',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '20px',
+            flexWrap: 'wrap',
+            gap: '10px',
+          }}
+        >
           <div>
-            <h3 style={{ margin: '0 0 4px', fontSize: '18px', fontWeight: 800 }}>Honor Badges &amp; Achievements</h3>
-            <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>
-              Earn badges through verified discipline, low drawdown, and podium finishes
+            <h3 style={{ margin: '0 0 4px', fontSize: '18px', fontWeight: 800, color: '#FFFFFF' }}>
+              {t.rewards.honorBadgesTitle}
+            </h3>
+            <p style={{ margin: 0, fontSize: '12px', color: '#848E9C' }}>
+              {t.rewards.honorBadgesSubtitle}
             </p>
           </div>
-          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent-cyan)' }}>
-            4 / 6 Unlocked
+          <span style={{ fontSize: '12px', fontWeight: 700, color: '#00F0FF' }}>
+            {t.rewards.unlockedCount}
           </span>
         </div>
 
@@ -248,15 +446,26 @@ export const RewardsBadges: React.FC = () => {
             return (
               <div
                 key={badge.id}
+                onClick={() => setSelectedBadge(badge)}
                 style={{
                   padding: '16px 18px',
                   borderRadius: '14px',
                   background: badge.unlocked ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.3)',
-                  border: badge.unlocked ? `1px solid ${badge.color}40` : '1px solid var(--border-subtle)',
+                  border: badge.unlocked ? `1px solid ${badge.color}50` : '1px solid rgba(255, 255, 255, 0.08)',
                   display: 'flex',
                   alignItems: 'flex-start',
                   gap: '14px',
-                  opacity: badge.unlocked ? 1 : 0.6,
+                  opacity: badge.unlocked ? 1 : 0.65,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.borderColor = badge.color;
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.borderColor = badge.unlocked ? `${badge.color}50` : 'rgba(255, 255, 255, 0.08)';
                 }}
               >
                 <div
@@ -270,14 +479,15 @@ export const RewardsBadges: React.FC = () => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
+                    boxShadow: badge.unlocked ? `0 0 16px ${badge.color}30` : 'none',
                   }}
                 >
-                  <Icon size={20} color={badge.unlocked ? badge.color : 'var(--text-muted)'} />
+                  <Icon size={20} color={badge.unlocked ? badge.color : '#848E9C'} />
                 </div>
 
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800 }}>{badge.name}</h4>
+                    <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#FFFFFF' }}>{badge.name}</h4>
                     <span
                       style={{
                         fontSize: '9px',
@@ -286,18 +496,19 @@ export const RewardsBadges: React.FC = () => {
                         borderRadius: '4px',
                         background: `${badge.color}20`,
                         color: badge.color,
+                        border: `1px solid ${badge.color}40`,
                       }}
                     >
                       {badge.rarity}
                     </span>
                   </div>
-                  <p style={{ margin: '0 0 8px', fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                  <p style={{ margin: '0 0 8px', fontSize: '12px', color: '#848E9C', lineHeight: '1.4' }}>
                     {badge.description}
                   </p>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
-                    <span style={{ color: 'var(--accent-cyan)', fontWeight: 700 }}>+{badge.xpReward} XP</span>
-                    <span style={{ color: 'var(--text-muted)' }}>
-                      {badge.unlocked ? `Unlocked ${badge.unlockedAt}` : 'Locked'}
+                    <span style={{ color: '#00F0FF', fontWeight: 700 }}>+{badge.xpReward} XP</span>
+                    <span style={{ color: '#848E9C', fontSize: '10px' }}>
+                      {badge.unlocked ? `✓ Unlocked (${badge.unlockedAt})` : '🔒 Click to inspect criteria'}
                     </span>
                   </div>
                 </div>
@@ -306,6 +517,135 @@ export const RewardsBadges: React.FC = () => {
           })}
         </div>
       </div>
+
+      {/* Interactive Badge Details Modal */}
+      {selectedBadge && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px',
+          }}
+          onClick={() => setSelectedBadge(null)}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '460px',
+              backgroundColor: '#0d131d',
+              border: `1px solid ${selectedBadge.color}`,
+              borderRadius: '20px',
+              padding: '28px',
+              boxShadow: `0 0 40px ${selectedBadge.color}30`,
+              animation: 'fadeInScale 0.2s ease-out',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <span
+                style={{
+                  fontSize: '10px',
+                  fontWeight: 800,
+                  padding: '3px 8px',
+                  borderRadius: '6px',
+                  background: `${selectedBadge.color}20`,
+                  color: selectedBadge.color,
+                  border: `1px solid ${selectedBadge.color}40`,
+                }}
+              >
+                {selectedBadge.rarity} PRESTIGE BADGE
+              </span>
+              <button
+                onClick={() => setSelectedBadge(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#848E9C',
+                  cursor: 'pointer',
+                  padding: '4px',
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <div
+                style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '16px',
+                  background: `${selectedBadge.color}20`,
+                  border: `2px solid ${selectedBadge.color}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 14px',
+                  boxShadow: `0 0 24px ${selectedBadge.color}50`,
+                }}
+              >
+                <selectedBadge.icon size={32} color={selectedBadge.color} />
+              </div>
+              <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#FFFFFF', margin: '0 0 6px' }}>
+                {selectedBadge.name}
+              </h3>
+              <p style={{ fontSize: '13px', color: '#848E9C', margin: 0, lineHeight: 1.5 }}>
+                {selectedBadge.description}
+              </p>
+            </div>
+
+            <div
+              style={{
+                background: 'rgba(8, 11, 17, 0.75)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '12px',
+                padding: '16px',
+                marginBottom: '20px',
+              }}
+            >
+              <div style={{ fontSize: '11px', color: '#848E9C', textTransform: 'uppercase', fontWeight: 700, marginBottom: '6px' }}>
+                {t.rewards.howToUnlock}
+              </div>
+              <p style={{ fontSize: '12px', color: '#FFFFFF', margin: '0 0 12px', lineHeight: 1.5 }}>
+                {selectedBadge.criteria}
+              </p>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '10px' }}>
+                <span style={{ fontSize: '11px', color: '#848E9C' }}>{t.rewards.rewardBonus}</span>
+                <span style={{ fontSize: '14px', fontWeight: 900, color: '#00F0FF' }}>
+                  +{selectedBadge.xpReward} XP
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setSelectedBadge(null)}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '10px',
+                border: 'none',
+                background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 100%)',
+                color: '#080b11',
+                fontSize: '13px',
+                fontWeight: 800,
+                cursor: 'pointer',
+              }}
+            >
+              {t.rewards.closeBtn}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
