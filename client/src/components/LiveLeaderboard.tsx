@@ -58,7 +58,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             tradesCount: trades,
             winRate: d.dailyWinRate || 68,
             xp: 1200 + (d.rank <= 3 ? 2000 : 500),
-            tier: d.rank === 1 ? 'Apex Predator' : d.rank <= 3 ? 'Market Veteran' : 'Pro Swing',
+            tier: d.rank === 1 ? t.rewards.tierApexPredator : d.rank <= 3 ? t.rewards.tierMarketVeteran : t.rewards.tierProSwing,
           };
         })
       : entries.map((e, idx) => {
@@ -76,7 +76,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             tradesCount: e.tradesCount || 12,
             winRate: e.winRate || 72,
             xp: e.xp || 2500,
-            tier: 'Market Veteran',
+            tier: t.rewards.tierMarketVeteran,
           };
         });
 

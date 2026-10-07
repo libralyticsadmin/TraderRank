@@ -52,8 +52,8 @@ export const TournamentArena: React.FC = () => {
   const tournaments: Tournament[] = [
     {
       id: 'tourney_weekly_blitz',
-      title: 'Weekly FX Blitz League',
-      subtitle: '5-Day Institutional Sprint across Forex & Metals',
+      title: t.arena.weeklySprint,
+      subtitle: t.arena.weeklySprintDesc,
       type: 'WEEKLY_SPRINT',
       prizePoolUsd: 5000,
       prizePoolXp: 15000,
@@ -65,13 +65,13 @@ export const TournamentArena: React.FC = () => {
         maxDailyLossPct: 5.0,
         maxTrailingDrawdownPct: 10.0,
         minTradesCount: 5,
-        scoringFormula: 'TraderScore = Net Pips * (1 + WinRate/100)',
+        scoringFormula: t.arena.scoringFormula,
       },
     },
     {
       id: 'tourney_monthly_prop',
-      title: 'Apex Prop Championship',
-      subtitle: '30-Day Endurance Gauntlet for Certified Traders',
+      title: t.arena.monthlyChampionship,
+      subtitle: t.arena.monthlyChampionshipDesc,
       type: 'MONTHLY_PROP',
       prizePoolUsd: 25000,
       prizePoolXp: 75000,
@@ -83,13 +83,13 @@ export const TournamentArena: React.FC = () => {
         maxDailyLossPct: 4.0,
         maxTrailingDrawdownPct: 8.0,
         minTradesCount: 20,
-        scoringFormula: 'TraderScore = Net Pips * SharpeRatio Multiplier',
+        scoringFormula: t.arena.scoringFormula,
       },
     },
     {
       id: 'tourney_gold_rush',
-      title: 'Global Gold Rush Masters',
-      subtitle: 'Precision XAUUSD & Precious Metals Gauntlet',
+      title: t.arena.globalGoldRushTitle,
+      subtitle: t.arena.globalGoldRushSubtitle,
       type: 'WEEKLY_SPRINT',
       prizePoolUsd: 10000,
       prizePoolXp: 30000,
@@ -101,13 +101,13 @@ export const TournamentArena: React.FC = () => {
         maxDailyLossPct: 4.5,
         maxTrailingDrawdownPct: 9.0,
         minTradesCount: 8,
-        scoringFormula: 'TraderScore = Gold Pips * (WinRate / 100)',
+        scoringFormula: t.arena.scoringFormula,
       },
     },
     {
       id: 'tourney_daily_rush',
-      title: 'Tokyo-London Overlap Rush',
-      subtitle: 'Fast-paced 8-hour session battle on GBP & EUR pairs',
+      title: t.arena.tokyoLondonOverlapTitle,
+      subtitle: t.arena.tokyoLondonOverlapSubtitle,
       type: 'DAILY_BLITZ',
       prizePoolUsd: 1500,
       prizePoolXp: 5000,
@@ -119,7 +119,7 @@ export const TournamentArena: React.FC = () => {
         maxDailyLossPct: 3.0,
         maxTrailingDrawdownPct: 6.0,
         minTradesCount: 3,
-        scoringFormula: 'TraderScore = Net Pips / Avg Holding Time',
+        scoringFormula: t.arena.scoringFormula,
       },
     },
   ];
@@ -132,7 +132,7 @@ export const TournamentArena: React.FC = () => {
       { rank: 2, userId: 'u_gold_bug', username: 'GoldBug_JP', broker: 'XM', avatarSymbol: 'XAUUSD', netPips: 74.2, tradesCount: 11, drawdownPct: 2.4, winRate: 72.7, status: 'ACTIVE', estimatedPrize: '$1,200 + 3,500 XP' },
       { rank: 3, userId: 'u_alpha_wave', username: 'AlphaWave', broker: 'Axiory', avatarSymbol: 'USDJPY', netPips: 61.9, tradesCount: 9, drawdownPct: 2.1, winRate: 66.7, status: 'ACTIVE', estimatedPrize: '$800 + 2,000 XP' },
       { rank: 4, userId: 'u_zen_scalp', username: 'ZenScalper', broker: 'Vantage', avatarSymbol: 'GBPUSD', netPips: 49.3, tradesCount: 16, drawdownPct: 3.2, winRate: 62.5, status: 'ACTIVE', estimatedPrize: '$400 + 1,000 XP' },
-      { rank: 5, userId: 'u_reckless_bull', username: 'RiskMaximus', broker: 'Exness', avatarSymbol: 'BTCUSD', netPips: 112.5, tradesCount: 4, drawdownPct: 7.2, winRate: 50.0, status: 'DISQUALIFIED', estimatedPrize: 'DQ (Max DD Exceeded)' },
+      { rank: 5, userId: 'u_reckless_bull', username: 'RiskMaximus', broker: 'Exness', avatarSymbol: 'BTCUSD', netPips: 112.5, tradesCount: 4, drawdownPct: 7.2, winRate: 50.0, status: 'DISQUALIFIED', estimatedPrize: t.arena.disqualifiedBadge },
     ],
     tourney_monthly_prop: [
       { rank: 1, userId: 'u_marcus_v', username: 'Marcus_V', broker: 'Axiory', avatarSymbol: 'EURUSD', netPips: 248.6, tradesCount: 42, drawdownPct: 3.1, winRate: 81.0, status: 'ACTIVE', estimatedPrize: '$10,000 + 30,000 XP' },
@@ -317,25 +317,25 @@ export const TournamentArena: React.FC = () => {
           <div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.arena.maxDailyLoss}</div>
             <div style={{ fontSize: '14px', fontWeight: 700, color: '#f59e0b' }}>
-              ≤ {currentTourney.rules.maxDailyLossPct}% Equity Loss
+              ≤ {currentTourney.rules.maxDailyLossPct}% {t.arena.equityLoss}
             </div>
           </div>
           <div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.arena.maxTrailingDD}</div>
             <div style={{ fontSize: '14px', fontWeight: 700, color: '#ef4444' }}>
-              ≤ {currentTourney.rules.maxTrailingDrawdownPct}% Peak DD
+              ≤ {currentTourney.rules.maxTrailingDrawdownPct}% {t.arena.peakDD}
             </div>
           </div>
           <div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.arena.minTradesReq}</div>
             <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--accent-cyan)' }}>
-              {currentTourney.rules.minTradesCount} Trades to Qualify
+              {currentTourney.rules.minTradesCount} {t.arena.tradesToQualify}
             </div>
           </div>
           <div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Scoring System</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.arena.scoringSystem}</div>
             <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>
-              Normalized Pips × WinRate
+              {t.arena.scoringFormula}
             </div>
           </div>
         </div>
@@ -413,7 +413,7 @@ export const TournamentArena: React.FC = () => {
                       )}
                     </div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                      {p.tradesCount} Trades • Max Drawdown: <span style={{ color: isDq ? '#ef4444' : 'var(--text-main)' }}>{p.drawdownPct}%</span> • Win Rate: {p.winRate}%
+                      {p.tradesCount} {t.dailyBest.trades} • {t.arena.maxTrailingDD}: <span style={{ color: isDq ? '#ef4444' : 'var(--text-main)' }}>{p.drawdownPct}%</span> • {t.dailyBest.winRate}: {p.winRate}%
                     </div>
                   </div>
                 </div>

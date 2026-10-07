@@ -394,7 +394,17 @@ export interface TranslationDictionary {
     communityFeedTitle: string;
     liveTradeFeed: string;
     weeklySprint: string;
+    weeklySprintTag: string;
+    weeklySprintDesc: string;
+    sprintDays: string;
     monthlyChampionship: string;
+    monthlyChampionshipTag: string;
+    monthlyChampionshipDesc: string;
+    monthlyDuration: string;
+    globalGoldRushTitle: string;
+    globalGoldRushSubtitle: string;
+    tokyoLondonOverlapTitle: string;
+    tokyoLondonOverlapSubtitle: string;
     maxDailyLoss: string;
     maxTrailingDD: string;
     minTradesReq: string;
@@ -404,7 +414,12 @@ export interface TranslationDictionary {
     maxDailyLossDesc: string;
     maxTrailingDDDesc: string;
     minTradesDesc: string;
+    scoringSystem: string;
+    scoringFormula: string;
     scoringSystemDesc: string;
+    tradesToQualify: string;
+    peakDD: string;
+    equityLoss: string;
     standingsTitle: string;
     disqualifiedBadge: string;
     enteredTracking: string;
@@ -427,7 +442,12 @@ export interface TranslationDictionary {
     streakActive: string;
     claimBtn: string;
     claimed: string;
+    active: string;
     locked: string;
+    verified: string;
+    seasonal: string;
+    mysteryBadge: string;
+    dayLabel: string;
     honorBadgesTitle: string;
     honorBadgesSubtitle: string;
     unlockedCount: string;
@@ -441,6 +461,34 @@ export interface TranslationDictionary {
     closeBtn: string;
     toastClaimed: string;
     exploreRewardsBtn: string;
+    badgeRiskGuardianName: string;
+    badgeRiskGuardianDesc: string;
+    badgeRiskGuardianCriteria: string;
+    badgePrecisionSniperName: string;
+    badgePrecisionSniperDesc: string;
+    badgePrecisionSniperCriteria: string;
+    badgeCenturyClubName: string;
+    badgeCenturyClubDesc: string;
+    badgeCenturyClubCriteria: string;
+    badgePodiumMasterName: string;
+    badgePodiumMasterDesc: string;
+    badgePodiumMasterCriteria: string;
+    badgeHallOfFameName: string;
+    badgeHallOfFameDesc: string;
+    badgeHallOfFameCriteria: string;
+    badgeIronDisciplineName: string;
+    badgeIronDisciplineDesc: string;
+    badgeIronDisciplineCriteria: string;
+    tierNovice: string;
+    tierProSwing: string;
+    tierMarketVeteran: string;
+    tierApexPredator: string;
+    tierHallOfFame: string;
+    prestigeBadge: string;
+    yesterday: string;
+    daysAgo: string;
+    lastWeek: string;
+    clickToInspect: string;
   };
 
   // Leaderboard & Rankings
@@ -1169,7 +1217,17 @@ export const translations: Record<Language, TranslationDictionary> = {
       communityFeedTitle: 'Live Global Community Stream',
       liveTradeFeed: 'Real-Time Trade Stream',
       weeklySprint: 'Weekly FX Blitz League',
+      weeklySprintTag: 'WEEKLY SPRINT',
+      weeklySprintDesc: 'Fast 5-day sprint for EUR, GBP, and Gold traders. Top 3 claim USD prizes and tier boosts.',
+      sprintDays: 'Monday – Friday',
       monthlyChampionship: 'Apex Prop Championship',
+      monthlyChampionshipTag: 'MONTHLY CHAMPIONSHIP',
+      monthlyChampionshipDesc: 'The flagship endurance competition. Multi-factor scoring combines net pips with Sharpe ratio stability.',
+      monthlyDuration: '30-Day Gauntlet',
+      globalGoldRushTitle: 'Global Gold Rush Masters',
+      globalGoldRushSubtitle: 'Precision XAUUSD & Precious Metals Gauntlet',
+      tokyoLondonOverlapTitle: 'Tokyo-London Overlap Rush',
+      tokyoLondonOverlapSubtitle: 'Fast-paced 8-hour session battle on GBP & EUR pairs',
       maxDailyLoss: 'Max Daily Loss',
       maxTrailingDD: 'Max Trailing Drawdown',
       minTradesReq: 'Minimum Trades to Qualify',
@@ -1179,7 +1237,12 @@ export const translations: Record<Language, TranslationDictionary> = {
       maxDailyLossDesc: 'Equity Loss',
       maxTrailingDDDesc: 'Peak DD',
       minTradesDesc: 'Trades to Qualify',
+      scoringSystem: 'Scoring System',
+      scoringFormula: 'Normalized Pips × WinRate',
       scoringSystemDesc: 'Normalized Pips × WinRate',
+      tradesToQualify: 'Trades to Qualify',
+      peakDD: 'Peak DD',
+      equityLoss: 'Equity Loss',
       standingsTitle: 'Battle Standings & Prize Positions',
       disqualifiedBadge: 'DISQUALIFIED',
       enteredTracking: 'ENTERED (TRACKING)',
@@ -1200,7 +1263,12 @@ export const translations: Record<Language, TranslationDictionary> = {
       streakActive: '🔥 4-Day Active Streak!',
       claimBtn: 'Claim +200 XP',
       claimed: 'Claimed',
+      active: 'Active',
       locked: 'Locked',
+      verified: 'Verified',
+      seasonal: 'Seasonal',
+      mysteryBadge: 'Mystery Badge',
+      dayLabel: 'Day',
       honorBadgesTitle: 'Honor Badges & Achievements',
       honorBadgesSubtitle: 'Earn badges through verified discipline, low drawdown, and podium finishes',
       unlockedCount: 'Unlocked Badges',
@@ -1214,6 +1282,34 @@ export const translations: Record<Language, TranslationDictionary> = {
       closeBtn: 'Close',
       toastClaimed: 'Daily Streak Claimed! +200 XP Added.',
       exploreRewardsBtn: 'Explore Rewards Hub',
+      badgeRiskGuardianName: 'Risk Guardian',
+      badgeRiskGuardianDesc: 'Completed a 5-day tournament with under 2.0% maximum drawdown.',
+      badgeRiskGuardianCriteria: 'Verified 5-day trading streak with Max Trailing DD strictly below 2.00% equity.',
+      badgePrecisionSniperName: 'Precision Sniper',
+      badgePrecisionSniperDesc: 'Achieved > 70% win rate across a minimum of 10 closed trades.',
+      badgePrecisionSniperCriteria: 'Closed 10+ canonical orders with net win rate exceeding 70.0% on verified live feed.',
+      badgeCenturyClubName: 'Century Club',
+      badgeCenturyClubDesc: 'Harvested 100+ net normalized pips within a single trading week.',
+      badgeCenturyClubCriteria: 'Accumulate 100.0+ normalized pips between Monday 00:00 UTC and Friday 23:59 UTC.',
+      badgePodiumMasterName: 'Podium Master',
+      badgePodiumMasterDesc: 'Finished Top 3 in an official verified community tournament.',
+      badgePodiumMasterCriteria: 'Place 1st, 2nd, or 3rd on the official final leaderboard of any Pro Arena contest.',
+      badgeHallOfFameName: 'Hall of Fame Titan',
+      badgeHallOfFameDesc: 'Crowned seasonal champion on the All-Time Legends leaderboard.',
+      badgeHallOfFameCriteria: 'Rank #1 globally at the conclusion of a 90-day competitive trading season.',
+      badgeIronDisciplineName: 'Iron Discipline',
+      badgeIronDisciplineDesc: 'Zero anti-gambling rule infractions across 30 consecutive trades.',
+      badgeIronDisciplineCriteria: '30 consecutive trades with mandatory SL placement, no revenge trading, and max 2% risk/trade.',
+      tierNovice: 'Novice Trader',
+      tierProSwing: 'Pro Swing Trader',
+      tierMarketVeteran: 'Market Veteran',
+      tierApexPredator: 'Apex Predator',
+      tierHallOfFame: 'Hall of Fame Titan',
+      prestigeBadge: 'Prestige Badge',
+      yesterday: 'Yesterday',
+      daysAgo: '3 days ago',
+      lastWeek: 'Last week',
+      clickToInspect: 'Click to inspect criteria',
     },
     leaderboard: {
       title: 'Global Verified Leaderboard',
@@ -1916,7 +2012,17 @@ export const translations: Record<Language, TranslationDictionary> = {
       communityFeedTitle: '世界コミュニティ・リアルタイム配信',
       liveTradeFeed: 'リアルタイム取引速報',
       weeklySprint: '週間 FX ブリッツリーグ',
+      weeklySprintTag: '週間スプリント',
+      weeklySprintDesc: 'EUR、GBP、ゴールドトレーダー向けの5日間スプリント。上位3名に賞金およびランク昇格ボーナスが付与されます。',
+      sprintDays: '月曜日 – 金曜日',
       monthlyChampionship: '月間 Apex プロップ選手権',
+      monthlyChampionshipTag: '月間チャンピオンシップ',
+      monthlyChampionshipDesc: '旗艦となる長期耐力コンペティション。獲得PIPSとシャープレシオの安定性を組み合わせた多面評価。',
+      monthlyDuration: '30日間ガントレット',
+      globalGoldRushTitle: 'グローバル・ゴールドラッシュ・マスターズ',
+      globalGoldRushSubtitle: 'XAUUSDおよび貴金属の精密トレードガントレット',
+      tokyoLondonOverlapTitle: '東京・ロンドン・オーバーラップ・ラッシュ',
+      tokyoLondonOverlapSubtitle: 'GBP・EUR通貨ペアを対象とした白熱の8時間セッションバトル',
       maxDailyLoss: '日次最大許容損失',
       maxTrailingDD: '最大トレイリングドローダウン',
       minTradesReq: '認定に必要な最低取引回数',
@@ -1926,7 +2032,12 @@ export const translations: Record<Language, TranslationDictionary> = {
       maxDailyLossDesc: '純資産損失',
       maxTrailingDDDesc: 'ピーク時DD',
       minTradesDesc: '回以上の取引で認定',
+      scoringSystem: 'スコアリング方式',
+      scoringFormula: '正規化純Pips × 勝率',
       scoringSystemDesc: '正規化純Pips × 勝率',
+      tradesToQualify: '達成に必要な取引数',
+      peakDD: 'ピーク時DD',
+      equityLoss: '有効証拠金損失',
       standingsTitle: '大会順位表 & 賞金獲得圏',
       disqualifiedBadge: '失格判定',
       enteredTracking: '参戦中 (成績追跡中)',
@@ -1947,7 +2058,12 @@ export const translations: Record<Language, TranslationDictionary> = {
       streakActive: '🔥 4日連続アクティブ継続中！',
       claimBtn: '+200 XP を受け取る',
       claimed: '獲得済み',
+      active: '獲得可能',
       locked: '未解放',
+      verified: '公式認定',
+      seasonal: 'シーズン限定',
+      mysteryBadge: 'ミステリーバッジ',
+      dayLabel: '日目',
       honorBadgesTitle: '名誉バッジ & 実績一覧',
       honorBadgesSubtitle: '低ドローダウン、高い規律、表彰台フィニッシュで名誉バッジを獲得',
       unlockedCount: '解放済みバッジ',
@@ -1961,6 +2077,34 @@ export const translations: Record<Language, TranslationDictionary> = {
       closeBtn: '閉じる',
       toastClaimed: 'デイリーストリークを受け取りました！ +200 XP 追加。',
       exploreRewardsBtn: 'リワードハブを見る',
+      badgeRiskGuardianName: 'リスク・ガーディアン',
+      badgeRiskGuardianDesc: '最大ドローダウン2.0%未満で5日間の大会を完走。',
+      badgeRiskGuardianCriteria: '最大ドローダウン2.00%未満を厳格に維持した5日間の検証済み取引。',
+      badgePrecisionSniperName: 'プレシジョン・スナイパー',
+      badgePrecisionSniperDesc: '10回以上の決済取引で勝率70%超を達成。',
+      badgePrecisionSniperCriteria: '検証済みライブフィードで勝率70.0%超の10回以上の注文を決済。',
+      badgeCenturyClubName: 'センチュリー・クラブ',
+      badgeCenturyClubDesc: '単一の取引週間で100以上の純Pipsを獲得。',
+      badgeCenturyClubCriteria: '月曜00:00 UTCから金曜23:59 UTCの間に100.0以上の正規化Pipsを獲得。',
+      badgePodiumMasterName: 'ポディウム・マスター',
+      badgePodiumMasterDesc: '公式検証済みコミュニティ大会でトップ3に入賞。',
+      badgePodiumMasterCriteria: '公式プロアリーナ大会の最終リーダーボードで1位〜3位に入賞。',
+      badgeHallOfFameName: '殿堂入りタイタン',
+      badgeHallOfFameDesc: '歴代レジェンドリーダーボードでシーズン王者に戴冠。',
+      badgeHallOfFameCriteria: '90日間の競技取引シーズンの終了時に世界ランク1位を獲得。',
+      badgeIronDisciplineName: '鉄の規律',
+      badgeIronDisciplineDesc: '30回連続の取引でアンチギャンブル規律違反ゼロ。',
+      badgeIronDisciplineCriteria: '必須SL設定、リベンジトレード禁止、1トレードあたり最大リスク2%を30回連続遵守。',
+      tierNovice: 'ノービス・トレーダー',
+      tierProSwing: 'プロ・スイングトレーダー',
+      tierMarketVeteran: 'マーケットベテラン',
+      tierApexPredator: 'Apex プレデター',
+      tierHallOfFame: '殿堂入りタイタン',
+      prestigeBadge: 'プレステージバッジ',
+      yesterday: '昨日',
+      daysAgo: '3日前',
+      lastWeek: '先週',
+      clickToInspect: 'クリックして条件を表示',
     },
     leaderboard: {
       title: '世界検証済みリーダーボード',
@@ -2663,7 +2807,17 @@ export const translations: Record<Language, TranslationDictionary> = {
       communityFeedTitle: '全球实盘动态流',
       liveTradeFeed: '实时成交快讯',
       weeklySprint: '每周 FX 极速冲刺联赛',
+      weeklySprintTag: '周度冲刺赛',
+      weeklySprintDesc: '面向EUR、GBP及黄金交易者的5天极速冲刺赛。前3名可获得美元奖金与等级提升。',
+      sprintDays: '周一 – 周五',
       monthlyChampionship: '每月 Apex 职业大师锦标赛',
+      monthlyChampionshipTag: '月度冠军锦标赛',
+      monthlyChampionshipDesc: '旗舰级耐力排位大赛。结合净点数与夏普比率稳定性的多维度量化评分。',
+      monthlyDuration: '30天耐力排位赛',
+      globalGoldRushTitle: '全球淘金大师锦标赛',
+      globalGoldRushSubtitle: '专注XAUUSD黄金与贵金属的高精度竞技排位赛',
+      tokyoLondonOverlapTitle: '东京-伦敦重叠时段极速赛',
+      tokyoLondonOverlapSubtitle: '针对GBP与EUR货币对的8小时紧凑时段排位赛',
       maxDailyLoss: '每日最大允许亏损',
       maxTrailingDD: '最大动态回撤',
       minTradesReq: '资格认证最低交易笔数',
@@ -2673,7 +2827,12 @@ export const translations: Record<Language, TranslationDictionary> = {
       maxDailyLossDesc: '净值单日亏损',
       maxTrailingDDDesc: '峰值动态回撤',
       minTradesDesc: '笔成交即可参评',
+      scoringSystem: '评分机制',
+      scoringFormula: '标准化净点数 × 胜率',
       scoringSystemDesc: '标准化净点数 × 胜率',
+      tradesToQualify: '达标交易次数',
+      peakDD: '峰值动态回撤',
+      equityLoss: '净值亏损',
       standingsTitle: '实时排位表与奖金名次',
       disqualifiedBadge: '风控违规失格',
       enteredTracking: '已参赛 (数据追踪中)',
@@ -2694,7 +2853,12 @@ export const translations: Record<Language, TranslationDictionary> = {
       streakActive: '🔥 已连续保持 4 天活跃！',
       claimBtn: '领取 +200 XP',
       claimed: '已领取',
+      active: '当前活跃',
       locked: '未解锁',
+      verified: '已验证',
+      seasonal: '赛季专属',
+      mysteryBadge: '神秘宝箱徽章',
+      dayLabel: '第天',
       honorBadgesTitle: '实盘荣誉勋章与成就',
       honorBadgesSubtitle: '通过低回撤、严谨执行力及锦标赛夺冠赢取荣誉勋章',
       unlockedCount: '已解锁勋章',
@@ -2708,6 +2872,34 @@ export const translations: Record<Language, TranslationDictionary> = {
       closeBtn: '关闭',
       toastClaimed: '打卡奖励领取成功！+200 XP 已存入。',
       exploreRewardsBtn: '查看勋章中心',
+      badgeRiskGuardianName: '风险守护者',
+      badgeRiskGuardianDesc: '以低于2.0%的最大回撤完赛5天锦标赛。',
+      badgeRiskGuardianCriteria: '经认证在5天交易中最大追踪回撤严格控制在2.00%以内。',
+      badgePrecisionSniperName: '精准狙击手',
+      badgePrecisionSniperDesc: '在至少10笔已平仓交易中实现70%以上的胜率。',
+      badgePrecisionSniperCriteria: '在实盘认证数据中完成10笔以上交易且胜率超过70.0%。',
+      badgeCenturyClubName: '百点俱乐部',
+      badgeCenturyClubDesc: '在单周交易内累计斩获100点以上的标准化净点数。',
+      badgeCenturyClubCriteria: '在周一00:00至周五23:59 UTC之间累计斩获100.0点以上标准化净点数。',
+      badgePodiumMasterName: '领奖台大师',
+      badgePodiumMasterDesc: '在官方认证的交易锦标赛中斩获前3名。',
+      badgePodiumMasterCriteria: '在任意专业竞技场大赛最终排行榜中获得第1、2或3名。',
+      badgeHallOfFameName: '名人堂泰坦',
+      badgeHallOfFameDesc: '荣登历史传奇排行榜并加冕赛季总冠军。',
+      badgeHallOfFameCriteria: '在为期90天的竞技交易赛季结算时荣登全球第1名。',
+      badgeIronDisciplineName: '钢铁纪律',
+      badgeIronDisciplineDesc: '连续30笔交易零违规（严格执行止损、杜绝报复性交易且单笔风险≤2%）。',
+      badgeIronDisciplineCriteria: '连续30笔交易强制设置止损、拒绝情绪化交易且单笔风险上限2%。',
+      tierNovice: '新手交易员',
+      tierProSwing: '专业波段交易员',
+      tierMarketVeteran: '市场老将',
+      tierApexPredator: 'Apex 顶级掠食者',
+      tierHallOfFame: '名人堂泰坦',
+      prestigeBadge: '声望勋章',
+      yesterday: '昨天',
+      daysAgo: '3天前',
+      lastWeek: '上周',
+      clickToInspect: '点击查看解锁条件',
     },
     leaderboard: {
       title: '全球实盘权威排行榜',

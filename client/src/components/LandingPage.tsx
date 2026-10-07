@@ -28,7 +28,7 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConnectWizard, onSelectTrader }) => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [activeTabRanking, setActiveTabRanking] = useState<'pips' | 'profit' | 'rate'>('pips');
 
   const topPodiumTraders = [
@@ -42,8 +42,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
       rate: 142.5,
       trades: 14,
       winRate: 78.5,
-      tier: 'Apex Predator',
-      badge: 'Gold Champion',
+      tier: t.rewards.tierApexPredator,
+      badge: t.leaderboard.goldChampion,
       glow: '#fbbf24',
     },
     {
@@ -56,8 +56,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
       rate: 118.0,
       trades: 11,
       winRate: 72.7,
-      tier: 'Market Veteran',
-      badge: 'Silver Contender',
+      tier: t.rewards.tierMarketVeteran,
+      badge: t.leaderboard.silverContender,
       glow: '#94a3b8',
     },
     {
@@ -70,8 +70,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
       rate: 94.2,
       trades: 9,
       winRate: 66.7,
-      tier: 'Pro Swing',
-      badge: 'Bronze Master',
+      tier: t.rewards.tierProSwing,
+      badge: t.leaderboard.bronzeMaster,
       glow: '#d97706',
     },
   ];
@@ -428,7 +428,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
                   <div>
                     <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#FFFFFF' }}>{trader.username}</h3>
                     <div style={{ fontSize: '12px', color: '#848E9C', marginTop: '2px' }}>
-                      {trader.tier} • {trader.trades} Trades
+                      {trader.tier} • {trader.trades} {t.dailyBest.trades}
                     </div>
                   </div>
                 </div>
@@ -507,13 +507,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                 <span style={{ fontSize: '11px', fontWeight: 800, padding: '3px 8px', borderRadius: '6px', background: 'rgba(0, 240, 255, 0.15)', color: '#00F0FF' }}>
-                  WEEKLY SPRINT
+                  {t.arena.weeklySprintTag}
                 </span>
-                <span style={{ fontSize: '12px', color: '#848E9C' }}>Monday – Friday</span>
+                <span style={{ fontSize: '12px', color: '#848E9C' }}>{t.arena.sprintDays}</span>
               </div>
-              <h3 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 8px', color: '#FFFFFF' }}>Weekly FX Blitz League</h3>
+              <h3 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 8px', color: '#FFFFFF' }}>{t.arena.weeklySprint}</h3>
               <p style={{ fontSize: '13px', color: '#848E9C', margin: '0 0 20px', lineHeight: '1.5' }}>
-                Fast 5-day sprint for EUR, GBP, and Gold traders. Top 3 claim USD prizes and tier boosts.
+                {t.arena.weeklySprintDesc}
               </p>
 
               <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(8, 11, 17, 0.7)', marginBottom: '20px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
@@ -522,9 +522,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
               </div>
 
               <div style={{ fontSize: '12px', color: '#848E9C', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div>✓ Max Daily Loss: 5.0% Equity</div>
-                <div>✓ Max Trailing DD: 10.0%</div>
-                <div>✓ Min. 5 Trades to Qualify</div>
+                <div>✓ {t.arena.maxDailyLoss}: 5.0% {t.arena.equityLoss}</div>
+                <div>✓ {t.arena.maxTrailingDD}: 10.0%</div>
+                <div>✓ 5 {t.arena.minTradesDesc}</div>
               </div>
             </div>
 
@@ -538,13 +538,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                 <span style={{ fontSize: '11px', fontWeight: 800, padding: '3px 8px', borderRadius: '6px', background: 'rgba(240, 185, 11, 0.15)', color: '#F0B90B' }}>
-                  MONTHLY CHAMPIONSHIP
+                  {t.arena.monthlyChampionshipTag}
                 </span>
-                <span style={{ fontSize: '12px', color: '#848E9C' }}>30-Day Gauntlet</span>
+                <span style={{ fontSize: '12px', color: '#848E9C' }}>{t.arena.monthlyDuration}</span>
               </div>
-              <h3 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 8px', color: '#FFFFFF' }}>Apex Prop Championship</h3>
+              <h3 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 8px', color: '#FFFFFF' }}>{t.arena.monthlyChampionship}</h3>
               <p style={{ fontSize: '13px', color: '#848E9C', margin: '0 0 20px', lineHeight: '1.5' }}>
-                The flagship endurance competition. Multi-factor scoring combines net pips with Sharpe ratio stability.
+                {t.arena.monthlyChampionshipDesc}
               </p>
 
               <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(8, 11, 17, 0.7)', marginBottom: '20px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
@@ -553,9 +553,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
               </div>
 
               <div style={{ fontSize: '12px', color: '#848E9C', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div>✓ Max Daily Loss: 4.0% Equity</div>
-                <div>✓ Max Trailing DD: 8.0%</div>
-                <div>✓ Min. 20 Trades to Qualify</div>
+                <div>✓ {t.arena.maxDailyLoss}: 4.0% {t.arena.equityLoss}</div>
+                <div>✓ {t.arena.maxTrailingDD}: 8.0%</div>
+                <div>✓ 20 {t.arena.minTradesDesc}</div>
               </div>
             </div>
           </div>
@@ -620,13 +620,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
             {/* Daily Streak Days Bar */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '10px', marginTop: '16px' }}>
               {[
-                { day: 'Day 1', xp: '+50 XP', claimed: true },
-                { day: 'Day 2', xp: '+75 XP', claimed: true },
-                { day: 'Day 3', xp: '+100 XP', claimed: true },
-                { day: 'Day 4', xp: '+150 XP', claimed: true },
-                { day: 'Day 5', xp: '+200 XP', current: true },
-                { day: 'Day 6', xp: '+300 XP', locked: true },
-                { day: 'Day 7', xp: '+500 XP', mystery: true },
+                { dayNum: 1, xp: '+50 XP', claimed: true },
+                { dayNum: 2, xp: '+75 XP', claimed: true },
+                { dayNum: 3, xp: '+100 XP', claimed: true },
+                { dayNum: 4, xp: '+150 XP', claimed: true },
+                { dayNum: 5, xp: '+200 XP', current: true },
+                { dayNum: 6, xp: '+300 XP', locked: true },
+                { dayNum: 7, xp: '+500 XP', mystery: true },
               ].map((s, idx) => (
                 <div
                   key={idx}
@@ -646,17 +646,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
                       : '1px solid rgba(255, 255, 255, 0.06)',
                   }}
                 >
-                  <div style={{ fontSize: '10px', color: '#848E9C' }}>{s.day}</div>
+                  <div style={{ fontSize: '10px', color: '#848E9C' }}>
+                    {language === 'ja' ? `${s.dayNum}日目` : language === 'zh' ? `第 ${s.dayNum} 天` : `Day ${s.dayNum}`}
+                  </div>
                   <div style={{ fontSize: '13px', fontWeight: 800, color: s.claimed ? '#00DAC6' : s.current ? '#F0B90B' : '#848E9C', margin: '4px 0' }}>
                     {s.xp}
                   </div>
                   <div style={{ fontSize: '10px' }}>
                     {s.claimed ? (
-                      <span style={{ color: '#00DAC6', fontWeight: 700 }}>✓ Claimed</span>
+                      <span style={{ color: '#00DAC6', fontWeight: 700 }}>✓ {t.rewards.claimed}</span>
                     ) : s.current ? (
-                      <span style={{ color: '#F0B90B', fontWeight: 800 }}>⚡ Active</span>
+                      <span style={{ color: '#F0B90B', fontWeight: 800 }}>⚡ {t.rewards.active}</span>
                     ) : (
-                      <span style={{ color: '#848E9C' }}>🔒 Locked</span>
+                      <span style={{ color: '#848E9C' }}>🔒 {t.rewards.locked}</span>
                     )}
                   </div>
                 </div>
@@ -681,13 +683,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
               </div>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#FFFFFF' }}>Risk Guardian</h4>
-                  <span style={{ fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: 'rgba(0, 218, 198, 0.2)', color: '#00DAC6' }}>EPIC</span>
+                  <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#FFFFFF' }}>{t.rewards.badgeRiskGuardianName}</h4>
+                  <span style={{ fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: 'rgba(0, 218, 198, 0.2)', color: '#00DAC6' }}>{t.rewards.rarityEpic}</span>
                 </div>
                 <p style={{ fontSize: '12px', color: '#848E9C', margin: '0 0 10px', lineHeight: 1.4 }}>
-                  Completed a 5-day tournament with under 2.0% maximum drawdown.
+                  {t.rewards.badgeRiskGuardianDesc}
                 </p>
-                <span style={{ fontSize: '11px', color: '#00F0FF', fontWeight: 700 }}>+500 XP • Verified</span>
+                <span style={{ fontSize: '11px', color: '#00F0FF', fontWeight: 700 }}>+500 XP • {t.rewards.verified}</span>
               </div>
             </div>
 
@@ -706,13 +708,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
               </div>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#FFFFFF' }}>Precision Sniper</h4>
-                  <span style={{ fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: 'rgba(0, 240, 255, 0.2)', color: '#00F0FF' }}>RARE</span>
+                  <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#FFFFFF' }}>{t.rewards.badgePrecisionSniperName}</h4>
+                  <span style={{ fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: 'rgba(0, 240, 255, 0.2)', color: '#00F0FF' }}>{t.rewards.rarityRare}</span>
                 </div>
                 <p style={{ fontSize: '12px', color: '#848E9C', margin: '0 0 10px', lineHeight: 1.4 }}>
-                  Achieved &gt; 70% win rate across a minimum of 10 closed trades.
+                  {t.rewards.badgePrecisionSniperDesc}
                 </p>
-                <span style={{ fontSize: '11px', color: '#00F0FF', fontWeight: 700 }}>+350 XP • Verified</span>
+                <span style={{ fontSize: '11px', color: '#00F0FF', fontWeight: 700 }}>+350 XP • {t.rewards.verified}</span>
               </div>
             </div>
 
@@ -731,13 +733,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
               </div>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#FFFFFF' }}>Century Club</h4>
-                  <span style={{ fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: 'rgba(240, 185, 11, 0.2)', color: '#F0B90B' }}>RARE</span>
+                  <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#FFFFFF' }}>{t.rewards.badgeCenturyClubName}</h4>
+                  <span style={{ fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: 'rgba(240, 185, 11, 0.2)', color: '#F0B90B' }}>{t.rewards.rarityRare}</span>
                 </div>
                 <p style={{ fontSize: '12px', color: '#848E9C', margin: '0 0 10px', lineHeight: 1.4 }}>
-                  Harvested 100+ net normalized pips within a single trading week.
+                  {t.rewards.badgeCenturyClubDesc}
                 </p>
-                <span style={{ fontSize: '11px', color: '#00F0FF', fontWeight: 700 }}>+400 XP • Verified</span>
+                <span style={{ fontSize: '11px', color: '#00F0FF', fontWeight: 700 }}>+400 XP • {t.rewards.verified}</span>
               </div>
             </div>
 
@@ -756,13 +758,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
               </div>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#FFFFFF' }}>Hall of Fame Titan</h4>
-                  <span style={{ fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: 'rgba(246, 70, 93, 0.2)', color: '#F6465D' }}>LEGENDARY</span>
+                  <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#FFFFFF' }}>{t.rewards.badgeHallOfFameName}</h4>
+                  <span style={{ fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: 'rgba(246, 70, 93, 0.2)', color: '#F6465D' }}>{t.rewards.rarityLegendary}</span>
                 </div>
                 <p style={{ fontSize: '12px', color: '#848E9C', margin: '0 0 10px', lineHeight: 1.4 }}>
-                  Crowned seasonal champion on the All-Time Legends leaderboard.
+                  {t.rewards.badgeHallOfFameDesc}
                 </p>
-                <span style={{ fontSize: '11px', color: '#00F0FF', fontWeight: 700 }}>+2,000 XP • Seasonal</span>
+                <span style={{ fontSize: '11px', color: '#00F0FF', fontWeight: 700 }}>+2,000 XP • {t.rewards.seasonal}</span>
               </div>
             </div>
           </div>

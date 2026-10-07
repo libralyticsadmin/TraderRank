@@ -29,68 +29,85 @@ export interface HonorBadge {
 }
 
 export const RewardsBadges: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   const [currentXp, setCurrentXp] = useState<number>(2750);
+  const [streakClaimed, setStreakClaimed] = useState<boolean>(false);
   const nextLevelXp = 5000;
   const prevLevelXp = 2001;
   const progressPct = Math.min(100, Math.round(((currentXp - prevLevelXp) / (nextLevelXp - prevLevelXp)) * 100));
 
-  const [streakDays, setStreakDays] = useState([
-    { day: 'Day 1', xp: 50, claimed: true },
-    { day: 'Day 2', xp: 75, claimed: true },
-    { day: 'Day 3', xp: 100, claimed: true },
-    { day: 'Day 4', xp: 150, claimed: true },
-    { day: 'Day 5', xp: 200, claimed: false, current: true },
-    { day: 'Day 6', xp: 300, claimed: false },
-    { day: 'Day 7', xp: 500, claimed: false, bonus: 'Mystery Badge' },
-  ]);
-
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [selectedBadge, setSelectedBadge] = useState<HonorBadge | null>(null);
+
+  const getRarityLabel = (rarity: HonorBadge['rarity']) => {
+    switch (rarity) {
+      case 'COMMON': return t.rewards.rarityCommon;
+      case 'RARE': return t.rewards.rarityRare;
+      case 'EPIC': return t.rewards.rarityEpic;
+      case 'LEGENDARY': return t.rewards.rarityLegendary;
+      default: return rarity;
+    }
+  };
+
+  const getDayText = (dayNum: number) => {
+    if (language === 'ja') return `${dayNum}日目`;
+    if (language === 'zh') return `第 ${dayNum} 天`;
+    return `Day ${dayNum}`;
+  };
+
+  const streakDays = [
+    { dayNum: 1, xp: 50, claimed: true },
+    { dayNum: 2, xp: 75, claimed: true },
+    { dayNum: 3, xp: 100, claimed: true },
+    { dayNum: 4, xp: 150, claimed: true },
+    { dayNum: 5, xp: 200, claimed: streakClaimed, current: !streakClaimed },
+    { dayNum: 6, xp: 300, claimed: false },
+    { dayNum: 7, xp: 500, claimed: false, bonus: t.rewards.mysteryBadge },
+  ];
 
   const badges: HonorBadge[] = [
     {
       id: 'badge_risk_guardian',
-      name: 'Risk Guardian',
-      description: 'Completed a 5-day tournament with under 2.0% maximum drawdown.',
-      criteria: 'Verified 5-day trading streak with Max Trailing DD strictly below 2.00% equity.',
+      name: t.rewards.badgeRiskGuardianName,
+      description: t.rewards.badgeRiskGuardianDesc,
+      criteria: t.rewards.badgeRiskGuardianCriteria,
       icon: Shield,
       color: '#00DAC6',
       unlocked: true,
-      unlockedAt: 'Yesterday',
+      unlockedAt: t.rewards.yesterday,
       rarity: 'EPIC',
       xpReward: 500,
     },
     {
       id: 'badge_sniper',
-      name: 'Precision Sniper',
-      description: 'Achieved > 70% win rate across a minimum of 10 closed trades.',
-      criteria: 'Closed 10+ canonical orders with net win rate exceeding 70.0% on verified live feed.',
+      name: t.rewards.badgePrecisionSniperName,
+      description: t.rewards.badgePrecisionSniperDesc,
+      criteria: t.rewards.badgePrecisionSniperCriteria,
       icon: Target,
       color: '#00F0FF',
       unlocked: true,
-      unlockedAt: '3 days ago',
+      unlockedAt: t.rewards.daysAgo,
       rarity: 'RARE',
       xpReward: 350,
     },
     {
       id: 'badge_century_club',
-      name: 'Century Club',
-      description: 'Harvested 100+ net normalized pips within a single trading week.',
-      criteria: 'Accumulate 100.0+ normalized pips between Monday 00:00 UTC and Friday 23:59 UTC.',
+      name: t.rewards.badgeCenturyClubName,
+      description: t.rewards.badgeCenturyClubDesc,
+      criteria: t.rewards.badgeCenturyClubCriteria,
       icon: Zap,
       color: '#F0B90B',
       unlocked: true,
-      unlockedAt: 'Sep 12, 2026',
+      unlockedAt: language === 'ja' ? '2026年9月12日' : language === 'zh' ? '2026年9月12日' : 'Sep 12, 2026',
       rarity: 'RARE',
       xpReward: 400,
     },
     {
       id: 'badge_podium_master',
-      name: 'Podium Master',
-      description: 'Finished Top 3 in an official verified community tournament.',
-      criteria: 'Place 1st, 2nd, or 3rd on the official final leaderboard of any Pro Arena contest.',
+      name: t.rewards.badgePodiumMasterName,
+      description: t.rewards.badgePodiumMasterDesc,
+      criteria: t.rewards.badgePodiumMasterCriteria,
       icon: Trophy,
       color: '#F59E0B',
       unlocked: false,
@@ -99,9 +116,9 @@ export const RewardsBadges: React.FC = () => {
     },
     {
       id: 'badge_hall_of_fame',
-      name: 'Hall of Fame Titan',
-      description: 'Crowned seasonal champion on the All-Time Legends leaderboard.',
-      criteria: 'Rank #1 globally at the conclusion of a 90-day competitive trading season.',
+      name: t.rewards.badgeHallOfFameName,
+      description: t.rewards.badgeHallOfFameDesc,
+      criteria: t.rewards.badgeHallOfFameCriteria,
       icon: Flame,
       color: '#F6465D',
       unlocked: false,
@@ -110,33 +127,31 @@ export const RewardsBadges: React.FC = () => {
     },
     {
       id: 'badge_iron_discipline',
-      name: 'Iron Discipline',
-      description: 'Zero anti-gambling rule infractions across 30 consecutive trades.',
-      criteria: '30 consecutive trades with mandatory SL placement, no revenge trading, and max 2% risk/trade.',
+      name: t.rewards.badgeIronDisciplineName,
+      description: t.rewards.badgeIronDisciplineDesc,
+      criteria: t.rewards.badgeIronDisciplineCriteria,
       icon: Star,
       color: '#8B5CF6',
       unlocked: true,
-      unlockedAt: 'Last week',
+      unlockedAt: t.rewards.lastWeek,
       rarity: 'COMMON',
       xpReward: 250,
     },
   ];
 
   const handleClaimStreak = () => {
-    setStreakDays(prev =>
-      prev.map(d => (d.current ? { ...d, claimed: true, current: false } : d))
-    );
+    setStreakClaimed(true);
     setCurrentXp(prev => prev + 200);
     setToastMessage(t.rewards.toastClaimed);
     setTimeout(() => setToastMessage(null), 4000);
   };
 
   const tiers = [
-    { level: 1, name: 'Novice Trader', minXp: 0, color: '#848E9C' },
-    { level: 2, name: 'Pro Swing Trader', minXp: 1000, color: '#00DAC6' },
-    { level: 3, name: 'Market Veteran', minXp: 2500, color: '#00F0FF', active: true },
-    { level: 4, name: 'Apex Predator', minXp: 5000, color: '#F0B90B' },
-    { level: 5, name: 'Hall of Fame Titan', minXp: 10000, color: '#F6465D' },
+    { level: 1, name: t.rewards.tierNovice, minXp: 0, color: '#848E9C' },
+    { level: 2, name: t.rewards.tierProSwing, minXp: 1000, color: '#00DAC6' },
+    { level: 3, name: t.rewards.tierMarketVeteran, minXp: 2500, color: '#00F0FF', active: true },
+    { level: 4, name: t.rewards.tierApexPredator, minXp: 5000, color: '#F0B90B' },
+    { level: 5, name: t.rewards.tierHallOfFame, minXp: 10000, color: '#F6465D' },
   ];
 
   return (
@@ -344,7 +359,7 @@ export const RewardsBadges: React.FC = () => {
                 transition: 'transform 0.2s, border-color 0.2s',
               }}
             >
-              <div style={{ fontSize: '11px', color: '#848E9C', marginBottom: '4px' }}>{s.day}</div>
+              <div style={{ fontSize: '11px', color: '#848E9C', marginBottom: '4px' }}>{getDayText(s.dayNum)}</div>
               <div
                 style={{
                   fontSize: '16px',
@@ -499,7 +514,7 @@ export const RewardsBadges: React.FC = () => {
                         border: `1px solid ${badge.color}40`,
                       }}
                     >
-                      {badge.rarity}
+                      {getRarityLabel(badge.rarity)}
                     </span>
                   </div>
                   <p style={{ margin: '0 0 8px', fontSize: '12px', color: '#848E9C', lineHeight: '1.4' }}>
@@ -508,7 +523,7 @@ export const RewardsBadges: React.FC = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
                     <span style={{ color: '#00F0FF', fontWeight: 700 }}>+{badge.xpReward} XP</span>
                     <span style={{ color: '#848E9C', fontSize: '10px' }}>
-                      {badge.unlocked ? `✓ Unlocked (${badge.unlockedAt})` : '🔒 Click to inspect criteria'}
+                      {badge.unlocked ? `✓ ${t.rewards.verified} (${badge.unlockedAt})` : `🔒 ${t.rewards.clickToInspect}`}
                     </span>
                   </div>
                 </div>
@@ -562,7 +577,7 @@ export const RewardsBadges: React.FC = () => {
                   border: `1px solid ${selectedBadge.color}40`,
                 }}
               >
-                {selectedBadge.rarity} PRESTIGE BADGE
+                {getRarityLabel(selectedBadge.rarity)} {t.rewards.prestigeBadge.toUpperCase()}
               </span>
               <button
                 onClick={() => setSelectedBadge(null)}
