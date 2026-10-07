@@ -17,6 +17,7 @@
     "build:client": "npm run --workspace=traderrank-client build",
     "build": "npm run --workspace=traderrank-client build && (mkdir -p dist && cp -r client/dist/* dist/ 2>/dev/null || true)",
     "vercel-build": "npm run --workspace=traderrank-client build",
+    "export:i18n": "node scripts/exportTranslationsToExcel.js",
     "test": "npm --prefix server test"
   },
   "dependencies": {
@@ -37,6 +38,7 @@
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "^9.1.2",
+    "exceljs": "^4.4.0",
     "typescript": "^5.7.3",
     "vite": "^6.2.0"
   }
