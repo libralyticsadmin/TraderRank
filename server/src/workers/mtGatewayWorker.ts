@@ -107,13 +107,40 @@ export class MTGatewayWorker implements IBrokerWorker {
         equity: res.accountInfo?.equity ?? 10420.50,
         currency: res.accountInfo?.currency ?? 'USD',
         leverage: res.accountInfo?.leverage ?? 100,
+        metaApiAccountId: res.metaApiAccountId,
       },
     };
   }
 
-  public async connectAccount(accountId: string, creds: unknown): Promise<void> {
+  public async connectAccount(accountId: string, creds: unknown, metaApiAccountId?: string): Promise<void> {
     const gatewayCreds = creds as GatewayCredentials;
-    const positions = this.marketSim.generateInitialPositions(accountId, gatewayCreds.broker);
+
+    // Check if real MetaApi account can be synced
+    let positions: RawPositionPayload[] = [];
+    if (this.metaApiClient.hasToken() && metaApiAccountId && !metaApiAccountId.startsWith('mock_')) {
+      const metaPositions = await this.metaApiClient.getPositions(metaApiAccountId);
+      if (metaPositions.length > 0) {
+        positions = metaPositions.map(p => ({
+          accountId,
+          ticket: p.id,
+          symbol: p.symbol,
+          type: p.type === 'POSITION_TYPE_BUY' ? 'BUY' : 'SELL',
+          volume: p.volume,
+          openPrice: p.openPrice,
+          currentPrice: p.currentPrice,
+          profit: p.profit,
+          swap: p.swap,
+          commission: p.commission,
+          openTime: p.openTime,
+          updateTime: p.updateTime,
+        }));
+      }
+    }
+
+    // If no live positions found or in simulated mode, populate initial simulated positions
+    if (positions.length === 0) {
+      positions = this.marketSim.generateInitialPositions(accountId, gatewayCreds.broker);
+    }
 
     this.activeAccounts.set(accountId, {
       creds: gatewayCreds,
@@ -133,7 +160,7 @@ export class MTGatewayWorker implements IBrokerWorker {
     return acc ? [...acc.positions] : [];
   }
 
-  public async getTradeHistory(accountId: string, _from: Date, _to: Date): Promise<RawDealPayload[]> {
+  public async getTradeHistory(accountId: string, from?: Date, to?: Date): Promise<RawDealPayload[]> {
     return this.marketSim.generateHistoricalDeals(accountId, this.broker);
   }
 

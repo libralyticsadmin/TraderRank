@@ -1,6 +1,6 @@
 import React from 'react';
 import { TradingAccount } from '../../../shared/src/types.ts';
-import { Shield, Trash2, Server } from 'lucide-react';
+import { Shield, Trash2, Server, Zap, RefreshCw } from 'lucide-react';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { useTranslation } from '../context/LanguageContext.tsx';
 
@@ -8,9 +8,10 @@ interface AccountsListProps {
   accounts: TradingAccount[];
   onDisconnect: (id: string) => void;
   onOpenWizard: () => void;
+  onSyncAccount?: (id: string) => void;
 }
 
-export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconnect, onOpenWizard }) => {
+export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconnect, onOpenWizard, onSyncAccount }) => {
   const { t } = useTranslation();
 
   return (
@@ -66,11 +67,16 @@ export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconne
                   <BrokerSymbol broker={acc.broker} size={22} />
                 </div>
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
                     <strong style={{ fontSize: '15px' }}>{acc.broker}</strong>
                     <span className="brand-badge" style={{ fontSize: '10px' }}>
                       {acc.integrationType === 'exness_native' ? 'Exness Native API' : `MT Gateway (${acc.platform})`}
                     </span>
+                    {acc.metaApiAccountId && (
+                      <span className="brand-badge" style={{ fontSize: '10px', background: 'rgba(10,186,181,0.15)', color: '#0abab5', border: '1px solid rgba(10,186,181,0.35)' }}>
+                        <Zap size={11} style={{ marginRight: '3px' }} /> MetaApi Cloud
+                      </span>
+                    )}
                     <span className="status-pill status-connected">
                       <span className="status-dot"></span> {t.accounts.activeFeed}
                     </span>
@@ -92,6 +98,16 @@ export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconne
                 </div>
 
                 <div style={{ display: 'flex', gap: '6px' }}>
+                  {onSyncAccount && (
+                    <button
+                      className="btn-secondary"
+                      title="Sync with MetaApi Cloud"
+                      onClick={() => onSyncAccount(acc.id)}
+                      style={{ padding: '8px', color: '#0abab5' }}
+                    >
+                      <RefreshCw size={16} />
+                    </button>
+                  )}
                   <button
                     className="btn-secondary"
                     title={t.accounts.vaultSecretRef}

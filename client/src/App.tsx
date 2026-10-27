@@ -39,6 +39,7 @@ import {
   Award,
   Users,
   Crown,
+  Zap,
 } from 'lucide-react';
 
 interface MarketQuote {
@@ -94,6 +95,7 @@ export const App: React.FC = () => {
   const [wsConnected, setWsConnected] = useState(false);
   const [marketStatus, setMarketStatus] = useState<MarketStatus | null>(null);
   const [isRefreshingMarket, setIsRefreshingMarket] = useState(false);
+  const [metaApiHealth, setMetaApiHealth] = useState<{ ok: boolean; latencyMs: number; hasTokenConfigured?: boolean } | null>(null);
 
   // Active modal trader profile
   const [selectedTrader, setSelectedTrader] = useState<TraderProfileData | null>(null);
@@ -108,6 +110,18 @@ export const App: React.FC = () => {
       }
     } catch (err) {
       console.error('Failed to fetch accounts', err);
+    }
+  };
+
+  const fetchMetaApiHealth = async () => {
+    try {
+      const res = await fetch('/api/brokers/metaapi/health');
+      if (res.ok) {
+        const data = await res.json();
+        setMetaApiHealth(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch MetaApi health', err);
     }
   };
 
@@ -161,6 +175,7 @@ export const App: React.FC = () => {
     fetchAccounts();
     fetchLeaderboard();
     fetchMarketQuotes();
+    fetchMetaApiHealth();
 
     // Setup live WebSocket stream
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -221,6 +236,19 @@ export const App: React.FC = () => {
   const handleAccountConnected = (newAcc: TradingAccount) => {
     setAccounts(prev => [...prev, newAcc]);
     fetchAccounts();
+    fetchMetaApiHealth();
+  };
+
+  const handleSyncAccount = async (accountId: string) => {
+    try {
+      const res = await fetch(`/api/brokers/metaapi/sync/${accountId}`, { method: 'POST' });
+      if (res.ok) {
+        await fetchAccounts();
+        await fetchLeaderboard();
+      }
+    } catch (err) {
+      console.error('Failed to sync account with MetaApi', err);
+    }
   };
 
   const handleSelectTrader = (t: { username: string; broker?: Broker; rank?: number; score?: number }) => {
@@ -297,6 +325,22 @@ export const App: React.FC = () => {
                 <Radio size={12} className={wsConnected ? 'animate-pulse' : ''} />
                 {wsConnected ? t.nav.wsConnected : t.nav.wsConnecting}
               </span>
+              {metaApiHealth && (
+                <span
+                  className="status-pill"
+                  style={{
+                    background: metaApiHealth.ok ? 'rgba(10, 186, 181, 0.15)' : 'rgba(246, 70, 93, 0.15)',
+                    color: metaApiHealth.ok ? '#0abab5' : 'var(--accent-red)',
+                    border: `1px solid ${metaApiHealth.ok ? 'rgba(10, 186, 181, 0.35)' : 'rgba(246, 70, 93, 0.35)'}`,
+                    fontSize: '11px',
+                    cursor: 'default',
+                  }}
+                  title={metaApiHealth.hasTokenConfigured ? 'MetaApi Enterprise Cloud Token Active' : 'MetaApi Sandbox Mode'}
+                >
+                  <Zap size={12} color="#0abab5" />
+                  {metaApiHealth.ok ? `MetaApi: ${metaApiHealth.latencyMs}ms` : 'MetaApi: Offline'}
+                </span>
+              )}
             </div>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>
               {t.app.heroSubheading}
@@ -477,6 +521,7 @@ export const App: React.FC = () => {
                 accounts={accounts}
                 onDisconnect={handleDisconnect}
                 onOpenWizard={() => setIsWizardOpen(true)}
+                onSyncAccount={handleSyncAccount}
               />
               <LivePositionsTicker positions={positions} />
             </div>

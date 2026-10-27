@@ -111,6 +111,7 @@ export class AccountConnectorService {
       currency: validation.accountDetails?.currency || 'USD',
       leverage: validation.accountDetails?.leverage || 100,
       vaultSecretRef,
+      metaApiAccountId: validation.accountDetails?.metaApiAccountId,
       lastSyncedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

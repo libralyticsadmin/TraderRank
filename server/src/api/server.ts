@@ -7,6 +7,12 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { WebSocketServer, WebSocket } from 'ws';
 import http from 'http';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import { AccountConnectorService } from '../connector/accountConnector.js';
 import { LeaderboardService } from '../services/leaderboardService.js';
 import { SecretsVault } from '../vault/secretsVault.js';
@@ -20,6 +26,7 @@ import { ZeroWriteGuard, IllegalWriteOperationError } from '../connector/zeroWri
 import { AiChartAnalyzer } from '../market/aiChartAnalyzer.js';
 import { ForexFactoryService } from '../market/forexFactoryService.js';
 import { DailyIntelService } from '../market/dailyIntelService.js';
+import { TournamentService } from '../services/tournamentService.js';
 
 export function createServer() {
   const app = express();
@@ -61,6 +68,7 @@ export function createServer() {
   const aiAnalyzer = new AiChartAnalyzer(marketFeed.getAllTickAdapter());
   const forexFactory = ForexFactoryService.getInstance();
   const dailyIntel = DailyIntelService.getInstance();
+  const tournamentService = TournamentService.getInstance();
 
   // Connected WebSocket clients
   const clients = new Set<WebSocket>();
@@ -330,6 +338,17 @@ export function createServer() {
     res.json(champions);
   });
 
+  // 8d. Tournaments & Challenges
+  app.get('/api/tournaments', (_req: Request, res: Response) => {
+    res.json(tournamentService.getTournaments());
+  });
+
+  app.get('/api/tournaments/:id', (req: Request, res: Response) => {
+    const tourney = tournamentService.getTournamentById(req.params.id);
+    if (!tourney) return res.status(404).json({ success: false, error: 'Tournament not found' });
+    res.json(tourney);
+  });
+
   // 9. Secrets Vault Audit Logs (Infrastructure Design §6)
   app.get('/api/vault/audit', (_req: Request, res: Response) => {
     res.json(vault.getAuditLogs());
@@ -359,10 +378,78 @@ export function createServer() {
     const health = await metaApiClient.ping();
     res.json({
       broker: 'MetaApi.cloud',
-      targetBrokers: ['XM', 'Axiory', 'Vantage', 'Generic MT4/MT5'],
+      targetBrokers: ['XM', 'Axiory', 'Vantage', 'IC Markets', 'Generic MT4/MT5'],
       hasTokenConfigured: metaApiClient.hasToken(),
       ...health,
     });
+  });
+
+  // 12b. MetaApi Cloud Provisioned Accounts
+  app.get('/api/brokers/metaapi/accounts', async (_req: Request, res: Response) => {
+    try {
+      const accounts = await metaApiClient.listProvisionedAccounts();
+      res.json({ success: true, count: accounts.length, accounts });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ success: false, error: msg });
+    }
+  });
+
+  // 12c. MetaApi Cloud Account Deploy
+  app.post('/api/brokers/metaapi/accounts/:id/deploy', async (req: Request, res: Response) => {
+    try {
+      const deployed = await metaApiClient.deployAccount(req.params.id);
+      res.json({ success: deployed, accountId: req.params.id });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ success: false, error: msg });
+    }
+  });
+
+  // 12d. MetaApi Cloud Account Sync
+  app.post('/api/brokers/metaapi/sync/:id', async (req: Request, res: Response) => {
+    try {
+      const accountId = req.params.id;
+      const account = connector.getAccount(accountId);
+      if (!account) {
+        return res.status(404).json({ success: false, error: 'Account not found' });
+      }
+
+      if (account.metaApiAccountId) {
+        const [info, positions, deals] = await Promise.all([
+          metaApiClient.getAccountInformation(account.metaApiAccountId),
+          metaApiClient.getPositions(account.metaApiAccountId),
+          metaApiClient.getHistoricalDeals(account.metaApiAccountId),
+        ]);
+
+        if (info) {
+          account.balance = info.balance;
+          account.equity = info.equity;
+          account.margin = info.margin;
+          account.freeMargin = info.freeMargin;
+          account.leverage = info.leverage;
+          account.lastSyncedAt = new Date().toISOString();
+        }
+
+        return res.json({
+          success: true,
+          accountId,
+          metaApiAccountId: account.metaApiAccountId,
+          liveInfo: info,
+          positionsCount: positions.length,
+          dealsCount: deals.length,
+        });
+      }
+
+      return res.json({
+        success: true,
+        accountId,
+        message: 'Account is operating on Simulated Market feed (no MetaApi ID linked).',
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ success: false, error: msg });
+    }
   });
 
   // 13. Exness OpenAPI Gateway Health & Latency
@@ -498,6 +585,18 @@ export function createServer() {
       res.status(400).json({ success: false, error: msg });
     }
   });
+
+  // 17. Production Static Asset Serving & SPA Fallback
+  const clientDistPath = path.resolve(__dirname, '../../../client/dist');
+  if (fs.existsSync(clientDistPath)) {
+    app.use(express.static(clientDistPath));
+    app.get('*', (req: Request, res: Response, next) => {
+      if (req.path.startsWith('/api') || req.path.startsWith('/ws')) {
+        return next();
+      }
+      res.sendFile(path.join(clientDistPath, 'index.html'));
+    });
+  }
 
   return { app, server };
 }

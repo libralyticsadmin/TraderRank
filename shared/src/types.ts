@@ -35,6 +35,7 @@ export interface TradingAccount {
   currency: string;
   leverage: number;
   vaultSecretRef: string; // Reference pointer into isolated Secrets Vault
+  metaApiAccountId?: string; // Optional MetaApi cloud account identifier
   lastSyncedAt: string; // ISO 8601 UTC
   createdAt: string;
   updatedAt: string;
@@ -76,6 +77,7 @@ export interface ValidationResult {
     equity: number;
     currency: string;
     leverage: number;
+    metaApiAccountId?: string;
   };
 }
 

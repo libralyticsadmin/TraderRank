@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: traderrank
+    env: node
+    plan: starter
+    region: singapore # Close to Asia-Pacific broker datacenters (IC Markets, XM, Exness)
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: META_API_TOKEN
+        sync: false # Set securely in Render dashboard
+      - key: ALLTICK_API_TOKEN
+        value: 4554c41c6fc5298fb839ca4530639663-c-app
+      - key: VAULT_MASTER_KEY
+        generateValue: true

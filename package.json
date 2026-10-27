@@ -15,7 +15,8 @@
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "build:server": "npm --prefix server run build",
     "build:client": "npm run --workspace=traderrank-client build",
-    "build": "npm run --workspace=traderrank-client build && (mkdir -p dist && cp -r client/dist/* dist/ 2>/dev/null || true)",
+    "build": "npm run build:client && npm run build:server",
+    "start": "node server/dist/index.js",
     "vercel-build": "npm run --workspace=traderrank-client build",
     "export:i18n": "node scripts/exportTranslationsToExcel.js",
     "test": "npm --prefix server test"

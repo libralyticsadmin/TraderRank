@@ -48,4 +48,21 @@ describe('MetaApiClient - MetaApi.cloud REST & Gateway Standard', () => {
     const positions = await client.getPositions('acc_test_123');
     expect(Array.isArray(positions)).toBe(true);
   });
+
+  it('should list provisioned accounts, state, information, and historical deals in offline mode', async () => {
+    const client = new MetaApiClient('');
+    const accounts = await client.listProvisionedAccounts();
+    expect(Array.isArray(accounts)).toBe(true);
+
+    const state = await client.getAccountState('mock_acc_1');
+    expect(state).toEqual({ state: 'DEPLOYED', connectionStatus: 'CONNECTED' });
+
+    const info = await client.getAccountInformation('mock_acc_1');
+    expect(info).toBeDefined();
+    expect(info?.balance).toBe(10000);
+    expect(info?.currency).toBe('USD');
+
+    const deals = await client.getHistoricalDeals('mock_acc_1');
+    expect(Array.isArray(deals)).toBe(true);
+  });
 });

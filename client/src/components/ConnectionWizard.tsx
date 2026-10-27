@@ -475,6 +475,24 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                     <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.balanceLabel}:</span> <span className="tabular">${validationResult.accountDetails?.balance.toLocaleString()} {validationResult.accountDetails?.currency}</span></div>
                     <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.equityLabel}:</span> <span className="tabular">${validationResult.accountDetails?.equity.toLocaleString()}</span></div>
                     <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.leverageLabel}:</span> <span className="tabular">1:{validationResult.accountDetails?.leverage}</span></div>
+                    {validationResult.accountDetails?.metaApiAccountId && (
+                      <div style={{ gridColumn: 'span 2', marginTop: '4px' }}>
+                        <span style={{
+                          background: 'rgba(10,186,181,0.15)',
+                          color: '#0abab5',
+                          border: '1px solid rgba(10,186,181,0.35)',
+                          padding: '4px 10px',
+                          borderRadius: '6px',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}>
+                          <Zap size={13} color="#0abab5" /> MetaApi Cloud Active: {validationResult.accountDetails.metaApiAccountId}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
