@@ -284,7 +284,10 @@ export const App: React.FC = () => {
     return (
       <>
         <LandingPage
+          leaderboard={leaderboard}
+          onSelectTrader={handleSelectTrader}
           onEnterApp={(tab?: string) => {
+            if (tab === 'leaderboard') tab = 'ranking';
             if (tab) {
               setActiveTab(tab as any);
             }
@@ -300,6 +303,13 @@ export const App: React.FC = () => {
           <ConnectionWizard
             onClose={() => setIsWizardOpen(false)}
             onSuccess={handleAccountConnected}
+          />
+        )}
+        {/* Trader Profile Modal if triggered from landing page */}
+        {selectedTrader && (
+          <TraderProfileModal
+            trader={selectedTrader}
+            onClose={() => setSelectedTrader(null)}
           />
         )}
       </>
@@ -535,6 +545,7 @@ export const App: React.FC = () => {
                 onDisconnect={handleDisconnect}
                 onOpenWizard={() => setIsWizardOpen(true)}
                 onSyncAccount={handleSyncAccount}
+                onOpenSecurityVault={() => setActiveTab('security')}
               />
               <LivePositionsTicker positions={positions} />
             </div>
@@ -585,7 +596,7 @@ export const App: React.FC = () => {
       {/* Tab 3: Tournament Battle Arena */}
       {activeTab === 'tournaments' && (
         <div style={{ maxWidth: '1080px', margin: '0 auto', width: '100%' }}>
-          <TournamentArena />
+          <TournamentArena onOpenConnectWizard={() => setIsWizardOpen(true)} />
         </div>
       )}
 
@@ -599,7 +610,7 @@ export const App: React.FC = () => {
       {/* Tab 5: Community Live Feed & Cheers */}
       {activeTab === 'community' && (
         <div style={{ maxWidth: '980px', margin: '0 auto', width: '100%' }}>
-          <CommunityFeed />
+          <CommunityFeed onOpenConnectWizard={() => setIsWizardOpen(true)} />
         </div>
       )}
 

@@ -38,7 +38,11 @@ export interface TournamentParticipant {
   estimatedPrize: string;
 }
 
-export const TournamentArena: React.FC = () => {
+export interface TournamentArenaProps {
+  onOpenConnectWizard?: () => void;
+}
+
+export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectWizard }) => {
   const { t } = useTranslation();
   const [selectedTournamentId, setSelectedTournamentId] = useState<string>('tourn_weekly_fx_blitz_01');
   const [isUserEntered, setIsUserEntered] = useState<boolean>(false);
@@ -82,9 +86,19 @@ export const TournamentArena: React.FC = () => {
       const accounts = accRes.ok ? await accRes.json() : [];
       const primaryAcc = accounts[0];
 
-      const userId = primaryAcc?.userId || 'usr_live_meta';
-      const username = primaryAcc ? (primaryAcc.accountNumber ? `Trader_${primaryAcc.accountNumber}` : primaryAcc.id) : 'LiveTrader_XM';
-      const broker = primaryAcc?.broker || 'XM';
+      if (!primaryAcc) {
+        setIsJoining(false);
+        if (onOpenConnectWizard) {
+          onOpenConnectWizard();
+        } else {
+          setJoinSuccessMsg('Please connect your verified broker account first to enter the tournament.');
+        }
+        return;
+      }
+
+      const userId = primaryAcc.userId || `usr_${primaryAcc.id}`;
+      const username = primaryAcc.accountNumber ? `TraderRank-${primaryAcc.accountNumber}` : primaryAcc.id;
+      const broker = primaryAcc.broker || 'XM';
 
       const res = await fetch(`/api/tournaments/${selectedTournamentId}/join`, {
         method: 'POST',

@@ -89,6 +89,17 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
     };
   }, [trader.userId]);
 
+  // Keyboard escape route
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   return (
     <div
       style={{

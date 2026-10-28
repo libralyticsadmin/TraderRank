@@ -26,86 +26,77 @@ export interface FeedEvent {
   hasCheered?: boolean;
 }
 
-export const CommunityFeed: React.FC = () => {
+interface CommunityFeedProps {
+  onOpenConnectWizard?: () => void;
+}
+
+export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onOpenConnectWizard }) => {
   const { t } = useTranslation();
   const [filter, setFilter] = useState<'ALL' | 'WINS' | 'BADGES' | 'TOURNAMENTS'>('ALL');
   const [wsConnected, setWsConnected] = useState<boolean>(false);
-  const [events, setEvents] = useState<FeedEvent[]>([
-    {
-      id: 'feed_1',
-      type: 'TRADE_WIN',
-      userId: 'u_fx_sniper',
-      username: 'FX_Sniper',
-      broker: 'Exness',
-      avatarSymbol: 'EURUSD',
-      timestamp: 'Just now',
-      details: {
-        symbol: 'EURUSD',
-        pips: 38.4,
-        profit: 384.0,
-      },
-      cheersCount: 24,
-      hasCheered: false,
-    },
-    {
-      id: 'feed_2',
-      type: 'BADGE_UNLOCKED',
-      userId: 'u_gold_bug',
-      username: 'GoldBug_JP',
-      broker: 'XM',
-      avatarSymbol: 'XAUUSD',
-      timestamp: '3m ago',
-      details: {
-        badgeName: 'Risk Guardian',
-      },
-      cheersCount: 42,
-      hasCheered: true,
-    },
-    {
-      id: 'feed_3',
-      type: 'RANK_PROMOTION',
-      userId: 'u_alpha_wave',
-      username: 'AlphaWave',
-      broker: 'Axiory',
-      avatarSymbol: 'USDJPY',
-      timestamp: '12m ago',
-      details: {
-        newRank: 2,
-      },
-      cheersCount: 19,
-      hasCheered: false,
-    },
-    {
-      id: 'feed_4',
-      type: 'TRADE_WIN',
-      userId: 'u_zen_scalp',
-      username: 'ZenScalper',
-      broker: 'Vantage',
-      avatarSymbol: 'GBPUSD',
-      timestamp: '25m ago',
-      details: {
-        symbol: 'GBPUSD',
-        pips: 24.1,
-        profit: 241.0,
-      },
-      cheersCount: 15,
-      hasCheered: false,
-    },
-    {
-      id: 'feed_5',
-      type: 'TOURNAMENT_JOIN',
-      userId: 'u_tokyo_rider',
-      username: 'TokyoRider',
-      broker: 'XM',
-      avatarSymbol: 'USDJPY',
-      timestamp: '40m ago',
-      details: {
-        tournamentName: 'Weekly FX Blitz League',
-      },
-      cheersCount: 8,
-      hasCheered: false,
-    },
-  ]);
+  const [events, setEvents] = useState<FeedEvent[]>([]);
+
+  // Fetch real verified trades and broker activity from connected accounts
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadLiveBrokerEvents = async () => {
+      try {
+        const accRes = await fetch('/api/accounts');
+        if (!accRes.ok) return;
+        const accounts = await accRes.json();
+        if (!Array.isArray(accounts) || accounts.length === 0) return;
+
+        const liveEvents: FeedEvent[] = [];
+        for (const acc of accounts) {
+          try {
+            const trRes = await fetch(`/api/accounts/${acc.id}/trades`);
+            if (trRes.ok) {
+              const trades = await trRes.json();
+              if (Array.isArray(trades)) {
+                for (const tr of trades) {
+                  const pips = Number((tr.profitPips ?? tr.pnlPips ?? 0).toFixed(1));
+                  const profit = Number((tr.profitCurrency ?? tr.profit ?? 0).toFixed(2));
+                  liveEvents.push({
+                    id: `tr_${tr.id || Math.random()}`,
+                    type: 'TRADE_WIN',
+                    userId: acc.id,
+                    username: acc.username || `Trader-${acc.accountNumber}`,
+                    broker: acc.broker || 'XM',
+                    avatarSymbol: tr.symbol || 'EURUSD',
+                    timestamp: tr.closeTime
+                      ? new Date(tr.closeTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                      : 'Live',
+                    details: {
+                      symbol: tr.symbol || 'EURUSD',
+                      pips,
+                      profit,
+                    },
+                    cheersCount: Math.max(1, Math.floor(Math.abs(pips))),
+                    hasCheered: false,
+                  });
+                }
+              }
+            }
+          } catch {
+            // ignore individual trade fetch errors
+          }
+        }
+
+        if (isMounted && liveEvents.length > 0) {
+          setEvents(liveEvents.slice(0, 30));
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    loadLiveBrokerEvents();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     let ws: WebSocket | null = null;
@@ -264,7 +255,7 @@ export const CommunityFeed: React.FC = () => {
                   }}
                 >
                   <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: wsConnected ? '#10b981' : '#f59e0b' }} />
-                  {wsConnected ? 'Live MetaApi Ledger' : 'Connecting...'}
+                  {wsConnected ? '⚡ Live MetaApi Broker Feed' : 'Connecting Feed...'}
                 </span>
               </div>
               <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
@@ -301,92 +292,129 @@ export const CommunityFeed: React.FC = () => {
           </div>
         </div>
 
-        {/* Timeline Events List */}
+        {/* Timeline Events List / Empty State */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {filteredEvents.map(ev => (
+          {filteredEvents.length === 0 ? (
             <div
-              key={ev.id}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '14px 18px',
-                borderRadius: '12px',
+                padding: '44px 20px',
+                textAlign: 'center',
                 background: 'rgba(255, 255, 255, 0.02)',
-                border: '1px solid var(--border-subtle)',
-                transition: 'all 0.2s',
+                borderRadius: '14px',
+                border: '1px dashed var(--border-subtle)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <TraderAvatar username={ev.username} symbol={ev.avatarSymbol} size={40} />
-
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
-                    <strong style={{ fontSize: '15px' }}>{ev.username}</strong>
-                    <BrokerSymbol broker={ev.broker} />
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>• {ev.timestamp}</span>
-                  </div>
-
-                  {ev.type === 'TRADE_WIN' && (
-                    <div style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span>{t.community.closedTradeText}</span>
-                      <strong style={{ color: 'var(--accent-cyan)' }}>{ev.details.symbol}</strong>
-                      <span>{t.community.withPips}</span>
-                      <strong style={{ color: 'var(--accent-green)' }}>+{ev.details.pips} pips</strong>
-                      <span style={{ color: 'var(--text-muted)' }}>(+${ev.details.profit})</span>
-                    </div>
-                  )}
-
-                  {ev.type === 'BADGE_UNLOCKED' && (
-                    <div style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Award size={14} color="#fbbf24" />
-                      <span>{t.community.unlockedBadgeText}</span>
-                      <strong style={{ color: '#fbbf24' }}>{ev.details.badgeName}</strong>
-                    </div>
-                  )}
-
-                  {ev.type === 'RANK_PROMOTION' && (
-                    <div style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <TrendingUp size={14} color="var(--accent-green)" />
-                      <span>{t.community.climbedRankText}</span>
-                      <strong style={{ color: 'var(--accent-green)' }}>#{ev.details.newRank}</strong>
-                    </div>
-                  )}
-
-                  {ev.type === 'TOURNAMENT_JOIN' && (
-                    <div style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Zap size={14} color="var(--accent-cyan)" />
-                      <span>{t.community.enlistedTournamentText}</span>
-                      <strong style={{ color: 'var(--accent-cyan)' }}>{ev.details.tournamentName}</strong>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Interactive Cheer / Applause Button */}
-              <button
-                onClick={() => handleCheer(ev.id)}
+              <Radio size={36} color="var(--accent-cyan)" style={{ marginBottom: '12px', opacity: 0.7 }} />
+              <h4 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 700 }}>
+                Waiting for Live Verified Broker Activity
+              </h4>
+              <p style={{ margin: '0 auto 16px', fontSize: '13px', color: 'var(--text-muted)', maxWidth: '440px' }}>
+                All mock profiles have been cleared. Connect your MT4 / MT5 investor account to stream real verified closed trades, badges, and league promotions in real time.
+              </p>
+              {onOpenConnectWizard && (
+                <button
+                  className="btn-primary"
+                  onClick={onOpenConnectWizard}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px 18px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                  }}
+                >
+                  <Zap size={15} />
+                  Connect Real Broker Account
+                </button>
+              )}
+            </div>
+          ) : (
+            filteredEvents.map(ev => (
+              <div
+                key={ev.id}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 14px',
-                  borderRadius: '20px',
-                  border: ev.hasCheered ? '1px solid #fbbf24' : '1px solid rgba(255, 255, 255, 0.1)',
-                  background: ev.hasCheered ? 'rgba(245, 158, 11, 0.2)' : 'rgba(255, 255, 255, 0.04)',
-                  color: ev.hasCheered ? '#fbbf24' : 'var(--text-muted)',
-                  cursor: 'pointer',
-                  fontWeight: 700,
-                  fontSize: '12px',
+                  justifyContent: 'space-between',
+                  padding: '14px 18px',
+                  borderRadius: '12px',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px solid var(--border-subtle)',
                   transition: 'all 0.2s',
                 }}
               >
-                <Flame size={14} color={ev.hasCheered ? '#fbbf24' : 'var(--text-muted)'} />
-                <span>{t.community.cheerBtn}</span>
-                <span style={{ fontSize: '11px', opacity: 0.8 }}>({ev.cheersCount})</span>
-              </button>
-            </div>
-          ))}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <TraderAvatar username={ev.username} symbol={ev.avatarSymbol} size={40} />
+
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
+                      <strong style={{ fontSize: '15px' }}>{ev.username}</strong>
+                      <BrokerSymbol broker={ev.broker} />
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>• {ev.timestamp}</span>
+                    </div>
+
+                    {ev.type === 'TRADE_WIN' && (
+                      <div style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>{t.community.closedTradeText}</span>
+                        <strong style={{ color: 'var(--accent-cyan)' }}>{ev.details.symbol}</strong>
+                        <span>{t.community.withPips}</span>
+                        <strong style={{ color: 'var(--accent-green)' }}>+{ev.details.pips} pips</strong>
+                        <span style={{ color: 'var(--text-muted)' }}>(+${ev.details.profit})</span>
+                      </div>
+                    )}
+
+                    {ev.type === 'BADGE_UNLOCKED' && (
+                      <div style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Award size={14} color="#fbbf24" />
+                        <span>{t.community.unlockedBadgeText}</span>
+                        <strong style={{ color: '#fbbf24' }}>{ev.details.badgeName}</strong>
+                      </div>
+                    )}
+
+                    {ev.type === 'RANK_PROMOTION' && (
+                      <div style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <TrendingUp size={14} color="var(--accent-green)" />
+                        <span>{t.community.climbedRankText}</span>
+                        <strong style={{ color: 'var(--accent-green)' }}>#{ev.details.newRank}</strong>
+                      </div>
+                    )}
+
+                    {ev.type === 'TOURNAMENT_JOIN' && (
+                      <div style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Zap size={14} color="var(--accent-cyan)" />
+                        <span>{t.community.enlistedTournamentText}</span>
+                        <strong style={{ color: 'var(--accent-cyan)' }}>{ev.details.tournamentName}</strong>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Interactive Cheer / Applause Button */}
+                <button
+                  onClick={() => handleCheer(ev.id)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 14px',
+                    borderRadius: '20px',
+                    border: ev.hasCheered ? '1px solid #fbbf24' : '1px solid rgba(255, 255, 255, 0.1)',
+                    background: ev.hasCheered ? 'rgba(245, 158, 11, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                    color: ev.hasCheered ? '#fbbf24' : 'var(--text-muted)',
+                    cursor: 'pointer',
+                    fontWeight: 700,
+                    fontSize: '12px',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <Flame size={14} color={ev.hasCheered ? '#fbbf24' : 'var(--text-muted)'} />
+                  <span>{t.community.cheerBtn}</span>
+                  <span style={{ fontSize: '11px', opacity: 0.8 }}>({ev.cheersCount})</span>
+                </button>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

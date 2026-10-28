@@ -102,6 +102,18 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     return () => clearInterval(interval);
   }, [isOpen, paymentMethod]);
 
+  // Keyboard escape route
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   // Format Card Number input with spaces

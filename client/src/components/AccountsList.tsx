@@ -9,9 +9,10 @@ interface AccountsListProps {
   onDisconnect: (id: string) => void;
   onOpenWizard: () => void;
   onSyncAccount?: (id: string) => Promise<void> | void;
+  onOpenSecurityVault?: () => void;
 }
 
-export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconnect, onOpenWizard, onSyncAccount }) => {
+export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconnect, onOpenWizard, onSyncAccount, onOpenSecurityVault }) => {
   const { t } = useTranslation();
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [syncedId, setSyncedId] = useState<string | null>(null);
@@ -140,7 +141,8 @@ export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconne
                   <button
                     className="btn-secondary"
                     title={t.accounts.vaultSecretRef}
-                    style={{ padding: '8px', color: 'var(--accent-cyan)' }}
+                    onClick={() => onOpenSecurityVault?.()}
+                    style={{ padding: '8px', color: 'var(--accent-cyan)', cursor: 'pointer' }}
                   >
                     <Shield size={16} />
                   </button>

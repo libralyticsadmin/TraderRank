@@ -25,56 +25,28 @@ interface LandingPageProps {
   onEnterApp: (tab?: string) => void;
   onOpenConnectWizard: () => void;
   onSelectTrader?: (trader: { username: string; broker?: any; rank?: number; score?: number }) => void;
+  leaderboard?: any[];
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConnectWizard, onSelectTrader }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConnectWizard, onSelectTrader, leaderboard = [] }) => {
   const { t, language } = useTranslation();
   const [activeTabRanking, setActiveTabRanking] = useState<'pips' | 'profit' | 'rate'>('pips');
 
-  const topPodiumTraders = [
-    {
-      rank: 1,
-      username: 'FX_Sniper',
-      broker: 'Exness' as const,
-      avatarSymbol: 'EURUSD',
-      pips: 88.4,
-      profit: 8840.0,
-      rate: 142.5,
-      trades: 14,
-      winRate: 78.5,
-      tier: t.rewards.tierApexPredator,
-      badge: t.leaderboard.goldChampion,
-      glow: '#fbbf24',
-    },
-    {
-      rank: 2,
-      username: 'GoldBug_JP',
-      broker: 'XM' as const,
-      avatarSymbol: 'XAUUSD',
-      pips: 74.2,
-      profit: 7420.0,
-      rate: 118.0,
-      trades: 11,
-      winRate: 72.7,
-      tier: t.rewards.tierMarketVeteran,
-      badge: t.leaderboard.silverContender,
-      glow: '#94a3b8',
-    },
-    {
-      rank: 3,
-      username: 'AlphaWave',
-      broker: 'Axiory' as const,
-      avatarSymbol: 'USDJPY',
-      pips: 61.9,
-      profit: 6190.0,
-      rate: 94.2,
-      trades: 9,
-      winRate: 66.7,
-      tier: t.rewards.tierProSwing,
-      badge: t.leaderboard.bronzeMaster,
-      glow: '#d97706',
-    },
-  ];
+  // Derive top 3 exclusively from verified real leaderboard entries (zero mock traders)
+  const topPodiumTraders = leaderboard.slice(0, 3).map((trader, idx) => ({
+    rank: idx + 1,
+    username: trader.username,
+    broker: (trader.brokers?.[0] || 'XM') as any,
+    avatarSymbol: trader.avatarSymbol || 'zap',
+    pips: trader.totalPips || trader.winningPips || 0,
+    profit: Math.round((trader.totalPips || trader.winningPips || 0) * 10),
+    rate: trader.winRate || 0,
+    trades: trader.tradesCount || 0,
+    winRate: trader.winRate || 0,
+    tier: trader.level > 10 ? t.rewards.tierApexPredator : t.rewards.tierMarketVeteran,
+    badge: idx === 0 ? t.leaderboard.goldChampion : idx === 1 ? t.leaderboard.silverContender : t.leaderboard.bronzeMaster,
+    glow: idx === 0 ? '#fbbf24' : idx === 1 ? '#94a3b8' : '#d97706',
+  }));
 
   return (
     <div style={{ backgroundColor: '#080b11', color: '#ffffff', minHeight: '100vh', overflowX: 'hidden' }}>
@@ -388,72 +360,130 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
             </div>
           </div>
 
-          {/* Top 3 Podium Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginBottom: '32px' }}>
-            {topPodiumTraders.map(trader => (
+          {/* Top 3 Podium Cards or Institutional Empty State */}
+          {topPodiumTraders.length === 0 ? (
+            <div
+              style={{
+                padding: '48px 24px',
+                textAlign: 'center',
+                borderRadius: '16px',
+                background: 'rgba(255, 255, 255, 0.02)',
+                border: '1px dashed rgba(0, 240, 255, 0.25)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '12px',
+                marginBottom: '32px',
+              }}
+            >
               <div
-                key={trader.rank}
                 style={{
-                  background: 'rgba(14, 20, 31, 0.85)',
-                  border: trader.rank === 1 ? '1px solid rgba(0, 240, 255, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '16px',
-                  padding: '28px',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  boxShadow: trader.rank === 1 ? '0 12px 36px rgba(0, 240, 255, 0.15)' : 'none',
-                  backdropFilter: 'blur(16px)',
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '50%',
+                  background: 'rgba(0, 240, 255, 0.1)',
+                  border: '1px solid rgba(0, 240, 255, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                  <span
-                    style={{
-                      fontSize: '12px',
-                      fontWeight: 800,
-                      padding: '4px 10px',
-                      borderRadius: '8px',
-                      background: `${trader.glow}20`,
-                      color: trader.glow,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                    }}
-                  >
-                    <Award size={16} /> #{trader.rank} {trader.badge}
-                  </span>
-                  <BrokerSymbol broker={trader.broker} />
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
-                  <TraderAvatar username={trader.username} symbol={trader.avatarSymbol} size={56} />
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#FFFFFF' }}>{trader.username}</h3>
-                    <div style={{ fontSize: '12px', color: '#848E9C', marginTop: '2px' }}>
-                      {trader.tier} • {trader.trades} {t.dailyBest.trades}
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '14px', borderRadius: '10px', background: 'rgba(8, 11, 17, 0.7)', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                  <div>
-                    <div style={{ fontSize: '11px', color: '#848E9C' }}>{t.landing.gainCol}</div>
-                    <div style={{ fontSize: '20px', fontWeight: 900, color: '#00F0FF' }}>
-                      +{trader.pips.toFixed(1)}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '11px', color: '#848E9C' }}>{t.landing.winRateCol}</div>
-                    <div style={{ fontSize: '20px', fontWeight: 900, color: '#F0B90B' }}>
-                      {trader.winRate}%
-                    </div>
-                  </div>
-                </div>
+                <Trophy size={28} color="#00F0FF" />
               </div>
-            ))}
-          </div>
+              <h4 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#fff' }}>Waiting for Verified Traders</h4>
+              <p style={{ margin: 0, fontSize: '13px', color: '#848E9C', maxWidth: '440px', lineHeight: 1.5 }}>
+                No mockup accounts are displayed. Only real traders connected via live MT4/MT5 broker feeds appear on the global leaderboard.
+              </p>
+              <button
+                onClick={onOpenConnectWizard}
+                style={{
+                  marginTop: '8px',
+                  background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 100%)',
+                  border: 'none',
+                  color: '#080b11',
+                  padding: '10px 24px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 16px rgba(0, 240, 255, 0.35)',
+                }}
+              >
+                {t.landing.connectBrokerBtn}
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginBottom: '32px' }}>
+              {topPodiumTraders.map(trader => (
+                <div
+                  key={trader.rank}
+                  onClick={() => onSelectTrader?.({ username: trader.username, broker: trader.broker, rank: trader.rank, score: trader.pips })}
+                  style={{
+                    background: 'rgba(14, 20, 31, 0.85)',
+                    border: trader.rank === 1 ? '1px solid rgba(0, 240, 255, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '16px',
+                    padding: '28px',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    boxShadow: trader.rank === 1 ? '0 12px 36px rgba(0, 240, 255, 0.15)' : 'none',
+                    backdropFilter: 'blur(16px)',
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-3px)')}
+                  onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <span
+                      style={{
+                        fontSize: '12px',
+                        fontWeight: 800,
+                        padding: '4px 10px',
+                        borderRadius: '8px',
+                        background: `${trader.glow}20`,
+                        color: trader.glow,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      <Award size={16} /> #{trader.rank} {trader.badge}
+                    </span>
+                    <BrokerSymbol broker={trader.broker} />
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+                    <TraderAvatar username={trader.username} symbol={trader.avatarSymbol} size={56} />
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#FFFFFF' }}>{trader.username}</h3>
+                      <div style={{ fontSize: '12px', color: '#848E9C', marginTop: '2px' }}>
+                        {trader.tier} • {trader.trades} {t.dailyBest.trades}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '14px', borderRadius: '10px', background: 'rgba(8, 11, 17, 0.7)', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                    <div>
+                      <div style={{ fontSize: '11px', color: '#848E9C' }}>{t.landing.gainCol}</div>
+                      <div style={{ fontSize: '20px', fontWeight: 900, color: '#00F0FF' }}>
+                        +{trader.pips.toFixed(1)}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '11px', color: '#848E9C' }}>{t.landing.winRateCol}</div>
+                      <div style={{ fontSize: '20px', fontWeight: 900, color: '#F0B90B' }}>
+                        {trader.winRate}%
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div style={{ textAlign: 'center' }}>
             <button
-              onClick={() => onEnterApp()}
+              onClick={() => onEnterApp('ranking')}
               style={{
                 background: 'rgba(255, 255, 255, 0.05)',
                 border: '1px solid rgba(0, 240, 255, 0.3)',
@@ -475,7 +505,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
                 e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
               }}
             >
-              {t.arena.tournamentsTitle} <ChevronRight size={16} />
+              {t.nav.rankings} <ChevronRight size={16} />
             </button>
           </div>
         </div>
@@ -558,6 +588,31 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
                 <div>✓ 20 {t.arena.minTradesDesc}</div>
               </div>
             </div>
+          </div>
+
+          <div style={{ textAlign: 'center', marginTop: '36px' }}>
+            <button
+              onClick={() => onEnterApp('tournaments')}
+              style={{
+                background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 100%)',
+                border: 'none',
+                color: '#080b11',
+                padding: '14px 32px',
+                borderRadius: '12px',
+                fontSize: '14px',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 20px rgba(0, 240, 255, 0.3)',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
+            >
+              {t.arena.tournamentsTitle} <ChevronRight size={16} />
+            </button>
           </div>
         </div>
       </section>

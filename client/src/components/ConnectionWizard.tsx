@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Broker,
   IntegrationType,
@@ -61,6 +61,17 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Keyboard escape route
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   const handleBrokerSelect = (broker: Broker) => {
     setSelectedBroker(broker);
@@ -169,7 +180,12 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
   };
 
   return (
-    <div className="modal-overlay">
+    <div
+      className="modal-overlay"
+      onClick={e => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div className="modal-content">
         <button className="modal-close" onClick={onClose} aria-label="Close">
           <X size={20} />
