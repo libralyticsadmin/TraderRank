@@ -93,7 +93,6 @@ export const App: React.FC = () => {
   const [positions, setPositions] = useState<CanonicalPosition[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [dailyResult, setDailyResult] = useState<DailyLeaderboardResult | null>(null);
-  const [wsConnected, setWsConnected] = useState(false);
   const [marketStatus, setMarketStatus] = useState<MarketStatus | null>(null);
   const [isRefreshingMarket, setIsRefreshingMarket] = useState(false);
   const [metaApiHealth, setMetaApiHealth] = useState<{ ok: boolean; latencyMs: number; hasTokenConfigured?: boolean } | null>(null);
@@ -197,10 +196,6 @@ export const App: React.FC = () => {
     const wsUrl = `${protocol}//${window.location.host}/ws`;
     const socket = new WebSocket(wsUrl);
 
-    socket.onopen = () => {
-      setWsConnected(true);
-    };
-
     socket.onmessage = event => {
       try {
         const msg = JSON.parse(event.data);
@@ -219,10 +214,6 @@ export const App: React.FC = () => {
       } catch (e) {
         console.error('Error parsing WS message', e);
       }
-    };
-
-    socket.onclose = () => {
-      setWsConnected(false);
     };
 
     const fallbackTimer = setInterval(() => {
@@ -328,18 +319,6 @@ export const App: React.FC = () => {
                 <span className="brand-fx-pill">FX</span>
               </h1>
               <span className="brand-badge">{t.landing.badge}</span>
-              <span
-                className="status-pill"
-                style={{
-                  background: wsConnected ? 'rgba(0, 218, 198, 0.15)' : 'rgba(246, 70, 93, 0.15)',
-                  color: wsConnected ? 'var(--accent-green)' : 'var(--accent-red)',
-                  border: `1px solid ${wsConnected ? 'rgba(0, 218, 198, 0.3)' : 'rgba(246, 70, 93, 0.3)'}`,
-                  fontSize: '11px',
-                }}
-              >
-                <Radio size={12} className={wsConnected ? 'animate-pulse' : ''} />
-                {wsConnected ? t.nav.wsConnected : t.nav.wsConnecting}
-              </span>
               {metaApiHealth && (
                 <span
                   className="status-pill"
