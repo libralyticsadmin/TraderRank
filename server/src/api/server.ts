@@ -23,6 +23,7 @@ import { Broker, AccountCredentials } from '../../../shared/src/types.js';
 
 import { BrokerDirectory } from '../connector/brokerDirectory.js';
 import { ZeroWriteGuard, IllegalWriteOperationError } from '../connector/zeroWriteGuard.js';
+import { r2Storage } from '../services/r2StorageService.js';
 import { AiChartAnalyzer } from '../market/aiChartAnalyzer.js';
 import { ForexFactoryService } from '../market/forexFactoryService.js';
 import { DailyIntelService } from '../market/dailyIntelService.js';
@@ -586,7 +587,44 @@ export function createServer() {
     }
   });
 
-  // 17. Production Static Asset Serving & SPA Fallback
+  // 17. Cloudflare R2 Cloud Storage Endpoints
+  app.get('/api/storage/r2/status', async (_req: Request, res: Response) => {
+    const status = await r2Storage.testConnection();
+    res.json({
+      configured: r2Storage.isConfigured(),
+      bucket: r2Storage.getBucketName(),
+      ...status,
+    });
+  });
+
+  app.post('/api/storage/r2/snapshot/leaderboard/:tournamentId', async (req: Request, res: Response) => {
+    try {
+      const { tournamentId } = req.params;
+      const tournament = tournamentService.getTournamentById(tournamentId);
+      if (!tournament) {
+        return res.status(404).json({ success: false, error: 'Tournament not found' });
+      }
+      const result = await r2Storage.saveLeaderboardSnapshot(tournamentId, tournament.standings);
+      res.json({ success: true, snapshot: result });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ success: false, error: msg });
+    }
+  });
+
+  app.post('/api/storage/r2/archive/trades/:accountId', async (req: Request, res: Response) => {
+    try {
+      const { accountId } = req.params;
+      const trades = connector.getAccountTrades(accountId);
+      const result = await r2Storage.saveTradeArchive(accountId, trades);
+      res.json({ success: true, archive: result });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ success: false, error: msg });
+    }
+  });
+
+  // 18. Production Static Asset Serving & SPA Fallback
   const candidatePaths = [
     path.resolve(process.cwd(), 'client/dist'),
     path.resolve(__dirname, '../../../../client/dist'),

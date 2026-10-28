@@ -40,6 +40,7 @@ import {
   Users,
   Crown,
   Zap,
+  Cloud,
 } from 'lucide-react';
 
 interface MarketQuote {
@@ -96,6 +97,7 @@ export const App: React.FC = () => {
   const [marketStatus, setMarketStatus] = useState<MarketStatus | null>(null);
   const [isRefreshingMarket, setIsRefreshingMarket] = useState(false);
   const [metaApiHealth, setMetaApiHealth] = useState<{ ok: boolean; latencyMs: number; hasTokenConfigured?: boolean } | null>(null);
+  const [r2Status, setR2Status] = useState<{ configured: boolean; bucket: string; ok: boolean; storage: string } | null>(null);
 
   // Active modal trader profile
   const [selectedTrader, setSelectedTrader] = useState<TraderProfileData | null>(null);
@@ -122,6 +124,18 @@ export const App: React.FC = () => {
       }
     } catch (err) {
       console.error('Failed to fetch MetaApi health', err);
+    }
+  };
+
+  const fetchR2Status = async () => {
+    try {
+      const res = await fetch('/api/storage/r2/status');
+      if (res.ok) {
+        const data = await res.json();
+        setR2Status(data);
+      }
+    } catch {
+      // Ignore
     }
   };
 
@@ -176,6 +190,7 @@ export const App: React.FC = () => {
     fetchLeaderboard();
     fetchMarketQuotes();
     fetchMetaApiHealth();
+    fetchR2Status();
 
     // Setup live WebSocket stream
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -339,6 +354,25 @@ export const App: React.FC = () => {
                 >
                   <Zap size={12} color="#0abab5" />
                   {metaApiHealth.ok ? `MetaApi: ${metaApiHealth.latencyMs}ms` : 'MetaApi: Offline'}
+                </span>
+              )}
+              {r2Status && (
+                <span
+                  className="status-pill"
+                  style={{
+                    background: 'rgba(244, 129, 32, 0.15)',
+                    color: '#f48120',
+                    border: '1px solid rgba(244, 129, 32, 0.35)',
+                    fontSize: '11px',
+                    cursor: 'default',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                  title={`Cloudflare R2 Bucket: ${r2Status.bucket} (${r2Status.storage})`}
+                >
+                  <Cloud size={12} color="#f48120" />
+                  R2 Cloud
                 </span>
               )}
             </div>
