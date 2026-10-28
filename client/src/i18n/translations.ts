@@ -1043,8 +1043,8 @@ export const translations: Record<Language, TranslationDictionary> = {
       newsCalendar: 'News Calendar',
       loadingKLine: 'Loading AllTick K-Line Stream...',
       closeSubPanel: '✕ Close Sub-Panel',
-      liveStreamActive: 'AllTick Live Stream: ForexFactory Red Folder Calendar & AI Engine Active',
-      tokenTrial: 'Token: 4554c41c...-c-app (7-Day Trial)',
+      liveStreamActive: 'MetaApi Broker Stream: Live Forex & Gold Feed Active',
+      tokenTrial: 'MetaApi Cloud Broker Ledger (Live)',
       overlayIndicators: 'Overlay Indicators (Main Chart)',
     },
     subscription: {
@@ -1838,8 +1838,8 @@ export const translations: Record<Language, TranslationDictionary> = {
       newsCalendar: '経済カレンダー',
       loadingKLine: 'AllTick Kラインストリーム読み込み中...',
       closeSubPanel: '✕ サブパネルを閉じる',
-      liveStreamActive: 'AllTick ライブ配信: ForexFactory 赤フォルダ & AIエンジン稼働中',
-      tokenTrial: 'トークン: 4554c41c...-c-app (7日間トライアル)',
+      liveStreamActive: 'MetaApi ブローカーストリーム: ライブ為替・ゴールド配信中',
+      tokenTrial: 'MetaApi クラウドブローカー台帳 (ライブ)',
       overlayIndicators: 'メインチャート重ね合わせ指標',
     },
     subscription: {
@@ -2633,8 +2633,8 @@ export const translations: Record<Language, TranslationDictionary> = {
       newsCalendar: '财经日历',
       loadingKLine: '正在加载 AllTick K线数据流...',
       closeSubPanel: '✕ 关闭副图面板',
-      liveStreamActive: 'AllTick 实时流: ForexFactory 财经日历与 AI 引擎运作中',
-      tokenTrial: '授权令牌: 4554c41c...-c-app (7天试用)',
+      liveStreamActive: 'MetaApi 经纪商数据流: 实时外汇与黄金行情已连接',
+      tokenTrial: 'MetaApi 云经纪商交易账本 (实时)',
       overlayIndicators: '主图叠加指标',
     },
     subscription: {

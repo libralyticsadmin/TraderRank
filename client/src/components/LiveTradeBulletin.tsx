@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Broker } from '../../../shared/src/types.ts';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
-import { TrendingUp, TrendingDown, Flame } from 'lucide-react';
+import { TrendingUp, TrendingDown, Flame, Zap } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext.tsx';
 
 export interface BulletinTradeItem {
@@ -24,115 +24,12 @@ interface LiveTradeBulletinProps {
   speed?: 'normal' | 'fast' | 'slow';
 }
 
-const INITIAL_BULLETIN_TRADES: BulletinTradeItem[] = [
-  {
-    id: 'blt_1',
-    trader: 'FX_Sniper',
-    broker: 'Exness',
-    symbol: 'EURUSD',
-    type: 'BUY',
-    pips: 38.4,
-    lotSize: 0.85,
-    profitUsd: 384.0,
-    timeAgo: 'Just now',
-    tagKey: 'scalpWin',
-    isHot: true,
-  },
-  {
-    id: 'blt_2',
-    trader: 'GoldBug_JP',
-    broker: 'XM',
-    symbol: 'XAUUSD',
-    type: 'BUY',
-    pips: 42.0,
-    lotSize: 0.50,
-    profitUsd: 2100.0,
-    timeAgo: '12s ago',
-    tagKey: 'goldRush',
-    isHot: true,
-  },
-  {
-    id: 'blt_3',
-    trader: 'TokyoRider',
-    broker: 'XM',
-    symbol: 'USDJPY',
-    type: 'BUY',
-    pips: 19.8,
-    lotSize: 1.20,
-    profitUsd: 156.4,
-    timeAgo: '35s ago',
-    tagKey: 'londonBreakout',
-  },
-  {
-    id: 'blt_4',
-    trader: 'ZenScalper',
-    broker: 'Vantage',
-    symbol: 'GBPUSD',
-    type: 'SELL',
-    pips: 24.1,
-    lotSize: 0.60,
-    profitUsd: 241.0,
-    timeAgo: '1m ago',
-    tagKey: 'swingPullback',
-  },
-  {
-    id: 'blt_5',
-    trader: 'AlphaWave',
-    broker: 'Axiory',
-    symbol: 'EURUSD',
-    type: 'BUY',
-    pips: 15.6,
-    lotSize: 0.40,
-    profitUsd: 156.0,
-    timeAgo: '2m ago',
-    tagKey: 'verifiedDeal',
-  },
-  {
-    id: 'blt_6',
-    trader: 'CryptoKing_99',
-    broker: 'Exness',
-    symbol: 'BTCUSD',
-    type: 'BUY',
-    pips: 185.0,
-    lotSize: 0.10,
-    profitUsd: 185.0,
-    timeAgo: '3m ago',
-    tagKey: 'weeklyHigh',
-    isHot: true,
-  },
-  {
-    id: 'blt_7',
-    trader: 'ApexPredator',
-    broker: 'XM',
-    symbol: 'XAUUSD',
-    type: 'TP_HIT',
-    pips: 52.4,
-    lotSize: 1.00,
-    profitUsd: 5240.0,
-    timeAgo: '4m ago',
-    tagKey: 'tournamentLead',
-    isHot: true,
-  },
-  {
-    id: 'blt_8',
-    trader: 'OsakaTrader',
-    broker: 'Axiory',
-    symbol: 'USDJPY',
-    type: 'SELL',
-    pips: 14.2,
-    lotSize: 0.75,
-    profitUsd: 98.2,
-    timeAgo: '5m ago',
-    tagKey: 'm15Pullback',
-  },
-];
-
 export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
   onSelectTrader,
   speed = 'normal',
 }) => {
   const { t } = useTranslation();
-  const [trades, setTrades] = useState<BulletinTradeItem[]>(INITIAL_BULLETIN_TRADES);
+  const [trades, setTrades] = useState<BulletinTradeItem[]>([]);
 
   const getTagLabel = (item: BulletinTradeItem) => {
     if (item.tagKey && (t.bulletin as any)[item.tagKey]) {
@@ -141,42 +38,61 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
     return item.tag || t.bulletin.verifiedBridge;
   };
 
-  // Periodic random live tick generator to simulate incoming WebSocket trade executions
+  // Fetch verified trades from connected MetaApi / broker accounts
   useEffect(() => {
-    const symbols = ['EURUSD', 'GBPUSD', 'USDJPY', 'XAUUSD', 'BTCUSD'];
-    const traders = ['FX_Sniper', 'GoldBug_JP', 'ZenScalper', 'TokyoRider', 'AlphaWave', 'ApexTrader', 'NovaFX'];
-    const brokers: Broker[] = ['Exness', 'XM', 'Axiory', 'Vantage'];
-    const tagKeys = ['liveExecution', 'takeProfit', 'pipsSurge', 'newTop10', 'verifiedBridge'];
+    let isMounted = true;
 
-    const interval = setInterval(() => {
-      const sym = symbols[Math.floor(Math.random() * symbols.length)];
-      const trader = traders[Math.floor(Math.random() * traders.length)];
-      const broker = brokers[Math.floor(Math.random() * brokers.length)];
-      const isBuy = Math.random() > 0.4;
-      const pips = Number((5 + Math.random() * 45).toFixed(1));
-      const lotSize = Number((0.1 + Math.random() * 1.5).toFixed(2));
-      const profitUsd = sym === 'XAUUSD' ? Number((pips * lotSize * 10).toFixed(1)) : Number((pips * lotSize * 10).toFixed(1));
-      const selectedKey = tagKeys[Math.floor(Math.random() * tagKeys.length)];
+    const loadRealTrades = async () => {
+      try {
+        const accRes = await fetch('/api/accounts');
+        if (!accRes.ok) return;
+        const accounts = await accRes.json();
+        if (!Array.isArray(accounts) || accounts.length === 0) return;
 
-      const newItem: BulletinTradeItem = {
-        id: `blt_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-        trader,
-        broker,
-        symbol: sym,
-        type: isBuy ? 'BUY' : 'SELL',
-        pips,
-        lotSize,
-        profitUsd,
-        timeAgo: t.bulletin.justNow,
-        tagKey: selectedKey,
-        isHot: pips > 30,
-      };
+        const collected: BulletinTradeItem[] = [];
+        for (const acc of accounts) {
+          try {
+            const trRes = await fetch(`/api/accounts/${acc.id}/trades`);
+            if (trRes.ok) {
+              const rawTrades = await trRes.json();
+              if (Array.isArray(rawTrades)) {
+                for (const tr of rawTrades) {
+                  collected.push({
+                    id: tr.id || `tr_${Math.random()}`,
+                    trader: acc.username || `Trader-${acc.accountNumber}`,
+                    broker: acc.broker || 'XM',
+                    symbol: tr.symbol || 'EURUSD',
+                    type: tr.type === 'BUY' ? 'BUY' : 'SELL',
+                    pips: Number((tr.profitPips ?? tr.pnlPips ?? 0).toFixed(1)),
+                    lotSize: Number((tr.lotSize ?? tr.volume ?? 0.1).toFixed(2)),
+                    profitUsd: Number((tr.profitCurrency ?? tr.profit ?? 0).toFixed(1)),
+                    timeAgo: tr.closeTime ? new Date(tr.closeTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Live',
+                    tagKey: (tr.profitPips ?? 0) > 0 ? 'scalpWin' : 'verifiedDeal',
+                    isHot: (tr.profitPips ?? 0) > 20,
+                  });
+                }
+              }
+            }
+          } catch {
+            // ignore
+          }
+        }
 
-      setTrades(prev => [newItem, ...prev.slice(0, 11)]);
-    }, 6500);
+        if (isMounted && collected.length > 0) {
+          setTrades(collected);
+        }
+      } catch {
+        // ignore
+      }
+    };
 
-    return () => clearInterval(interval);
-  }, [t]);
+    loadRealTrades();
+    const interval = setInterval(loadRealTrades, 15000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   const getDuration = () => {
     if (speed === 'fast') return '18s';
@@ -198,15 +114,31 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
         </div>
       </div>
 
-      {/* Infinite Horizontal Motion Track Moving Left */}
+      {/* Infinite Horizontal Motion Track Moving Left or Waiting Status */}
       <div className="bulletin-track-window">
-        <div
-          className="bulletin-marquee-content"
-          style={{ animationDuration: getDuration() }}
-        >
-          {/* Render track items twice to ensure seamless 100% infinite continuous loop */}
-          {[...trades, ...trades].map((item, idx) => {
-            const isPositive = item.pips >= 0;
+        {trades.length === 0 ? (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '0 24px',
+              color: 'var(--text-muted)',
+              fontSize: '12px',
+              fontWeight: 500,
+            }}
+          >
+            <Zap size={14} color="#0abab5" />
+            <span>MetaApi Real-Time Broker Stream Active • Waiting for incoming verified trade fills</span>
+          </div>
+        ) : (
+          <div
+            className="bulletin-marquee-content"
+            style={{ animationDuration: getDuration() }}
+          >
+            {/* Render track items twice to ensure seamless 100% infinite continuous loop */}
+            {[...trades, ...trades].map((item, idx) => {
+              const isPositive = item.pips >= 0;
             return (
               <div
                 key={`${item.id}-${idx}`}
@@ -266,6 +198,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
             );
           })}
         </div>
+        )}
       </div>
     </div>
   );

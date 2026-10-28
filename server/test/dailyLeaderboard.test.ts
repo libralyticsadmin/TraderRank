@@ -1,10 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { LeaderboardService } from '../src/services/leaderboardService.js';
 import { RedisStreamsBus } from '../src/eventbus/redisStreamsBus.js';
 
 describe('Daily Winning Pips & Best Trader Engine', () => {
   const leaderboard = LeaderboardService.getInstance();
   const eventBus = RedisStreamsBus.getInstance();
+
+  beforeAll(() => {
+    leaderboard.seedDemoTraders();
+  });
 
   it('should calculate daily leaderboard and identify Daily Best Trader', () => {
     const daily = leaderboard.getDailyLeaderboard();

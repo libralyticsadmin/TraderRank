@@ -46,51 +46,9 @@ export class LeaderboardService {
   private dailyUpdateListeners: ((result: DailyLeaderboardResult) => void)[] = [];
 
   // Historical Daily Champions Archive
-  private historicalChampions: DailyChampionRecord[] = [
-    {
-      date: '2026-09-12',
-      winnerUserId: 'u_apex',
-      winnerUsername: 'ApexTrader_FX',
-      winnerAvatarSymbol: 'zap',
-      winnerBrokers: ['Exness', 'XM'],
-      pipsWon: 142.8,
-      winRate: 85,
-      tradesCompleted: 14,
-    },
-    {
-      date: '2026-09-11',
-      winnerUserId: 'u_samurai',
-      winnerUsername: 'TokyoScalper',
-      winnerAvatarSymbol: 'target',
-      winnerBrokers: ['XM'],
-      pipsWon: 118.4,
-      winRate: 78,
-      tradesCompleted: 18,
-    },
-    {
-      date: '2026-09-10',
-      winnerUserId: 'u_libra',
-      winnerUsername: 'Libralytic',
-      winnerAvatarSymbol: 'shield',
-      winnerBrokers: ['Axiory', 'Exness'],
-      pipsWon: 96.2,
-      winRate: 82,
-      tradesCompleted: 11,
-    },
-    {
-      date: '2026-09-09',
-      winnerUserId: 'u_quantum',
-      winnerUsername: 'QuantumPips',
-      winnerAvatarSymbol: 'gem',
-      winnerBrokers: ['Vantage'],
-      pipsWon: 88.5,
-      winRate: 75,
-      tradesCompleted: 8,
-    },
-  ];
+  private historicalChampions: DailyChampionRecord[] = [];
 
   constructor() {
-    this.seedDemoTraders();
     this.initEventConsumers();
   }
 
@@ -105,8 +63,50 @@ export class LeaderboardService {
     return new Date().toISOString().slice(0, 10);
   }
 
-  private seedDemoTraders(): void {
+  public seedDemoTraders(): void {
     const today = this.getTodayUTC();
+    this.historicalChampions = [
+      {
+        date: '2026-09-12',
+        winnerUserId: 'u_apex',
+        winnerUsername: 'ApexTrader_FX',
+        winnerAvatarSymbol: 'zap',
+        winnerBrokers: ['Exness', 'XM'],
+        pipsWon: 142.8,
+        winRate: 85,
+        tradesCompleted: 14,
+      },
+      {
+        date: '2026-09-11',
+        winnerUserId: 'u_samurai',
+        winnerUsername: 'TokyoScalper',
+        winnerAvatarSymbol: 'target',
+        winnerBrokers: ['XM'],
+        pipsWon: 118.4,
+        winRate: 78,
+        tradesCompleted: 18,
+      },
+      {
+        date: '2026-09-10',
+        winnerUserId: 'u_libra',
+        winnerUsername: 'Libralytic',
+        winnerAvatarSymbol: 'shield',
+        winnerBrokers: ['Axiory', 'Exness'],
+        pipsWon: 96.2,
+        winRate: 82,
+        tradesCompleted: 11,
+      },
+      {
+        date: '2026-09-09',
+        winnerUserId: 'u_quantum',
+        winnerUsername: 'QuantumPips',
+        winnerAvatarSymbol: 'gem',
+        winnerBrokers: ['Vantage'],
+        pipsWon: 88.5,
+        winRate: 75,
+        tradesCompleted: 8,
+      },
+    ];
     // Benchmark competitive leaderboard data with symbolic icons (zero emojis)
     const seeds = [
       {

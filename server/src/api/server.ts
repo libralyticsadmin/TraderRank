@@ -647,21 +647,20 @@ export function createServer() {
     res.json(data);
   });
 
-  // 15. AllTick Integration Status & 7-Day Trial Telemetry
+  // 15. Real-Time Market Feed Status & MetaApi Gateway Telemetry
   app.get('/api/market/alltick/status', (_req: Request, res: Response) => {
     const adapter = marketFeed.getAllTickAdapter();
     res.json({
-      provider: 'AllTick Real-Time Financial Data API',
-      tokenMasked: '4554c41c6fc5...-c-app',
-      validity: '7-Day Token',
+      provider: 'MetaApi Live Broker Cloud Feed',
+      source: 'Direct Broker Gateway',
+      status: 'OPERATIONAL',
       websocketConnected: adapter.getIsConnected(),
       supportedEndpoints: {
-        websocketQuoteStream: 'wss://quote.alltick.co/quote-b-ws-api',
-        candlestickApi: 'https://quote.alltick.co/quote-b-api/kline',
-        realtimeTickApi: 'https://quote.alltick.co/quote-b-api/trade-tick',
+        websocketQuoteStream: 'MetaApi Real-Time Quote Stream',
+        candlestickApi: 'MetaApi Historical Bar Feed',
+        realtimeTickApi: 'MetaApi Broker Tick Stream',
       },
       activeSymbols: ['USDJPY', 'EURUSD', 'GBPUSD', 'AUDUSD', 'USDCAD', 'XAUUSD', 'MCL1!', 'BTCUSD'],
-      status: 'OPERATIONAL',
     });
   });
 

@@ -396,84 +396,119 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
         </div>
       )}
 
-      {/* Main Ranking Table */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {processedEntries.map(trader => {
-          const isTop3 = trader.displayRank <= 3;
-          return (
-            <div
-              key={trader.userId}
-              onClick={() => onSelectTrader?.({ username: trader.username, broker: trader.broker, rank: trader.displayRank, score: trader.winningPips })}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px 18px',
-                borderRadius: '12px',
-                background: isTop3 ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.01)',
-                border: '1px solid var(--border-subtle)',
-                cursor: 'pointer',
-                transition: 'background 0.2s',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)')}
-              onMouseLeave={e => (e.currentTarget.style.background = isTop3 ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.01)')}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <div
-                  style={{
-                    width: '32px',
-                    fontWeight: 800,
-                    fontSize: '14px',
-                    textAlign: 'center',
-                    color: trader.displayRank === 1 ? '#fbbf24' : trader.displayRank === 2 ? '#94a3b8' : trader.displayRank === 3 ? '#d97706' : 'var(--text-muted)',
-                  }}
-                >
-                  #{trader.displayRank}
+      {/* Main Ranking Table or Institutional Empty State */}
+      {processedEntries.length === 0 ? (
+        <div
+          style={{
+            padding: '48px 24px',
+            textAlign: 'center',
+            borderRadius: '16px',
+            background: 'rgba(255, 255, 255, 0.02)',
+            border: '1px dashed rgba(255, 255, 255, 0.12)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '12px',
+          }}
+        >
+          <div
+            style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              background: 'rgba(10, 186, 181, 0.1)',
+              border: '1px solid rgba(10, 186, 181, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Trophy size={28} color="#0abab5" />
+          </div>
+          <h4 style={{ margin: 0, fontSize: '18px', fontWeight: 700 }}>Waiting for Verified Traders</h4>
+          <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)', maxWidth: '440px', lineHeight: 1.5 }}>
+            No mockup accounts are displayed. Only real traders connected via live MT4/MT5 broker feeds appear on the global leaderboard.
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {processedEntries.map(trader => {
+            const isTop3 = trader.displayRank <= 3;
+            return (
+              <div
+                key={trader.userId}
+                onClick={() => onSelectTrader?.({ username: trader.username, broker: trader.broker, rank: trader.displayRank, score: trader.winningPips })}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '12px 18px',
+                  borderRadius: '12px',
+                  background: isTop3 ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.01)',
+                  border: '1px solid var(--border-subtle)',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)')}
+                onMouseLeave={e => (e.currentTarget.style.background = isTop3 ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.01)')}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div
+                    style={{
+                      width: '32px',
+                      fontWeight: 800,
+                      fontSize: '14px',
+                      textAlign: 'center',
+                      color: trader.displayRank === 1 ? '#fbbf24' : trader.displayRank === 2 ? '#94a3b8' : trader.displayRank === 3 ? '#d97706' : 'var(--text-muted)',
+                    }}
+                  >
+                    #{trader.displayRank}
+                  </div>
+
+                  <TraderAvatar username={trader.username} symbol={trader.avatarSymbol} size={38} />
+
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <strong style={{ fontSize: '15px' }}>{trader.username}</strong>
+                      <BrokerSymbol broker={trader.broker} />
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>• {trader.tier}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      <span>{t.leaderboard.winRate} <strong style={{ color: 'var(--text-main)' }}>{trader.winRate}%</strong></span>
+                      <span>{t.leaderboard.xp} <strong style={{ color: 'var(--accent-cyan)' }}>{trader.xp}</strong></span>
+                    </div>
+                  </div>
                 </div>
 
-                <TraderAvatar username={trader.username} symbol={trader.avatarSymbol} size={38} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '24px', textAlign: 'right' }}>
+                  <div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.netPips}</div>
+                    <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--accent-green)' }}>
+                      +{trader.winningPips.toFixed(1)}
+                    </div>
+                  </div>
 
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <strong style={{ fontSize: '15px' }}>{trader.username}</strong>
-                    <BrokerSymbol broker={trader.broker} />
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>• {trader.tier}</span>
+                  <div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.profit}</div>
+                    <div style={{ fontSize: '16px', fontWeight: 800, color: '#fbbf24' }}>
+                      +${trader.profitAmount.toLocaleString()}
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                    <span>{t.leaderboard.winRate} <strong style={{ color: 'var(--text-main)' }}>{trader.winRate}%</strong></span>
-                    <span>{t.leaderboard.xp} <strong style={{ color: 'var(--accent-cyan)' }}>{trader.xp}</strong></span>
+
+                  <div style={{ minWidth: '70px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.rate}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--accent-cyan)' }}>
+                      +{trader.profitRate}%
+                    </div>
                   </div>
+
+                  <ExternalLink size={16} color="var(--text-muted)" />
                 </div>
               </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '24px', textAlign: 'right' }}>
-                <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.netPips}</div>
-                  <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--accent-green)' }}>
-                    +{trader.winningPips.toFixed(1)}
-                  </div>
-                </div>
-
-                <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.profit}</div>
-                  <div style={{ fontSize: '16px', fontWeight: 800, color: '#fbbf24' }}>
-                    +${trader.profitAmount.toLocaleString()}
-                  </div>
-                </div>
-
-                <div style={{ minWidth: '70px' }}>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.rate}</div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--accent-cyan)' }}>
-                    +{trader.profitRate}%
-                  </div>
-                </div>
-
-                <ExternalLink size={16} color="var(--text-muted)" />
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

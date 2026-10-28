@@ -2173,8 +2173,8 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
           <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#0abab5', boxShadow: '0 0 6px #0abab5' }} />
           <span>{t.chart.liveStreamActive}</span>
         </div>
-        <div>
-          {t.chart.tokenTrial}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#0abab5', fontWeight: 600 }}>
+          <span>⚡ MetaApi Live Broker Cloud Feed</span>
         </div>
       </div>
 

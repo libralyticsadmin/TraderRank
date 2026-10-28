@@ -147,8 +147,8 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: 'u_active_trader',
-          username: 'AlphaTrader',
+          userId: `u_${login || accountId || Date.now()}`,
+          username: login ? `TraderRank-${login}` : (accountId ? `TraderRank-${accountId}` : 'TraderRank-User'),
           broker: selectedBroker,
           credentials: payloadCreds,
         }),
