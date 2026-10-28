@@ -390,9 +390,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
               >
                 <Trophy size={28} color="#00F0FF" />
               </div>
-              <h4 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#fff' }}>Waiting for Verified Traders</h4>
+              <h4 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#fff' }}>
+                {language === 'ja'
+                  ? '検証済みトレーダーの参加を待機中'
+                  : language === 'zh'
+                  ? '等待实盘认证交易者入驻'
+                  : 'Waiting for Verified Traders'}
+              </h4>
               <p style={{ margin: 0, fontSize: '13px', color: '#848E9C', maxWidth: '440px', lineHeight: 1.5 }}>
-                No mockup accounts are displayed. Only real traders connected via live MT4/MT5 broker feeds appear on the global leaderboard.
+                {language === 'ja'
+                  ? 'モックアップアカウントは一切表示されません。実盤 MT4 / MT5 ブローカーフィードを連携した本物のトレーダーのみがグローバルリーダーボードに表示されます。'
+                  : language === 'zh'
+                  ? '绝无任何虚拟模拟账户。仅展示通过实盘 MT4 / MT5 经纪商行情与观摩账户绑定的真实交易者。'
+                  : 'No mockup accounts are displayed. Only real traders connected via live MT4/MT5 broker feeds appear on the global leaderboard.'}
               </p>
               <button
                 onClick={onOpenConnectWizard}

@@ -31,7 +31,7 @@ interface CommunityFeedProps {
 }
 
 export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onOpenConnectWizard }) => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [filter, setFilter] = useState<'ALL' | 'WINS' | 'BADGES' | 'TOURNAMENTS'>('ALL');
   const [wsConnected, setWsConnected] = useState<boolean>(false);
   const [events, setEvents] = useState<FeedEvent[]>([]);
@@ -306,10 +306,18 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onOpenConnectWizar
             >
               <Radio size={36} color="var(--accent-cyan)" style={{ marginBottom: '12px', opacity: 0.7 }} />
               <h4 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 700 }}>
-                Waiting for Live Verified Broker Activity
+                {language === 'ja'
+                  ? '実盤検証済み取引の配信を待機中'
+                  : language === 'zh'
+                  ? '等待实盘经纪商交易动态'
+                  : 'Waiting for Live Verified Broker Activity'}
               </h4>
               <p style={{ margin: '0 auto 16px', fontSize: '13px', color: 'var(--text-muted)', maxWidth: '440px' }}>
-                All mock profiles have been cleared. Connect your MT4 / MT5 investor account to stream real verified closed trades, badges, and league promotions in real time.
+                {language === 'ja'
+                  ? 'モックアカウントは全削除されました。MT4 / MT5 閲覧専用インベスター口座を連携すると、検証済みの利確決済、バッジ獲得、リーグ昇格がリアルタイムでストリーミングされます。'
+                  : language === 'zh'
+                  ? '模拟账户已全部清理。绑定实盘 MT4 / MT5 观摩账户即可实时同步经过认证的平仓盈利、徽章解锁与联赛晋升。'
+                  : 'All mock profiles have been cleared. Connect your MT4 / MT5 investor account to stream real verified closed trades, badges, and league promotions in real time.'}
               </p>
               {onOpenConnectWizard && (
                 <button
@@ -325,7 +333,11 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onOpenConnectWizar
                   }}
                 >
                   <Zap size={15} />
-                  Connect Real Broker Account
+                  {language === 'ja'
+                    ? 'リアルブローカー口座を連携'
+                    : language === 'zh'
+                    ? '绑定实盘经纪商账户'
+                    : 'Connect Real Broker Account'}
                 </button>
               )}
             </div>
