@@ -282,6 +282,65 @@ export function createServer() {
     });
   });
 
+  // 4b-2. Supported Brokers Directory
+  app.get('/api/brokers', (_req: Request, res: Response) => {
+    res.json({
+      supportedBrokers: ['IC_MARKETS', 'EXNESS', 'XM', 'AXIORY', 'VANTAGE'],
+      brokers: [
+        {
+          id: 'IC_MARKETS',
+          name: 'IC Markets Global',
+          website: 'https://www.ic.com/en/?camp=57406',
+          supportedPlatforms: ['MT4', 'MT5', 'cTrader'],
+          connectionMethod: 'MetaApi Cloud Bridge / Read-Only Investor',
+          region: 'Australia, Seychelles, Bahamas',
+          minLeverage: '1:500',
+          executionType: 'Raw Spread / ECN',
+        },
+        {
+          id: 'Exness',
+          name: 'Exness',
+          website: 'https://www.exness.com',
+          supportedPlatforms: ['MT4', 'MT5', 'Exness Native API'],
+          connectionMethod: 'OpenAPI REST + Read-Only Investor',
+          region: 'Cyprus, Seychelles, UK, South Africa',
+          minLeverage: '1:2000 / Unlimited',
+          executionType: 'Instant / Market',
+        },
+        {
+          id: 'XM',
+          name: 'XM Global',
+          website: 'https://www.xm.com',
+          supportedPlatforms: ['MT4', 'MT5'],
+          connectionMethod: 'MetaApi Cloud Bridge / Read-Only Investor',
+          region: 'Cyprus, Belize, Australia, UAE',
+          minLeverage: '1:1000',
+          executionType: 'Ultra Low Standard / Micro',
+        },
+        {
+          id: 'Axiory',
+          name: 'Axiory',
+          website: 'https://www.axiory.com',
+          supportedPlatforms: ['MT4', 'MT5', 'cTrader'],
+          connectionMethod: 'MetaApi Cloud Bridge / Read-Only Investor',
+          region: 'Belize, UAE',
+          minLeverage: '1:777',
+          executionType: 'Nano / Standard / Max',
+        },
+        {
+          id: 'Vantage',
+          name: 'Vantage Markets',
+          website: 'https://www.vantagemarkets.com',
+          supportedPlatforms: ['MT4', 'MT5'],
+          connectionMethod: 'MetaApi Cloud Bridge / Read-Only Investor',
+          region: 'Australia, Cayman Islands, Vanuatu',
+          minLeverage: '1:500',
+          executionType: 'Raw ECN / Standard STP',
+        },
+      ],
+    });
+  });
+
   // 4c. Supported MT4/MT5 Broker Servers Directory
   app.get('/api/brokers/servers', (req: Request, res: Response) => {
     const broker = req.query.broker as Broker | undefined;
@@ -523,7 +582,7 @@ export function createServer() {
   });
 
   // 18. Daily Trading Intelligence & Highlights Summary (Technical + Fundamental + News)
-  app.get('/api/market/daily-intel', async (req: Request, res: Response) => {
+  const handleDailyIntel = async (req: Request, res: Response) => {
     try {
       const date = req.query.date as string | undefined;
       const isSubscriber = req.query.isSubscriber !== 'false';
@@ -533,7 +592,9 @@ export function createServer() {
       const msg = err instanceof Error ? err.message : String(err);
       res.status(500).json({ success: false, error: msg });
     }
-  });
+  };
+  app.get('/api/market/daily-intel', handleDailyIntel);
+  app.get('/api/market/intel', handleDailyIntel);
 
   // 19. Custom Trading Strategic Timeframe & Analysis Generator
   app.post('/api/market/custom-daily-analysis', (req: Request, res: Response) => {
