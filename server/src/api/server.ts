@@ -587,8 +587,13 @@ export function createServer() {
   });
 
   // 17. Production Static Asset Serving & SPA Fallback
-  const clientDistPath = path.resolve(__dirname, '../../../client/dist');
-  if (fs.existsSync(clientDistPath)) {
+  const candidatePaths = [
+    path.resolve(process.cwd(), 'client/dist'),
+    path.resolve(__dirname, '../../../../client/dist'),
+    path.resolve(__dirname, '../../../client/dist'),
+  ];
+  const clientDistPath = candidatePaths.find(p => fs.existsSync(p));
+  if (clientDistPath) {
     app.use(express.static(clientDistPath));
     app.get('*', (req: Request, res: Response, next) => {
       if (req.path.startsWith('/api') || req.path.startsWith('/ws')) {
