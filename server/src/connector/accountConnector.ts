@@ -22,6 +22,7 @@ import { TradeNormalizerService } from '../normalizer/tradeNormalizer.js';
 import { LeaderboardService } from '../services/leaderboardService.js';
 import { MetaApiClient } from '../workers/metaApiClient.js';
 import { RawPositionPayload } from '../workers/baseWorker.js';
+import { TournamentService } from '../services/tournamentService.js';
 
 export class AccountConnectorService {
   private static instance: AccountConnectorService;
@@ -233,6 +234,34 @@ export class AccountConnectorService {
           for (const trade of normalizedTrades) {
             await this.eventBus.publish('stream:trade.closed.normalized', 'trade.closed.normalized', accountId, trade);
           }
+
+          // Register real account in active tournament
+          const tournamentService = TournamentService.getInstance();
+          tournamentService.joinTournament({
+            tournamentId: 'tourn_weekly_fx_blitz_01',
+            userId,
+            username,
+            avatarSymbol: brokerName.slice(0, 2).toUpperCase(),
+            broker: brokerName,
+          });
+
+          const winningTrades = normalizedTrades.filter(t => t.pnlCurrency > 0);
+          const closedPips = normalizedTrades.reduce((sum, t) => sum + (t.pnlPips || (t.pnlCurrency * 10)), 0);
+          const winRate = normalizedTrades.length > 0
+            ? Math.round((winningTrades.length / normalizedTrades.length) * 100)
+            : 0;
+
+          tournamentService.updateTraderTournamentStats({
+            tournamentId: 'tourn_weekly_fx_blitz_01',
+            userId,
+            closedPips: Number(closedPips.toFixed(1)),
+            floatingPips: 0,
+            tradesCount: normalizedTrades.length,
+            winRate,
+            startingEquity: Number(tradingAccount.equity || 2.8),
+            highWaterMarkEquity: Number(tradingAccount.equity || 2.8),
+            currentEquity: Number(tradingAccount.equity || 2.8),
+          });
         }
       }
     } catch (err) {

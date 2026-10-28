@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Swords, Clock, CheckCircle2, Zap, ChevronRight, Users, Flame } from 'lucide-react';
+import { Swords, Clock, CheckCircle2, Zap, ChevronRight, Users, Flame, Trophy } from 'lucide-react';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { Broker } from '../../../shared/src/types.ts';
@@ -117,7 +117,7 @@ export const TournamentArena: React.FC = () => {
       type: 'WEEKLY_SPRINT',
       prizePoolUsd: 5000,
       prizePoolXp: 15000,
-      entrantsCount: 248,
+      entrantsCount: 0,
       startsAt: '2026-09-14T00:00:00Z',
       endsAt: '2026-09-19T21:00:00Z',
       status: 'ACTIVE',
@@ -135,7 +135,7 @@ export const TournamentArena: React.FC = () => {
       type: 'MONTHLY_PROP',
       prizePoolUsd: 25000,
       prizePoolXp: 75000,
-      entrantsCount: 684,
+      entrantsCount: 0,
       startsAt: '2026-09-01T00:00:00Z',
       endsAt: '2026-09-30T23:59:59Z',
       status: 'ACTIVE',
@@ -153,7 +153,7 @@ export const TournamentArena: React.FC = () => {
       type: 'WEEKLY_SPRINT',
       prizePoolUsd: 10000,
       prizePoolXp: 30000,
-      entrantsCount: 420,
+      entrantsCount: 0,
       startsAt: '2026-09-15T00:00:00Z',
       endsAt: '2026-09-20T23:59:59Z',
       status: 'ACTIVE',
@@ -171,7 +171,7 @@ export const TournamentArena: React.FC = () => {
       type: 'DAILY_BLITZ',
       prizePoolUsd: 1500,
       prizePoolXp: 5000,
-      entrantsCount: 112,
+      entrantsCount: 0,
       startsAt: '2026-09-15T07:00:00Z',
       endsAt: '2026-09-15T16:00:00Z',
       status: 'ACTIVE',
@@ -192,7 +192,7 @@ export const TournamentArena: React.FC = () => {
         type: st.type,
         prizePoolUsd: st.prizePoolPips * 2,
         prizePoolXp: st.prizePoolPips * 5,
-        entrantsCount: st.participantCount || st.standings?.length || 10,
+        entrantsCount: st.participantCount || st.standings?.length || 0,
         startsAt: st.startDate,
         endsAt: st.endDate,
         status: st.status,
@@ -208,38 +208,19 @@ export const TournamentArena: React.FC = () => {
   const currentTourney = tournaments.find(t => t.id === selectedTournamentId) || tournaments[0];
   const activeServerTourn = serverTournaments.find(st => st.id === selectedTournamentId);
 
-  const participantRosters: Record<string, TournamentParticipant[]> = {
-    tourn_weekly_fx_blitz_01: [
-      { rank: 1, userId: 'u_fx_sniper', username: 'FX_Sniper', broker: 'Exness', avatarSymbol: 'EURUSD', netPips: 88.4, tradesCount: 14, drawdownPct: 1.8, winRate: 78.5, status: 'ACTIVE', estimatedPrize: '$2,000 + 5,000 XP' },
-      { rank: 2, userId: 'u_gold_bug', username: 'GoldBug_JP', broker: 'XM', avatarSymbol: 'XAUUSD', netPips: 74.2, tradesCount: 11, drawdownPct: 2.4, winRate: 72.7, status: 'ACTIVE', estimatedPrize: '$1,200 + 3,500 XP' },
-      { rank: 3, userId: 'u_alpha_wave', username: 'AlphaWave', broker: 'Axiory', avatarSymbol: 'USDJPY', netPips: 61.9, tradesCount: 9, drawdownPct: 2.1, winRate: 66.7, status: 'ACTIVE', estimatedPrize: '$800 + 2,000 XP' },
-      { rank: 4, userId: 'u_zen_scalp', username: 'ZenScalper', broker: 'Vantage', avatarSymbol: 'GBPUSD', netPips: 49.3, tradesCount: 16, drawdownPct: 3.2, winRate: 62.5, status: 'ACTIVE', estimatedPrize: '$400 + 1,000 XP' },
-      { rank: 5, userId: 'u_reckless_bull', username: 'RiskMaximus', broker: 'Exness', avatarSymbol: 'BTCUSD', netPips: 112.5, tradesCount: 4, drawdownPct: 7.2, winRate: 50.0, status: 'DISQUALIFIED', estimatedPrize: t.arena.disqualifiedBadge },
-    ],
-    tourn_monthly_prop_01: [
-      { rank: 1, userId: 'u_marcus_v', username: 'Marcus_V', broker: 'Axiory', avatarSymbol: 'EURUSD', netPips: 248.6, tradesCount: 42, drawdownPct: 3.1, winRate: 81.0, status: 'ACTIVE', estimatedPrize: '$10,000 + 30,000 XP' },
-      { rank: 2, userId: 'u_sarah_fx', username: 'Sarah_FX', broker: 'Exness', avatarSymbol: 'GBPUSD', netPips: 198.4, tradesCount: 38, drawdownPct: 2.8, winRate: 76.3, status: 'ACTIVE', estimatedPrize: '$6,000 + 20,000 XP' },
-      { rank: 3, userId: 'u_hiroshi_k', username: 'Hiroshi_K', broker: 'XM', avatarSymbol: 'USDJPY', netPips: 182.1, tradesCount: 29, drawdownPct: 3.4, winRate: 72.4, status: 'ACTIVE', estimatedPrize: '$4,000 + 12,000 XP' },
-      { rank: 4, userId: 'u_elena_scalps', username: 'Elena_Scalps', broker: 'Vantage', avatarSymbol: 'XAUUSD', netPips: 165.7, tradesCount: 35, drawdownPct: 3.9, winRate: 68.6, status: 'ACTIVE', estimatedPrize: '$2,500 + 8,000 XP' },
-      { rank: 5, userId: 'u_david_gold', username: 'David_Gold', broker: 'XM', avatarSymbol: 'XAUUSD', netPips: 142.0, tradesCount: 31, drawdownPct: 4.1, winRate: 64.5, status: 'ACTIVE', estimatedPrize: '$1,500 + 5,000 XP' },
-    ],
-  };
-
-  const participants: TournamentParticipant[] = activeServerTourn?.standings && activeServerTourn.standings.length > 0
-    ? activeServerTourn.standings.map((s: any) => ({
-        rank: s.rank,
-        userId: s.userId,
-        username: s.username,
-        broker: (s.brokers && s.brokers[0]) || 'XM',
-        avatarSymbol: s.avatarSymbol || s.username.slice(0, 2),
-        netPips: s.netPips,
-        tradesCount: s.tradesCount,
-        drawdownPct: s.maxDrawdownReached || s.currentDrawdownPercent || 1.8,
-        winRate: s.winRate,
-        status: s.isDisqualified ? 'DISQUALIFIED' : 'ACTIVE',
-        estimatedPrize: s.rank === 1 ? '$2,000 + 5,000 XP' : s.rank === 2 ? '$1,200 + 3,500 XP' : s.rank === 3 ? '$800 + 2,000 XP' : '$400 + 1,000 XP',
-      }))
-    : (participantRosters[selectedTournamentId] || participantRosters.tourn_weekly_fx_blitz_01 || []);
+  const participants: TournamentParticipant[] = (activeServerTourn?.standings || []).map((s: any) => ({
+    rank: s.rank,
+    userId: s.userId,
+    username: s.username,
+    broker: (s.brokers && s.brokers[0]) || 'XM',
+    avatarSymbol: s.avatarSymbol || s.username.slice(0, 2),
+    netPips: s.netPips,
+    tradesCount: s.tradesCount,
+    drawdownPct: s.maxDrawdownReached || s.currentDrawdownPercent || 0,
+    winRate: s.winRate,
+    status: s.isDisqualified ? 'DISQUALIFIED' : 'ACTIVE',
+    estimatedPrize: s.rank === 1 ? '$2,000 + 5,000 XP' : s.rank === 2 ? '$1,200 + 3,500 XP' : s.rank === 3 ? '$800 + 2,000 XP' : '$400 + 1,000 XP',
+  }));
 
   // Countdown timer tick simulation
   useEffect(() => {
@@ -449,7 +430,49 @@ export const TournamentArena: React.FC = () => {
         {/* Standings Leaderboard */}
         <h4 style={{ margin: '0 0 14px', fontSize: '16px', fontWeight: 700 }}>{t.arena.standingsTitle}</h4>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {participants.map(p => {
+          {participants.length === 0 ? (
+            <div
+              style={{
+                padding: '44px 24px',
+                textAlign: 'center',
+                background: 'rgba(255, 255, 255, 0.02)',
+                borderRadius: '16px',
+                border: '1px dashed var(--border-subtle)',
+              }}
+            >
+              <div
+                style={{
+                  width: '54px',
+                  height: '54px',
+                  borderRadius: '50%',
+                  background: 'rgba(0, 218, 198, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 14px',
+                }}
+              >
+                <Trophy size={26} color="var(--accent-cyan)" />
+              </div>
+              <h4 style={{ margin: '0 0 6px', fontSize: '17px', fontWeight: 800 }}>
+                Waiting for Verified Contenders
+              </h4>
+              <p style={{ margin: '0 auto 18px', maxWidth: '440px', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                No mock accounts are displayed. This arena is waiting for real traders to connect their broker account and enter. Join now to claim the #1 ranking spot!
+              </p>
+              {!isUserEntered && (
+                <button
+                  className="btn-primary"
+                  onClick={handleJoinTournament}
+                  disabled={isJoining}
+                  style={{ padding: '10px 22px', fontSize: '13px', fontWeight: 800, margin: '0 auto' }}
+                >
+                  <Zap size={15} /> Enter Arena With Connected Account
+                </button>
+              )}
+            </div>
+          ) : (
+            participants.map(p => {
             const isTop3 = p.rank <= 3;
             const isDq = p.status === 'DISQUALIFIED';
 
@@ -585,7 +608,7 @@ export const TournamentArena: React.FC = () => {
                 </div>
               </div>
             );
-          })}
+          }))}
         </div>
       </div>
     </div>
