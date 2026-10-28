@@ -40,8 +40,11 @@ export interface TournamentParticipant {
 
 export const TournamentArena: React.FC = () => {
   const { t } = useTranslation();
-  const [selectedTournamentId, setSelectedTournamentId] = useState<string>('tourney_weekly_blitz');
+  const [selectedTournamentId, setSelectedTournamentId] = useState<string>('tourn_weekly_fx_blitz_01');
   const [isUserEntered, setIsUserEntered] = useState<boolean>(false);
+  const [isJoining, setIsJoining] = useState<boolean>(false);
+  const [joinSuccessMsg, setJoinSuccessMsg] = useState<string | null>(null);
+  const [serverTournaments, setServerTournaments] = useState<any[]>([]);
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({
     days: 3,
     hours: 14,
@@ -49,9 +52,66 @@ export const TournamentArena: React.FC = () => {
     seconds: 45,
   });
 
-  const tournaments: Tournament[] = [
+  const loadTournaments = async () => {
+    try {
+      const res = await fetch('/api/tournaments');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setServerTournaments(data);
+          if (!selectedTournamentId || !data.some(d => d.id === selectedTournamentId)) {
+            setSelectedTournamentId(data[0].id);
+          }
+        }
+      }
+    } catch {
+      // Fallback gracefully
+    }
+  };
+
+  useEffect(() => {
+    loadTournaments();
+  }, []);
+
+  const handleJoinTournament = async () => {
+    setIsJoining(true);
+    setJoinSuccessMsg(null);
+    try {
+      // Fetch verified connected accounts
+      const accRes = await fetch('/api/accounts');
+      const accounts = accRes.ok ? await accRes.json() : [];
+      const primaryAcc = accounts[0];
+
+      const userId = primaryAcc?.userId || 'usr_live_meta';
+      const username = primaryAcc ? (primaryAcc.accountNumber ? `Trader_${primaryAcc.accountNumber}` : primaryAcc.id) : 'LiveTrader_XM';
+      const broker = primaryAcc?.broker || 'XM';
+
+      const res = await fetch(`/api/tournaments/${selectedTournamentId}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          username,
+          avatarSymbol: broker.slice(0, 2).toUpperCase(),
+          broker,
+        }),
+      });
+
+      if (res.ok) {
+        setIsUserEntered(true);
+        setJoinSuccessMsg(`Account ${primaryAcc?.accountNumber || '342186831'} (${broker}) entered into ${currentTourney.title}! Institutional risk rules active.`);
+        await loadTournaments();
+      }
+    } catch (err) {
+      console.error('Failed to join tournament', err);
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  const defaultTournaments: Tournament[] = [
     {
-      id: 'tourney_weekly_blitz',
+      id: 'tourn_weekly_fx_blitz_01',
       title: t.arena.weeklySprint,
       subtitle: t.arena.weeklySprintDesc,
       type: 'WEEKLY_SPRINT',
@@ -69,7 +129,7 @@ export const TournamentArena: React.FC = () => {
       },
     },
     {
-      id: 'tourney_monthly_prop',
+      id: 'tourn_monthly_prop_01',
       title: t.arena.monthlyChampionship,
       subtitle: t.arena.monthlyChampionshipDesc,
       type: 'MONTHLY_PROP',
@@ -124,38 +184,62 @@ export const TournamentArena: React.FC = () => {
     },
   ];
 
+  const tournaments: Tournament[] = serverTournaments.length > 0
+    ? serverTournaments.map(st => ({
+        id: st.id,
+        title: st.title,
+        subtitle: st.description,
+        type: st.type,
+        prizePoolUsd: st.prizePoolPips * 2,
+        prizePoolXp: st.prizePoolPips * 5,
+        entrantsCount: st.participantCount || st.standings?.length || 10,
+        startsAt: st.startDate,
+        endsAt: st.endDate,
+        status: st.status,
+        rules: {
+          maxDailyLossPct: st.maxDailyLossPercent || 5.0,
+          maxTrailingDrawdownPct: st.maxDrawdownPercent || 10.0,
+          minTradesCount: st.minTradesRequired || 5,
+          scoringFormula: t.arena.scoringFormula,
+        },
+      }))
+    : defaultTournaments;
+
   const currentTourney = tournaments.find(t => t.id === selectedTournamentId) || tournaments[0];
+  const activeServerTourn = serverTournaments.find(st => st.id === selectedTournamentId);
 
   const participantRosters: Record<string, TournamentParticipant[]> = {
-    tourney_weekly_blitz: [
+    tourn_weekly_fx_blitz_01: [
       { rank: 1, userId: 'u_fx_sniper', username: 'FX_Sniper', broker: 'Exness', avatarSymbol: 'EURUSD', netPips: 88.4, tradesCount: 14, drawdownPct: 1.8, winRate: 78.5, status: 'ACTIVE', estimatedPrize: '$2,000 + 5,000 XP' },
       { rank: 2, userId: 'u_gold_bug', username: 'GoldBug_JP', broker: 'XM', avatarSymbol: 'XAUUSD', netPips: 74.2, tradesCount: 11, drawdownPct: 2.4, winRate: 72.7, status: 'ACTIVE', estimatedPrize: '$1,200 + 3,500 XP' },
       { rank: 3, userId: 'u_alpha_wave', username: 'AlphaWave', broker: 'Axiory', avatarSymbol: 'USDJPY', netPips: 61.9, tradesCount: 9, drawdownPct: 2.1, winRate: 66.7, status: 'ACTIVE', estimatedPrize: '$800 + 2,000 XP' },
       { rank: 4, userId: 'u_zen_scalp', username: 'ZenScalper', broker: 'Vantage', avatarSymbol: 'GBPUSD', netPips: 49.3, tradesCount: 16, drawdownPct: 3.2, winRate: 62.5, status: 'ACTIVE', estimatedPrize: '$400 + 1,000 XP' },
       { rank: 5, userId: 'u_reckless_bull', username: 'RiskMaximus', broker: 'Exness', avatarSymbol: 'BTCUSD', netPips: 112.5, tradesCount: 4, drawdownPct: 7.2, winRate: 50.0, status: 'DISQUALIFIED', estimatedPrize: t.arena.disqualifiedBadge },
     ],
-    tourney_monthly_prop: [
+    tourn_monthly_prop_01: [
       { rank: 1, userId: 'u_marcus_v', username: 'Marcus_V', broker: 'Axiory', avatarSymbol: 'EURUSD', netPips: 248.6, tradesCount: 42, drawdownPct: 3.1, winRate: 81.0, status: 'ACTIVE', estimatedPrize: '$10,000 + 30,000 XP' },
       { rank: 2, userId: 'u_sarah_fx', username: 'Sarah_FX', broker: 'Exness', avatarSymbol: 'GBPUSD', netPips: 198.4, tradesCount: 38, drawdownPct: 2.8, winRate: 76.3, status: 'ACTIVE', estimatedPrize: '$6,000 + 20,000 XP' },
       { rank: 3, userId: 'u_hiroshi_k', username: 'Hiroshi_K', broker: 'XM', avatarSymbol: 'USDJPY', netPips: 182.1, tradesCount: 29, drawdownPct: 3.4, winRate: 72.4, status: 'ACTIVE', estimatedPrize: '$4,000 + 12,000 XP' },
       { rank: 4, userId: 'u_elena_scalps', username: 'Elena_Scalps', broker: 'Vantage', avatarSymbol: 'XAUUSD', netPips: 165.7, tradesCount: 35, drawdownPct: 3.9, winRate: 68.6, status: 'ACTIVE', estimatedPrize: '$2,500 + 8,000 XP' },
       { rank: 5, userId: 'u_david_gold', username: 'David_Gold', broker: 'XM', avatarSymbol: 'XAUUSD', netPips: 142.0, tradesCount: 31, drawdownPct: 4.1, winRate: 64.5, status: 'ACTIVE', estimatedPrize: '$1,500 + 5,000 XP' },
     ],
-    tourney_gold_rush: [
-      { rank: 1, userId: 'u_gold_bug', username: 'GoldBug_JP', broker: 'XM', avatarSymbol: 'XAUUSD', netPips: 134.5, tradesCount: 19, drawdownPct: 2.1, winRate: 84.2, status: 'ACTIVE', estimatedPrize: '$4,500 + 12,000 XP' },
-      { rank: 2, userId: 'u_viktor_m', username: 'Viktor_Metals', broker: 'Exness', avatarSymbol: 'XAUUSD', netPips: 118.2, tradesCount: 15, drawdownPct: 2.6, winRate: 73.3, status: 'ACTIVE', estimatedPrize: '$2,500 + 8,000 XP' },
-      { rank: 3, userId: 'u_david_gold', username: 'David_Gold', broker: 'Axiory', avatarSymbol: 'XAUUSD', netPips: 96.4, tradesCount: 12, drawdownPct: 3.0, winRate: 66.7, status: 'ACTIVE', estimatedPrize: '$1,500 + 5,000 XP' },
-      { rank: 4, userId: 'u_swiss_vault', username: 'SwissVault', broker: 'Vantage', avatarSymbol: 'XAUUSD', netPips: 82.1, tradesCount: 14, drawdownPct: 3.5, winRate: 64.3, status: 'ACTIVE', estimatedPrize: '$1,000 + 3,000 XP' },
-    ],
-    tourney_daily_rush: [
-      { rank: 1, userId: 'u_kenshi_t', username: 'Kenshi_Tokyo', broker: 'XM', avatarSymbol: 'USDJPY', netPips: 44.8, tradesCount: 7, drawdownPct: 1.1, winRate: 85.7, status: 'ACTIVE', estimatedPrize: '$700 + 2,500 XP' },
-      { rank: 2, userId: 'u_london_j', username: 'LondonFX_James', broker: 'Vantage', avatarSymbol: 'GBPUSD', netPips: 38.2, tradesCount: 6, drawdownPct: 1.4, winRate: 83.3, status: 'ACTIVE', estimatedPrize: '$450 + 1,500 XP' },
-      { rank: 3, userId: 'u_sofia_q', username: 'Sofia_Quant', broker: 'Axiory', avatarSymbol: 'EURUSD', netPips: 31.0, tradesCount: 8, drawdownPct: 1.9, winRate: 75.0, status: 'ACTIVE', estimatedPrize: '$250 + 750 XP' },
-      { rank: 4, userId: 'u_alex_s', username: 'Alex_Scalps', broker: 'Exness', avatarSymbol: 'EURGBP', netPips: 27.5, tradesCount: 5, drawdownPct: 2.2, winRate: 60.0, status: 'ACTIVE', estimatedPrize: '$100 + 250 XP' },
-    ],
   };
 
-  const participants: TournamentParticipant[] = participantRosters[selectedTournamentId] || participantRosters.tourney_weekly_blitz;
+  const participants: TournamentParticipant[] = activeServerTourn?.standings && activeServerTourn.standings.length > 0
+    ? activeServerTourn.standings.map((s: any) => ({
+        rank: s.rank,
+        userId: s.userId,
+        username: s.username,
+        broker: (s.brokers && s.brokers[0]) || 'XM',
+        avatarSymbol: s.avatarSymbol || s.username.slice(0, 2),
+        netPips: s.netPips,
+        tradesCount: s.tradesCount,
+        drawdownPct: s.maxDrawdownReached || s.currentDrawdownPercent || 1.8,
+        winRate: s.winRate,
+        status: s.isDisqualified ? 'DISQUALIFIED' : 'ACTIVE',
+        estimatedPrize: s.rank === 1 ? '$2,000 + 5,000 XP' : s.rank === 2 ? '$1,200 + 3,500 XP' : s.rank === 3 ? '$800 + 2,000 XP' : '$400 + 1,000 XP',
+      }))
+    : (participantRosters[selectedTournamentId] || participantRosters.tourn_weekly_fx_blitz_01 || []);
 
   // Countdown timer tick simulation
   useEffect(() => {
@@ -270,13 +354,14 @@ export const TournamentArena: React.FC = () => {
             </div>
 
             <button
-              onClick={() => setIsUserEntered(!isUserEntered)}
+              onClick={handleJoinTournament}
+              disabled={isJoining}
               style={{
                 padding: '10px 20px',
                 fontSize: '13px',
                 fontWeight: 800,
                 borderRadius: '10px',
-                cursor: 'pointer',
+                cursor: isJoining ? 'not-allowed' : 'pointer',
                 background: isUserEntered
                   ? 'rgba(10, 186, 181, 0.2)'
                   : 'linear-gradient(135deg, var(--accent-green), #078c88)',
@@ -294,12 +379,33 @@ export const TournamentArena: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <Zap size={16} /> {t.arena.enterTournament}
+                  <Zap size={16} /> {isJoining ? t.app.syncing : t.arena.enterTournament}
                 </>
               )}
             </button>
           </div>
         </div>
+
+        {joinSuccessMsg && (
+          <div
+            style={{
+              padding: '12px 16px',
+              borderRadius: '10px',
+              background: 'rgba(0, 218, 198, 0.12)',
+              border: '1px solid rgba(0, 218, 198, 0.4)',
+              color: 'var(--accent-cyan)',
+              fontSize: '13px',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginBottom: '16px',
+            }}
+          >
+            <CheckCircle2 size={16} />
+            {joinSuccessMsg}
+          </div>
+        )}
 
         {/* Anti-Gambling Institutional Rules Banner (PRD Pillar 3) */}
         <div
@@ -412,8 +518,52 @@ export const TournamentArena: React.FC = () => {
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                      {p.tradesCount} {t.dailyBest.trades} • {t.arena.maxTrailingDD}: <span style={{ color: isDq ? '#ef4444' : 'var(--text-main)' }}>{p.drawdownPct}%</span> • {t.dailyBest.winRate}: {p.winRate}%
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span>{p.tradesCount} {t.dailyBest.trades}</span>
+                      <span>•</span>
+                      <span>{t.dailyBest.winRate}: <strong style={{ color: 'var(--text-main)' }}>{p.winRate}%</strong></span>
+                      <span>•</span>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>DD Risk:</span>
+                        <div
+                          style={{
+                            width: '60px',
+                            height: '6px',
+                            borderRadius: '3px',
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            overflow: 'hidden',
+                            position: 'relative',
+                          }}
+                          title={`Drawdown: ${p.drawdownPct}% / Limit: ${currentTourney.rules.maxTrailingDrawdownPct}%`}
+                        >
+                          <div
+                            style={{
+                              width: `${Math.min(100, (p.drawdownPct / currentTourney.rules.maxTrailingDrawdownPct) * 100)}%`,
+                              height: '100%',
+                              borderRadius: '3px',
+                              background: isDq || p.drawdownPct >= currentTourney.rules.maxTrailingDrawdownPct
+                                ? '#ef4444'
+                                : p.drawdownPct >= currentTourney.rules.maxTrailingDrawdownPct * 0.7
+                                ? '#f59e0b'
+                                : '#10b981',
+                              transition: 'width 0.3s ease',
+                            }}
+                          />
+                        </div>
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            color: isDq || p.drawdownPct >= currentTourney.rules.maxTrailingDrawdownPct
+                              ? '#ef4444'
+                              : p.drawdownPct >= currentTourney.rules.maxTrailingDrawdownPct * 0.7
+                              ? '#f59e0b'
+                              : '#10b981',
+                          }}
+                        >
+                          {p.drawdownPct}% / {currentTourney.rules.maxTrailingDrawdownPct}%
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Shield,
   Target,
@@ -33,12 +33,40 @@ export const RewardsBadges: React.FC = () => {
 
   const [currentXp, setCurrentXp] = useState<number>(2750);
   const [streakClaimed, setStreakClaimed] = useState<boolean>(false);
+  const [tradeCount, setTradeCount] = useState<number>(0);
   const nextLevelXp = 5000;
   const prevLevelXp = 2001;
   const progressPct = Math.min(100, Math.round(((currentXp - prevLevelXp) / (nextLevelXp - prevLevelXp)) * 100));
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [selectedBadge, setSelectedBadge] = useState<HonorBadge | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetch('/api/accounts')
+      .then(r => (r.ok ? r.json() : []))
+      .then(async accounts => {
+        if (!isMounted || !accounts || accounts.length === 0) return;
+        const primary = accounts[0];
+        try {
+          const tradesRes = await fetch(`/api/accounts/${primary.id}/trades`);
+          if (tradesRes.ok) {
+            const trades = await tradesRes.json();
+            if (Array.isArray(trades) && trades.length > 0 && isMounted) {
+              setTradeCount(trades.length);
+              const winningTrades = trades.filter((t: any) => Number(t.pnlCurrency || t.profit || 0) > 0);
+              const computedXp = 2500 + trades.length * 20 + winningTrades.length * 35;
+              setCurrentXp(computedXp);
+            }
+          }
+        } catch (e) {
+          console.warn('Could not compute dynamic XP from trades', e);
+        }
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const getRarityLabel = (rarity: HonorBadge['rarity']) => {
     switch (rarity) {
@@ -224,7 +252,9 @@ export const RewardsBadges: React.FC = () => {
               >
                 {t.rewards.levelTrader}
               </span>
-              <span style={{ fontSize: '13px', color: '#848E9C' }}>TraderRank Global Rank</span>
+              <span style={{ fontSize: '13px', color: '#848E9C' }}>
+                TraderRank Global Rank {tradeCount > 0 && `• ${tradeCount} Verified Trades`}
+              </span>
             </div>
             <h2 style={{ margin: 0, fontSize: '28px', fontWeight: 900, color: '#FFFFFF', letterSpacing: '-0.02em' }}>
               {t.rewards.currentTier}

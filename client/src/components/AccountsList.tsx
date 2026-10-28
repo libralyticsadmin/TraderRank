@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { TradingAccount } from '../../../shared/src/types.ts';
-import { Shield, Trash2, Server, Zap, RefreshCw } from 'lucide-react';
+import { Shield, Trash2, Server, Zap, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { useTranslation } from '../context/LanguageContext.tsx';
 
@@ -8,11 +8,25 @@ interface AccountsListProps {
   accounts: TradingAccount[];
   onDisconnect: (id: string) => void;
   onOpenWizard: () => void;
-  onSyncAccount?: (id: string) => void;
+  onSyncAccount?: (id: string) => Promise<void> | void;
 }
 
 export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconnect, onOpenWizard, onSyncAccount }) => {
   const { t } = useTranslation();
+  const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [syncedId, setSyncedId] = useState<string | null>(null);
+
+  const handleSyncClick = async (id: string) => {
+    if (!onSyncAccount || syncingId) return;
+    setSyncingId(id);
+    try {
+      await onSyncAccount(id);
+      setSyncedId(id);
+      setTimeout(() => setSyncedId(null), 3000);
+    } finally {
+      setSyncingId(null);
+    }
+  };
 
   return (
     <div className="card-panel">
@@ -101,11 +115,26 @@ export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconne
                   {onSyncAccount && (
                     <button
                       className="btn-secondary"
-                      title="Sync with MetaApi Cloud"
-                      onClick={() => onSyncAccount(acc.id)}
-                      style={{ padding: '8px', color: '#0abab5' }}
+                      title={syncingId === acc.id ? 'Syncing...' : 'Sync with MetaApi Cloud'}
+                      onClick={() => handleSyncClick(acc.id)}
+                      disabled={syncingId === acc.id}
+                      style={{
+                        padding: '8px',
+                        color: syncedId === acc.id ? '#10b981' : '#0abab5',
+                        background: syncedId === acc.id ? 'rgba(16, 185, 129, 0.15)' : undefined,
+                        border: syncedId === acc.id ? '1px solid rgba(16, 185, 129, 0.4)' : undefined,
+                      }}
                     >
-                      <RefreshCw size={16} />
+                      {syncedId === acc.id ? (
+                        <CheckCircle2 size={16} />
+                      ) : (
+                        <RefreshCw
+                          size={16}
+                          style={{
+                            animation: syncingId === acc.id ? 'spin 1s linear infinite' : 'none',
+                          }}
+                        />
+                      )}
                     </button>
                   )}
                   <button

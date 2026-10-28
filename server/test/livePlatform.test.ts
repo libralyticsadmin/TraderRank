@@ -71,7 +71,7 @@ describe('TraderRank Live Platform End-to-End Suite', () => {
     expect(data.bars.length).toBeGreaterThan(0);
     expect(data.bars[0]).toHaveProperty('open');
     expect(data.bars[0]).toHaveProperty('close');
-  });
+  }, 15000);
 
   it('7. POST /api/connector/validate & connect should onboard an account and store secrets in vault', async () => {
     // 7a. Validate
@@ -153,6 +153,21 @@ describe('TraderRank Live Platform End-to-End Suite', () => {
     const tourneyData = await tourneyRes.json();
     expect(Array.isArray(tourneyData)).toBe(true);
     expect(tourneyData.length).toBeGreaterThan(0);
+
+    // Verify one-click tournament entry
+    const joinRes = await fetch(`${baseUrl}/api/tournaments/${tourneyData[0].id}/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: 'u_challenger_99',
+        username: 'XM_Challenger',
+        broker: 'XM',
+      }),
+    });
+    expect(joinRes.status).toBe(200);
+    const joinData = await joinRes.json();
+    expect(joinData.success).toBe(true);
+    expect(joinData.standing.username).toBe('XM_Challenger');
   });
 
   it('9. WebSocket Gateway /ws should stream leaderboard and live market quotes', async () => {

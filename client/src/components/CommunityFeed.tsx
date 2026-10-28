@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Award, TrendingUp, Zap, Radio, Target, Flame } from 'lucide-react';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
@@ -29,6 +29,7 @@ export interface FeedEvent {
 export const CommunityFeed: React.FC = () => {
   const { t } = useTranslation();
   const [filter, setFilter] = useState<'ALL' | 'WINS' | 'BADGES' | 'TOURNAMENTS'>('ALL');
+  const [wsConnected, setWsConnected] = useState<boolean>(false);
   const [events, setEvents] = useState<FeedEvent[]>([
     {
       id: 'feed_1',
@@ -105,6 +106,52 @@ export const CommunityFeed: React.FC = () => {
       hasCheered: false,
     },
   ]);
+
+  useEffect(() => {
+    let ws: WebSocket | null = null;
+    let reconnectTimeout: any = null;
+
+    const connect = () => {
+      try {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws`;
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+          setWsConnected(true);
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg.type === 'COMMUNITY_EVENT' && msg.data) {
+              setEvents(prev => [msg.data, ...prev.filter(e => e.id !== msg.data.id)].slice(0, 30));
+            }
+          } catch {
+            // ignore non-json
+          }
+        };
+
+        ws.onclose = () => {
+          setWsConnected(false);
+          reconnectTimeout = setTimeout(connect, 3000);
+        };
+
+        ws.onerror = () => {
+          ws?.close();
+        };
+      } catch {
+        setWsConnected(false);
+      }
+    };
+
+    connect();
+
+    return () => {
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      if (ws) ws.close();
+    };
+  }, []);
 
   const handleCheer = (eventId: string) => {
     setEvents(prev =>
@@ -200,8 +247,27 @@ export const CommunityFeed: React.FC = () => {
               <Radio size={18} color="var(--accent-green)" />
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800 }}>{t.community.liveBulletinTitle}</h3>
-              <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800 }}>{t.community.liveBulletinTitle}</h3>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    color: wsConnected ? '#10b981' : '#f59e0b',
+                    background: wsConnected ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                    border: `1px solid ${wsConnected ? 'rgba(16, 185, 129, 0.4)' : 'rgba(245, 158, 11, 0.4)'}`,
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: wsConnected ? '#10b981' : '#f59e0b' }} />
+                  {wsConnected ? 'Live MetaApi Ledger' : 'Connecting...'}
+                </span>
+              </div>
+              <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
                 {t.community.liveBulletinDesc}
               </p>
             </div>

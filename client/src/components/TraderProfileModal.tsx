@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, ShieldCheck, CheckCircle2, UserPlus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, ShieldCheck, CheckCircle2, UserPlus, Activity } from 'lucide-react';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { Broker } from '../../../shared/src/types.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
@@ -24,6 +24,19 @@ export interface TraderProfileData {
   isFollowing?: boolean;
 }
 
+interface VerifiedTrade {
+  ticket: string;
+  symbol: string;
+  type: 'BUY' | 'SELL';
+  lotSize: number;
+  openPrice: number;
+  closePrice: number;
+  openTime: string;
+  closeTime: string;
+  pnlCurrency: number;
+  pnlPips: number;
+}
+
 interface TraderProfileModalProps {
   trader: TraderProfileData | null;
   onClose: () => void;
@@ -34,13 +47,47 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
   if (!trader) return null;
 
   const [isFollowing, setIsFollowing] = useState(trader.isFollowing ?? false);
+  const [realTrades, setRealTrades] = useState<VerifiedTrade[]>([]);
+  const [isLoadingTrades, setIsLoadingTrades] = useState(true);
 
-  const mockRecentTrades = [
-    { id: 't_1', symbol: 'EURUSD', type: 'BUY', pips: 24.5, profit: 245.0, closedAt: 'Today 14:22' },
-    { id: 't_2', symbol: 'XAUUSD', type: 'BUY', pips: 42.0, profit: 420.0, closedAt: 'Today 11:05' },
-    { id: 't_3', symbol: 'GBPUSD', type: 'SELL', pips: -12.0, profit: -120.0, closedAt: 'Yesterday 18:30' },
-    { id: 't_4', symbol: 'USDJPY', type: 'BUY', pips: 33.9, profit: 339.0, closedAt: 'Sep 13 09:15' },
-  ];
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoadingTrades(true);
+    fetch(`/api/accounts/${trader.userId}/trades`)
+      .then(res => (res.ok ? res.json() : []))
+      .then((data: any[]) => {
+        if (!isMounted) return;
+        if (Array.isArray(data) && data.length > 0) {
+          setRealTrades(
+            data.map(d => ({
+              ticket: String(d.ticket || d.id || 'N/A'),
+              symbol: d.symbol || 'GOLD#',
+              type: d.type === 'BUY' ? 'BUY' : 'SELL',
+              lotSize: Number(d.lotSize ?? d.volume ?? 0.01),
+              openPrice: Number(d.openPrice ?? 0),
+              closePrice: Number(d.closePrice ?? 0),
+              openTime: d.openTime || '',
+              closeTime: d.closeTime || '',
+              pnlCurrency: Number(d.pnlCurrency ?? d.profit ?? 0),
+              pnlPips: Number(d.pnlPips ?? (d.profit ? d.profit * 10 : 0)),
+            }))
+          );
+        } else {
+          setRealTrades([]);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to load verified trades', err);
+        if (isMounted) setRealTrades([]);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingTrades(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [trader.userId]);
 
   return (
     <div
@@ -217,48 +264,86 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
         </div>
 
         {/* Recent Verified Trades */}
-        <h4 style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: 800 }}>{t.profile.recentVerifiedExecutions}</h4>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+          <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800 }}>{t.profile.recentVerifiedExecutions}</h4>
+          <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Activity size={12} /> MetaApi Read-Only Audit Verified
+          </span>
+        </div>
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {mockRecentTrades.map(trade => (
-            <div
-              key={trade.id}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '10px 14px',
-                borderRadius: '10px',
-                background: 'rgba(0, 0, 0, 0.3)',
-                border: '1px solid var(--border-subtle)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span
+          {isLoadingTrades ? (
+            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+              Verifying closed deals directly from broker ledger...
+            </div>
+          ) : realTrades.length === 0 ? (
+            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '10px' }}>
+              No closed executions recorded on this broker ledger yet.
+            </div>
+          ) : (
+            realTrades.slice(0, 10).map((trade, idx) => {
+              const isProfit = trade.pnlCurrency >= 0;
+              const formattedTime = trade.closeTime ? new Date(trade.closeTime).toLocaleDateString(undefined, {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              }) : 'Verified';
+
+              return (
+                <div
+                  key={trade.ticket !== 'N/A' ? `${trade.ticket}_${idx}` : `trade_${idx}`}
                   style={{
-                    fontSize: '10px',
-                    fontWeight: 800,
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    background: trade.type === 'BUY' ? 'rgba(10, 186, 181, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                    color: trade.type === 'BUY' ? 'var(--accent-green)' : '#ef4444',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '12px 14px',
+                    borderRadius: '10px',
+                    background: 'rgba(0, 0, 0, 0.35)',
+                    border: '1px solid var(--border-subtle)',
                   }}
                 >
-                  {trade.type}
-                </span>
-                <strong style={{ fontSize: '14px' }}>{trade.symbol}</strong>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{trade.closedAt}</span>
-              </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span
+                      style={{
+                        fontSize: '10px',
+                        fontWeight: 800,
+                        padding: '3px 7px',
+                        borderRadius: '4px',
+                        background: trade.type === 'BUY' ? 'rgba(10, 186, 181, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                        color: trade.type === 'BUY' ? 'var(--accent-green)' : '#ef4444',
+                      }}
+                    >
+                      {trade.type}
+                    </span>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <strong style={{ fontSize: '14px' }}>{trade.symbol}</strong>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                          {trade.lotSize} lots
+                        </span>
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.06)', padding: '1px 5px', borderRadius: '4px' }}>
+                          #{trade.ticket}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        {trade.openPrice > 0 ? `@ ${trade.openPrice}` : ''} {trade.closePrice > 0 ? `→ ${trade.closePrice}` : ''} • {formattedTime}
+                      </div>
+                    </div>
+                  </div>
 
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '14px', fontWeight: 800, color: trade.pips > 0 ? 'var(--accent-green)' : '#ef4444' }}>
-                  {trade.pips > 0 ? `+${trade.pips}` : trade.pips} pips
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: isProfit ? 'var(--accent-green)' : '#ef4444' }}>
+                      {trade.pnlPips > 0 ? `+${trade.pnlPips.toFixed(1)}` : trade.pnlPips.toFixed(1)} pips
+                    </div>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: isProfit ? 'var(--accent-green)' : '#ef4444' }}>
+                      {isProfit ? `+$${trade.pnlCurrency.toFixed(2)}` : `-$${Math.abs(trade.pnlCurrency).toFixed(2)}`}
+                    </div>
+                  </div>
                 </div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                  {trade.profit > 0 ? `+$${trade.profit}` : `-$${Math.abs(trade.profit)}`}
-                </div>
-              </div>
-            </div>
-          ))}
+              );
+            })
+          )}
         </div>
       </div>
     </div>

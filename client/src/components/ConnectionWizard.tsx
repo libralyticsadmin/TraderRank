@@ -326,44 +326,58 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                   </div>
                 </div>
 
-                {selectedBroker === 'IC_MARKETS' && (
-                  <div style={{ marginBottom: '14px', marginTop: '-4px' }}>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px' }}>
-                      {t.connector.popularServers}:
+                {(() => {
+                  const serverPresets: Record<string, string[]> = {
+                    IC_MARKETS: ['ICMarketsSC-Live01', 'ICMarketsSC-Live02', 'ICMarkets-Live 01', 'ICMarketsGlobal-Live01', 'ICTrading-Live01'],
+                    XM: ['XMGlobal-MT5 10', 'XMGlobal-Real 55', 'XMGlobal-Real 1', 'XMGlobal-MT5', 'XMGlobal-Real 30'],
+                    Exness: ['Exness-Real10', 'Exness-Real9', 'Exness-MT5Real', 'Exness-MT5Real2'],
+                    Axiory: ['Axiory-Live 01', 'Axiory-Live 02', 'AxioryAsia-Live'],
+                    Vantage: ['VantageFX-Live 2', 'VantageFX-Live 1', 'VantageInternational-Live 1'],
+                  };
+                  const currentPresets = serverPresets[selectedBroker];
+                  if (!currentPresets) return null;
+
+                  return (
+                    <div style={{ marginBottom: '14px', marginTop: '-4px' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                        {t.connector.popularServers} ({selectedBroker}):
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {currentPresets.map(srv => (
+                          <button
+                            key={srv}
+                            type="button"
+                            onClick={() => setServerName(srv)}
+                            style={{
+                              padding: '3px 8px',
+                              borderRadius: '5px',
+                              background: serverName === srv ? 'rgba(10, 186, 181, 0.25)' : 'rgba(255, 255, 255, 0.04)',
+                              border: `1px solid ${serverName === srv ? '#0abab5' : 'var(--border-subtle)'}`,
+                              color: serverName === srv ? '#81d8d0' : 'var(--text-muted)',
+                              fontSize: '11px',
+                              fontFamily: 'monospace',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {srv}
+                          </button>
+                        ))}
+                      </div>
+                      {selectedBroker === 'IC_MARKETS' && (
+                        <div style={{ fontSize: '11px', marginTop: '6px' }}>
+                          <a
+                            href="https://www.ic.com/en/?camp=57406"
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ color: '#0abab5', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            {t.connector.findIcServer} →
+                          </a>
+                        </div>
+                      )}
                     </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                      {['ICMarketsSC-Live01', 'ICMarketsSC-Live02', 'ICMarkets-Live 01', 'ICMarketsGlobal-Live01', 'ICTrading-Live01'].map(srv => (
-                        <button
-                          key={srv}
-                          type="button"
-                          onClick={() => setServerName(srv)}
-                          style={{
-                            padding: '3px 8px',
-                            borderRadius: '5px',
-                            background: serverName === srv ? 'rgba(10, 186, 181, 0.25)' : 'rgba(255, 255, 255, 0.04)',
-                            border: `1px solid ${serverName === srv ? '#0abab5' : 'var(--border-subtle)'}`,
-                            color: serverName === srv ? '#81d8d0' : 'var(--text-muted)',
-                            fontSize: '11px',
-                            fontFamily: 'monospace',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          {srv}
-                        </button>
-                      ))}
-                    </div>
-                    <div style={{ fontSize: '11px', marginTop: '6px' }}>
-                      <a
-                        href="https://www.ic.com/en/?camp=57406"
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ color: '#0abab5', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                      >
-                        {t.connector.findIcServer} →
-                      </a>
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 <div className="form-group">
                   <label className="form-label">{t.connector.accountLoginNumber}</label>
