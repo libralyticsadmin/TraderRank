@@ -48,13 +48,13 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
 
   // Form states - Gateway
   const [serverName, setServerName] = useState('ICMarketsSC-Live01');
-  const [login, setLogin] = useState('10982341');
-  const [investorPassword, setInvestorPassword] = useState('ReadOnlyInvestorPass99!');
+  const [login, setLogin] = useState('');
+  const [investorPassword, setInvestorPassword] = useState('');
 
   // Form states - Exness Native
-  const [apiKey, setApiKey] = useState('exn_live_key_99382104');
-  const [apiSecret, setApiSecret] = useState('exn_secret_hash_882019482');
-  const [accountId, setAccountId] = useState('EXN-8812903');
+  const [apiKey, setApiKey] = useState('');
+  const [apiSecret, setApiSecret] = useState('');
+  const [accountId, setAccountId] = useState('');
 
   // Validation states
   const [isValidating, setIsValidating] = useState(false);
@@ -69,7 +69,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
     } else {
       setSelectedPath('mt_gateway');
       if (broker === 'IC_MARKETS') setServerName('ICMarketsSC-Live01');
-      if (broker === 'XM') setServerName('XMGlobal-Real 55');
+      if (broker === 'XM') setServerName('XMGlobal-MT5 10');
       if (broker === 'Axiory') setServerName('Axiory-Live 01');
       if (broker === 'Vantage') setServerName('VantageFX-Live 2');
       if (broker === 'OTHER') setServerName('MetaQuotes-Demo');

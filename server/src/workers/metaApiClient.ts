@@ -64,12 +64,17 @@ export interface MetaStatsMetrics {
 
 export class MetaApiClient {
   private token: string;
-  private clientBaseUrl = 'https://mt-client-api-v1.agiliumtrade.agiliumtrade.ai';
   private provisioningBaseUrl = 'https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai';
   private metaStatsBaseUrl = 'https://metastats-api-v1.agiliumtrade.agiliumtrade.ai';
+  private accountRegions = new Map<string, string>();
 
   constructor(token?: string) {
     this.token = token || process.env.META_API_TOKEN || '';
+  }
+
+  public getClientBaseUrl(metaApiAccountId?: string): string {
+    const region = (metaApiAccountId && this.accountRegions.get(metaApiAccountId)) || 'london';
+    return `https://mt-client-api-v1.${region}.agiliumtrade.ai`;
   }
 
   public hasToken(): boolean {
@@ -124,16 +129,21 @@ export class MetaApiClient {
       });
       if (!res.ok) return [];
       const data = await res.json() as any[];
-      return data.map(acc => ({
-        id: acc._id || acc.id,
-        name: acc.name,
-        login: acc.login,
-        server: acc.server,
-        platform: acc.platform,
-        type: acc.type,
-        state: acc.state,
-        connectionStatus: acc.connectionStatus,
-      }));
+      return data.map(acc => {
+        const id = String(acc._id || acc.id);
+        const region = String(acc.region || 'london');
+        this.accountRegions.set(id, region);
+        return {
+          id,
+          name: acc.name,
+          login: acc.login,
+          server: acc.server,
+          platform: acc.platform,
+          type: acc.type,
+          state: acc.state,
+          connectionStatus: acc.connectionStatus,
+        };
+      });
     } catch {
       return [];
     }
@@ -247,7 +257,8 @@ export class MetaApiClient {
     }
 
     try {
-      const res = await fetch(`${this.clientBaseUrl}/users/current/accounts/${metaApiAccountId}/account-information`, {
+      const clientUrl = this.getClientBaseUrl(metaApiAccountId);
+      const res = await fetch(`${clientUrl}/users/current/accounts/${metaApiAccountId}/account-information`, {
         headers: {
           'auth-token': this.token,
           'Accept': 'application/json',
@@ -373,7 +384,8 @@ export class MetaApiClient {
     if (!this.hasToken() || !metaApiAccountId || typeof metaApiAccountId !== 'string' || metaApiAccountId.startsWith('mock_')) return [];
 
     try {
-      const res = await fetch(`${this.clientBaseUrl}/users/current/accounts/${metaApiAccountId}/positions`, {
+      const clientUrl = this.getClientBaseUrl(metaApiAccountId);
+      const res = await fetch(`${clientUrl}/users/current/accounts/${metaApiAccountId}/positions`, {
         headers: {
           'auth-token': this.token,
           'Accept': 'application/json',
@@ -406,16 +418,17 @@ export class MetaApiClient {
    */
   public async getHistoricalDeals(
     metaApiAccountId: string,
-    startTime: string = new Date(Date.now() - 30 * 86400 * 1000).toISOString(),
+    startTime: string = new Date(Date.now() - 365 * 86400 * 1000).toISOString(),
     endTime: string = new Date().toISOString()
   ): Promise<MetaApiDeal[]> {
     if (!this.hasToken() || !metaApiAccountId || typeof metaApiAccountId !== 'string' || metaApiAccountId.startsWith('mock_')) return [];
 
     try {
+      const clientUrl = this.getClientBaseUrl(metaApiAccountId);
       const startEncoded = encodeURIComponent(startTime);
       const endEncoded = encodeURIComponent(endTime);
       const res = await fetch(
-        `${this.clientBaseUrl}/users/current/accounts/${metaApiAccountId}/history-deals/time/${startEncoded}/${endEncoded}`,
+        `${clientUrl}/users/current/accounts/${metaApiAccountId}/history-deals/time/${startEncoded}/${endEncoded}`,
         {
           headers: {
             'auth-token': this.token,
@@ -465,6 +478,129 @@ export class MetaApiClient {
         profitFactor: Number(m.profitFactor ?? 1.0),
         maxDrawdown: Number(m.maxDrawdown ?? 0),
         pips: Number(m.pips ?? 0),
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  public getMarketDataBaseUrl(metaApiAccountId?: string): string {
+    const region = (metaApiAccountId && this.accountRegions.get(metaApiAccountId)) || 'london';
+    return `https://mt-market-data-client-api-v1.${region}.agiliumtrade.ai`;
+  }
+
+  /**
+   * Fetches real historical & live candlestick bars directly from MetaApi Market Data API
+   */
+  public async getCandles(
+    metaApiAccountId: string,
+    symbol: string,
+    timeframe: string = '1m',
+    limit: number = 60
+  ): Promise<Array<{
+    symbol: string;
+    time: string;
+    brokerTime: string;
+    timeframe: string;
+    open: number;
+    close: number;
+    high: number;
+    low: number;
+    tickVolume: number;
+    spread?: number;
+  }>> {
+    if (!this.hasToken() || !metaApiAccountId || typeof metaApiAccountId !== 'string' || metaApiAccountId.startsWith('mock_')) {
+      return [];
+    }
+
+    const fetchSymbolCandles = async (sym: string) => {
+      try {
+        const marketUrl = this.getMarketDataBaseUrl(metaApiAccountId);
+        const encodedSymbol = encodeURIComponent(sym);
+        const res = await fetch(
+          `${marketUrl}/users/current/accounts/${metaApiAccountId}/historical-market-data/symbols/${encodedSymbol}/timeframes/${timeframe}/candles?limit=${limit}`,
+          {
+            headers: {
+              'auth-token': this.token,
+              'Accept': 'application/json',
+            },
+          }
+        );
+        if (!res.ok) return [];
+        const data = (await res.json()) as any[];
+        if (!Array.isArray(data)) return [];
+        return data.map((c: any) => ({
+          symbol,
+          time: c.time ? new Date(c.time).toISOString() : new Date().toISOString(),
+          brokerTime: c.brokerTime || '',
+          timeframe: c.timeframe || timeframe,
+          open: Number(c.open),
+          high: Number(c.high),
+          low: Number(c.low),
+          close: Number(c.close),
+          tickVolume: Number(c.tickVolume || 0),
+          spread: Number(c.spread || 0),
+        }));
+      } catch {
+        return [];
+      }
+    };
+
+    let candles = await fetchSymbolCandles(symbol);
+    if ((!candles || candles.length === 0) && (symbol === 'XAUUSD' || symbol === 'GOLD')) {
+      candles = await fetchSymbolCandles('GOLD#');
+    }
+    return candles;
+  }
+
+  /**
+   * Fetches real-time price quotes directly from MetaApi broker terminal
+   */
+  public async getCurrentPrice(
+    metaApiAccountId: string,
+    symbol: string
+  ): Promise<{ symbol: string; bid: number; ask: number; time: string } | null> {
+    if (!this.hasToken() || !metaApiAccountId || typeof metaApiAccountId !== 'string' || metaApiAccountId.startsWith('mock_')) {
+      return null;
+    }
+
+    try {
+      const clientUrl = this.getClientBaseUrl(metaApiAccountId);
+      const encodedSymbol = encodeURIComponent(symbol);
+      const res = await fetch(`${clientUrl}/users/current/accounts/${metaApiAccountId}/symbols/${encodedSymbol}/current-price`, {
+        headers: {
+          'auth-token': this.token,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!res.ok) {
+        if (symbol === 'XAUUSD') {
+          const resGold = await fetch(`${clientUrl}/users/current/accounts/${metaApiAccountId}/symbols/GOLD%23/current-price`, {
+            headers: {
+              'auth-token': this.token,
+              'Accept': 'application/json',
+            },
+          });
+          if (resGold.ok) {
+            const data = await resGold.json() as any;
+            return {
+              symbol: 'XAUUSD',
+              bid: Number(data.bid),
+              ask: Number(data.ask),
+              time: data.time || new Date().toISOString(),
+            };
+          }
+        }
+        return null;
+      }
+
+      const data = await res.json() as any;
+      return {
+        symbol: data.symbol || symbol,
+        bid: Number(data.bid),
+        ask: Number(data.ask),
+        time: data.time || new Date().toISOString(),
       };
     } catch {
       return null;

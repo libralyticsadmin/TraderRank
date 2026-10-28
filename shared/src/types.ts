@@ -371,7 +371,7 @@ export interface MarketCandlestickResponse {
   symbol: string;
   timeframe: CandlestickTimeframe;
   bars: CandlestickBar[];
-  source: 'ALLTICK_LIVE' | 'ALLTICK_CACHED' | 'SYNTHETIC_FALLBACK';
+  source: 'METAAPI_LIVE' | 'ALLTICK_LIVE' | 'ALLTICK_CACHED' | 'SYNTHETIC_FALLBACK';
   lastUpdated: string;
 }
 

@@ -55,14 +55,14 @@ interface LiveCandleChartProps {
 }
 
 const SUPPORTED_SYMBOLS = [
-  { symbol: 'USDJPY', name: 'USD/JPY (AllTick Live)', isLive: true },
-  { symbol: 'EURUSD', name: 'EUR/USD (OANDA Feed)', isLive: true },
-  { symbol: 'GBPUSD', name: 'GBP/USD (OANDA Feed)', isLive: true },
-  { symbol: 'AUDUSD', name: 'AUD/USD (Aussie)', isLive: true },
-  { symbol: 'USDCAD', name: 'USD/CAD (Loonie)', isLive: true },
-  { symbol: 'XAUUSD', name: 'Gold / USD (Spot Gold)', isLive: true },
-  { symbol: 'MCL1!', name: 'Oil (MCL1! • OANDA / NYMEX)', isLive: true },
-  { symbol: 'BTCUSD', name: 'Bitcoin / USD', isLive: true },
+  { symbol: 'USDJPY', name: 'USD/JPY (MetaApi Live)', isLive: true },
+  { symbol: 'EURUSD', name: 'EUR/USD (MetaApi Live)', isLive: true },
+  { symbol: 'GBPUSD', name: 'GBP/USD (MetaApi Live)', isLive: true },
+  { symbol: 'AUDUSD', name: 'AUD/USD (MetaApi Live)', isLive: true },
+  { symbol: 'USDCAD', name: 'USD/CAD (MetaApi Live)', isLive: true },
+  { symbol: 'XAUUSD', name: 'Gold / USD (XM Spot Gold • MetaApi)', isLive: true },
+  { symbol: 'MCL1!', name: 'Oil (MCL1! • NYMEX)', isLive: true },
+  { symbol: 'BTCUSD', name: 'Bitcoin / USD (Crypto Spot)', isLive: true },
 ];
 
 const TIMEFRAMES: { id: CandlestickTimeframe; label: string }[] = [
@@ -105,6 +105,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
     generateRealisticCandles(initialSymbol, initialTimeframe, 80)
   );
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [candleSource, setCandleSource] = useState<string>('METAAPI_LIVE');
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
   const [isIndicatorMenuOpen, setIsIndicatorMenuOpen] = useState<boolean>(false);
@@ -260,6 +261,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
           const data = JSON.parse(text) as MarketCandlestickResponse;
           if (data.bars && data.bars.length > 0) {
             setBars(data.bars);
+            if (data.source) setCandleSource(data.source);
             return;
           }
         } catch {
@@ -1772,7 +1774,10 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
               gap: '6px',
             }}
           >
-            <Zap size={12} fill="#0abab5" /> {t.chart.allTickLiveBadge}
+            <Zap size={12} fill="#0abab5" />
+            {candleSource === 'METAAPI_LIVE'
+              ? '⚡ MetaApi Live MT5 Broker Feed (XM / IC Markets)'
+              : t.chart.allTickLiveBadge}
           </span>
 
           <button

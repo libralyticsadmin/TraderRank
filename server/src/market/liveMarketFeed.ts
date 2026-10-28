@@ -6,6 +6,8 @@
 
 import { MarketSimulator } from '../workers/marketSimulator.js';
 import { AllTickAdapter } from './alltickAdapter.js';
+import { MetaApiClient } from '../workers/metaApiClient.js';
+import { CandlestickBar, MarketCandlestickResponse, CandlestickTimeframe } from '../../../shared/src/types.js';
 
 export interface MarketQuote {
   symbol: string;
@@ -28,6 +30,7 @@ export class LiveMarketFeedService {
   private static instance: LiveMarketFeedService;
   private simulator = MarketSimulator.getInstance();
   private alltickAdapter = new AllTickAdapter();
+  private metaApiClient = new MetaApiClient();
   private timer: NodeJS.Timeout | null = null;
   private isPolling = false;
   private feedStatus: 'LIVE_NETWORK' | 'FALLBACK_SYNTHETIC' = 'FALLBACK_SYNTHETIC';
@@ -78,13 +81,44 @@ export class LiveMarketFeedService {
   }
 
   /**
-   * Fetches real rates from live public APIs.
+   * Fetches real rates from live public APIs and MetaApi broker feeds.
    */
   public async fetchRealRates(): Promise<boolean> {
     if (this.isPolling) return false;
     this.isPolling = true;
 
     try {
+      // 1. Primary: MetaApi Live Broker Feed (XM / IC Markets real market prices)
+      if (this.metaApiClient.hasToken()) {
+        try {
+          const accounts = await this.metaApiClient.listProvisionedAccounts();
+          const activeAcc = accounts.find(a => a.connectionStatus === 'CONNECTED') || accounts[0];
+          if (activeAcc) {
+            const symbols = ['EURUSD', 'USDJPY', 'GBPUSD', 'XAUUSD'];
+            let fetchedCount = 0;
+            for (const sym of symbols) {
+              const quote = await this.metaApiClient.getCurrentPrice(activeAcc.id, sym);
+              if (quote && quote.bid > 0) {
+                const spread = Math.max(0.00001, Number((quote.ask - quote.bid).toFixed(sym === 'USDJPY' ? 3 : sym === 'XAUUSD' ? 2 : 5)));
+                const mid = Number(((quote.bid + quote.ask) / 2).toFixed(sym === 'USDJPY' ? 3 : sym === 'XAUUSD' ? 2 : 5));
+                this.applyLiveRate(sym, mid, spread);
+                fetchedCount++;
+              }
+            }
+            if (fetchedCount > 0) {
+              // Real BTC crypto spot price
+              await this.fetchCryptoRates();
+              this.feedStatus = 'LIVE_NETWORK';
+              this.lastSyncAt = new Date().toISOString();
+              this.successfulSyncCount++;
+              this.lastError = undefined;
+              return true;
+            }
+          }
+        } catch {
+          // Fall through to next tier
+        }
+      }
       // 1. Try AllTick Real-Time API as primary tier if token is configured
       if (this.alltickAdapter.getToken()) {
         try {
@@ -231,7 +265,59 @@ export class LiveMarketFeedService {
     });
   }
 
-  public async fetchCandlesticks(symbol = 'USDJPY', timeframe: any = '1m', count = 50) {
+  public async fetchCandlesticks(
+    symbol = 'USDJPY',
+    timeframe: CandlestickTimeframe = '1m',
+    count = 80
+  ): Promise<MarketCandlestickResponse> {
+    // 1. Primary: Real Broker MetaTrader 4/5 Candlesticks via MetaApi
+    if (this.metaApiClient.hasToken()) {
+      try {
+        const tfMap: Record<string, string> = {
+          '1m': '1m',
+          '5m': '5m',
+          '15m': '15m',
+          '30m': '30m',
+          '1h': '1h',
+          '4h': '4h',
+          '1D': '1d',
+          '1W': '1w',
+          '1M': '1mn',
+        };
+        const metaTf = tfMap[String(timeframe)] || '1m';
+        const accounts = await this.metaApiClient.listProvisionedAccounts();
+        const activeAcc = accounts.find(a => a.connectionStatus === 'CONNECTED') || accounts[0];
+        const accountId = activeAcc?.id || process.env.META_API_ACCOUNT_ID || 'c3fb9213-c550-4038-b1cd-9f400705f759';
+
+        const metaCandles = await this.metaApiClient.getCandles(accountId, symbol, metaTf, count);
+        if (metaCandles && metaCandles.length > 0) {
+          const bars: CandlestickBar[] = metaCandles.map(c => ({
+            timestamp: Math.floor(new Date(c.time).getTime() / 1000),
+            timeString: c.time,
+            open: c.open,
+            high: c.high,
+            low: c.low,
+            close: c.close,
+            volume: c.tickVolume,
+          }));
+
+          // Sort ascending (earliest to latest)
+          bars.sort((a, b) => a.timestamp - b.timestamp);
+
+          return {
+            symbol,
+            timeframe,
+            bars,
+            source: 'METAAPI_LIVE',
+            lastUpdated: new Date().toISOString(),
+          };
+        }
+      } catch (err) {
+        console.warn('[LiveMarketFeed] MetaApi candle retrieval fallback:', err);
+      }
+    }
+
+    // 2. Secondary: AllTick Real-Time API / In-Memory Cache
     return this.alltickAdapter.fetchCandlesticks(symbol, timeframe, count);
   }
 

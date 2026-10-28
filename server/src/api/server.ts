@@ -245,10 +245,23 @@ export function createServer() {
   });
 
   // 4. List Accounts
-  app.get('/api/accounts', (req: Request, res: Response) => {
+  app.get('/api/accounts', async (req: Request, res: Response) => {
     const userId = req.query.userId as string | undefined;
-    const accounts = connector.getAccounts(userId);
+    let accounts = connector.getAccounts(userId);
+    if (accounts.length === 0) {
+      accounts = await connector.syncCloudProvisionedAccounts();
+    }
     res.json(accounts);
+  });
+
+  // 4c. Trigger live cloud accounts sync
+  app.post('/api/accounts/sync-cloud', async (_req: Request, res: Response) => {
+    const accounts = await connector.syncCloudProvisionedAccounts();
+    res.json({
+      success: true,
+      count: accounts.length,
+      accounts,
+    });
   });
 
   // 4b. Account Summary (View-Only Metrics: balance, equity, margin, freeMargin, marginLevel)

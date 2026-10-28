@@ -161,6 +161,33 @@ export class MTGatewayWorker implements IBrokerWorker {
   }
 
   public async getTradeHistory(accountId: string, from?: Date, to?: Date): Promise<RawDealPayload[]> {
+    if (this.metaApiClient.hasToken()) {
+      try {
+        const liveDeals = await this.metaApiClient.getHistoricalDeals(
+          accountId,
+          from?.toISOString(),
+          to?.toISOString()
+        );
+        if (liveDeals && liveDeals.length > 0) {
+          return liveDeals.map(d => ({
+            accountId,
+            ticket: d.id || d.positionId,
+            symbol: d.symbol,
+            type: d.type === 'DEAL_TYPE_BUY' ? 'BUY' : 'SELL',
+            volume: d.volume,
+            openPrice: d.price,
+            closePrice: d.price,
+            profit: d.profit,
+            commission: d.commission,
+            swap: d.swap,
+            openTime: d.time,
+            closeTime: d.time,
+          }));
+        }
+      } catch {
+        // Fall back to simulation if MetaApi is offline
+      }
+    }
     return this.marketSim.generateHistoricalDeals(accountId, this.broker);
   }
 
