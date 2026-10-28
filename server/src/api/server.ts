@@ -33,10 +33,118 @@ import { TournamentService } from '../services/tournamentService.js';
 export function createServer() {
   const app = express();
   const server = http.createServer(app);
-  const wss = new WebSocketServer({ server, path: '/ws' });
 
-  app.use(cors());
-  app.use(express.json());
+  // Allowed origin patterns for CORS and WebSocket handshake
+  const ALLOWED_ORIGIN_PATTERNS = [
+    /^https:\/\/(www\.)?traderank\.live$/,
+    /^https:\/\/(www\.)?traderrank\.live$/,
+    /^https:\/\/traderrank.*\.onrender\.com$/,
+    /^https:\/\/.*\.vercel\.app$/,
+    /^http:\/\/localhost(:\d+)?$/,
+    /^http:\/\/127\.0\.0\.1(:\d+)?$/,
+  ];
+
+  const isOriginAllowed = (origin: string | undefined): boolean => {
+    if (!origin) return true; // allow same-origin, curl, server-to-server, unit tests
+    return ALLOWED_ORIGIN_PATTERNS.some(pat => pat.test(origin));
+  };
+
+  const wss = new WebSocketServer({
+    server,
+    path: '/ws',
+    verifyClient: (info, callback) => {
+      const origin = info.origin;
+      if (!isOriginAllowed(origin)) {
+        console.warn(`[SECURITY] Blocked cross-site WebSocket handshake attempt from origin: ${origin}`);
+        return callback(false, 403, 'Forbidden origin');
+      }
+      callback(true);
+    },
+  });
+
+  // 1. Server Hardening: Disable Express fingerprinting
+  app.disable('x-powered-by');
+
+  // 2. Defensive HTTP Security Headers (OWASP & Cloudflare Security Standards)
+  app.use((_req: Request, res: Response, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('X-XSS-Protection', '0');
+    if (process.env.NODE_ENV === 'production') {
+      res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
+    next();
+  });
+
+  // 3. Strict CORS origin filter
+  app.use(cors({
+    origin: (origin, callback) => {
+      if (isOriginAllowed(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS blocked: Origin ${origin} is not permitted`));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'x-admin-key'],
+  }));
+
+  app.use(express.json({ limit: '100kb' }));
+
+  // 4. In-Memory Request Rate Limiter (Resource Exhaustion Defense)
+  const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
+  const createRateLimiter = (windowMs: number, maxRequests: number, label: string) => {
+    return (req: Request, res: Response, next: () => void) => {
+      if (process.env.NODE_ENV === 'test') return next();
+      const ip = req.ip || req.socket.remoteAddress || 'unknown';
+      const key = `${label}:${ip}`;
+      const now = Date.now();
+      const entry = rateLimitStore.get(key);
+
+      if (!entry || entry.resetAt <= now) {
+        rateLimitStore.set(key, { count: 1, resetAt: now + windowMs });
+        return next();
+      }
+
+      if (entry.count >= maxRequests) {
+        const retryAfterSec = Math.ceil((entry.resetAt - now) / 1000);
+        res.setHeader('Retry-After', String(retryAfterSec));
+        return res.status(429).json({
+          success: false,
+          error: `Rate limit exceeded for ${label}. Please retry after ${retryAfterSec}s.`,
+          code: 'RATE_LIMIT_EXCEEDED',
+        });
+      }
+
+      entry.count++;
+      next();
+    };
+  };
+
+  const connectorRateLimit = createRateLimiter(60000, 60, 'connector');
+  const aiRateLimit = createRateLimiter(60000, 30, 'ai_analysis');
+
+  // 5. Admin Authorization Guard
+  const requireAdminAuth = (req: Request, res: Response, next: () => void) => {
+    const adminKey = process.env.ADMIN_API_KEY;
+    if (!adminKey && process.env.NODE_ENV !== 'production') {
+      return next();
+    }
+    const headerKey = req.headers['x-admin-key'] as string | undefined;
+    const authHeader = req.headers.authorization;
+    const bearerKey = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
+    const provided = headerKey || bearerKey;
+
+    if (!adminKey || provided !== adminKey) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized: Valid x-admin-key or Bearer token required for administrative operations',
+        code: 'ADMIN_AUTH_REQUIRED',
+      });
+    }
+    next();
+  };
 
   // Strict Zero-Write Security Interceptor: rejects any order execution or trade write attempts
   app.use((req: Request, res: Response, next) => {
@@ -228,6 +336,19 @@ export function createServer() {
     });
   });
 
+  // Helper: Mask vault secret references in public DTOs
+  const maskAccountSecrets = <T extends { vaultSecretRef?: string }>(account: T): T => {
+    if (!account) return account;
+    const rawRef = account.vaultSecretRef || '';
+    const maskedRef = rawRef.startsWith('vault_sec_')
+      ? `vault_sec_***${rawRef.slice(-4)}`
+      : rawRef;
+    return {
+      ...account,
+      vaultSecretRef: maskedRef,
+    };
+  };
+
   // 1. Health & Telemetry
   app.get('/api/health', (_req: Request, res: Response) => {
     res.json({
@@ -244,7 +365,7 @@ export function createServer() {
   });
 
   // 2. Pre-flight Validate Credentials (PRD §6 step 4)
-  app.post('/api/connector/validate', async (req: Request, res: Response) => {
+  app.post('/api/connector/validate', connectorRateLimit, async (req: Request, res: Response) => {
     try {
       const { broker, credentials } = req.body as { broker: Broker; credentials: AccountCredentials };
       if (!broker || !credentials) {
@@ -260,7 +381,7 @@ export function createServer() {
   });
 
   // 3. Connect Account (PRD §6)
-  app.post('/api/connector/connect', async (req: Request, res: Response) => {
+  app.post('/api/connector/connect', connectorRateLimit, async (req: Request, res: Response) => {
     try {
       const { userId = 'u_current_user', username = 'MasterTrader', broker, credentials } = req.body as {
         userId?: string;
@@ -274,7 +395,10 @@ export function createServer() {
       }
 
       const result = await connector.connectAccount(userId, username, broker, credentials);
-      return res.status(201).json(result);
+      return res.status(201).json({
+        ...result,
+        account: maskAccountSecrets(result.account),
+      });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       return res.status(400).json({ success: false, error: msg });
@@ -288,7 +412,7 @@ export function createServer() {
     if (accounts.length === 0) {
       accounts = await connector.syncCloudProvisionedAccounts();
     }
-    res.json(accounts);
+    res.json(accounts.map(maskAccountSecrets));
   });
 
   // 4c. Trigger live cloud accounts sync
@@ -297,7 +421,7 @@ export function createServer() {
     res.json({
       success: true,
       count: accounts.length,
-      accounts,
+      accounts: accounts.map(maskAccountSecrets),
     });
   });
 
@@ -527,7 +651,14 @@ export function createServer() {
 
   // 9. Secrets Vault Audit Logs (Infrastructure Design §6)
   app.get('/api/vault/audit', (_req: Request, res: Response) => {
-    res.json(vault.getAuditLogs());
+    const rawLogs = vault.getAuditLogs();
+    const sanitizedLogs = rawLogs.map(log => ({
+      ...log,
+      secretRef: log.secretRef.startsWith('vault_sec_')
+        ? `vault_sec_***${log.secretRef.slice(-4)}`
+        : log.secretRef,
+    }));
+    res.json(sanitizedLogs);
   });
 
   // 10. Live Market Quotes from Real APIs
@@ -536,7 +667,7 @@ export function createServer() {
   });
 
   // 11. Force Refresh Real Market Rates
-  app.post('/api/market/refresh', async (_req: Request, res: Response) => {
+  app.post('/api/market/refresh', connectorRateLimit, async (_req: Request, res: Response) => {
     const success = await marketFeed.fetchRealRates();
     const status = marketFeed.getStatus();
     // Broadcast refreshed quotes to all WS clients
@@ -571,8 +702,8 @@ export function createServer() {
     }
   });
 
-  // 12c. MetaApi Cloud Account Deploy
-  app.post('/api/brokers/metaapi/accounts/:id/deploy', async (req: Request, res: Response) => {
+  // 12c. MetaApi Cloud Account Deploy (Protected by Admin Auth)
+  app.post('/api/brokers/metaapi/accounts/:id/deploy', requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const deployed = await metaApiClient.deployAccount(req.params.id);
       res.json({ success: deployed, accountId: req.params.id });
@@ -639,9 +770,10 @@ export function createServer() {
 
   // 14. Candlestick (K-Line) API (AllTick REST & In-Memory Live Feed)
   app.get('/api/market/candlesticks', async (req: Request, res: Response) => {
-    const symbol = ((req.query.symbol as string) || 'USDJPY').toUpperCase();
+    const rawSymbol = ((req.query.symbol as string) || 'USDJPY').toUpperCase();
+    const symbol = /^[A-Z0-9_!.-]{1,16}$/.test(rawSymbol) ? rawSymbol : 'USDJPY';
     const timeframe = ((req.query.timeframe as string) || '1m') as any;
-    const count = req.query.count ? parseInt(req.query.count as string, 10) : 50;
+    const count = req.query.count ? Math.min(100, Math.max(1, parseInt(req.query.count as string, 10) || 50)) : 50;
 
     const data = await marketFeed.fetchCandlesticks(symbol, timeframe, count);
     res.json(data);
@@ -665,9 +797,10 @@ export function createServer() {
   });
 
   // 16. AI Multi-Timeframe Chart Analysis (15m, 4h, 1D, 1W)
-  app.get('/api/market/ai-analysis', async (req: Request, res: Response) => {
+  app.get('/api/market/ai-analysis', aiRateLimit, async (req: Request, res: Response) => {
     try {
-      const symbol = ((req.query.symbol as string) || 'USDJPY').toUpperCase();
+      const rawSymbol = ((req.query.symbol as string) || 'USDJPY').toUpperCase();
+      const symbol = /^[A-Z0-9_!.-]{1,16}$/.test(rawSymbol) ? rawSymbol : 'USDJPY';
       const forceRefresh = req.query.refresh === 'true';
       const report = await aiAnalyzer.analyzeSymbol(symbol, forceRefresh);
       res.json(report);
@@ -773,7 +906,7 @@ export function createServer() {
     });
   });
 
-  app.post('/api/storage/r2/snapshot/leaderboard/:tournamentId', async (req: Request, res: Response) => {
+  app.post('/api/storage/r2/snapshot/leaderboard/:tournamentId', requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const { tournamentId } = req.params;
       const tournament = tournamentService.getTournamentById(tournamentId);
@@ -788,7 +921,7 @@ export function createServer() {
     }
   });
 
-  app.post('/api/storage/r2/archive/trades/:accountId', async (req: Request, res: Response) => {
+  app.post('/api/storage/r2/archive/trades/:accountId', requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const { accountId } = req.params;
       const trades = connector.getAccountTrades(accountId);

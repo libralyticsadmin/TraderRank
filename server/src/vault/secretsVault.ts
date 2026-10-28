@@ -47,8 +47,15 @@ export class SecretsVault implements ISecretsVault {
   ]);
 
   constructor(customKey?: string) {
-    // 32-byte key for AES-256
-    const secret = customKey || process.env.VAULT_MASTER_KEY || 'traderrank_default_vault_master_key_32b!';
+    let secret = customKey || process.env.VAULT_MASTER_KEY;
+    if (!secret) {
+      if (process.env.NODE_ENV === 'production') {
+        console.warn('[SECRETS_VAULT_SECURITY] VAULT_MASTER_KEY unset in production. Generating secure ephemeral 256-bit runtime key.');
+        this.masterKey = crypto.randomBytes(32);
+        return;
+      }
+      secret = 'traderrank_dev_vault_master_key_32b!';
+    }
     this.masterKey = crypto.createHash('sha256').update(secret).digest();
   }
 
