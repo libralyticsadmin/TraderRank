@@ -541,15 +541,19 @@ export class MetaApiClient {
     for (const sym of candidates) {
       try {
         const encodedSymbol = encodeURIComponent(sym);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 2000);
         const res = await fetch(
           `${marketUrl}/users/current/accounts/${metaApiAccountId}/historical-market-data/symbols/${encodedSymbol}/timeframes/${timeframe}/candles?limit=${limit}`,
           {
+            signal: controller.signal,
             headers: {
               'auth-token': this.token,
               'Accept': 'application/json',
             },
           }
         );
+        clearTimeout(timeout);
         if (res.ok) {
           const data = (await res.json()) as any[];
           if (Array.isArray(data) && data.length > 0) {

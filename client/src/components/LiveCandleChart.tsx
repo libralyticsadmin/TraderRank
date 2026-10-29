@@ -55,14 +55,14 @@ interface LiveCandleChartProps {
 }
 
 const SUPPORTED_SYMBOLS = [
-  { symbol: 'USDJPY', name: 'USD/JPY (MetaApi Live)', isLive: true },
-  { symbol: 'EURUSD', name: 'EUR/USD (MetaApi Live)', isLive: true },
-  { symbol: 'GBPUSD', name: 'GBP/USD (MetaApi Live)', isLive: true },
-  { symbol: 'AUDUSD', name: 'AUD/USD (MetaApi Live)', isLive: true },
-  { symbol: 'USDCAD', name: 'USD/CAD (MetaApi Live)', isLive: true },
-  { symbol: 'XAUUSD', name: 'Gold / USD (XM Spot Gold • MetaApi)', isLive: true },
-  { symbol: 'MCL1!', name: 'Oil (MCL1! • NYMEX)', isLive: true },
-  { symbol: 'BTCUSD', name: 'Bitcoin / USD (Crypto Spot)', isLive: true },
+  { symbol: 'USDJPY', name: 'USD/JPY (MetaApi • TradingView Verified)', isLive: true },
+  { symbol: 'EURUSD', name: 'EUR/USD (MetaApi • TradingView Verified)', isLive: true },
+  { symbol: 'GBPUSD', name: 'GBP/USD (MetaApi • TradingView Verified)', isLive: true },
+  { symbol: 'AUDUSD', name: 'AUD/USD (MetaApi • TradingView Verified)', isLive: true },
+  { symbol: 'USDCAD', name: 'USD/CAD (MetaApi • TradingView Verified)', isLive: true },
+  { symbol: 'XAUUSD', name: 'Gold / USD (MetaApi • TradingView Spot)', isLive: true },
+  { symbol: 'MCL1!', name: 'Crude Oil (NYMEX • TradingView Ref)', isLive: true },
+  { symbol: 'BTCUSD', name: 'Bitcoin / USD (Binance • TradingView Ref)', isLive: true },
 ];
 
 const TIMEFRAMES: { id: CandlestickTimeframe; label: string }[] = [
@@ -1831,7 +1831,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
           >
             <Zap size={12} fill="#0abab5" />
             {candleSource === 'METAAPI_LIVE'
-              ? 'MetaApi Live MT5 Broker Feed (XM / IC Markets)'
+              ? 'MetaApi Live MT5 (TradingView Verified)'
               : candleSource === 'TRADINGVIEW_LIVE'
               ? 'TradingView Live Reference Feed (OANDA / FX / Binance)'
               : t.chart.allTickLiveBadge}

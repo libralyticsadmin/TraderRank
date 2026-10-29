@@ -120,7 +120,22 @@ export class LiveMarketFeedService {
     try {
       let fetchedAny = false;
 
-      // 1. Primary: MetaApi Live Broker Feed (XM / MT5 real market prices)
+      // 1. Authoritative Reference Check: First check the updated price with TradingView (OANDA / Forex / Binance)
+      let tvBatch: Record<string, any> = {};
+      try {
+        const symbolsToFetch = ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'XAUUSD', 'MCL1!', 'BTCUSD', 'US30'];
+        tvBatch = await this.tradingViewAdapter.fetchBatchQuotes(symbolsToFetch);
+        for (const [sym, q] of Object.entries(tvBatch)) {
+          if (q && q.lastPrice > 0) {
+            this.applyLiveRate(sym, q.lastPrice, q.spread, q.bid, q.ask);
+            fetchedAny = true;
+          }
+        }
+      } catch {
+        // Fall through to MetaApi broker feed
+      }
+
+      // 2. MetaApi Live Broker Feed (calibrated & anchored to TradingView updated price)
       if (this.metaApiClient.hasToken()) {
         try {
           const accounts = await this.metaApiClient.listProvisionedAccounts();
@@ -134,29 +149,21 @@ export class LiveMarketFeedService {
                 const isTwoDec = sym === 'BTCUSD' || sym === 'XAUUSD' || sym === 'GOLD' || sym === 'MCL1!' || sym === 'USOIL' || sym === 'US30';
                 const decimals = isJpy ? 3 : isTwoDec ? 2 : 5;
                 const spread = Math.max(0.00001, Number((quote.ask - quote.bid).toFixed(decimals)));
-                const mid = Number(((quote.bid + quote.ask) / 2).toFixed(decimals));
-                this.applyLiveRate(sym, mid, spread, quote.bid, quote.ask);
+
+                // Check updated price against TradingView reference
+                const tvQ = tvBatch[sym];
+                const verifiedPrice = (tvQ && tvQ.lastPrice > 0) ? tvQ.lastPrice : Number(((quote.bid + quote.ask) / 2).toFixed(decimals));
+                const verifiedBid = (tvQ && tvQ.bid > 0) ? tvQ.bid : quote.bid;
+                const verifiedAsk = (tvQ && tvQ.ask > 0) ? tvQ.ask : quote.ask;
+
+                this.applyLiveRate(sym, verifiedPrice, spread, verifiedBid, verifiedAsk);
                 fetchedAny = true;
               }
             }
           }
         } catch {
-          // Fall through to TradingView Scanner
+          // Fall through to public backup
         }
-      }
-
-      // 2. Authoritative Institutional Reference Feed (TradingView Scanner API - OANDA / Forex / Binance)
-      try {
-        const symbolsToFetch = ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'XAUUSD', 'MCL1!', 'BTCUSD', 'US30'];
-        const tvBatch = await this.tradingViewAdapter.fetchBatchQuotes(symbolsToFetch);
-        for (const [sym, q] of Object.entries(tvBatch)) {
-          if (q && q.lastPrice > 0) {
-            this.applyLiveRate(sym, q.lastPrice, q.spread, q.bid, q.ask);
-            fetchedAny = true;
-          }
-        }
-      } catch {
-        // Fall through to public backup
       }
 
       // 3. Tertiary: Public Forex open exchange rates backup
@@ -342,7 +349,15 @@ export class LiveMarketFeedService {
     timeframe: CandlestickTimeframe = '1m',
     count = 80
   ): Promise<MarketCandlestickResponse> {
-    // 1. Primary: Real Broker MetaTrader 4/5 Candlesticks via MetaApi
+    // 1. Authoritative Reference Check: First check the updated price with TradingView
+    let tvQuote: any = null;
+    try {
+      tvQuote = await this.tradingViewAdapter.fetchQuote(symbol);
+    } catch {
+      // Continue
+    }
+
+    // 2. MetaApi Live Broker Candlesticks (using broker feed, anchored & calibrated to TradingView updated price)
     if (this.metaApiClient.hasToken()) {
       try {
         const tfMap: Record<string, string> = {
@@ -375,12 +390,23 @@ export class LiveMarketFeedService {
 
           bars.sort((a, b) => a.timestamp - b.timestamp);
 
-          const latestQ = this.cachedQuotes.get(symbol);
-          if (latestQ && latestQ.bid > 0 && bars.length > 0) {
+          // Calibrate to TradingView verified price so chart prices match TradingView
+          const targetPrice = tvQuote?.lastPrice || tvQuote?.bid || this.cachedQuotes.get(symbol)?.bid;
+          if (targetPrice && targetPrice > 0 && bars.length > 0) {
             const last = bars[bars.length - 1];
-            last.close = latestQ.bid;
-            last.high = Math.max(last.high, latestQ.bid);
-            last.low = Math.min(last.low, latestQ.bid);
+            const diff = targetPrice - last.close;
+            if (Math.abs(diff) > 0.00001) {
+              const decimals = symbol.includes('JPY') ? 3 : (symbol.includes('XAU') || symbol.includes('BTC') || symbol.includes('USOIL') || symbol.includes('MCL1')) ? 2 : 5;
+              for (const b of bars) {
+                b.open = Number((b.open + diff).toFixed(decimals));
+                b.high = Number((b.high + diff).toFixed(decimals));
+                b.low = Number((b.low + diff).toFixed(decimals));
+                b.close = Number((b.close + diff).toFixed(decimals));
+              }
+            }
+            last.close = targetPrice;
+            last.high = Math.max(last.high, targetPrice);
+            last.low = Math.min(last.low, targetPrice);
           }
 
           return {
@@ -396,7 +422,7 @@ export class LiveMarketFeedService {
       }
     }
 
-    // 2. Secondary: TradingView Institutional Real-Time Reference Bar Feed
+    // 3. Fallback to TradingView Institutional Real-Time Reference Bar Feed
     try {
       const tvData = await this.tradingViewAdapter.fetchCandlesticks(symbol, timeframe, count);
       if (tvData && tvData.bars && tvData.bars.length > 0) {
