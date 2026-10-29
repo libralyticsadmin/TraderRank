@@ -1742,7 +1742,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       tradeSetupQualified: 'トレード適格成立 • 目標 {targetRR} R:R 検証完了',
       directiveQualified: 'エントリー適格 — 高確率セットアップ',
       directiveDisqualified: '厳格指令: トレードを見送ってください',
-      doNotEnterTrade: '[HOLD] トレードエントリー見送り • 目標 {targetRR} R:R 未達',
+      doNotEnterTrade: '[HOLD] トレードエントリー禁止 • 目標 {targetRR} R:R 未達',
       rrTargetsLabel: 'R:R 目標: 1:3 • 1:5 • 1:7',
       findOtherPairs: 'より高いリスクリワードが見込める他の通貨ペアを探す',
       findAnotherPair: '他の高根拠な通貨ペアを探索 (推奨スキャン):',
