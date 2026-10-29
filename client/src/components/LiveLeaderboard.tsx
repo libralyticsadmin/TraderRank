@@ -133,8 +133,8 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               <Trophy size={22} color="#fbbf24" />
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, letterSpacing: '-0.02em' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
                   {t.leaderboard.title}
                 </h3>
                 <span
@@ -149,12 +149,14 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
                   }}
                 >
                   <Zap size={12} /> {t.leaderboard.liveVerified}
                 </span>
               </div>
-              <p style={{ margin: '2px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
+              <p style={{ margin: '2px 0 0', fontSize: '13px', color: 'var(--text-muted)', wordBreak: 'keep-all', lineBreak: 'strict' }}>
                 {t.leaderboard.subtitle}
               </p>
             </div>
@@ -168,6 +170,8 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               borderRadius: '10px',
               padding: '4px',
               border: '1px solid var(--border-subtle)',
+              flexWrap: 'nowrap',
+              overflowX: 'auto',
             }}
           >
             {[
@@ -194,6 +198,8 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                     alignItems: 'center',
                     gap: '6px',
                     transition: 'all 0.2s ease',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
                   }}
                 >
                   <Icon size={14} />
@@ -219,9 +225,11 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
           }}
         >
           {/* Metric Sort Buttons (Winning Pips / Profit / Rate) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>{t.leaderboard.rankingMetric}</span>
-            <div style={{ display: 'flex', gap: '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
+              {t.leaderboard.rankingMetric}
+            </span>
+            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
               {[
                 { id: 'pips', label: t.leaderboard.winningPips, icon: TrendingUp },
                 { id: 'profit', label: t.leaderboard.profitAmount, icon: Trophy },
@@ -245,6 +253,8 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                       display: 'flex',
                       alignItems: 'center',
                       gap: '5px',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
                     }}
                   >
                     <Icon size={13} />
