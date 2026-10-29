@@ -1,0 +1,627 @@
+{
+  "nav.dailyIntel": {
+    "ja": "デイリーニュース・情報",
+    "row": 7,
+    "isYellow": true
+  },
+  "nav.rankings": {
+    "ja": "ランキング",
+    "row": 9,
+    "isYellow": true
+  },
+  "nav.rewards": {
+    "ja": "ランクタイトル＆リワード報酬",
+    "row": 11,
+    "isYellow": true
+  },
+  "nav.connectAccount": {
+    "ja": "+ ブローカー口座を連携する",
+    "row": 15,
+    "isYellow": true
+  },
+  "nav.proSubscriber": {
+    "ja": "PRO プラン有効中",
+    "row": 17,
+    "isYellow": true
+  },
+  "nav.unlockPro": {
+    "ja": "PRO プランを有効化する ($9/月)",
+    "row": 18,
+    "isYellow": true
+  },
+  "nav.proPlanActive": {
+    "ja": "PRO 全機能対応",
+    "row": 19,
+    "isYellow": true
+  },
+  "nav.viewOnlyBadge": {
+    "ja": "閲覧専用・変更不可",
+    "row": 20,
+    "isYellow": true
+  },
+  "nav.refreshRates": {
+    "ja": "最新レートに更新する",
+    "row": 23,
+    "isYellow": true
+  },
+  "landing.badge": {
+    "ja": "認証済、複数ブローカー対応のトレーダーコミュニティ",
+    "row": 26,
+    "isYellow": true
+  },
+  "landing.heroTitlePrefix": {
+    "ja": "世界中のトレーダーが安全に利用できる",
+    "row": 27,
+    "isYellow": true
+  },
+  "landing.heroTitleAccent": {
+    "ja": "公式トレーダーランキングサイト・トレーダーランク",
+    "row": 28,
+    "isYellow": true
+  },
+  "landing.heroSubtitle": {
+    "ja": "トレーダーランクは全ユーザーのブローカー口座を安全に接続・連携、検証し、公式に有益なトレード履歴や戦略を公開、そして全プロトレーダーにリワード報酬獲得の機会を提供します。",
+    "row": 30,
+    "isYellow": true
+  },
+  "landing.enterArenaBtn": {
+    "ja": "ログインする",
+    "row": 31,
+    "isYellow": true
+  },
+  "landing.connectBrokerBtn": {
+    "ja": "ブローカー口座を連携する",
+    "row": 32,
+    "isYellow": true
+  },
+  "landing.verifiedPnlBadge": {
+    "ja": "ゼロライト実盤検証済",
+    "row": 34,
+    "isYellow": true
+  },
+  "landing.zeroWriteGuarantee": {
+    "ja": "100% 閲覧専用 • 各口座資金へのアクセスは一切できません。",
+    "row": 35,
+    "isYellow": true
+  },
+  "landing.volume24h": {
+    "ja": "正規化取引高（24時間）",
+    "row": 38,
+    "isYellow": true
+  },
+  "landing.topPerformersTitle": {
+    "ja": "グローバルランキング",
+    "row": 39,
+    "isYellow": true
+  },
+  "landing.tabPips": {
+    "ja": "獲得純Pips数",
+    "row": 41,
+    "isYellow": true
+  },
+  "landing.tabProfit": {
+    "ja": "純利益金額",
+    "row": 42,
+    "isYellow": true
+  },
+  "landing.viewProfile": {
+    "ja": "実績詳細を確認",
+    "row": 50,
+    "isYellow": true
+  },
+  "landing.feature1Desc": {
+    "ja": "トレーダーランクは、完全なる閲覧専用のみで動作しており、発注や入出金操作は、システム基盤レベルで物理的に遮断されています。",
+    "row": 52,
+    "isYellow": true
+  },
+  "landing.feature2Desc": {
+    "ja": "5桁の小数点表記、異なるスプレッド幅、通貨ペア命名規則を自動統一し、公平なコミュニティ環境を提供します。",
+    "row": 54,
+    "isYellow": true
+  },
+  "landing.feature3Title": {
+    "ja": "トレーダーおよび投資家向け・日次ニュースおよび関連情報 ($9/月)",
+    "row": 55,
+    "isYellow": true
+  },
+  "landing.feature4Title": {
+    "ja": "賞金付き eスポーツ型トレードトーナメント",
+    "row": 57,
+    "isYellow": true
+  },
+  "landing.feature4Desc": {
+    "ja": "5日間の短期トーナメントや、長期間の月間リーグに参加し、賞金プール、XPポイント、タイトルなどのリワード報酬を獲得しよう。",
+    "row": 58,
+    "isYellow": true
+  },
+  "landing.ctaHeading": {
+    "ja": "トレーダーとしての真の能力を証明しませんか？",
+    "row": 59,
+    "isYellow": true
+  },
+  "landing.ctaButton": {
+    "ja": "トレーダーランクにログインする →",
+    "row": 61,
+    "isYellow": true
+  },
+  "intel.title": {
+    "ja": "インテリジェンスAIトレーディング情報",
+    "row": 62,
+    "isYellow": true
+  },
+  "intel.subtitle": {
+    "ja": "マクロファンダメンタルズ動向、ForexFactory経済指標発表、SMCオーダーブロック、およびマルチタイムフレーム戦略プランなど他多数",
+    "row": 63,
+    "isYellow": true
+  },
+  "intel.todayMarketSummary": {
+    "ja": "本日の相場情報まとめ",
+    "row": 64,
+    "isYellow": true
+  },
+  "intel.proUnlocked": {
+    "ja": "サブスク開始 ($9/月)",
+    "row": 66,
+    "isYellow": true
+  },
+  "intel.unlockProBtn": {
+    "ja": "月額 $9 で サブスク開始",
+    "row": 67,
+    "isYellow": true
+  },
+  "intel.marketRegime": {
+    "ja": "本日の市場状況",
+    "row": 68,
+    "isYellow": true
+  },
+  "intel.sessionFocus": {
+    "ja": "フォーカスセッション",
+    "row": 90,
+    "isYellow": true
+  },
+  "intel.accountSize": {
+    "ja": "1% リスク必要口座資金:",
+    "row": 92,
+    "isYellow": true
+  },
+  "intel.tradeQualification": {
+    "ja": "トレード取引資格適合性",
+    "row": 97,
+    "isYellow": true
+  },
+  "intel.tradeSetupQualified": {
+    "ja": "トレード適格承認 • 目標 {targetRR} R:R 検証完了",
+    "row": 98,
+    "isYellow": true
+  },
+  "intel.directiveQualified": {
+    "ja": "認証完了 — 高確率セットアップ",
+    "row": 99,
+    "isYellow": true
+  },
+  "intel.directiveDisqualified": {
+    "ja": "【厳重警告】取引エントリー禁止",
+    "row": 100,
+    "isYellow": true
+  },
+  "intel.doNotEnterTrade": {
+    "ja": "⛔ エントリー禁止 • リスクリワード比 • 目標 {targetRR} R:R 不足",
+    "row": 101,
+    "isYellow": true
+  },
+  "intel.entryZone": {
+    "ja": "最適エントリー価格帯",
+    "row": 109,
+    "isYellow": true
+  },
+  "intel.optimalEntryZone": {
+    "ja": "最適エントリー価格帯",
+    "row": 110,
+    "isYellow": true
+  },
+  "intel.marketStructureContext": {
+    "ja": "環境認識 ： 市場構造",
+    "row": 116,
+    "isYellow": true
+  },
+  "intel.preExecutionChecklist": {
+    "ja": "トレードエントリー前チェックリスト:",
+    "row": 120,
+    "isYellow": true
+  },
+  "intel.unlockGeneratorModalDesc": {
+    "ja": "TraderRank Pro ($9/月) に加入すると、全時間軸 (1分・5分・15分・1時間・4時間・日足・週足) に対応したエントリー価格帯・損切り・利確目標などを設定・生成できます。",
+    "row": 122,
+    "isYellow": true
+  },
+  "intel.unlockBtn": {
+    "ja": "月額 $9 でサブスクを開始する",
+    "row": 123,
+    "isYellow": true
+  },
+  "intel.dailyBreakdownDesc": {
+    "ja": "資産を選択して、機関投資家のオーダーブロック、ピボット水準、カタリストを確認",
+    "row": 129,
+    "isYellow": true
+  },
+  "intel.institutionalDemandBlock": {
+    "ja": "大口需要ゾーン (SMC)",
+    "row": 134,
+    "isYellow": true
+  },
+  "intel.institutionalSupplyBlock": {
+    "ja": "大口供給ゾーン (レジスタンス)",
+    "row": 135,
+    "isYellow": true
+  },
+  "intel.smcKeyLevels": {
+    "ja": "SMC重要意識価格＆オーダーブロック",
+    "row": 137,
+    "isYellow": true
+  },
+  "intel.demandZone": {
+    "ja": "主要需要ゾーン",
+    "row": 139,
+    "isYellow": true
+  },
+  "intel.supplyZone": {
+    "ja": "主要供給ゾーン",
+    "row": 140,
+    "isYellow": true
+  },
+  "intel.unlockProPrompt": {
+    "ja": "月額$9で日次完全レポート＆カスタム時間足分析を提供",
+    "row": 142,
+    "isYellow": true
+  },
+  "intel.optimalSession": {
+    "ja": "最適エントリー・ウィンドウ",
+    "row": 148,
+    "isYellow": true
+  },
+  "intel.calculatedLotSize": {
+    "ja": "推奨ロット数 (1%リスク)",
+    "row": 149,
+    "isYellow": true
+  },
+  "chart.bosDesc": {
+    "ja": "フラクタル構造認識＆市場構造破壊",
+    "row": 180,
+    "isYellow": true
+  },
+  "subscription.modalTitle": {
+    "ja": "TraderRank プロ — 日次インテリジェンス全機能アクセス",
+    "row": 198,
+    "isYellow": true
+  },
+  "subscription.monthlyTier": {
+    "ja": "プロ ・ 月額プラン",
+    "row": 200,
+    "isYellow": true
+  },
+  "subscription.annualTier": {
+    "ja": "プロ ・ 年間プラン",
+    "row": 202,
+    "isYellow": true
+  },
+  "subscription.annualSavings": {
+    "ja": "27% 割引",
+    "row": 204,
+    "isYellow": true
+  },
+  "subscription.save27": {
+    "ja": "27% 割引",
+    "row": 211,
+    "isYellow": true
+  },
+  "subscription.monthlyDesc": {
+    "ja": "日次市場レポート（完全版） • カスタム戦略ジェネレーター • いつでも解約可能",
+    "row": 212,
+    "isYellow": true
+  },
+  "subscription.annualDesc": {
+    "ja": "Proプランの全機能 ＋ 限定Alpha Discordグループ（優先参加）＆ 過去データアーカイブ",
+    "row": 213,
+    "isYellow": true
+  },
+  "subscription.timerRemaining": {
+    "ja": "決済レート有効期限",
+    "row": 233,
+    "isYellow": true
+  },
+  "subscription.estimatedTax": {
+    "ja": "消費税",
+    "row": 235,
+    "isYellow": true
+  },
+  "subscription.moneyBackGuarantee": {
+    "ja": "14日間返金保証",
+    "row": 239,
+    "isYellow": true
+  },
+  "subscription.confirmAndUnlock": {
+    "ja": "決済を完了して Pro を有効化する",
+    "row": 240,
+    "isYellow": true
+  },
+  "subscription.paymentConfirmedBadge": {
+    "ja": "支払い確認完了 • Pro 有効化",
+    "row": 244,
+    "isYellow": true
+  },
+  "subscription.membershipActiveBadge": {
+    "ja": "Pro メンバーシップ有効中",
+    "row": 254,
+    "isYellow": true
+  },
+  "subscription.membershipActiveDesc": {
+    "ja": "日次トレーディング・インテリジェンス、マクロレポート、そしてカスタム戦略ジェネレーターのすべての機能（機関投資家向けフルアクセス権）が有効化されています。",
+    "row": 255,
+    "isYellow": true
+  },
+  "subscription.guaranteeText": {
+    "ja": "即時有効化 • 14日間返金保証 • いつでもワンクリックで解約可能。",
+    "row": 261,
+    "isYellow": true
+  },
+  "connector.modalTitle": {
+    "ja": "取引口座ブローカーを選択",
+    "row": 263,
+    "isYellow": true
+  },
+  "connector.modalSubtitle": {
+    "ja": "最適な接続を行うため、ご利用中の取引口座のブローカーを選択してください。",
+    "row": 264,
+    "isYellow": true
+  },
+  "connector.selectBrokerDesc": {
+    "ja": "最適な接続を行うため、ご利用中の取引口座のブローカーを選択してください。",
+    "row": 266,
+    "isYellow": true
+  },
+  "connector.mtGatewayDesc": {
+    "ja": "APIキー不要で接続可能（Exness MT4/MT5口座専用の標準コネクター）",
+    "row": 272,
+    "isYellow": true
+  },
+  "connector.brokerAgnosticTitle": {
+    "ja": "全ブローカー対応 MT4/MT5ゲートウェイ",
+    "row": 273,
+    "isYellow": true
+  },
+  "connector.securityCalloutTitle": {
+    "ja": "注文発注リスクゼロ完全保証：",
+    "row": 276,
+    "isYellow": true
+  },
+  "connector.securityCalloutDesc": {
+    "ja": "TraderRankが必要とするのは、閲覧専用（リードオンリー）のアクセス権限のみです。インベスターパスワードを使って勝手に注文を入れたり決済したりすることは不可能です。お客様のログイン情報は、隔離された安全なSecrets Vault（機密保管庫）内で、最高峰の暗号化規格『AES-256-GCM』によって厳重に暗号化・保護されます。",
+    "row": 277,
+    "isYellow": true
+  },
+  "connector.zeroWriteDesc": {
+    "ja": "TraderRankは、閲覧専用（リードオンリー）のオブザーバーとしてのみ厳格に動作します。注文の執行、変更、および資金の出金（Withdrawal）といったすべての操作権限は、システムエンジンレベルで物理的に遮断されています。",
+    "row": 312,
+    "isYellow": true
+  },
+  "connector.readOnlyAudited": {
+    "ja": "外部監査済 • ゼロライトセキュリティ認証",
+    "row": 313,
+    "isYellow": true
+  },
+  "dailyBest.spotlight": {
+    "ja": "本日のトップ獲得pips",
+    "row": 327,
+    "isYellow": true
+  },
+  "dailyBest.window": {
+    "ja": "24時間ブローカー同期枠",
+    "row": 328,
+    "isYellow": true
+  },
+  "dailyBest.rollover": {
+    "ja": "ロールオーバー:",
+    "row": 331,
+    "isYellow": true
+  },
+  "dailyBest.dailyCrown": {
+    "ja": "本日の王者",
+    "row": 334,
+    "isYellow": true
+  },
+  "dailyBest.platformsTraded": {
+    "ja": "利用プラットフォーム:",
+    "row": 335,
+    "isYellow": true
+  },
+  "dailyBest.trades": {
+    "ja": "トレード数",
+    "row": 337,
+    "isYellow": true
+  },
+  "dailyBest.hallOfFameTitle": {
+    "ja": "殿堂入り — 歴代のデイリー最優秀トレーダー",
+    "row": 345,
+    "isYellow": true
+  },
+  "arena.tournamentsTitle": {
+    "ja": "リアルタイム・トレードトーナメント会場",
+    "row": 346,
+    "isYellow": true
+  },
+  "arena.tournamentsSubtitle": {
+    "ja": "世界中の実力派MT4/MT5トレーダーが集結。賞金、名誉、そして本物の取引実績（トラックレコード）を懸けて競い合おう！",
+    "row": 347,
+    "isYellow": true
+  },
+  "arena.liveContests": {
+    "ja": "開催中のトーナメント一覧",
+    "row": 348,
+    "isYellow": true
+  },
+  "arena.upcomingContests": {
+    "ja": "開催予定のトーナメント",
+    "row": 349,
+    "isYellow": true
+  },
+  "arena.joinArena": {
+    "ja": "トーナメントに参戦する",
+    "row": 353,
+    "isYellow": true
+  },
+  "arena.dailyChampionTitle": {
+    "ja": "本日の Pips クラウン覇者",
+    "row": 355,
+    "isYellow": true
+  },
+  "arena.badgesTitle": {
+    "ja": "実績バッジ & ランクステータス",
+    "row": 357,
+    "isYellow": true
+  },
+  "arena.communityFeedTitle": {
+    "ja": "グローバルコミュニティ・リアルタイム配信",
+    "row": 358,
+    "isYellow": true
+  },
+  "arena.weeklySprint": {
+    "ja": "短期決戦：週間FXブリッツリーグ",
+    "row": 360,
+    "isYellow": true
+  },
+  "arena.monthlyChampionship": {
+    "ja": "最高峰プロップ選手権：Apex Prop Championship",
+    "row": 361,
+    "isYellow": true
+  },
+  "arena.maxDailyLoss": {
+    "ja": "1日最大許容損失",
+    "row": 362,
+    "isYellow": true
+  },
+  "arena.maxTrailingDD": {
+    "ja": "最大追従ドローダウン",
+    "row": 363,
+    "isYellow": true
+  },
+  "rewards.locked": {
+    "ja": "未解除",
+    "row": 390,
+    "isYellow": true
+  },
+  "rewards.honorBadgesSubtitle": {
+    "ja": "厳格なリスク管理、低ドローダウン、そしてトーナメントでの表彰台独占。あなただけの『実力の証（バッジ）』をコレクションしよう。",
+    "row": 392,
+    "isYellow": true
+  },
+  "rewards.unlockedCount": {
+    "ja": "解除済みバッジ",
+    "row": 393,
+    "isYellow": true
+  },
+  "rewards.badgeModalTitle": {
+    "ja": "バッジ詳細 & 解除条件",
+    "row": 398,
+    "isYellow": true
+  },
+  "rewards.howToUnlock": {
+    "ja": "解除条件",
+    "row": 399,
+    "isYellow": true
+  },
+  "rewards.toastClaimed": {
+    "ja": "毎日ログイン達成！ +200 XP が加算されました。",
+    "row": 402,
+    "isYellow": true
+  },
+  "leaderboard.title": {
+    "ja": "世界公式ランキング",
+    "row": 404,
+    "isYellow": true
+  },
+  "leaderboard.subtitle": {
+    "ja": "純粋なスキルと正規化Pipsによって格付けされたマルチブローカーランキング",
+    "row": 405,
+    "isYellow": true
+  },
+  "leaderboard.filterEcn": {
+    "ja": "True ECN Only",
+    "row": 414,
+    "isYellow": true
+  },
+  "leaderboard.follow": {
+    "ja": "トレーダーをフォローする",
+    "row": 432,
+    "isYellow": true
+  },
+  "community.title": {
+    "ja": "グローバルコミュニティ・ライブ配信",
+    "row": 446,
+    "isYellow": true
+  },
+  "community.subtitle": {
+    "ja": "検証済みトレード約定、ランク昇格、バッジ獲得のライブタイムライン",
+    "row": 447,
+    "isYellow": true
+  },
+  "community.challengeTitle": {
+    "ja": "5,000 Pips グローバルハーベスト",
+    "row": 448,
+    "isYellow": true
+  },
+  "community.challengeDesc": {
+    "ja": "全トレーダー協力チャレンジ: 今週全員で合計 5,000 Pips を獲得して、全員に +500 ボーナス XP を解放！",
+    "row": 449,
+    "isYellow": true
+  },
+  "community.collectiveHarvest": {
+    "ja": "全体の獲得状況",
+    "row": 451,
+    "isYellow": true
+  },
+  "community.filterBadges": {
+    "ja": "バッジ & 順位",
+    "row": 462,
+    "isYellow": true
+  },
+  "community.cheersKing": {
+    "ja": "超過リターン 👑",
+    "row": 472,
+    "isYellow": true
+  },
+  "community.cheersShield": {
+    "ja": "リスク管理 🛡️",
+    "row": 473,
+    "isYellow": true
+  },
+  "positions.title": {
+    "ja": "ライブ保有ポジション監視",
+    "row": 495,
+    "isYellow": true
+  },
+  "positions.liveIngestionFeed": {
+    "ja": "ライブ保有ポジション監視",
+    "row": 496,
+    "isYellow": true
+  },
+  "positions.subSecondStream": {
+    "ja": "ミリ秒単位ライブストリーム",
+    "row": 497,
+    "isYellow": true
+  },
+  "profile.followTrader": {
+    "ja": "トレーダーをフォローする",
+    "row": 553,
+    "isYellow": true
+  },
+  "profile.copyDisabledNotice": {
+    "ja": "TraderRankは、ゼロライト（ゼロ書込み）セキュリティを維持するために、ダイレクトコピートレード機能を無効化している、競技型のパフォーマンスプラットフォームです。",
+    "row": 555,
+    "isYellow": true
+  },
+  "bulletin.newTop10": {
+    "ja": "最新トップ10",
+    "row": 630,
+    "isYellow": true
+  }
+}

@@ -162,6 +162,18 @@ const WHITE_FILL = {
   fgColor: { argb: 'FFFFFFFF' },
 };
 
+const YELLOW_HIGHLIGHT_FILL = {
+  type: 'pattern',
+  pattern: 'solid',
+  fgColor: { argb: 'FFFFFF00' }, // Vibrant User Revision Yellow
+};
+
+let userYellowKeys = new Set();
+try {
+  const revsData = JSON.parse(fs.readFileSync(path.join(__dirname, 'user_revisions.json'), 'utf8'));
+  userYellowKeys = new Set(Object.keys(revsData));
+} catch (e) {}
+
 const BORDER_THIN = {
   top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
   left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
@@ -239,7 +251,7 @@ rows.forEach((r, idx) => {
 
   row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
     cell.font = { name: 'Segoe UI', size: 10, color: { argb: 'FF0F172A' } };
-    cell.fill = rowFill;
+    cell.fill = (colNumber === 4 && userYellowKeys.has(r.keyPath)) ? YELLOW_HIGHLIGHT_FILL : rowFill;
     cell.border = BORDER_THIN;
     cell.alignment = {
       vertical: 'middle',
@@ -409,7 +421,7 @@ CATEGORY_TABS.forEach((catTab) => {
 
     row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
       cell.font = { name: 'Segoe UI', size: 9.5 };
-      cell.fill = rowFill;
+      cell.fill = (colNumber === 3 && userYellowKeys.has(r.keyPath)) ? YELLOW_HIGHLIGHT_FILL : rowFill;
       cell.border = BORDER_THIN;
       cell.alignment = {
         vertical: 'middle',
