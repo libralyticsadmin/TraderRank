@@ -673,31 +673,38 @@ body {
 }
 
 /* ====================================================
-   LIVE TRADE BULLETIN — MOVING MOTION GRAPHIC SPOT TAPE
+   LIVE TRADE BULLETIN — SPOTLIGHT FLASH FEED
    ==================================================== */
 .bulletin-container {
   display: flex;
-  align-items: center;
-  background: rgba(8, 20, 25, 0.85);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(10, 186, 181, 0.25);
-  border-radius: 14px;
-  margin-bottom: 20px;
+  align-items: stretch;
+  background: linear-gradient(135deg, rgba(8, 20, 25, 0.95) 0%, rgba(12, 28, 33, 0.9) 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(10, 186, 181, 0.3);
+  border-radius: 16px;
+  margin-bottom: 22px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(129, 216, 208, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(129, 216, 208, 0.2);
 }
 
 .bulletin-badge-pinned {
   display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: linear-gradient(90deg, rgba(5, 12, 16, 0.98) 0%, rgba(7, 18, 23, 0.92) 100%);
+  border-right: 1px solid rgba(10, 186, 181, 0.22);
+  flex-shrink: 0;
+  min-width: 220px;
+  gap: 8px;
+  z-index: 10;
+}
+
+.bulletin-badge-header {
+  display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 18px;
-  background: linear-gradient(90deg, rgba(6, 13, 17, 0.98) 80%, rgba(6, 13, 17, 0) 100%);
-  z-index: 10;
-  flex-shrink: 0;
-  position: relative;
-  border-right: 1px solid rgba(10, 186, 181, 0.2);
 }
 
 .bulletin-radar-wrap {
@@ -714,14 +721,14 @@ body {
   height: 8px;
   border-radius: 50%;
   background-color: var(--tiffany);
-  box-shadow: 0 0 10px var(--tiffany);
+  box-shadow: 0 0 12px var(--tiffany);
   z-index: 2;
 }
 
 .bulletin-radar-ping {
   position: absolute;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   border: 2px solid var(--tiffany);
   opacity: 0.8;
@@ -730,14 +737,8 @@ body {
 }
 
 @keyframes radar-pulse {
-  0% {
-    transform: scale(0.6);
-    opacity: 0.9;
-  }
-  100% {
-    transform: scale(2.4);
-    opacity: 0;
-  }
+  0% { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(2.4); opacity: 0; }
 }
 
 .bulletin-badge-text {
@@ -749,7 +750,7 @@ body {
 .bulletin-title {
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   background: linear-gradient(90deg, #ffffff 0%, var(--tiffany-light) 100%);
   -webkit-background-clip: text;
   background-clip: text;
@@ -766,190 +767,280 @@ body {
   white-space: nowrap;
 }
 
-.bulletin-track-window {
-  flex: 1;
-  overflow: hidden;
-  position: relative;
-  mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
-}
-
-.bulletin-marquee-content {
+.bulletin-filters {
   display: flex;
   align-items: center;
-  gap: 14px;
-  width: max-content;
-  animation: bulletin-scroll-left 28s linear infinite;
-  will-change: transform;
-  padding: 8px 0;
+  gap: 5px;
+  flex-wrap: wrap;
 }
 
-.bulletin-marquee-content:hover {
-  animation-play-state: paused;
-}
-
-@keyframes bulletin-scroll-left {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-/* Individual Trading Spot Card */
-.bulletin-spot-card {
-  background: rgba(12, 28, 33, 0.7);
-  border: 1px solid rgba(129, 216, 208, 0.14);
-  border-radius: 10px;
-  padding: 8px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.bulletin-filter-chip {
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  min-width: 175px;
-  position: relative;
-  user-select: none;
-  flex-shrink: 0;
+  transition: all 0.15s ease;
 }
 
-.bulletin-spot-card:hover {
-  background: rgba(18, 42, 48, 0.95);
+.bulletin-filter-chip:hover {
+  background: rgba(10, 186, 181, 0.15);
+  color: #ffffff;
+  border-color: rgba(10, 186, 181, 0.4);
+}
+
+.bulletin-filter-chip.active {
+  background: rgba(10, 186, 181, 0.25);
+  color: var(--tiffany-light);
   border-color: var(--tiffany);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(10, 186, 181, 0.25);
 }
 
-.bulletin-spot-card--hot {
-  border-color: rgba(251, 191, 36, 0.4);
-  background: linear-gradient(135deg, rgba(12, 28, 33, 0.85) 0%, rgba(35, 28, 12, 0.6) 100%);
-}
-
-.bulletin-card-header {
+/* Spotlight Stage Container */
+.bulletin-spotlight-stage {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  padding: 10px 22px;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
 }
 
-.bulletin-symbol-wrap {
+.bulletin-spotlight-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex: 1;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  animation: spotlight-pop 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bulletin-spotlight-card:hover {
+  background: rgba(10, 186, 181, 0.06);
+}
+
+@keyframes spotlight-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.spotlight-trader-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 170px;
+}
+
+.spotlight-trader-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.spotlight-trader-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.bulletin-symbol {
+.spotlight-broker-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.spotlight-order-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+.spotlight-symbol {
   font-family: var(--font-mono);
-  font-size: 12px;
   font-weight: 800;
+  font-size: 13px;
   color: #ffffff;
   letter-spacing: -0.2px;
 }
 
-.bulletin-type-badge {
-  font-size: 9px;
-  font-weight: 700;
-  padding: 1px 5px;
+.spotlight-type-badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
   border-radius: 4px;
   letter-spacing: 0.02em;
 }
 
 .type-buy {
-  background: rgba(10, 186, 181, 0.2);
+  background: rgba(10, 186, 181, 0.22);
   color: var(--tiffany);
-  border: 1px solid rgba(10, 186, 181, 0.35);
+  border: 1px solid rgba(10, 186, 181, 0.4);
 }
 
 .type-sell {
-  background: rgba(244, 63, 94, 0.2);
-  color: var(--accent-red);
-  border: 1px solid rgba(244, 63, 94, 0.35);
+  background: rgba(239, 68, 68, 0.22);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
 }
 
-.bulletin-broker-badge {
+.spotlight-pips-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 120px;
+}
+
+.spotlight-pips-val {
+  font-size: 18px;
+  font-weight: 900;
+  font-family: var(--font-mono);
+  letter-spacing: -0.5px;
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  color: var(--text-muted);
-  background: rgba(255, 255, 255, 0.04);
-  padding: 2px 6px;
-  border-radius: 4px;
+  gap: 5px;
 }
 
-.bulletin-card-body {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+.spotlight-pips-val.profit {
+  color: #10b981;
+  text-shadow: 0 0 14px rgba(16, 185, 129, 0.4);
 }
 
-.bulletin-trader-name {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: #f1f5f9;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 90px;
+.spotlight-pips-val.loss {
+  color: #ef4444;
+  text-shadow: 0 0 14px rgba(239, 68, 68, 0.4);
 }
 
-.bulletin-flame-icon {
-  animation: flame-flicker 1.5s ease-in-out infinite alternate;
-}
-
-@keyframes flame-flicker {
-  0% { transform: scale(0.9); opacity: 0.8; }
-  100% { transform: scale(1.15); opacity: 1; }
-}
-
-.bulletin-pips-pill {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--tiffany);
+.spotlight-usd-val {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
   font-family: var(--font-mono);
 }
 
-.bulletin-pips-pill small {
-  font-size: 9px;
-  font-weight: 600;
-  opacity: 0.8;
-}
-
-.bulletin-card-footer {
-  display: flex;
+.spotlight-tag-badge {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  font-size: 9px;
-  color: var(--text-faint);
-  padding-top: 2px;
-  border-top: 1px dashed rgba(255, 255, 255, 0.06);
-}
-
-.bulletin-tag {
-  font-weight: 700;
-  color: var(--tiffany-light);
+  gap: 4px;
+  padding: 3px 9px;
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  color: #fbbf24;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
-.bulletin-time {
+.spotlight-time-tag {
+  font-size: 10px;
+  color: var(--text-faint);
   font-family: var(--font-mono);
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.bulletin-hot-glow {
+/* Navigation & Breadcrumb Chips */
+.bulletin-controls-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.bulletin-mini-chips {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.bulletin-mini-chip {
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+}
+
+.bulletin-mini-chip:hover {
+  background: rgba(10, 186, 181, 0.15);
+  border-color: rgba(10, 186, 181, 0.4);
+  color: #ffffff;
+}
+
+.bulletin-mini-chip.active {
+  background: rgba(10, 186, 181, 0.25);
+  border-color: var(--tiffany);
+  color: var(--tiffany-light);
+  box-shadow: 0 0 10px rgba(10, 186, 181, 0.35);
+}
+
+.bulletin-arrow-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  border-radius: 6px;
+  padding: 4px 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.bulletin-arrow-btn:hover {
+  background: rgba(10, 186, 181, 0.2);
+  border-color: var(--tiffany);
+  color: #ffffff;
+}
+
+/* Bottom Progress Track */
+.bulletin-progress-track {
   position: absolute;
-  top: 0;
+  bottom: 0;
+  left: 0;
   right: 0;
-  width: 20px;
-  height: 20px;
-  background: radial-gradient(circle, rgba(251, 191, 36, 0.35) 0%, transparent 70%);
-  pointer-events: none;
+  height: 2.5px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.bulletin-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0abab5, #38bdf8);
+  box-shadow: 0 0 8px #0abab5;
+  transition: width 0.08s linear;
 }
 
 /* ====================================================
