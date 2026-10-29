@@ -195,7 +195,9 @@ body {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 .btn-primary {
@@ -212,6 +214,8 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 4px 16px var(--accent-green-glow);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-primary:hover {
@@ -232,6 +236,8 @@ body {
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-secondary:hover {
@@ -246,21 +252,33 @@ body {
   margin-bottom: 24px;
   border-bottom: 1px solid var(--border-subtle);
   padding-bottom: 8px;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.tabs-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .tab-button {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
   background: none;
   border: none;
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  padding: 10px 18px;
+  padding: 9px 16px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-break: strict;
+  word-break: keep-all;
 }
 
 .tab-button:hover {

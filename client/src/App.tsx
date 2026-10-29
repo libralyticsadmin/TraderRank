@@ -365,7 +365,7 @@ export const App: React.FC = () => {
                 </span>
               )}
             </div>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', wordBreak: 'keep-all', lineBreak: 'strict' }}>
               {t.app.heroSubheading}
             </p>
           </div>

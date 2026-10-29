@@ -531,8 +531,10 @@ export const RewardsBadges: React.FC = () => {
                 </div>
 
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#FFFFFF' }}>{badge.name}</h4>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#FFFFFF', wordBreak: 'keep-all', lineBreak: 'strict', whiteSpace: 'nowrap' }}>
+                      {badge.name}
+                    </h4>
                     <span
                       style={{
                         fontSize: '9px',
@@ -542,6 +544,7 @@ export const RewardsBadges: React.FC = () => {
                         background: `${badge.color}20`,
                         color: badge.color,
                         border: `1px solid ${badge.color}40`,
+                        flexShrink: 0,
                       }}
                     >
                       {getRarityLabel(badge.rarity)}
