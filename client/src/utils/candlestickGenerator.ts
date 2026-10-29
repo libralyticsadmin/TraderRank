@@ -8,14 +8,17 @@ export interface SymbolMarketMetadata {
 }
 
 export const SYMBOL_METADATA_MAP: Record<string, SymbolMarketMetadata> = {
-  USDJPY: { basePrice: 158.150, decimals: 3, tickVolatility: 0.018, spread: 0.015 },
-  EURUSD: { basePrice: 1.12250, decimals: 5, tickVolatility: 0.00012, spread: 0.00011 },
-  GBPUSD: { basePrice: 1.32200, decimals: 5, tickVolatility: 0.00015, spread: 0.00014 },
-  AUDUSD: { basePrice: 0.69700, decimals: 5, tickVolatility: 0.00012, spread: 0.00012 },
-  USDCAD: { basePrice: 1.42560, decimals: 5, tickVolatility: 0.00014, spread: 0.00015 },
-  XAUUSD: { basePrice: 4174.50, decimals: 2, tickVolatility: 0.65, spread: 0.30 },
-  'MCL1!': { basePrice: 87.65, decimals: 2, tickVolatility: 0.05, spread: 0.03 },
-  BTCUSD: { basePrice: 85850.00, decimals: 2, tickVolatility: 12.0, spread: 15.0 },
+  USDJPY: { basePrice: 158.240, decimals: 3, tickVolatility: 0.018, spread: 0.005 },
+  EURUSD: { basePrice: 1.11400, decimals: 5, tickVolatility: 0.00012, spread: 0.00005 },
+  GBPUSD: { basePrice: 1.33070, decimals: 5, tickVolatility: 0.00015, spread: 0.00015 },
+  AUDUSD: { basePrice: 0.70370, decimals: 5, tickVolatility: 0.00012, spread: 0.00010 },
+  USDCAD: { basePrice: 1.40390, decimals: 5, tickVolatility: 0.00014, spread: 0.00015 },
+  XAUUSD: { basePrice: 4038.50, decimals: 2, tickVolatility: 0.65, spread: 0.30 },
+  GOLD: { basePrice: 4038.50, decimals: 2, tickVolatility: 0.65, spread: 0.30 },
+  'MCL1!': { basePrice: 102.85, decimals: 2, tickVolatility: 0.05, spread: 0.04 },
+  USOIL: { basePrice: 102.85, decimals: 2, tickVolatility: 0.05, spread: 0.04 },
+  BTCUSD: { basePrice: 80720.00, decimals: 2, tickVolatility: 12.0, spread: 10.0 },
+  US30: { basePrice: 52525.00, decimals: 2, tickVolatility: 4.0, spread: 3.0 },
 };
 
 export const getTimeframeDurationSeconds = (timeframe: CandlestickTimeframe): number => {
@@ -35,7 +38,7 @@ export const getTimeframeDurationSeconds = (timeframe: CandlestickTimeframe): nu
 
 export const getSymbolMetadata = (symbol: string): SymbolMarketMetadata => {
   return SYMBOL_METADATA_MAP[symbol] || {
-    basePrice: 1.085,
+    basePrice: 1.11400,
     decimals: 5,
     tickVolatility: 0.0001,
     spread: 0.00012,
@@ -100,6 +103,14 @@ export const generateRealisticCandles = (
     currentPrice = close;
   }
 
+  // Anchor the current active candle strictly to the benchmark price
+  if (rawPrices.length > 0) {
+    const last = rawPrices[rawPrices.length - 1];
+    last.close = meta.basePrice;
+    last.high = Number(Math.max(last.high, meta.basePrice).toFixed(meta.decimals));
+    last.low = Number(Math.min(last.low, meta.basePrice).toFixed(meta.decimals));
+  }
+
   return rawPrices;
 };
 
@@ -149,9 +160,15 @@ export const applyLiveTick = (
   if (typeof externalPrice === 'number' && !isNaN(externalPrice) && externalPrice > 0) {
     newClose = Number(externalPrice.toFixed(meta.decimals));
   } else {
-    // Micro tick delta
-    const delta = (Math.random() - 0.495) * (meta.tickVolatility * 0.45);
-    newClose = Math.max(0.0001, Number((lastBar.close + delta).toFixed(meta.decimals)));
+    // Mean-reverting micro-jitter bounded tightly around benchmark basePrice (anti-drift)
+    const anchor = meta.basePrice;
+    const drift = lastBar.close - anchor;
+    const meanReversion = -drift * 0.35;
+    const microJitter = (Math.random() - 0.5) * (meta.tickVolatility * 0.15);
+    const maxDev = meta.tickVolatility * 1.5;
+    let target = lastBar.close + meanReversion + microJitter;
+    target = Math.max(anchor - maxDev, Math.min(anchor + maxDev, target));
+    newClose = Math.max(0.0001, Number(target.toFixed(meta.decimals)));
   }
 
   const newHigh = Number(Math.max(lastBar.high, newClose).toFixed(meta.decimals));

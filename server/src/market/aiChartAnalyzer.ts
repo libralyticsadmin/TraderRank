@@ -12,13 +12,18 @@ import {
   AiBiasType,
 } from '../../../shared/src/types.js';
 import { AllTickAdapter } from './alltickAdapter.js';
+import { MarketCandlestickResponse, CandlestickTimeframe } from '../../../shared/src/types.js';
+
+export interface ICandleProvider {
+  fetchCandlesticks(symbol?: string, timeframe?: CandlestickTimeframe, count?: number): Promise<MarketCandlestickResponse>;
+}
 
 export class AiChartAnalyzer {
-  private alltickAdapter: AllTickAdapter;
+  private candleProvider: ICandleProvider;
   private cache: Map<string, { report: AiChartAnalysisReport; expiresAt: number }> = new Map();
 
-  constructor(alltickAdapter: AllTickAdapter) {
-    this.alltickAdapter = alltickAdapter;
+  constructor(candleProvider: ICandleProvider) {
+    this.candleProvider = candleProvider;
   }
 
   /**
@@ -33,10 +38,10 @@ export class AiChartAnalyzer {
 
     // 1. Fetch Candlesticks for the 4 Timeframes in parallel
     const [res15m, res4h, res1D, res1W] = await Promise.all([
-      this.alltickAdapter.fetchCandlesticks(symbol, '15m', 60),
-      this.alltickAdapter.fetchCandlesticks(symbol, '4h', 60),
-      this.alltickAdapter.fetchCandlesticks(symbol, '1D', 60),
-      this.alltickAdapter.fetchCandlesticks(symbol, '1W', 52),
+      this.candleProvider.fetchCandlesticks(symbol, '15m', 60),
+      this.candleProvider.fetchCandlesticks(symbol, '4h', 60),
+      this.candleProvider.fetchCandlesticks(symbol, '1D', 60),
+      this.candleProvider.fetchCandlesticks(symbol, '1W', 52),
     ]);
 
     const bars15m = res15m.bars;

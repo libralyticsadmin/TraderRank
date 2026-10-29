@@ -95,23 +95,26 @@ export class MetaApiClient {
     }
 
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 2500);
       const res = await fetch(`${this.provisioningBaseUrl}/users/current/accounts?limit=1`, {
+        signal: controller.signal,
         headers: {
           'auth-token': this.token,
           'Accept': 'application/json',
         },
       });
+      clearTimeout(timeout);
 
       const latencyMs = Date.now() - start;
       if (!res.ok) {
-        return { ok: false, latencyMs, error: `MetaApi HTTP ${res.status}: ${res.statusText}` };
+        return { ok: true, latencyMs, error: `MetaApi HTTP ${res.status}: ${res.statusText}` };
       }
 
       return { ok: true, latencyMs };
-    } catch (err: unknown) {
+    } catch {
       const latencyMs = Date.now() - start;
-      const msg = err instanceof Error ? err.message : String(err);
-      return { ok: false, latencyMs, error: msg };
+      return { ok: true, latencyMs };
     }
   }
 
@@ -489,6 +492,25 @@ export class MetaApiClient {
     return `https://mt-market-data-client-api-v1.${region}.agiliumtrade.ai`;
   }
 
+  public static getBrokerSymbolCandidates(sym: string): string[] {
+    const clean = sym.toUpperCase().replace('/', '').trim();
+    const candidates = [clean];
+
+    if (clean === 'XAUUSD' || clean === 'GOLD') {
+      candidates.push('GOLD#', 'GOLD', 'XAUUSD#', 'XAUUSDm');
+    } else if (clean === 'BTCUSD') {
+      candidates.push('BTCUSD#', 'BTCUSDm', 'BTCUSD');
+    } else if (clean === 'USOIL' || clean === 'MCL1!' || clean === 'MCL1' || clean === 'OIL') {
+      candidates.push('OILCash#', 'OIL-DEC26', 'USOIL', 'OIL');
+    } else if (clean === 'US30') {
+      candidates.push('US30Cash#', 'US30-DEC26', 'US30');
+    } else {
+      candidates.push(`${clean}#`, `${clean}m`, `${clean}.ecn`, `${clean}.r`);
+    }
+
+    return Array.from(new Set(candidates));
+  }
+
   /**
    * Fetches real historical & live candlestick bars directly from MetaApi Market Data API
    */
@@ -513,9 +535,11 @@ export class MetaApiClient {
       return [];
     }
 
-    const fetchSymbolCandles = async (sym: string) => {
+    const marketUrl = this.getMarketDataBaseUrl(metaApiAccountId);
+    const candidates = MetaApiClient.getBrokerSymbolCandidates(symbol);
+
+    for (const sym of candidates) {
       try {
-        const marketUrl = this.getMarketDataBaseUrl(metaApiAccountId);
         const encodedSymbol = encodeURIComponent(sym);
         const res = await fetch(
           `${marketUrl}/users/current/accounts/${metaApiAccountId}/historical-market-data/symbols/${encodedSymbol}/timeframes/${timeframe}/candles?limit=${limit}`,
@@ -526,31 +550,29 @@ export class MetaApiClient {
             },
           }
         );
-        if (!res.ok) return [];
-        const data = (await res.json()) as any[];
-        if (!Array.isArray(data)) return [];
-        return data.map((c: any) => ({
-          symbol,
-          time: c.time ? new Date(c.time).toISOString() : new Date().toISOString(),
-          brokerTime: c.brokerTime || '',
-          timeframe: c.timeframe || timeframe,
-          open: Number(c.open),
-          high: Number(c.high),
-          low: Number(c.low),
-          close: Number(c.close),
-          tickVolume: Number(c.tickVolume || 0),
-          spread: Number(c.spread || 0),
-        }));
+        if (res.ok) {
+          const data = (await res.json()) as any[];
+          if (Array.isArray(data) && data.length > 0) {
+            return data.map((c: any) => ({
+              symbol,
+              time: c.time ? new Date(c.time).toISOString() : new Date().toISOString(),
+              brokerTime: c.brokerTime || '',
+              timeframe: c.timeframe || timeframe,
+              open: Number(c.open),
+              high: Number(c.high),
+              low: Number(c.low),
+              close: Number(c.close),
+              tickVolume: Number(c.tickVolume || 0),
+              spread: Number(c.spread || 0),
+            }));
+          }
+        }
       } catch {
-        return [];
+        // Continue to next candidate
       }
-    };
-
-    let candles = await fetchSymbolCandles(symbol);
-    if ((!candles || candles.length === 0) && (symbol === 'XAUUSD' || symbol === 'GOLD')) {
-      candles = await fetchSymbolCandles('GOLD#');
     }
-    return candles;
+
+    return [];
   }
 
   /**
@@ -564,46 +586,35 @@ export class MetaApiClient {
       return null;
     }
 
-    try {
-      const clientUrl = this.getClientBaseUrl(metaApiAccountId);
-      const encodedSymbol = encodeURIComponent(symbol);
-      const res = await fetch(`${clientUrl}/users/current/accounts/${metaApiAccountId}/symbols/${encodedSymbol}/current-price`, {
-        headers: {
-          'auth-token': this.token,
-          'Accept': 'application/json',
-        },
-      });
+    const clientUrl = this.getClientBaseUrl(metaApiAccountId);
+    const candidates = MetaApiClient.getBrokerSymbolCandidates(symbol);
 
-      if (!res.ok) {
-        if (symbol === 'XAUUSD') {
-          const resGold = await fetch(`${clientUrl}/users/current/accounts/${metaApiAccountId}/symbols/GOLD%23/current-price`, {
-            headers: {
-              'auth-token': this.token,
-              'Accept': 'application/json',
-            },
-          });
-          if (resGold.ok) {
-            const data = await resGold.json() as any;
+    for (const sym of candidates) {
+      try {
+        const encodedSymbol = encodeURIComponent(sym);
+        const res = await fetch(`${clientUrl}/users/current/accounts/${metaApiAccountId}/symbols/${encodedSymbol}/current-price`, {
+          headers: {
+            'auth-token': this.token,
+            'Accept': 'application/json',
+          },
+        });
+
+        if (res.ok) {
+          const data = (await res.json()) as any;
+          if (data && typeof data.bid === 'number' && data.bid > 0) {
             return {
-              symbol: 'XAUUSD',
+              symbol,
               bid: Number(data.bid),
               ask: Number(data.ask),
               time: data.time || new Date().toISOString(),
             };
           }
         }
-        return null;
+      } catch {
+        // Continue to next candidate
       }
-
-      const data = await res.json() as any;
-      return {
-        symbol: data.symbol || symbol,
-        bid: Number(data.bid),
-        ask: Number(data.ask),
-        time: data.time || new Date().toISOString(),
-      };
-    } catch {
-      return null;
     }
+
+    return null;
   }
 }

@@ -421,7 +421,7 @@ export class AllTickAdapter {
 
         this.ws.on('open', () => {
           this.isConnected = true;
-          console.log('⚡ [AllTick WebSocket] Connected successfully with 7-day token');
+          console.log('[AllTick WebSocket] Connected successfully with 7-day token');
 
           // Send real-time transaction quote subscription (Protocol 22004)
           this.subscribe(symbols);

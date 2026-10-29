@@ -11,9 +11,9 @@ interface LanguageOption {
 }
 
 const LANGUAGE_OPTIONS: LanguageOption[] = [
-  { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸' },
-  { code: 'ja', name: 'Japanese', nativeName: '日本語', flag: '🇯🇵' },
-  { code: 'zh', name: 'Mandarin', nativeName: '简体中文', flag: '🇨🇳' },
+  { code: 'en', name: 'English', nativeName: 'English', flag: 'EN' },
+  { code: 'ja', name: 'Japanese', nativeName: '日本語', flag: 'JA' },
+  { code: 'zh', name: 'Mandarin', nativeName: '简体中文', flag: 'ZH' },
 ];
 
 interface LanguageSelectorProps {
@@ -76,8 +76,8 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'h
         aria-label="Select Language"
       >
         <Globe size={15} style={{ color: '#00F0FF', flexShrink: 0 }} />
-        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <span>{activeLang.flag}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ fontSize: '10px', fontWeight: 800, padding: '1px 5px', borderRadius: '4px', background: 'rgba(0, 240, 255, 0.1)', color: '#00F0FF' }}>{activeLang.flag}</span>
           <span>{activeLang.nativeName}</span>
         </span>
         <ChevronDown
@@ -158,7 +158,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'h
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '15px' }}>{opt.flag}</span>
+                  <span style={{ fontSize: '10px', fontWeight: 800, padding: '1px 5px', borderRadius: '4px', background: 'rgba(255, 255, 255, 0.08)', color: '#00F0FF' }}>{opt.flag}</span>
                   <div>
                     <div style={{ lineHeight: 1.2 }}>{opt.nativeName}</div>
                     <div style={{ fontSize: '10px', color: '#848E9C' }}>{opt.name}</div>

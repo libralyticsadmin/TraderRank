@@ -13,6 +13,7 @@ import {
   Plus,
   Eye,
   EyeOff,
+  X,
 } from 'lucide-react';
 import { CandlestickBar } from '../../../shared/src/types.ts';
 import {
@@ -376,7 +377,7 @@ function calculate(bars, params, indicators) {
               fontWeight: 700,
             }}
           >
-            ✕
+            <X size={15} />
           </button>
         </div>
 

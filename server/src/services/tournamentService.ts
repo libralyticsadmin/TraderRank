@@ -38,9 +38,9 @@ export class TournamentService {
     const weeklyBlitz: Tournament = {
       id: 'tourn_weekly_fx_blitz_01',
       title: 'Weekly FX Blitz Sprint',
-      description: '5-day institutional endurance sprint across XM, Axiory, Exness, and Vantage. Max 5% daily loss limit applies.',
+      description: '5-day institutional endurance sprint across XM, Axiory, Exness, and Vantage. Max 5% daily loss limit applies. Unlocks when 50 traders register.',
       type: 'WEEKLY_SPRINT',
-      status: 'ACTIVE',
+      status: 'UPCOMING',
       startDate: new Date(now.getTime() - 24 * 3600 * 1000).toISOString(),
       endDate: weeklyEndDate.toISOString(),
       prizePoolPips: 2500,
@@ -49,6 +49,7 @@ export class TournamentService {
       maxDailyLossPercent: 5.0,
       maxDrawdownPercent: 10.0,
       participantCount: 0,
+      minParticipantsToStart: 50,
       standings: [],
     };
 
@@ -59,9 +60,9 @@ export class TournamentService {
     const monthlyChallenge: Tournament = {
       id: 'tourn_monthly_prop_01',
       title: 'Monthly Prop Endurance Gauntlet',
-      description: '30-day institutional consistency trial. Strict trailing 10% drawdown enforcement and minimum 15 trades requirement.',
+      description: '30-day institutional consistency trial. Strict trailing 10% drawdown enforcement and minimum 15 trades requirement. Unlocks when 50 traders register.',
       type: 'MONTHLY_PROP',
-      status: 'ACTIVE',
+      status: 'UPCOMING',
       startDate: new Date(now.getTime() - 6 * 24 * 3600 * 1000).toISOString(),
       endDate: monthlyEndDate.toISOString(),
       prizePoolPips: 10000,
@@ -70,6 +71,7 @@ export class TournamentService {
       maxDailyLossPercent: 5.0,
       maxDrawdownPercent: 10.0,
       participantCount: 0,
+      minParticipantsToStart: 50,
       standings: [],
     };
 
@@ -85,21 +87,43 @@ export class TournamentService {
     return this.tournaments.get(id) || null;
   }
 
+  public isTournamentOpen(id: string): boolean {
+    const t = this.tournaments.get(id);
+    return t ? t.status === 'ACTIVE' : false;
+  }
+
   public joinTournament(params: {
     tournamentId: string;
     userId: string;
     username: string;
     avatarSymbol: string;
     broker: Broker;
-  }): { success: boolean; error?: string; standing?: TournamentStanding } {
+  }): {
+    success: boolean;
+    error?: string;
+    standing?: TournamentStanding;
+    status?: 'ACTIVE' | 'UPCOMING' | 'COMPLETED';
+    participantCount?: number;
+    minParticipantsToStart?: number;
+    remainingToOpen?: number;
+  } {
     const tournament = this.tournaments.get(params.tournamentId);
     if (!tournament) {
       return { success: false, error: 'Tournament not found' };
     }
 
+    const minRequired = tournament.minParticipantsToStart ?? 50;
+
     const existing = tournament.standings.find(s => s.userId === params.userId);
     if (existing) {
-      return { success: true, standing: existing };
+      return {
+        success: true,
+        standing: existing,
+        status: tournament.status,
+        participantCount: tournament.participantCount,
+        minParticipantsToStart: minRequired,
+        remainingToOpen: Math.max(0, minRequired - tournament.participantCount),
+      };
     }
 
     const newStanding: TournamentStanding = {
@@ -122,7 +146,22 @@ export class TournamentService {
 
     tournament.standings.push(newStanding);
     tournament.participantCount = tournament.standings.length;
-    return { success: true, standing: newStanding };
+
+    // Automatically transition to ACTIVE when 50 participants threshold is reached
+    if (tournament.participantCount >= minRequired) {
+      tournament.status = 'ACTIVE';
+    } else {
+      tournament.status = 'UPCOMING';
+    }
+
+    return {
+      success: true,
+      standing: newStanding,
+      status: tournament.status,
+      participantCount: tournament.participantCount,
+      minParticipantsToStart: minRequired,
+      remainingToOpen: Math.max(0, minRequired - tournament.participantCount),
+    };
   }
 
   public updateTraderTournamentStats(params: {

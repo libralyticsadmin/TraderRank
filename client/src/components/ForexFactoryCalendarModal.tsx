@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   RefreshCw,
   Flame,
+  X,
 } from 'lucide-react';
 import {
   EconomicCalendarResponse,
@@ -102,33 +103,29 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
         return {
           label: 'HIGH',
           color: '#ef4444',
-          bg: 'rgba(239, 68, 68, 0.18)',
-          border: 'rgba(239, 68, 68, 0.45)',
-          folder: '🔴',
+          bg: 'rgba(239, 68, 68, 0.14)',
+          border: 'rgba(239, 68, 68, 0.35)',
         };
       case 'MEDIUM':
         return {
           label: 'MED',
           color: '#f59e0b',
-          bg: 'rgba(245, 158, 11, 0.18)',
-          border: 'rgba(245, 158, 11, 0.45)',
-          folder: '🟠',
+          bg: 'rgba(245, 158, 11, 0.14)',
+          border: 'rgba(245, 158, 11, 0.35)',
         };
       case 'LOW':
         return {
           label: 'LOW',
-          color: '#fbbf24',
-          bg: 'rgba(251, 191, 36, 0.12)',
-          border: 'rgba(251, 191, 36, 0.3)',
-          folder: '🟡',
+          color: '#38bdf8',
+          bg: 'rgba(56, 189, 248, 0.12)',
+          border: 'rgba(56, 189, 248, 0.3)',
         };
       default:
         return {
           label: 'HOLIDAY',
           color: '#94a3b8',
-          bg: 'rgba(148, 163, 184, 0.12)',
+          bg: 'rgba(148, 163, 184, 0.10)',
           border: 'rgba(148, 163, 184, 0.25)',
-          folder: '⚪',
         };
     }
   };
@@ -259,7 +256,7 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
                 fontWeight: 700,
               }}
             >
-              ✕
+              <X size={15} />
             </button>
           </div>
         </div>
@@ -363,7 +360,8 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
                 cursor: 'pointer',
               }}
             >
-              🔴 {t.forexCalendar.highImpact} ({data?.highImpactCount || 0})
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ef4444', display: 'inline-block', marginRight: 6 }} />
+              {t.forexCalendar.highImpact} ({data?.highImpactCount || 0})
             </button>
             <button
               onClick={() => setSelectedImpact('MEDIUM')}
@@ -378,7 +376,8 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
                 cursor: 'pointer',
               }}
             >
-              🟠 {t.forexCalendar.mediumImpact} ({data?.mediumImpactCount || 0})
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b', display: 'inline-block', marginRight: 6 }} />
+              {t.forexCalendar.mediumImpact} ({data?.mediumImpactCount || 0})
             </button>
             <button
               onClick={() => setSelectedImpact('LOW')}
@@ -393,7 +392,8 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
                 cursor: 'pointer',
               }}
             >
-              🟡 {t.forexCalendar.lowImpact}
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fbbf24', display: 'inline-block', marginRight: 6 }} />
+              {t.forexCalendar.lowImpact}
             </button>
           </div>
 
@@ -561,7 +561,8 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
                                     gap: '4px',
                                   }}
                                 >
-                                  <span>{badge.folder}</span> {badge.label}
+                                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: badge.color, display: 'inline-block' }} />
+                                  <span>{badge.label}</span>
                                 </span>
                               </td>
 

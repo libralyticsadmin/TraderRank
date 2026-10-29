@@ -41,6 +41,7 @@ export class R2StorageService {
           accessKeyId: this.config.accessKeyId,
           secretAccessKey: this.config.secretAccessKey,
         },
+        maxAttempts: 1,
       });
     }
   }

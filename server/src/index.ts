@@ -8,10 +8,10 @@ const { server } = createServer();
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`====================================================`);
-  console.log(`🚀 TraderRank Core Infrastructure Running on Port ${PORT}`);
-  console.log(`📡 WebSocket Gateway: ws://0.0.0.0:${PORT}/ws`);
-  console.log(`🛡️ Secrets Vault: Initialized (AES-256-GCM)`);
-  console.log(`⚡ Ingestion Workers: MT Gateway & Exness Native Ready`);
-  console.log(`📊 Redis Streams Normalization: Active`);
+  console.log(`[CORE] TraderRank Core Infrastructure Running on Port ${PORT}`);
+  console.log(`[GATEWAY] WebSocket Gateway: ws://0.0.0.0:${PORT}/ws`);
+  console.log(`[VAULT] Secrets Vault: Initialized (AES-256-GCM)`);
+  console.log(`[INGEST] Ingestion Workers: MT Gateway & Exness Native Ready`);
+  console.log(`[STREAM] Redis Streams Normalization: Active`);
   console.log(`====================================================`);
 });

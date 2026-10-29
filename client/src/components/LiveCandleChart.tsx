@@ -261,6 +261,8 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
           const data = JSON.parse(text) as MarketCandlestickResponse;
           if (data.bars && data.bars.length > 0) {
             setBars(data.bars);
+            const lastBar = data.bars[data.bars.length - 1];
+            setLatestLivePrice(lastBar.close);
             if (data.source) setCandleSource(data.source);
             return;
           }
@@ -269,26 +271,71 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
         }
       }
       // Fallback to high-fidelity seed candles
-      setBars(generateRealisticCandles(symbol, timeframe, 80));
+      const fallback = generateRealisticCandles(symbol, timeframe, 80);
+      setBars(fallback);
+      if (fallback.length > 0) {
+        setLatestLivePrice(fallback[fallback.length - 1].close);
+      }
     } catch {
-      setBars(prev => (prev.length > 0 ? prev : generateRealisticCandles(symbol, timeframe, 80)));
+      const fallback = generateRealisticCandles(symbol, timeframe, 80);
+      setBars(prev => {
+        if (prev.length > 0) return prev;
+        setLatestLivePrice(fallback[fallback.length - 1].close);
+        return fallback;
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
+  const [latestLivePrice, setLatestLivePrice] = useState<number | null>(null);
+
   useEffect(() => {
+    setLatestLivePrice(null);
     fetchCandles();
   }, [symbol, timeframe]);
 
-  // High-Frequency Real-Time Live Ticking Engine (Runs 600ms continuously on all platforms)
+  // Periodic Authoritative Live Price Polling (every 2.5s) to guarantee zero price drift
+  useEffect(() => {
+    let isSubscribed = true;
+    const fetchLiveQuote = async () => {
+      try {
+        const res = await fetch('/api/market/quotes');
+        if (res.ok) {
+          const data = await res.json();
+          const cleanSym = symbol.replace('/', '').toUpperCase();
+          const q = data.quotes?.[cleanSym] || data.quotes?.[symbol];
+          if (q && typeof q.bid === 'number' && q.bid > 0) {
+            if (isSubscribed) {
+              setLatestLivePrice(q.bid);
+              setBars(prev => {
+                if (!prev || prev.length === 0) return prev;
+                return applyLiveTick(prev, symbol, timeframe, q.bid);
+              });
+            }
+          }
+        }
+      } catch {
+        // Continue
+      }
+    };
+
+    fetchLiveQuote();
+    const quoteInterval = setInterval(fetchLiveQuote, 2500);
+    return () => {
+      isSubscribed = false;
+      clearInterval(quoteInterval);
+    };
+  }, [symbol, timeframe]);
+
+  // High-Frequency Real-Time Live Ticking Engine (Synchronized with verified market prices)
   useEffect(() => {
     const tickTimer = setInterval(() => {
-      setBars(prev => applyLiveTick(prev, symbol, timeframe));
+      setBars(prev => applyLiveTick(prev, symbol, timeframe, latestLivePrice || undefined));
     }, 600);
 
     return () => clearInterval(tickTimer);
-  }, [symbol, timeframe]);
+  }, [symbol, timeframe, latestLivePrice]);
 
   // WebSocket real-time tick and candle listener (for full server environments)
   useEffect(() => {
@@ -316,6 +363,13 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
                 }
                 return next;
               });
+            }
+          } else if (msg.type === 'MARKET_QUOTES' && msg.data?.quotes) {
+            const cleanSym = symbol.replace('/', '').toUpperCase();
+            const q = msg.data.quotes[cleanSym] || msg.data.quotes[symbol];
+            if (q && typeof q.bid === 'number' && q.bid > 0) {
+              setLatestLivePrice(q.bid);
+              setBars(prev => applyLiveTick(prev, symbol, timeframe, q.bid));
             }
           }
         } catch {
@@ -519,8 +573,8 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
         const isForex = symbol === 'EURUSD' || symbol === 'GBPUSD' || symbol === 'AUDUSD' || symbol === 'USDCAD';
         const decimals = symbol === 'USDJPY' ? 3 : isForex ? 5 : 2;
         const labelText = isDemand
-          ? (isFresh ? '⚡ DEMAND ZONE' : 'DEMAND [TESTED]')
-          : (isFresh ? '🛡️ SUPPLY ZONE' : 'SUPPLY [TESTED]');
+          ? (isFresh ? 'DEMAND ZONE [FRESH]' : 'DEMAND [TESTED]')
+          : (isFresh ? 'SUPPLY ZONE [FRESH]' : 'SUPPLY [TESTED]');
         const priceSubText = `${zone.bottomPrice.toFixed(decimals)} - ${zone.topPrice.toFixed(decimals)}`;
 
         ctx.fillStyle = isDemand ? '#81d8d0' : '#fca5a5';
@@ -1721,16 +1775,17 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
               gap: '8px',
               padding: '6px 14px',
               borderRadius: '8px',
-              background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(10, 186, 181, 0.35) 100%)',
-              border: '1px solid rgba(168, 85, 247, 0.6)',
-              color: '#f3e8ff',
+              background: 'rgba(10, 186, 181, 0.08)',
+              border: '1px solid rgba(10, 186, 181, 0.35)',
+              color: '#0abab5',
               fontSize: '12px',
-              fontWeight: 800,
+              fontWeight: 700,
               cursor: 'pointer',
-              boxShadow: '0 0 16px rgba(168, 85, 247, 0.3)',
+              boxShadow: '0 0 12px rgba(10, 186, 181, 0.12)',
+              backdropFilter: 'blur(8px)',
             }}
           >
-            <Brain size={14} color="#c084fc" />
+            <Brain size={14} color="#0abab5" />
             <span>{t.chart.aiMultiTfQuickBtn}</span>
             <Sparkles size={12} color="#0abab5" />
           </button>
@@ -1744,21 +1799,21 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
               gap: '6px',
               padding: '6px 12px',
               borderRadius: '8px',
-              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(185, 28, 28, 0.25) 100%)',
-              border: '1px solid rgba(239, 68, 68, 0.5)',
-              color: '#fca5a5',
+              background: 'rgba(255, 255, 255, 0.04)',
+              border: '1px solid var(--border-subtle)',
+              color: 'var(--text-main)',
               fontSize: '12px',
-              fontWeight: 800,
+              fontWeight: 700,
               cursor: 'pointer',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
             }}
           >
-            <Calendar size={13} color="#ef4444" />
-            <span>{t.chart.forexFactoryQuickBtn} ({calendarData?.highImpactCount || 0} {t.forexCalendar.redFolders})</span>
-            <Flame size={12} fill="#ef4444" />
+            <Calendar size={13} color="#94a3b8" />
+            <span>{t.chart.forexFactoryQuickBtn} ({calendarData?.highImpactCount || 0})</span>
           </button>
         </div>
 
-        {/* AllTick 7-Day Live Feed Badge */}
+        {/* Live Feed Badge */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span
             style={{
@@ -1766,9 +1821,9 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
               fontWeight: 800,
               padding: '4px 10px',
               borderRadius: '8px',
-              background: 'rgba(10, 186, 181, 0.15)',
+              background: 'rgba(10, 186, 181, 0.12)',
               color: '#0abab5',
-              border: '1px solid rgba(10, 186, 181, 0.4)',
+              border: '1px solid rgba(10, 186, 181, 0.3)',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
@@ -1776,7 +1831,9 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
           >
             <Zap size={12} fill="#0abab5" />
             {candleSource === 'METAAPI_LIVE'
-              ? '⚡ MetaApi Live MT5 Broker Feed (XM / IC Markets)'
+              ? 'MetaApi Live MT5 Broker Feed (XM / IC Markets)'
+              : candleSource === 'TRADINGVIEW_LIVE'
+              ? 'TradingView Live Reference Feed (OANDA / FX / Binance)'
               : t.chart.allTickLiveBadge}
           </span>
 
@@ -2174,7 +2231,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
           <span>{t.chart.liveStreamActive}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#0abab5', fontWeight: 600 }}>
-          <span>⚡ MetaApi Live Broker Cloud Feed</span>
+          <span>MetaApi Live Broker Cloud Feed</span>
         </div>
       </div>
 

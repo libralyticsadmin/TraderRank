@@ -420,12 +420,12 @@ export const RewardsBadges: React.FC = () => {
                       padding: '4px 12px',
                       borderRadius: '6px',
                       border: 'none',
-                      background: 'linear-gradient(135deg, #F0B90B 0%, #FFA000 100%)',
+                      background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 100%)',
                       color: '#080b11',
-                      fontWeight: 900,
+                      fontWeight: 800,
                       fontSize: '11px',
                       cursor: 'pointer',
-                      boxShadow: '0 2px 10px rgba(240, 185, 11, 0.4)',
+                      boxShadow: '0 2px 10px rgba(0, 240, 255, 0.25)',
                       transition: 'transform 0.15s',
                     }}
                     onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')}
@@ -552,8 +552,18 @@ export const RewardsBadges: React.FC = () => {
                   </p>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
                     <span style={{ color: '#00F0FF', fontWeight: 700 }}>+{badge.xpReward} XP</span>
-                    <span style={{ color: '#848E9C', fontSize: '10px' }}>
-                      {badge.unlocked ? `✓ ${t.rewards.verified} (${badge.unlockedAt})` : `🔒 ${t.rewards.clickToInspect}`}
+                    <span style={{ color: '#848E9C', fontSize: '10px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      {badge.unlocked ? (
+                        <>
+                          <CheckCircle size={11} color="#00F0FF" />
+                          <span>{t.rewards.verified} ({badge.unlockedAt})</span>
+                        </>
+                      ) : (
+                        <>
+                          <Lock size={11} color="#64748b" />
+                          <span>{t.rewards.clickToInspect}</span>
+                        </>
+                      )}
                     </span>
                   </div>
                 </div>

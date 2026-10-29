@@ -95,14 +95,14 @@ export class DailyIntelService {
     const marketStatus = this.marketFeed.getStatus();
     const quotes = marketStatus.quotes || {};
 
-    const goldBid = quotes['XAUUSD']?.bid || 4174.50;
-    const oilBid = quotes['MCL1!']?.bid || quotes['USOIL']?.bid || 87.65;
-    const eurusdBid = quotes['EURUSD']?.bid || 1.1225;
-    const gbpusdBid = quotes['GBPUSD']?.bid || 1.3220;
-    const audusdBid = quotes['AUDUSD']?.bid || 0.6970;
-    const usdcadBid = quotes['USDCAD']?.bid || 1.4256;
-    const usdjpyBid = quotes['USDJPY']?.bid || 158.15;
-    const btcusdBid = quotes['BTCUSD']?.bid || 85850.00;
+    const goldBid = quotes['XAUUSD']?.bid || quotes['GOLD']?.bid || 4038.50;
+    const oilBid = quotes['MCL1!']?.bid || quotes['USOIL']?.bid || 102.85;
+    const eurusdBid = quotes['EURUSD']?.bid || 1.1140;
+    const gbpusdBid = quotes['GBPUSD']?.bid || 1.3307;
+    const audusdBid = quotes['AUDUSD']?.bid || 0.7037;
+    const usdcadBid = quotes['USDCAD']?.bid || 1.4039;
+    const usdjpyBid = quotes['USDJPY']?.bid || 158.24;
+    const btcusdBid = quotes['BTCUSD']?.bid || 80720.00;
 
     const assetAnalyses: DailyAssetAnalysis[] = [
       {
@@ -356,17 +356,17 @@ export class DailyIntelService {
     // Determine Anchor Price
     const marketStatus = this.marketFeed.getStatus();
     const quote = marketStatus.quotes?.[symbol];
-    let basePrice = quote ? quote.bid : 4174.50;
+    let basePrice = quote ? quote.bid : 4038.50;
 
     if (!quote) {
-      if (symbol.includes('EUR')) basePrice = 1.1225;
-      else if (symbol.includes('GBP')) basePrice = 1.3220;
-      else if (symbol.includes('AUD')) basePrice = 0.6970;
-      else if (symbol.includes('CAD')) basePrice = 1.4256;
-      else if (symbol.includes('JPY')) basePrice = 158.15;
-      else if (symbol.includes('BTC')) basePrice = 85850.00;
-      else if (symbol.includes('XAU') || symbol.includes('GOLD')) basePrice = 4174.50;
-      else if (symbol.includes('MCL') || symbol.includes('OIL') || symbol.includes('WTI') || symbol.includes('WTICO')) basePrice = 87.65;
+      if (symbol.includes('EUR')) basePrice = 1.1140;
+      else if (symbol.includes('GBP')) basePrice = 1.3307;
+      else if (symbol.includes('AUD')) basePrice = 0.7037;
+      else if (symbol.includes('CAD')) basePrice = 1.4039;
+      else if (symbol.includes('JPY')) basePrice = 158.24;
+      else if (symbol.includes('BTC')) basePrice = 80720.00;
+      else if (symbol.includes('XAU') || symbol.includes('GOLD')) basePrice = 4038.50;
+      else if (symbol.includes('MCL') || symbol.includes('OIL') || symbol.includes('WTI') || symbol.includes('WTICO')) basePrice = 102.85;
     }
 
     const isGold = symbol.includes('XAU') || symbol.includes('GOLD');
@@ -482,8 +482,8 @@ export class DailyIntelService {
       targetRR,
       actualRRRatio: `1:${primaryMultiplier.toFixed(1)} (Staged 1:3 / 1:5 / 1:7)`,
       directive: isQualified
-        ? `✅ TRADE SETUP QUALIFIED: Setup meets strict ${targetRR} Risk:Reward threshold. Follow staged profit taking (TP1 1:3, TP2 1:5, TP3 1:7) with invalidation stop at ${round(stopLoss)}.`
-        : `⛔ STRICT RULE: DO NOT ENTER TRADE. Risk:Reward ${targetRR} cannot be safely attained due to structural roadblock. Scan and trade an alternative pair.`,
+        ? `[QUALIFIED] TRADE SETUP QUALIFIED: Setup meets strict ${targetRR} Risk:Reward threshold. Follow staged profit taking (TP1 1:3, TP2 1:5, TP3 1:7) with invalidation stop at ${round(stopLoss)}.`
+        : `[RESTRICTED] DO NOT ENTER TRADE: Risk:Reward ${targetRR} cannot be safely attained due to structural roadblock. Scan and trade an alternative pair.`,
       reason: isQualified
         ? `Confirmed high-probability order block mitigation and clean liquidity runway to target 1:3, 1:5, and 1:7 asymmetric targets.`
         : `Insufficient room to achieve minimum ${targetRR} R:R before higher-timeframe resistance/support barrier. DO NOT FORCE TRADE.`,

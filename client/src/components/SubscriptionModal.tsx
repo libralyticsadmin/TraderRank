@@ -916,14 +916,14 @@ Libralytic Co.,Ltd / TraderRank FX Global Trading Platform.
                         fontSize: '13px',
                       }}
                     >
-                      <option value="US">🇺🇸 United States</option>
-                      <option value="GB">🇬🇧 United Kingdom</option>
-                      <option value="CA">🇨🇦 Canada</option>
-                      <option value="AU">🇦🇺 Australia</option>
-                      <option value="EU">🇪🇺 European Union</option>
-                      <option value="SG">🇸🇬 Singapore</option>
-                      <option value="JP">🇯🇵 Japan</option>
-                      <option value="CN">🇨🇳 China</option>
+                      <option value="US">US • United States</option>
+                      <option value="GB">GB • United Kingdom</option>
+                      <option value="CA">CA • Canada</option>
+                      <option value="AU">AU • Australia</option>
+                      <option value="EU">EU • European Union</option>
+                      <option value="SG">SG • Singapore</option>
+                      <option value="JP">JP • Japan</option>
+                      <option value="CN">CN • China</option>
                     </select>
                   </div>
                 </div>

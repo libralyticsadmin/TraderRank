@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Layers,
   ChevronRight,
+  X,
 } from 'lucide-react';
 import {
   AiChartAnalysisReport,
@@ -234,7 +235,7 @@ export const AiChartAnalysisModal: React.FC<AiChartAnalysisModalProps> = ({
                 fontWeight: 700,
               }}
             >
-              ✕
+              <X size={15} />
             </button>
           </div>
         </div>

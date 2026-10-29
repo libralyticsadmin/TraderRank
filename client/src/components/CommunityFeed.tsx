@@ -212,7 +212,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onOpenConnectWizar
               style={{
                 width: '72.8%',
                 height: '100%',
-                background: 'linear-gradient(90deg, #fbbf24, #0abab5)',
+                background: 'linear-gradient(90deg, #f59e0b, #fbbf24)',
                 borderRadius: '4px',
               }}
             />
@@ -255,7 +255,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onOpenConnectWizar
                   }}
                 >
                   <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: wsConnected ? '#10b981' : '#f59e0b' }} />
-                  {wsConnected ? '⚡ Live MetaApi Broker Feed' : 'Connecting Feed...'}
+                  {wsConnected ? 'Live MetaApi Broker Feed' : 'Connecting Feed...'}
                 </span>
               </div>
               <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>

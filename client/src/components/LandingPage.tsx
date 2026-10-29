@@ -11,6 +11,7 @@ import {
   Play,
   Target,
   Flame,
+  Check,
 } from 'lucide-react';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { TraderAvatar } from './TraderAvatar.tsx';
@@ -562,9 +563,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
               </div>
 
               <div style={{ fontSize: '12px', color: '#848E9C', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div>✓ {t.arena.maxDailyLoss}: 5.0% {t.arena.equityLoss}</div>
-                <div>✓ {t.arena.maxTrailingDD}: 10.0%</div>
-                <div>✓ 5 {t.arena.minTradesDesc}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Check size={12} color="#00F0FF" /> {t.arena.maxDailyLoss}: 5.0% {t.arena.equityLoss}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Check size={12} color="#00F0FF" /> {t.arena.maxTrailingDD}: 10.0%</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Check size={12} color="#00F0FF" /> 5 {t.arena.minTradesDesc}</div>
               </div>
             </div>
 
@@ -593,9 +594,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
               </div>
 
               <div style={{ fontSize: '12px', color: '#848E9C', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div>✓ {t.arena.maxDailyLoss}: 4.0% {t.arena.equityLoss}</div>
-                <div>✓ {t.arena.maxTrailingDD}: 8.0%</div>
-                <div>✓ 20 {t.arena.minTradesDesc}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Check size={12} color="#00F0FF" /> {t.arena.maxDailyLoss}: 4.0% {t.arena.equityLoss}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Check size={12} color="#00F0FF" /> {t.arena.maxTrailingDD}: 8.0%</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Check size={12} color="#00F0FF" /> 20 {t.arena.minTradesDesc}</div>
               </div>
             </div>
           </div>
@@ -719,11 +720,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
                   </div>
                   <div style={{ fontSize: '10px' }}>
                     {s.claimed ? (
-                      <span style={{ color: '#00DAC6', fontWeight: 700 }}>✓ {t.rewards.claimed}</span>
+                      <span style={{ color: '#00DAC6', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}><Check size={10} color="#00DAC6" /> {t.rewards.claimed}</span>
                     ) : s.current ? (
-                      <span style={{ color: '#F0B90B', fontWeight: 800 }}>⚡ {t.rewards.active}</span>
+                      <span style={{ color: '#F0B90B', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><span style={{ width: 5, height: 5, borderRadius: '50%', background: '#F0B90B', display: 'inline-block' }} /> {t.rewards.active}</span>
                     ) : (
-                      <span style={{ color: '#848E9C' }}>🔒 {t.rewards.locked}</span>
+                      <span style={{ color: '#848E9C', display: 'inline-flex', alignItems: 'center', gap: '3px' }}><Lock size={10} color="#848E9C" /> {t.rewards.locked}</span>
                     )}
                   </div>
                 </div>

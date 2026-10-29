@@ -559,8 +559,8 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
                 borderRadius: '12px',
                 marginBottom: '20px',
                 background: generatedPlan.tradeQualification?.canEnter
-                  ? 'linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(10, 186, 181, 0.15) 100%)'
-                  : 'linear-gradient(90deg, rgba(239, 68, 68, 0.2) 0%, rgba(245, 158, 11, 0.15) 100%)',
+                  ? 'linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.08) 100%)'
+                  : 'linear-gradient(90deg, rgba(239, 68, 68, 0.16) 0%, rgba(220, 38, 38, 0.08) 100%)',
                 border: `1px solid ${generatedPlan.tradeQualification?.canEnter ? 'var(--accent-green)' : '#ef4444'}`,
                 display: 'flex',
                 flexDirection: 'column',

@@ -175,7 +175,7 @@ export function createServer() {
   const metaApiClient = new MetaApiClient();
   const exnessApiClient = new ExnessApiClient();
   const brokerDir = BrokerDirectory.getInstance();
-  const aiAnalyzer = new AiChartAnalyzer(marketFeed.getAllTickAdapter());
+  const aiAnalyzer = new AiChartAnalyzer(marketFeed);
   const forexFactory = ForexFactoryService.getInstance();
   const dailyIntel = DailyIntelService.getInstance();
   const tournamentService = TournamentService.getInstance();

@@ -267,6 +267,7 @@ export interface Tournament {
   maxDailyLossPercent: number; // e.g. 5.0%
   maxDrawdownPercent: number; // e.g. 10.0%
   participantCount: number;
+  minParticipantsToStart?: number;
   standings: TournamentStanding[];
 }
 
@@ -371,7 +372,7 @@ export interface MarketCandlestickResponse {
   symbol: string;
   timeframe: CandlestickTimeframe;
   bars: CandlestickBar[];
-  source: 'METAAPI_LIVE' | 'ALLTICK_LIVE' | 'ALLTICK_CACHED' | 'SYNTHETIC_FALLBACK';
+  source: 'METAAPI_LIVE' | 'TRADINGVIEW_LIVE' | 'ALLTICK_LIVE' | 'ALLTICK_CACHED' | 'SYNTHETIC_FALLBACK';
   lastUpdated: string;
 }
 

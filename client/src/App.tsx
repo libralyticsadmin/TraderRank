@@ -386,8 +386,8 @@ export const App: React.FC = () => {
               fontWeight: 700,
             }}
           >
-            <Crown size={15} color={subscription.isActive ? 'var(--accent-cyan)' : 'var(--accent-gold)'} />
-            {subscription.isActive ? `👑 ${t.nav.proPlanActive}` : `👑 ${t.nav.unlockPro}`}
+            <Crown size={14} color={subscription.isActive ? '#0abab5' : '#94a3b8'} />
+            <span>{subscription.isActive ? t.nav.proPlanActive : t.nav.unlockPro}</span>
           </button>
           <button
             className="btn-secondary"
@@ -416,14 +416,18 @@ export const App: React.FC = () => {
           <span
             className="status-pill"
             style={{
-              background: marketStatus?.feedStatus === 'LIVE_NETWORK' ? 'rgba(0, 218, 198, 0.15)' : 'rgba(0, 240, 255, 0.15)',
-              color: marketStatus?.feedStatus === 'LIVE_NETWORK' ? 'var(--accent-green)' : 'var(--accent-cyan)',
-              border: `1px solid ${marketStatus?.feedStatus === 'LIVE_NETWORK' ? 'rgba(0, 218, 198, 0.3)' : 'rgba(0, 240, 255, 0.3)'}`,
+              background: marketStatus?.feedStatus === 'LIVE_NETWORK' ? 'rgba(10, 186, 181, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+              color: marketStatus?.feedStatus === 'LIVE_NETWORK' ? 'var(--accent-green)' : 'var(--text-muted)',
+              border: `1px solid ${marketStatus?.feedStatus === 'LIVE_NETWORK' ? 'rgba(10, 186, 181, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
               fontSize: '11px',
               padding: '3px 8px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
             }}
           >
-            {marketStatus?.feedStatus === 'LIVE_NETWORK' ? `● ${t.marketTicker.realApiLive}` : `● ${t.marketTicker.liveEngine}`}
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: marketStatus?.feedStatus === 'LIVE_NETWORK' ? '#10b981' : '#0abab5', display: 'inline-block' }} />
+            {marketStatus?.feedStatus === 'LIVE_NETWORK' ? t.marketTicker.realApiLive : t.marketTicker.liveEngine}
           </span>
         </div>
 
@@ -436,8 +440,8 @@ export const App: React.FC = () => {
                   <span className="bid-ask tabular">
                     {q.bid.toLocaleString(undefined, { minimumFractionDigits: sym === 'USDJPY' ? 3 : sym === 'BTCUSD' ? 2 : 5 })} / {q.ask.toLocaleString(undefined, { minimumFractionDigits: sym === 'USDJPY' ? 3 : sym === 'BTCUSD' ? 2 : 5 })}
                   </span>
-                  <span style={{ fontSize: '10px', color: 'var(--text-faint)' }}>
-                    {q.source === 'LIVE_API' ? '🌐 Live' : '⚡ Sim'}
+                  <span style={{ fontSize: '10px', color: 'var(--text-faint)', letterSpacing: '0.5px', fontWeight: 700 }}>
+                    {q.source === 'LIVE_API' ? 'LIVE' : 'SIM'}
                   </span>
                 </div>
               ))}

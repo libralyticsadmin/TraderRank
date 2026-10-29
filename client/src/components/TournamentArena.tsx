@@ -13,6 +13,7 @@ export interface Tournament {
   prizePoolUsd: number;
   prizePoolXp: number;
   entrantsCount: number;
+  minParticipantsToStart?: number;
   startsAt: string;
   endsAt: string;
   status: 'ACTIVE' | 'UPCOMING' | 'COMPLETED';
@@ -132,9 +133,10 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
       prizePoolUsd: 5000,
       prizePoolXp: 15000,
       entrantsCount: 0,
+      minParticipantsToStart: 50,
       startsAt: '2026-09-14T00:00:00Z',
       endsAt: '2026-09-19T21:00:00Z',
-      status: 'ACTIVE',
+      status: 'UPCOMING',
       rules: {
         maxDailyLossPct: 5.0,
         maxTrailingDrawdownPct: 10.0,
@@ -150,9 +152,10 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
       prizePoolUsd: 25000,
       prizePoolXp: 75000,
       entrantsCount: 0,
+      minParticipantsToStart: 50,
       startsAt: '2026-09-01T00:00:00Z',
       endsAt: '2026-09-30T23:59:59Z',
-      status: 'ACTIVE',
+      status: 'UPCOMING',
       rules: {
         maxDailyLossPct: 4.0,
         maxTrailingDrawdownPct: 8.0,
@@ -168,9 +171,10 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
       prizePoolUsd: 10000,
       prizePoolXp: 30000,
       entrantsCount: 0,
+      minParticipantsToStart: 50,
       startsAt: '2026-09-15T00:00:00Z',
       endsAt: '2026-09-20T23:59:59Z',
-      status: 'ACTIVE',
+      status: 'UPCOMING',
       rules: {
         maxDailyLossPct: 4.5,
         maxTrailingDrawdownPct: 9.0,
@@ -186,9 +190,10 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
       prizePoolUsd: 1500,
       prizePoolXp: 5000,
       entrantsCount: 0,
+      minParticipantsToStart: 50,
       startsAt: '2026-09-15T07:00:00Z',
       endsAt: '2026-09-15T16:00:00Z',
-      status: 'ACTIVE',
+      status: 'UPCOMING',
       rules: {
         maxDailyLossPct: 3.0,
         maxTrailingDrawdownPct: 6.0,
@@ -199,24 +204,30 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
   ];
 
   const tournaments: Tournament[] = serverTournaments.length > 0
-    ? serverTournaments.map(st => ({
-        id: st.id,
-        title: st.title,
-        subtitle: st.description,
-        type: st.type,
-        prizePoolUsd: st.prizePoolPips * 2,
-        prizePoolXp: st.prizePoolPips * 5,
-        entrantsCount: st.participantCount || st.standings?.length || 0,
-        startsAt: st.startDate,
-        endsAt: st.endDate,
-        status: st.status,
-        rules: {
-          maxDailyLossPct: st.maxDailyLossPercent || 5.0,
-          maxTrailingDrawdownPct: st.maxDrawdownPercent || 10.0,
-          minTradesCount: st.minTradesRequired || 5,
-          scoringFormula: t.arena.scoringFormula,
-        },
-      }))
+    ? serverTournaments.map(st => {
+        const count = st.participantCount || st.standings?.length || 0;
+        const target = st.minParticipantsToStart || 50;
+        const status = st.status || (count >= target ? 'ACTIVE' : 'UPCOMING');
+        return {
+          id: st.id,
+          title: st.title,
+          subtitle: st.description,
+          type: st.type,
+          prizePoolUsd: st.prizePoolPips * 2,
+          prizePoolXp: st.prizePoolPips * 5,
+          entrantsCount: count,
+          minParticipantsToStart: target,
+          startsAt: st.startDate,
+          endsAt: st.endDate,
+          status,
+          rules: {
+            maxDailyLossPct: st.maxDailyLossPercent || 5.0,
+            maxTrailingDrawdownPct: st.maxDrawdownPercent || 10.0,
+            minTradesCount: st.minTradesRequired || 5,
+            scoringFormula: t.arena.scoringFormula,
+          },
+        };
+      })
     : defaultTournaments;
 
   const currentTourney = tournaments.find(t => t.id === selectedTournamentId) || tournaments[0];
@@ -286,13 +297,42 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
                 >
                   {tourney.type === 'WEEKLY_SPRINT' ? t.arena.weeklySprint : t.arena.monthlyChampionship}
                 </span>
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Users size={13} /> {tourney.entrantsCount} {t.arena.participants}
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    color: tourney.entrantsCount >= (tourney.minParticipantsToStart || 50) ? 'var(--accent-green)' : 'var(--accent-cyan)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <Users size={12} /> {tourney.entrantsCount}/{tourney.minParticipantsToStart || 50} {tourney.entrantsCount >= (tourney.minParticipantsToStart || 50) ? 'LIVE' : 'REG'}
                 </span>
               </div>
 
               <h4 style={{ margin: '0 0 6px', fontSize: '18px', fontWeight: 800 }}>{tourney.title}</h4>
-              <p style={{ margin: '0 0 14px', fontSize: '12px', color: 'var(--text-muted)' }}>{tourney.subtitle}</p>
+              <p style={{ margin: '0 0 10px', fontSize: '12px', color: 'var(--text-muted)' }}>{tourney.subtitle}</p>
+
+              {/* 50-user threshold card progress */}
+              <div style={{ marginBottom: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                  <span>{tourney.entrantsCount >= (tourney.minParticipantsToStart || 50) ? 'Battle Active' : 'Opens at 50 Traders'}</span>
+                  <span style={{ fontWeight: 700, color: tourney.entrantsCount >= (tourney.minParticipantsToStart || 50) ? 'var(--accent-green)' : 'var(--accent-cyan)' }}>
+                    {Math.round((Math.min(tourney.entrantsCount, tourney.minParticipantsToStart || 50) / (tourney.minParticipantsToStart || 50)) * 100)}%
+                  </span>
+                </div>
+                <div style={{ width: '100%', height: '4px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      width: `${Math.min(100, (tourney.entrantsCount / (tourney.minParticipantsToStart || 50)) * 100)}%`,
+                      height: '100%',
+                      background: tourney.entrantsCount >= (tourney.minParticipantsToStart || 50) ? 'var(--accent-green)' : 'var(--accent-cyan)',
+                      boxShadow: '0 0 8px rgba(0, 240, 255, 0.4)',
+                    }}
+                  />
+                </div>
+              </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
                 <div>
@@ -310,76 +350,161 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
 
       {/* Active Tournament Detail & Live Bracket */}
       <div className="card-panel" style={{ padding: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Swords size={24} color="var(--accent-green)" />
-              <h3 style={{ margin: 0, fontSize: '22px', fontWeight: 800 }}>{currentTourney.title}</h3>
-              <span
+        {(() => {
+          const targetUsers = currentTourney.minParticipantsToStart || 50;
+          const isTournamentLive = currentTourney.entrantsCount >= targetUsers;
+          const remainingUsers = Math.max(0, targetUsers - currentTourney.entrantsCount);
+          const progressPct = Math.min(100, Math.round((currentTourney.entrantsCount / targetUsers) * 100));
+
+          return (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Swords size={24} color={isTournamentLive ? 'var(--accent-green)' : 'var(--accent-cyan)'} />
+                    <h3 style={{ margin: 0, fontSize: '22px', fontWeight: 800 }}>{currentTourney.title}</h3>
+                    {isTournamentLive ? (
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          padding: '3px 8px',
+                          borderRadius: '12px',
+                          background: 'rgba(239, 68, 68, 0.15)',
+                          color: '#ef4444',
+                          border: '1px solid rgba(239, 68, 68, 0.3)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                        }}
+                      >
+                        <Flame size={12} /> {t.arena.liveBattleBadge}
+                      </span>
+                    ) : (
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          padding: '3px 10px',
+                          borderRadius: '12px',
+                          background: 'rgba(0, 240, 255, 0.12)',
+                          color: 'var(--accent-cyan)',
+                          border: '1px solid rgba(0, 240, 255, 0.35)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                        }}
+                      >
+                        <Users size={12} /> OPENS AT 50 TRADERS ({currentTourney.entrantsCount}/{targetUsers})
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
+                    {currentTourney.subtitle} • {t.arena.antiGamblingRules} {t.arena.maxTrailingDD} {currentTourney.rules.maxTrailingDrawdownPct}%
+                  </p>
+                </div>
+
+                {/* Countdown & Entry CTA */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
+                      <Clock size={12} /> {t.arena.battleEndsIn}:
+                    </div>
+                    <div style={{ fontSize: '18px', fontWeight: 800, fontFamily: 'monospace', color: 'var(--accent-cyan)' }}>
+                      {String(timeLeft.days).padStart(2, '0')}d : {String(timeLeft.hours).padStart(2, '0')}h : {String(timeLeft.minutes).padStart(2, '0')}m : {String(timeLeft.seconds).padStart(2, '0')}s
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleJoinTournament}
+                    disabled={isJoining}
+                    style={{
+                      padding: '10px 20px',
+                      fontSize: '13px',
+                      fontWeight: 800,
+                      borderRadius: '10px',
+                      cursor: isJoining ? 'not-allowed' : 'pointer',
+                      background: isUserEntered
+                        ? 'rgba(10, 186, 181, 0.2)'
+                        : 'linear-gradient(135deg, var(--accent-green), #078c88)',
+                      color: isUserEntered ? 'var(--accent-green)' : '#000000',
+                      border: isUserEntered ? '1px solid var(--accent-green)' : 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {isUserEntered ? (
+                      <>
+                        <CheckCircle2 size={16} />{' '}
+                        {isTournamentLive
+                          ? t.arena.enteredTracking
+                          : `Registered • Waiting for 50 Traders (${currentTourney.entrantsCount}/${targetUsers})`}
+                      </>
+                    ) : (
+                      <>
+                        <Zap size={16} />{' '}
+                        {isJoining
+                          ? t.app.syncing
+                          : `Register for Tournament (${currentTourney.entrantsCount}/${targetUsers})`}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* 50-Participant Registration Progress Milestone */}
+              <div
                 style={{
-                  fontSize: '11px',
-                  fontWeight: 800,
-                  padding: '3px 8px',
+                  padding: '16px 20px',
                   borderRadius: '12px',
-                  background: 'rgba(239, 68, 68, 0.15)',
-                  color: '#ef4444',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
+                  background: isTournamentLive
+                    ? 'rgba(16, 185, 129, 0.08)'
+                    : 'linear-gradient(135deg, rgba(0, 240, 255, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%)',
+                  border: `1px solid ${isTournamentLive ? 'rgba(16, 185, 129, 0.3)' : 'rgba(0, 240, 255, 0.25)'}`,
+                  marginBottom: '20px',
                 }}
               >
-                <Flame size={12} /> {t.arena.liveBattleBadge}
-              </span>
-            </div>
-            <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
-              {currentTourney.subtitle} • {t.arena.antiGamblingRules} {t.arena.maxTrailingDD} {currentTourney.rules.maxTrailingDrawdownPct}%
-            </p>
-          </div>
-
-          {/* Countdown & Entry CTA */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
-                <Clock size={12} /> {t.arena.battleEndsIn}:
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Users size={16} color={isTournamentLive ? 'var(--accent-green)' : 'var(--accent-cyan)'} />
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#ffffff' }}>
+                      {isTournamentLive ? 'TOURNAMENT OPEN & LIVE' : 'TOURNAMENT OPENS AT 50 REGISTERED TRADERS'}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: isTournamentLive ? 'var(--accent-green)' : 'var(--accent-cyan)' }}>
+                    {currentTourney.entrantsCount} / {targetUsers} Registered ({progressPct}%)
+                  </span>
+                </div>
+                <div style={{ width: '100%', height: '8px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '4px', overflow: 'hidden', marginBottom: '8px' }}>
+                  <div
+                    style={{
+                      width: `${progressPct}%`,
+                      height: '100%',
+                      background: isTournamentLive
+                        ? 'linear-gradient(90deg, #10b981, #059669)'
+                        : 'linear-gradient(90deg, #00DAC6, #00F0FF)',
+                      borderRadius: '4px',
+                      boxShadow: '0 0 10px rgba(0, 240, 255, 0.4)',
+                      transition: 'width 0.4s ease',
+                    }}
+                  />
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                  <span>
+                    {isTournamentLive
+                      ? 'Target reached! Official live rankings and trading performance scoring are active.'
+                      : `${remainingUsers} more verified broker accounts needed to unlock official tournament round.`}
+                  </span>
+                  <span style={{ color: isTournamentLive ? 'var(--accent-green)' : 'var(--accent-cyan)', fontWeight: 600 }}>
+                    {isTournamentLive ? 'Battle Status: Active' : 'Status: Registration Stage'}
+                  </span>
+                </div>
               </div>
-              <div style={{ fontSize: '18px', fontWeight: 800, fontFamily: 'monospace', color: 'var(--accent-cyan)' }}>
-                {String(timeLeft.days).padStart(2, '0')}d : {String(timeLeft.hours).padStart(2, '0')}h : {String(timeLeft.minutes).padStart(2, '0')}m : {String(timeLeft.seconds).padStart(2, '0')}s
-              </div>
-            </div>
-
-            <button
-              onClick={handleJoinTournament}
-              disabled={isJoining}
-              style={{
-                padding: '10px 20px',
-                fontSize: '13px',
-                fontWeight: 800,
-                borderRadius: '10px',
-                cursor: isJoining ? 'not-allowed' : 'pointer',
-                background: isUserEntered
-                  ? 'rgba(10, 186, 181, 0.2)'
-                  : 'linear-gradient(135deg, var(--accent-green), #078c88)',
-                color: isUserEntered ? 'var(--accent-green)' : '#000000',
-                border: isUserEntered ? '1px solid var(--accent-green)' : 'none',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.2s',
-              }}
-            >
-              {isUserEntered ? (
-                <>
-                  <CheckCircle2 size={16} /> {t.arena.enteredTracking}
-                </>
-              ) : (
-                <>
-                  <Zap size={16} /> {isJoining ? t.app.syncing : t.arena.enterTournament}
-                </>
-              )}
-            </button>
-          </div>
-        </div>
+            </>
+          );
+        })()}
 
         {joinSuccessMsg && (
           <div
@@ -441,51 +566,66 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
           </div>
         </div>
 
-        {/* Standings Leaderboard */}
-        <h4 style={{ margin: '0 0 14px', fontSize: '16px', fontWeight: 700 }}>{t.arena.standingsTitle}</h4>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {participants.length === 0 ? (
-            <div
-              style={{
-                padding: '44px 24px',
-                textAlign: 'center',
-                background: 'rgba(255, 255, 255, 0.02)',
-                borderRadius: '16px',
-                border: '1px dashed var(--border-subtle)',
-              }}
-            >
-              <div
-                style={{
-                  width: '54px',
-                  height: '54px',
-                  borderRadius: '50%',
-                  background: 'rgba(0, 218, 198, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 14px',
-                }}
-              >
-                <Trophy size={26} color="var(--accent-cyan)" />
+        {/* Standings Leaderboard / Registered Contenders */}
+        {(() => {
+          const targetUsers = currentTourney.minParticipantsToStart || 50;
+          const isTournamentLive = currentTourney.entrantsCount >= targetUsers;
+
+          return (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>
+                  {isTournamentLive
+                    ? t.arena.standingsTitle
+                    : `Registered Contenders (${participants.length} / ${targetUsers})`}
+                </h4>
+                <span style={{ fontSize: '12px', color: isTournamentLive ? 'var(--accent-green)' : 'var(--accent-cyan)', fontWeight: 600 }}>
+                  {isTournamentLive ? 'Round Status: Active' : `Opens when 50 traders register (${Math.max(0, targetUsers - participants.length)} spots remaining)`}
+                </span>
               </div>
-              <h4 style={{ margin: '0 0 6px', fontSize: '17px', fontWeight: 800 }}>
-                Waiting for Verified Contenders
-              </h4>
-              <p style={{ margin: '0 auto 18px', maxWidth: '440px', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                No mock accounts are displayed. This arena is waiting for real traders to connect their broker account and enter. Join now to claim the #1 ranking spot!
-              </p>
-              {!isUserEntered && (
-                <button
-                  className="btn-primary"
-                  onClick={handleJoinTournament}
-                  disabled={isJoining}
-                  style={{ padding: '10px 22px', fontSize: '13px', fontWeight: 800, margin: '0 auto' }}
-                >
-                  <Zap size={15} /> Enter Arena With Connected Account
-                </button>
-              )}
-            </div>
-          ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {participants.length === 0 ? (
+                  <div
+                    style={{
+                      padding: '44px 24px',
+                      textAlign: 'center',
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      borderRadius: '16px',
+                      border: '1px dashed var(--border-subtle)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '54px',
+                        height: '54px',
+                        borderRadius: '50%',
+                        background: 'rgba(0, 218, 198, 0.1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        margin: '0 auto 14px',
+                      }}
+                    >
+                      <Trophy size={26} color="var(--accent-cyan)" />
+                    </div>
+                    <h4 style={{ margin: '0 0 6px', fontSize: '17px', fontWeight: 800 }}>
+                      {isTournamentLive ? 'Waiting for Verified Contenders' : `Registration Open • 0 / ${targetUsers} Registered`}
+                    </h4>
+                    <p style={{ margin: '0 auto 18px', maxWidth: '440px', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                      Tournament opens officially once 50 traders register their verified broker account. Join now to secure your entry in this institutional battle!
+                    </p>
+                    {!isUserEntered && (
+                      <button
+                        className="btn-primary"
+                        onClick={handleJoinTournament}
+                        disabled={isJoining}
+                        style={{ padding: '10px 22px', fontSize: '13px', fontWeight: 800, margin: '0 auto' }}
+                      >
+                        <Zap size={15} /> Register With Connected Broker
+                      </button>
+                    )}
+                  </div>
+                ) : (
             participants.map(p => {
             const isTop3 = p.rank <= 3;
             const isDq = p.status === 'DISQUALIFIED';
@@ -622,8 +762,12 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
                 </div>
               </div>
             );
-          }))}
-        </div>
+          })
+        )}
+      </div>
+    </>
+  );
+})()}
       </div>
     </div>
   );

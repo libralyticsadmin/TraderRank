@@ -23,24 +23,24 @@ const DEFAULT_TOP_PAIRS: MarketPairPrice[] = [
     symbol: 'EUR/USD',
     name: 'Euro / US Dollar',
     category: 'FOREX',
-    bid: 1.12245,
-    ask: 1.12257,
-    change24h: 0.38,
-    spreadPips: '0.12 pips',
-    high24h: 1.1265,
-    low24h: 1.1180,
+    bid: 1.11400,
+    ask: 1.11405,
+    change24h: 0.15,
+    spreadPips: '0.05 pips',
+    high24h: 1.1153,
+    low24h: 1.1113,
     tagKey: 'tagMostTraded',
   },
   {
     symbol: 'USD/JPY',
     name: 'US Dollar / Yen',
     category: 'FOREX',
-    bid: 158.142,
-    ask: 158.158,
-    change24h: 0.64,
-    spreadPips: '1.6 pips',
-    high24h: 158.60,
-    low24h: 157.60,
+    bid: 158.240,
+    ask: 158.245,
+    change24h: 0.18,
+    spreadPips: '0.5 pips',
+    high24h: 158.25,
+    low24h: 157.65,
     tagKey: 'tagAlltick',
     source: 'ALLTICK_LIVE',
   },
@@ -48,85 +48,85 @@ const DEFAULT_TOP_PAIRS: MarketPairPrice[] = [
     symbol: 'GBP/USD',
     name: 'British Pound / USD',
     category: 'FOREX',
-    bid: 1.32195,
-    ask: 1.32210,
-    change24h: -0.18,
+    bid: 1.33070,
+    ask: 1.33085,
+    change24h: 0.02,
     spreadPips: '0.15 pips',
-    high24h: 1.3260,
-    low24h: 1.3175,
+    high24h: 1.3321,
+    low24h: 1.3272,
     tagKey: 'tagHighMomentum',
   },
   {
     symbol: 'XAU/USD',
-    name: 'Spot Gold / USD',
+    name: 'Spot Gold / USD (OANDA / Broker)',
     category: 'METALS',
-    bid: 4174.20,
-    ask: 4174.50,
-    change24h: 1.42,
+    bid: 4038.50,
+    ask: 4038.80,
+    change24h: -0.52,
     spreadPips: '0.30 pips',
-    high24h: 4188.50,
-    low24h: 4160.10,
+    high24h: 4070.84,
+    low24h: 4028.19,
     tagKey: 'tagTopVolatility',
   },
   {
     symbol: 'MCL1!',
-    name: 'Micro WTI Crude Oil (OANDA/NYMEX)',
+    name: 'WTI Crude Oil (Spot / USOIL)',
     category: 'COMMODITIES',
-    bid: 87.62,
-    ask: 87.65,
-    change24h: 1.12,
-    spreadPips: '0.03 pips',
-    high24h: 88.50,
-    low24h: 86.80,
+    bid: 102.84,
+    ask: 102.88,
+    change24h: 2.65,
+    spreadPips: '0.04 pips',
+    high24h: 103.53,
+    low24h: 99.74,
     tagKey: 'tagOanda',
     source: 'ALLTICK_LIVE',
   },
   {
     symbol: 'BTC/USD',
-    name: 'Bitcoin / US Dollar',
+    name: 'Bitcoin / US Dollar (Binance Spot)',
     category: 'CRYPTO',
-    bid: 85845.00,
-    ask: 85855.00,
-    change24h: 2.85,
+    bid: 80720.00,
+    ask: 80730.00,
+    change24h: -0.25,
     spreadPips: '10.0 pips',
-    high24h: 86900.0,
-    low24h: 84800.0,
+    high24h: 81823.0,
+    low24h: 80397.0,
     tagKey: 'tagCrypto',
   },
   {
     symbol: 'AUD/USD',
     name: 'Australian Dollar / USD',
     category: 'FOREX',
-    bid: 0.69695,
-    ask: 0.69707,
-    change24h: 0.22,
-    spreadPips: '0.12 pips',
-    high24h: 0.7010,
-    low24h: 0.6930,
+    bid: 0.70370,
+    ask: 0.70380,
+    change24h: 0.17,
+    spreadPips: '0.10 pips',
+    high24h: 0.7054,
+    low24h: 0.7021,
     tagKey: 'tagAsiaPac',
   },
   {
     symbol: 'USD/CAD',
     name: 'US Dollar / CAD',
     category: 'FOREX',
-    bid: 1.42555,
-    ask: 1.42570,
-    change24h: -0.09,
+    bid: 1.40390,
+    ask: 1.40405,
+    change24h: -0.08,
     spreadPips: '0.15 pips',
-    high24h: 1.4290,
-    low24h: 1.4210,
+    high24h: 1.4068,
+    low24h: 1.4026,
     tagKey: 'tagCommodityFx',
   },
   {
     symbol: 'US30',
-    name: 'Wall Street 30 Index',
+    name: 'Wall Street 30 Index (OANDA)',
     category: 'INDICES',
-    bid: 51265.0,
-    ask: 51268.0,
-    change24h: 0.55,
+    bid: 52524.0,
+    ask: 52527.0,
+    change24h: 0.20,
     spreadPips: '3.0 pts',
-    high24h: 51450.0,
-    low24h: 50950.0,
+    high24h: 52676.0,
+    low24h: 52244.0,
     tagKey: 'tagUsSession',
   },
 ];
@@ -135,6 +135,7 @@ export const MarketLivePricesTicker: React.FC = () => {
   const { t } = useTranslation();
   const [pairs, setPairs] = useState<MarketPairPrice[]>(DEFAULT_TOP_PAIRS);
   const [lastTickSymbol, setLastTickSymbol] = useState<string | null>(null);
+  const anchorsRef = React.useRef<Record<string, { bid: number; ask: number }>>({});
 
   const getPairTag = (pair: MarketPairPrice) => {
     if (pair.tagKey && (t.marketTicker as any)[pair.tagKey]) {
@@ -155,7 +156,8 @@ export const MarketLivePricesTicker: React.FC = () => {
               prev.map(p => {
                 const rawSym = p.symbol.replace('/', '');
                 const q = data.quotes[rawSym] || data.quotes[p.symbol];
-                if (q) {
+                if (q && typeof q.bid === 'number' && q.bid > 0) {
+                  anchorsRef.current[p.symbol] = { bid: q.bid, ask: q.ask };
                   const isHigher = q.bid > p.bid;
                   const isLower = q.bid < p.bid;
                   return {
@@ -177,11 +179,11 @@ export const MarketLivePricesTicker: React.FC = () => {
     };
 
     fetchQuotes();
-    const timer = setInterval(fetchQuotes, 4000);
+    const timer = setInterval(fetchQuotes, 2500);
     return () => clearInterval(timer);
   }, []);
 
-  // Micro jitter simulation for ultra-responsive live floor aesthetics
+  // Micro jitter simulation strictly bounded to verified market quotes (zero drift)
   useEffect(() => {
     const jitter = setInterval(() => {
       setPairs(prev => {
@@ -191,23 +193,35 @@ export const MarketLivePricesTicker: React.FC = () => {
         const isCrypto = target.symbol.includes('BTC');
         const isGold = target.symbol.includes('XAU');
         const isOil = target.symbol.includes('MCL') || target.symbol.includes('OIL');
+        const isIndex = target.symbol === 'US30';
 
-        const delta = (Math.random() - 0.48) * (isCrypto ? 8.5 : isGold ? 0.35 : isOil ? 0.04 : isJpy ? 0.008 : 0.00008);
-        const newBid = Math.max(0.01, target.bid + delta);
-        const spreadNum = isCrypto ? 12.0 : isGold ? 0.25 : isOil ? 0.03 : isJpy ? 0.018 : 0.00012;
-        const newAsk = newBid + spreadNum;
+        const anchor = anchorsRef.current[target.symbol] || { bid: target.bid, ask: target.ask };
+        const drift = target.bid - anchor.bid;
+        const meanReversion = -drift * 0.4;
+
+        const maxDev = isCrypto ? 15.0 : isGold ? 0.40 : isIndex ? 10.0 : isOil ? 0.08 : isJpy ? 0.02 : 0.0002;
+        const microVol = isCrypto ? 4.0 : isGold ? 0.12 : isIndex ? 2.5 : isOil ? 0.02 : isJpy ? 0.004 : 0.00004;
+
+        const microJitter = (Math.random() - 0.5) * microVol;
+        let rawBid = target.bid + meanReversion + microJitter;
+        rawBid = Math.max(anchor.bid - maxDev, Math.min(anchor.bid + maxDev, rawBid));
+
+        const decimals = isJpy ? 3 : isCrypto || isGold || isOil || isIndex ? 2 : 5;
+        const newBid = Number(rawBid.toFixed(decimals));
+        const spreadNum = Math.max(0.00001, Number((anchor.ask - anchor.bid).toFixed(decimals)));
+        const newAsk = Number((newBid + spreadNum).toFixed(decimals));
 
         const updated = [...prev];
         updated[randIdx] = {
           ...target,
-          bid: isJpy ? Number(newBid.toFixed(3)) : isCrypto || isGold || isOil ? Number(newBid.toFixed(2)) : Number(newBid.toFixed(5)),
-          ask: isJpy ? Number(newAsk.toFixed(3)) : isCrypto || isGold || isOil ? Number(newAsk.toFixed(2)) : Number(newAsk.toFixed(5)),
-          priceDirection: delta >= 0 ? 'up' : 'down',
+          bid: newBid,
+          ask: newAsk,
+          priceDirection: newBid >= target.bid ? 'up' : 'down',
         };
         setLastTickSymbol(target.symbol);
         return updated;
       });
-    }, 2200);
+    }, 1800);
 
     return () => clearInterval(jitter);
   }, []);
