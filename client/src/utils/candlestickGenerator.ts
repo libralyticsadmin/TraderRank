@@ -13,8 +13,8 @@ export const SYMBOL_METADATA_MAP: Record<string, SymbolMarketMetadata> = {
   GBPUSD: { basePrice: 1.33070, decimals: 5, tickVolatility: 0.00015, spread: 0.00015 },
   AUDUSD: { basePrice: 0.70370, decimals: 5, tickVolatility: 0.00012, spread: 0.00010 },
   USDCAD: { basePrice: 1.40390, decimals: 5, tickVolatility: 0.00014, spread: 0.00015 },
-  XAUUSD: { basePrice: 4042.69, decimals: 2, tickVolatility: 0.65, spread: 0.30 },
-  GOLD: { basePrice: 4042.69, decimals: 2, tickVolatility: 0.65, spread: 0.30 },
+  XAUUSD: { basePrice: 4038.50, decimals: 2, tickVolatility: 0.65, spread: 0.30 },
+  GOLD: { basePrice: 4038.50, decimals: 2, tickVolatility: 0.65, spread: 0.30 },
   'MCL1!': { basePrice: 101.29, decimals: 2, tickVolatility: 0.05, spread: 0.04 },
   USOIL: { basePrice: 101.29, decimals: 2, tickVolatility: 0.05, spread: 0.04 },
   BTCUSD: { basePrice: 80316.97, decimals: 2, tickVolatility: 12.0, spread: 10.0 },
@@ -61,14 +61,15 @@ export const generateRealisticCandles = (
   const nowSec = Math.floor(Date.now() / 1000);
   const currentBoundary = Math.floor(nowSec / tfSec) * tfSec;
 
-  const tfVolMultiplier = Math.sqrt(tfSec / 60);
-  const barVolatility = meta.tickVolatility * tfVolMultiplier * 2.8;
+  // Cap timeframe volatility multiplier so multi-day/month frames don't blow out
+  const tfVolMultiplier = Math.min(5.5, Math.sqrt(tfSec / 60));
+  const barVolatility = meta.tickVolatility * tfVolMultiplier * 1.8;
 
   // Multi-harmonic cycle seed for natural technical market structure
   let currentPrice = targetAnchor;
   const cycle1 = 28 + Math.floor(Math.random() * 8);
   const cycle2 = 12 + Math.floor(Math.random() * 4);
-  const drift = (Math.random() - 0.48) * 0.001 * targetAnchor;
+  const drift = (Math.random() - 0.48) * 0.0008 * targetAnchor;
 
   const rawPrices: { open: number; close: number; high: number; low: number; volume: number; timestamp: number }[] = [];
 
@@ -76,8 +77,8 @@ export const generateRealisticCandles = (
   for (let i = count - 1; i >= 0; i--) {
     const timestamp = currentBoundary - i * tfSec;
     const wave =
-      Math.sin((i / cycle1) * Math.PI * 2) * barVolatility * 1.5 +
-      Math.cos((i / cycle2) * Math.PI * 2) * barVolatility * 0.8;
+      Math.sin((i / cycle1) * Math.PI * 2) * barVolatility * 1.2 +
+      Math.cos((i / cycle2) * Math.PI * 2) * barVolatility * 0.6;
     const noise = (Math.random() - 0.49) * barVolatility;
 
     const open = currentPrice;
@@ -86,12 +87,12 @@ export const generateRealisticCandles = (
 
     const bodyHigh = Math.max(open, close);
     const bodyLow = Math.min(open, close);
-    const wickHigh = Math.random() * barVolatility * 0.8;
-    const wickLow = Math.random() * barVolatility * 0.8;
+    const wickHigh = Math.random() * barVolatility * 0.45;
+    const wickLow = Math.random() * barVolatility * 0.45;
 
     const high = Number((bodyHigh + wickHigh).toFixed(meta.decimals));
     const low = Math.max(0.0001, Number((bodyLow - wickLow).toFixed(meta.decimals)));
-    const volume = Math.floor(350 + Math.random() * 1800 + Math.abs(close - open) / barVolatility * 1200);
+    const volume = Math.floor(350 + Math.random() * 1800 + (Math.abs(close - open) / barVolatility) * 1200);
 
     rawPrices.push({
       timestamp,
@@ -105,12 +106,13 @@ export const generateRealisticCandles = (
     currentPrice = close;
   }
 
-  // Anchor the current active candle strictly to the benchmark price
+  // Anchor the current active candle strictly to the benchmark price with realistic tight wicks
   if (rawPrices.length > 0) {
     const last = rawPrices[rawPrices.length - 1];
     last.close = targetAnchor;
-    last.high = Number(Math.max(last.high, targetAnchor).toFixed(meta.decimals));
-    last.low = Number(Math.min(last.low, targetAnchor).toFixed(meta.decimals));
+    const maxWick = barVolatility * 0.4;
+    last.high = Number((Math.max(last.open, targetAnchor) + Math.random() * maxWick * 0.5).toFixed(meta.decimals));
+    last.low = Number((Math.min(last.open, targetAnchor) - Math.random() * maxWick * 0.5).toFixed(meta.decimals));
   }
 
   return rawPrices;

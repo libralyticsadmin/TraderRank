@@ -13,6 +13,9 @@ import {
   Calendar,
   Flame,
   Layers,
+  RotateCcw,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
 import {
   CandlestickBar,
@@ -145,6 +148,26 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
   const mainCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const subCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // TradingView Interactive Chart Viewport & Scaling State
+  const [visibleBarsCount, setVisibleBarsCount] = useState<number>(55);
+  const [panOffset, setPanOffset] = useState<number>(0);
+  const [isAutoScale, setIsAutoScale] = useState<boolean>(true);
+  const [priceScaleMultiplier, setPriceScaleMultiplier] = useState<number>(1.0);
+  const [priceOffset, setPriceOffset] = useState<number>(0);
+  const [cursorType, setCursorType] = useState<string>('crosshair');
+
+  const dragStateRef = useRef<{
+    type: 'PRICE_SCALE' | 'TIME_SCALE' | 'CHART_PAN';
+    startX: number;
+    startY: number;
+    startMultiplier: number;
+    startPanOffset: number;
+    startPriceOffset: number;
+    startVisibleBars: number;
+    hasDragged?: boolean;
+  } | null>(null);
+  const adjustedRangeRef = useRef<number>(1);
 
   // Auto fetch AI analysis report for symbol
   useEffect(() => {
@@ -310,6 +333,10 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
 
   useEffect(() => {
     setLatestLivePrice(null);
+    setIsAutoScale(true);
+    setPriceScaleMultiplier(1.0);
+    setPriceOffset(0);
+    setPanOffset(0);
     fetchCandles();
   }, [symbol, timeframe]);
 
@@ -466,7 +493,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
     return null;
   }, [indicators.subIndicator, activeCustomSubId, customIndicators]);
 
-  // Main Canvas Rendering (Candles + Standard Overlays + Custom Overlays + AI Key Levels + Volume)
+  // Main Canvas Rendering (Candles + Standard Overlays + Custom Overlays + AI Key Levels + Volume + Interactive Scales)
   useEffect(() => {
     const canvas = mainCanvasRef.current;
     if (!canvas || bars.length === 0) return;
@@ -490,89 +517,202 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
 
     ctx.clearRect(0, 0, width, chartHeight);
 
-    // Calculate Min / Max Price Bounds across Candles & Overlays
+    // Coordinate mapping with dynamic zoom, pan, and right margin
+    const rightMarginBars = 4;
+    const totalBars = bars.length;
+    const barSpacing = plotWidth / (visibleBarsCount + rightMarginBars);
+    const candleWidth = Math.max(2, Math.min(22, barSpacing * 0.7));
+    const rightmostX = plotWidth - (rightMarginBars + 0.5) * barSpacing;
+    const getX = (idx: number) => rightmostX - (totalBars - 1 - idx - panOffset) * barSpacing;
+
+    // Calculate Min / Max Price Bounds across ONLY Visible Candles & Overlays
     let minPrice = Infinity;
     let maxPrice = -Infinity;
     let maxVolume = 0;
 
     bars.forEach((b, i) => {
+      const x = getX(i);
+      // Only include bars that are currently visible within the plot area
+      if (x < -barSpacing || x > plotWidth + barSpacing) return;
+
       if (b.low < minPrice) minPrice = b.low;
       if (b.high > maxPrice) maxPrice = b.high;
       if (b.volume > maxVolume) maxVolume = b.volume;
 
-      // Include Bollinger Bands in scale if active
+      // Include Bollinger Bands in scale if active and visible
       if (indicatorData?.bollinger) {
         const u = indicatorData.bollinger.upper[i];
         const l = indicatorData.bollinger.lower[i];
         if (u !== null && u > maxPrice) maxPrice = u;
         if (l !== null && l < minPrice) minPrice = l;
       }
+
+      // Include EMAs / SMA / VWAP if active
+      if (indicators.ema9 && indicatorData?.ema9?.[i] !== null && indicatorData?.ema9?.[i] !== undefined) {
+        const val = indicatorData.ema9[i] as number;
+        if (val > maxPrice) maxPrice = val;
+        if (val < minPrice) minPrice = val;
+      }
+      if (indicators.ema21 && indicatorData?.ema21?.[i] !== null && indicatorData?.ema21?.[i] !== undefined) {
+        const val = indicatorData.ema21[i] as number;
+        if (val > maxPrice) maxPrice = val;
+        if (val < minPrice) minPrice = val;
+      }
+      if (indicators.ema50 && indicatorData?.ema50?.[i] !== null && indicatorData?.ema50?.[i] !== undefined) {
+        const val = indicatorData.ema50[i] as number;
+        if (val > maxPrice) maxPrice = val;
+        if (val < minPrice) minPrice = val;
+      }
     });
 
-    // Also include active Demand & Supply zones in price scaling
+    // Fallback if no bars in view
+    if (minPrice === Infinity || maxPrice === -Infinity) {
+      const lastBar = bars[bars.length - 1];
+      minPrice = lastBar ? lastBar.low * 0.998 : 1;
+      maxPrice = lastBar ? lastBar.high * 1.002 : 2;
+    }
+
+    // Include active Demand & Supply zones in price scaling if visible
     if (indicatorData?.demandSupply && indicators.demandSupply) {
       indicatorData.demandSupply.zones.forEach(z => {
-        if (z.topPrice > maxPrice) maxPrice = z.topPrice;
-        if (z.bottomPrice < minPrice) minPrice = z.bottomPrice;
+        const startX = getX(z.startIndex);
+        if (startX <= plotWidth) {
+          if (z.topPrice > maxPrice) maxPrice = z.topPrice;
+          if (z.bottomPrice < minPrice) minPrice = z.bottomPrice;
+        }
       });
     }
 
-    // Also include custom overlays in scaling if active
+    // Include custom overlays in scaling if active
     Object.values(customIndicatorResults).forEach(({ def, data }) => {
       if (def.pane === 'OVERLAY') {
-        data.forEach(v => {
-          if (v !== null && typeof v === 'number') {
-            if (v < minPrice) minPrice = v;
-            if (v > maxPrice) maxPrice = v;
+        data.forEach((v, i) => {
+          const x = getX(i);
+          if (x >= -barSpacing && x <= plotWidth + barSpacing) {
+            if (v !== null && typeof v === 'number') {
+              if (v < minPrice) minPrice = v;
+              if (v > maxPrice) maxPrice = v;
+            }
           }
         });
       }
     });
 
-    const priceRange = maxPrice - minPrice || 1;
-    const pricePadding = priceRange * 0.08;
-    const adjustedMin = minPrice - pricePadding;
-    const adjustedMax = maxPrice + pricePadding;
-    const adjustedRange = adjustedMax - adjustedMin;
+    const rawRange = maxPrice - minPrice || 1;
+    // TradingView breathing room margins: 14% top margin, 22% bottom margin (leaves dedicated space for volume)
+    const baseMin = minPrice - rawRange * 0.22;
+    const baseMax = maxPrice + rawRange * 0.14;
+    const baseRange = baseMax - baseMin || 1;
+
+    let adjustedMin: number;
+    let adjustedMax: number;
+
+    if (isAutoScale) {
+      adjustedMin = baseMin;
+      adjustedMax = baseMax;
+    } else {
+      const centerPrice = (baseMin + baseMax) / 2 + priceOffset;
+      const halfRange = (baseRange / 2) / priceScaleMultiplier;
+      adjustedMin = centerPrice - halfRange;
+      adjustedMax = centerPrice + halfRange;
+    }
+
+    const adjustedRange = adjustedMax - adjustedMin || 1;
+    adjustedRangeRef.current = adjustedRange;
 
     const getY = (price: number) => {
       return paddingTop + plotHeight - ((price - adjustedMin) / adjustedRange) * plotHeight;
     };
+    const getPriceFromY = (y: number) => {
+      return adjustedMin + ((paddingTop + plotHeight - y) / plotHeight) * adjustedRange;
+    };
 
-    // Draw Grid Lines & Price Labels
+    // Draw Subtle Grid Lines & Professional Price Axis Ticks
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
     ctx.lineWidth = 1;
     ctx.fillStyle = '#64748b';
     ctx.font = '10px monospace';
     ctx.textAlign = 'left';
 
-    const gridLines = 5;
-    for (let i = 0; i <= gridLines; i++) {
-      const price = adjustedMin + (adjustedRange * i) / gridLines;
-      const y = getY(price);
+    // Calculate clean, readable price step increments (TradingView style)
+    const roughStep = adjustedRange / 6;
+    const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep || 1)));
+    const norm = roughStep / (magnitude || 1);
+    let niceNorm = 1;
+    if (norm < 1.5) niceNorm = 1;
+    else if (norm < 3.5) niceNorm = 2;
+    else if (norm < 7.5) niceNorm = 5;
+    else niceNorm = 10;
+    const priceStep = Math.max(magnitude * niceNorm, 0.00001);
+
+    const firstTick = Math.ceil(adjustedMin / priceStep) * priceStep;
+    const isForex = symbol === 'EURUSD' || symbol === 'GBPUSD' || symbol === 'AUDUSD' || symbol === 'USDCAD';
+    const priceDecimals = symbol === 'USDJPY' ? 3 : isForex ? 5 : 2;
+
+    for (let p = firstTick; p <= adjustedMax; p += priceStep) {
+      const y = getY(p);
+      if (y < paddingTop || y > paddingTop + plotHeight) continue;
 
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(plotWidth, y);
       ctx.stroke();
 
-      const isForex = symbol === 'EURUSD' || symbol === 'GBPUSD' || symbol === 'AUDUSD' || symbol === 'USDCAD';
-      const priceStr = price.toFixed(
-        symbol === 'USDJPY' ? 3 : isForex ? 5 : 2
-      );
-      ctx.fillText(priceStr, plotWidth + 8, y + 3);
+      ctx.fillText(p.toFixed(priceDecimals), plotWidth + 8, y + 3);
     }
 
-    const totalBars = bars.length;
-    const candleSpacing = plotWidth / totalBars;
-    const candleWidth = Math.max(3, candleSpacing * 0.65);
+    // Vertical Separator Line for Right Price Scale
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.beginPath();
+    ctx.moveTo(plotWidth, 0);
+    ctx.lineTo(plotWidth, chartHeight);
+    ctx.stroke();
+
+    // Horizontal Separator Line for Bottom Time Scale
+    ctx.beginPath();
+    ctx.moveTo(0, paddingTop + plotHeight);
+    ctx.lineTo(width, paddingTop + plotHeight);
+    ctx.stroke();
+
+    // Draw Time Axis Grid Lines & Timestamp Ticks
+    const timeStepBars = Math.max(5, Math.round(visibleBarsCount / 7));
+    ctx.fillStyle = '#64748b';
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'center';
+
+    for (let i = 0; i < totalBars; i += timeStepBars) {
+      const x = getX(i);
+      if (x < 15 || x > plotWidth - 15) continue;
+      const bar = bars[i];
+      const d = new Date(bar.timestamp * 1000);
+      const isIntraday = timeframe === '1m' || timeframe === '5m' || timeframe === '15m' || timeframe === '30m' || timeframe === '1h' || timeframe === '4h';
+      const timeStr = isIntraday
+        ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : `${d.getMonth() + 1}/${d.getDate()}`;
+
+      // Subtle vertical grid line
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.035)';
+      ctx.beginPath();
+      ctx.moveTo(x, paddingTop);
+      ctx.lineTo(x, paddingTop + plotHeight);
+      ctx.stroke();
+
+      // Timestamp on bottom axis
+      ctx.fillText(timeStr, x, paddingTop + plotHeight + 17);
+    }
+
+    // CLIP PATH for chart interior (prevents any candle or indicator from leaking into scales)
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, plotWidth, paddingTop + plotHeight);
+    ctx.clip();
 
     // 1. Draw Smart Money Concepts (SMC): Supply & Demand Zones
     if (indicatorData?.demandSupply && indicators.demandSupply) {
       const { zones } = indicatorData.demandSupply;
 
       zones.forEach(zone => {
-        const startX = Math.max(0, zone.startIndex * candleSpacing);
+        const startX = Math.max(0, getX(zone.startIndex));
         const endX = plotWidth;
         const topY = getY(zone.topPrice);
         const bottomY = getY(zone.bottomPrice);
@@ -605,7 +745,6 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
         ctx.setLineDash([]);
 
         // Label Badge
-        const isForex = symbol === 'EURUSD' || symbol === 'GBPUSD' || symbol === 'AUDUSD' || symbol === 'USDCAD';
         const decimals = symbol === 'USDJPY' ? 3 : isForex ? 5 : 2;
         const labelText = isDemand
           ? (isFresh ? 'DEMAND ZONE [FRESH]' : 'DEMAND [TESTED]')
@@ -629,7 +768,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       for (let i = 0; i < totalBars; i++) {
         const u = upper[i];
         if (u !== null) {
-          const x = i * candleSpacing + candleSpacing / 2;
+          const x = getX(i);
           const y = getY(u);
           if (first) {
             ctx.moveTo(x, y);
@@ -642,7 +781,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       for (let i = totalBars - 1; i >= 0; i--) {
         const l = lower[i];
         if (l !== null) {
-          const x = i * candleSpacing + candleSpacing / 2;
+          const x = getX(i);
           const y = getY(l);
           ctx.lineTo(x, y);
         }
@@ -658,7 +797,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       first = true;
       for (let i = 0; i < totalBars; i++) {
         if (upper[i] !== null) {
-          const x = i * candleSpacing + candleSpacing / 2;
+          const x = getX(i);
           const y = getY(upper[i] as number);
           if (first) { ctx.moveTo(x, y); first = false; } else { ctx.lineTo(x, y); }
         }
@@ -671,7 +810,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       first = true;
       for (let i = 0; i < totalBars; i++) {
         if (lower[i] !== null) {
-          const x = i * candleSpacing + candleSpacing / 2;
+          const x = getX(i);
           const y = getY(lower[i] as number);
           if (first) { ctx.moveTo(x, y); first = false; } else { ctx.lineTo(x, y); }
         }
@@ -685,7 +824,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       first = true;
       for (let i = 0; i < totalBars; i++) {
         if (middle[i] !== null) {
-          const x = i * candleSpacing + candleSpacing / 2;
+          const x = getX(i);
           const y = getY(middle[i] as number);
           if (first) { ctx.moveTo(x, y); first = false; } else { ctx.lineTo(x, y); }
         }
@@ -694,21 +833,23 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       ctx.setLineDash([]);
     }
 
-    // 3. Draw Volume Bars
+    // 3. Draw Volume Bars (Positioned in bottom 18% with clean spacing)
     const volumeHeight = plotHeight * 0.18;
     bars.forEach((bar, idx) => {
-      const x = idx * candleSpacing + candleSpacing / 2;
+      const x = getX(idx);
+      if (x < -candleWidth || x > plotWidth + candleWidth) return;
       const isBull = bar.close >= bar.open;
       const vHeight = maxVolume > 0 ? (bar.volume / maxVolume) * volumeHeight : 0;
       const vy = paddingTop + plotHeight - vHeight;
 
-      ctx.fillStyle = isBull ? 'rgba(10, 186, 181, 0.2)' : 'rgba(239, 68, 68, 0.2)';
+      ctx.fillStyle = isBull ? 'rgba(10, 186, 181, 0.22)' : 'rgba(239, 68, 68, 0.22)';
       ctx.fillRect(x - candleWidth / 2, vy, candleWidth, vHeight);
     });
 
     // 4. Draw Candlestick Bars & Wicks
     bars.forEach((bar, idx) => {
-      const x = idx * candleSpacing + candleSpacing / 2;
+      const x = getX(idx);
+      if (x < -candleWidth || x > plotWidth + candleWidth) return;
       const isBull = bar.close >= bar.open;
       const openY = getY(bar.open);
       const closeY = getY(bar.close);
@@ -720,7 +861,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       ctx.fillStyle = color;
 
       // Wick shadow line
-      ctx.lineWidth = 1.2;
+      ctx.lineWidth = Math.max(1, candleWidth > 6 ? 1.4 : 1);
       ctx.beginPath();
       ctx.moveTo(x, highY);
       ctx.lineTo(x, lowY);
@@ -738,7 +879,8 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
 
       // 5a. Subtle Swing Fractals (HH, HL, LH, LL)
       swings.forEach(sw => {
-        const x = sw.index * candleSpacing + candleSpacing / 2;
+        const x = getX(sw.index);
+        if (x < -20 || x > plotWidth + 20) return;
         const y = getY(sw.price);
         const isHigh = sw.type === 'HIGH';
 
@@ -755,8 +897,9 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
 
       // 5b. Breakout Lines & Marker Badges
       breaks.forEach(brk => {
-        const startX = brk.brokenIndex * candleSpacing + candleSpacing / 2;
-        const endX = brk.breakoutIndex * candleSpacing + candleSpacing / 2;
+        const startX = getX(brk.brokenIndex);
+        const endX = getX(brk.breakoutIndex);
+        if (endX < -20 || startX > plotWidth + 20) return;
         const y = getY(brk.brokenPrice);
 
         const isBull = brk.isBullish;
@@ -801,7 +944,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       for (let i = 0; i < totalBars; i++) {
         const val = data[i];
         if (val !== null) {
-          const x = i * candleSpacing + candleSpacing / 2;
+          const x = getX(i);
           const y = getY(val);
           if (first) {
             ctx.moveTo(x, y);
@@ -832,8 +975,8 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
           ctx.strokeStyle = dir === 1 ? '#10b981' : '#ef4444';
           ctx.lineWidth = 2;
           ctx.beginPath();
-          ctx.moveTo((i - 1) * candleSpacing + candleSpacing / 2, getY(p1));
-          ctx.lineTo(i * candleSpacing + candleSpacing / 2, getY(p2));
+          ctx.moveTo(getX(i - 1), getY(p1));
+          ctx.lineTo(getX(i), getY(p2));
           ctx.stroke();
         }
       }
@@ -846,7 +989,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       for (let i = 0; i < totalBars; i++) {
         const val = sar[i];
         if (val !== null) {
-          const x = i * candleSpacing + candleSpacing / 2;
+          const x = getX(i);
           const y = getY(val);
           ctx.beginPath();
           ctx.arc(x, y, 2, 0, Math.PI * 2);
@@ -866,7 +1009,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
         for (let i = 0; i < totalBars; i++) {
           const val = data[i];
           if (val !== null) {
-            const x = i * candleSpacing + candleSpacing / 2;
+            const x = getX(i);
             const y = getY(val);
             ctx.beginPath();
             ctx.arc(x, y, (def.lineWidth || 2) * 1.5, 0, Math.PI * 2);
@@ -874,12 +1017,12 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
           }
         }
       } else if (def.plotType === 'HISTOGRAM') {
-        const barW = Math.max(2, candleSpacing * 0.6);
+        const barW = Math.max(2, candleWidth * 0.85);
         ctx.fillStyle = def.color;
         for (let i = 0; i < totalBars; i++) {
           const val = data[i];
           if (val !== null) {
-            const x = i * candleSpacing + candleSpacing / 2;
+            const x = getX(i);
             const y = getY(val);
             const base = getY(adjustedMin);
             ctx.fillRect(x - barW / 2, Math.min(y, base), barW, Math.abs(y - base));
@@ -891,7 +1034,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
         for (let i = 0; i < totalBars; i++) {
           const val = data[i];
           if (val !== null) {
-            const x = i * candleSpacing + candleSpacing / 2;
+            const x = getX(i);
             const y = getY(val);
             if (first) {
               ctx.moveTo(x, y);
@@ -910,11 +1053,11 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       }
     });
 
-    // 8. Draw AI Multi-Timeframe Key Levels (If Plotted)
+    // 10. Draw AI Multi-Timeframe Key Levels (If Plotted)
     if (isAiPlottedOnChart && activeAiReport?.keyLevels) {
       const levels = activeAiReport.keyLevels;
 
-      const drawAiLevel = (price: number, label: string, color: string, isDashed = true) => {
+      const drawAiLevel = (price: number, color: string, isDashed = true) => {
         const y = getY(price);
         if (y < paddingTop - 20 || y > paddingTop + plotHeight + 20) return;
 
@@ -926,8 +1069,26 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
         ctx.lineTo(plotWidth, y);
         ctx.stroke();
         ctx.setLineDash([]);
+      };
 
-        // Small glowing label tag on right
+      drawAiLevel(levels.r2, '#ef4444');
+      drawAiLevel(levels.r1, '#fb7185');
+      drawAiLevel(levels.pivot, '#fbbf24', false);
+      drawAiLevel(levels.s1, '#34d399');
+      drawAiLevel(levels.s2, '#10b981');
+      drawAiLevel(levels.tp2, '#0abab5');
+      drawAiLevel(levels.stopLoss, '#f43f5e');
+    }
+
+    // End of Clipped Chart Interior Area
+    ctx.restore();
+
+    // 11. Draw AI Level Right Axis Badges (outside clipped area so tags are fully readable)
+    if (isAiPlottedOnChart && activeAiReport?.keyLevels) {
+      const levels = activeAiReport.keyLevels;
+      const drawAiBadge = (price: number, label: string, color: string) => {
+        const y = getY(price);
+        if (y < paddingTop || y > paddingTop + plotHeight) return;
         ctx.fillStyle = `${color}20`;
         ctx.fillRect(plotWidth + 2, y - 8, 80, 16);
         ctx.strokeStyle = color;
@@ -937,80 +1098,136 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
         ctx.textAlign = 'left';
         ctx.fillText(label, plotWidth + 6, y + 4);
       };
-
-      drawAiLevel(levels.r2, `R2: ${levels.r2}`, '#ef4444');
-      drawAiLevel(levels.r1, `R1: ${levels.r1}`, '#fb7185');
-      drawAiLevel(levels.pivot, `PIVOT: ${levels.pivot}`, '#fbbf24', false);
-      drawAiLevel(levels.s1, `S1: ${levels.s1}`, '#34d399');
-      drawAiLevel(levels.s2, `S2: ${levels.s2}`, '#10b981');
-      drawAiLevel(levels.tp2, `AI TP2: ${levels.tp2}`, '#0abab5');
-      drawAiLevel(levels.stopLoss, `AI SL: ${levels.stopLoss}`, '#f43f5e');
+      drawAiBadge(levels.r2, `R2: ${levels.r2}`, '#ef4444');
+      drawAiBadge(levels.r1, `R1: ${levels.r1}`, '#fb7185');
+      drawAiBadge(levels.pivot, `PIVOT: ${levels.pivot}`, '#fbbf24');
+      drawAiBadge(levels.s1, `S1: ${levels.s1}`, '#34d399');
+      drawAiBadge(levels.s2, `S2: ${levels.s2}`, '#10b981');
+      drawAiBadge(levels.tp2, `AI TP2: ${levels.tp2}`, '#0abab5');
+      drawAiBadge(levels.stopLoss, `AI SL: ${levels.stopLoss}`, '#f43f5e');
     }
 
-    // 9. Draw Current Live Price Line with Glow Tag & Pulsing Beacon
+    // 12. Draw Current Live Price Line with Glow Tag & Pulsing Beacon
     if (bars.length > 0) {
       const currentBar = bars[bars.length - 1];
       const currentY = getY(currentBar.close);
       const isUp = currentBar.close >= currentBar.open;
       const currentPriceColor = isUp ? '#0abab5' : '#ef4444';
 
-      // Horizontal dashed line
-      ctx.strokeStyle = currentPriceColor;
-      ctx.setLineDash([4, 4]);
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(0, currentY);
-      ctx.lineTo(plotWidth, currentY);
-      ctx.stroke();
-      ctx.setLineDash([]);
+      if (currentY >= paddingTop && currentY <= paddingTop + plotHeight) {
+        // Horizontal dashed line
+        ctx.strokeStyle = currentPriceColor;
+        ctx.setLineDash([4, 4]);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, currentY);
+        ctx.lineTo(plotWidth, currentY);
+        ctx.stroke();
+        ctx.setLineDash([]);
 
-      // Live Beacon Pulsing Halo on the tip of the current candle
-      const lastCandleX = (bars.length - 1) * candleSpacing + candleSpacing / 2;
-      ctx.beginPath();
-      ctx.arc(lastCandleX, currentY, 7, 0, Math.PI * 2);
-      ctx.fillStyle = isUp ? 'rgba(10, 186, 181, 0.25)' : 'rgba(239, 68, 68, 0.25)';
-      ctx.fill();
+        // Live Beacon Pulsing Halo on the tip of the current candle
+        const lastCandleX = getX(bars.length - 1);
+        if (lastCandleX >= 0 && lastCandleX <= plotWidth) {
+          ctx.beginPath();
+          ctx.arc(lastCandleX, currentY, 7, 0, Math.PI * 2);
+          ctx.fillStyle = isUp ? 'rgba(10, 186, 181, 0.25)' : 'rgba(239, 68, 68, 0.25)';
+          ctx.fill();
 
-      ctx.beginPath();
-      ctx.arc(lastCandleX, currentY, 3.5, 0, Math.PI * 2);
-      ctx.fillStyle = currentPriceColor;
-      ctx.fill();
+          ctx.beginPath();
+          ctx.arc(lastCandleX, currentY, 3.5, 0, Math.PI * 2);
+          ctx.fillStyle = currentPriceColor;
+          ctx.fill();
+        }
 
-      // Price Tag on Right Axis (Rounded Badge)
-      ctx.fillStyle = currentPriceColor;
-      ctx.beginPath();
-      ctx.roundRect(plotWidth + 2, currentY - 10, 78, 20, 4);
-      ctx.fill();
+        // Price Tag on Right Axis (Rounded Badge)
+        ctx.fillStyle = currentPriceColor;
+        ctx.beginPath();
+        ctx.roundRect(plotWidth + 2, currentY - 10, 78, 20, 4);
+        ctx.fill();
 
-      ctx.fillStyle = '#000000';
-      ctx.font = 'bold 11px monospace';
-      ctx.textAlign = 'center';
-      const isForex = symbol === 'EURUSD' || symbol === 'GBPUSD' || symbol === 'AUDUSD' || symbol === 'USDCAD';
-      const curPriceStr = currentBar.close.toFixed(
-        symbol === 'USDJPY' ? 3 : isForex ? 5 : 2
-      );
-      ctx.fillText(curPriceStr, plotWidth + 41, currentY + 4);
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 11px monospace';
+        ctx.textAlign = 'center';
+        const curPriceStr = currentBar.close.toFixed(priceDecimals);
+        ctx.fillText(curPriceStr, plotWidth + 41, currentY + 4);
+      }
     }
 
-    // 10. Crosshair on hover
-    if (mousePos && mousePos.x <= plotWidth) {
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+    // 13. TradingView Interactive Crosshair on hover
+    if (mousePos && mousePos.x <= plotWidth && mousePos.y <= paddingTop + plotHeight) {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
       ctx.setLineDash([2, 2]);
 
-      // Vertical line
+      // Vertical crosshair line
       ctx.beginPath();
       ctx.moveTo(mousePos.x, paddingTop);
       ctx.lineTo(mousePos.x, paddingTop + plotHeight);
       ctx.stroke();
 
-      // Horizontal line
+      // Horizontal crosshair line
       ctx.beginPath();
       ctx.moveTo(0, mousePos.y);
       ctx.lineTo(plotWidth, mousePos.y);
       ctx.stroke();
       ctx.setLineDash([]);
+
+      // Time Badge Pill on Bottom X-Axis
+      const activeBar = hoveredIndex !== null ? bars[hoveredIndex] : null;
+      if (activeBar) {
+        const d = new Date(activeBar.timestamp * 1000);
+        const isIntraday = timeframe === '1m' || timeframe === '5m' || timeframe === '15m' || timeframe === '30m' || timeframe === '1h' || timeframe === '4h';
+        const timeBadgeStr = isIntraday
+          ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+          : d.toLocaleDateString();
+
+        const badgeW = 76;
+        ctx.fillStyle = '#0f172a';
+        ctx.strokeStyle = '#0abab5';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(mousePos.x - badgeW / 2, paddingTop + plotHeight + 3, badgeW, 18, 3);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#0abab5';
+        ctx.font = 'bold 9px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(timeBadgeStr, mousePos.x, paddingTop + plotHeight + 15);
+      }
+
+      // Price Badge Pill on Right Y-Axis
+      const hoverPrice = getPriceFromY(mousePos.y);
+      const hoverPriceStr = hoverPrice.toFixed(priceDecimals);
+
+      ctx.fillStyle = '#0f172a';
+      ctx.strokeStyle = '#0abab5';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(plotWidth + 2, mousePos.y - 9, 78, 18, 3);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#0abab5';
+      ctx.font = 'bold 10px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(hoverPriceStr, plotWidth + 41, mousePos.y + 4);
     }
-  }, [bars, mousePos, symbol, indicatorData, customIndicatorResults, isAiPlottedOnChart, activeAiReport]);
+  }, [
+    bars,
+    mousePos,
+    symbol,
+    timeframe,
+    indicatorData,
+    customIndicatorResults,
+    isAiPlottedOnChart,
+    activeAiReport,
+    visibleBarsCount,
+    panOffset,
+    isAutoScale,
+    priceScaleMultiplier,
+    priceOffset,
+    hoveredIndex,
+  ]);
 
   // Sub-Indicator Canvas Rendering (RSI / MACD / Stochastic / ATR / Custom Subpanel)
   useEffect(() => {
@@ -1036,8 +1253,25 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
 
     ctx.clearRect(0, 0, width, chartHeight);
 
+    // Synchronize X-coordinates with main candlestick chart
+    const rightMarginBars = 4;
     const totalBars = bars.length;
-    const candleSpacing = plotWidth / totalBars;
+    const barSpacing = plotWidth / (visibleBarsCount + rightMarginBars);
+    const rightmostX = plotWidth - (rightMarginBars + 0.5) * barSpacing;
+    const getX = (idx: number) => rightmostX - (totalBars - 1 - idx - panOffset) * barSpacing;
+
+    // Vertical line separating sub-chart from right scale
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.beginPath();
+    ctx.moveTo(plotWidth, 0);
+    ctx.lineTo(plotWidth, chartHeight);
+    ctx.stroke();
+
+    // Clip plotting area to avoid bleeding
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, plotWidth, chartHeight);
+    ctx.clip();
 
     // A. Render RSI Sub-Chart (0 - 100 with 70 & 30 Zones)
     if (indicators.subIndicator === 'RSI' && indicatorData?.rsi) {
@@ -1061,11 +1295,6 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       ctx.stroke();
       ctx.setLineDash([]);
 
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '10px monospace';
-      ctx.fillText('70 OB', plotWidth + 8, y70 + 3);
-      ctx.fillText('30 OS', plotWidth + 8, y30 + 3);
-
       // Draw RSI Curve
       ctx.strokeStyle = '#81d8d0';
       ctx.lineWidth = 1.8;
@@ -1074,7 +1303,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       for (let i = 0; i < totalBars; i++) {
         const val = rsi[i];
         if (val !== null) {
-          const x = i * candleSpacing + candleSpacing / 2;
+          const x = getX(i);
           const y = getY_RSI(val);
           if (first) { ctx.moveTo(x, y); first = false; } else { ctx.lineTo(x, y); }
         }
@@ -1088,13 +1317,16 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
 
       let maxVal = 0.0001;
       for (let i = 0; i < totalBars; i++) {
-        const m = Math.abs(macdLine[i] || 0);
-        const s = Math.abs(signalLine[i] || 0);
-        const h = Math.abs(histogram[i] || 0);
-        maxVal = Math.max(maxVal, m, s, h);
+        const x = getX(i);
+        if (x >= -barSpacing && x <= plotWidth + barSpacing) {
+          const m = Math.abs(macdLine[i] || 0);
+          const s = Math.abs(signalLine[i] || 0);
+          const h = Math.abs(histogram[i] || 0);
+          maxVal = Math.max(maxVal, m, s, h);
+        }
       }
 
-      const getY_MACD = (val: number) => paddingTop + plotHeight / 2 - (val / (maxVal * 1.2)) * (plotHeight / 2);
+      const getY_MACD = (val: number) => paddingTop + plotHeight / 2 - (val / (maxVal * 1.25)) * (plotHeight / 2);
       const zeroY = getY_MACD(0);
 
       // Zero Line
@@ -1105,14 +1337,16 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       ctx.stroke();
 
       // Histogram Bars
-      const barW = Math.max(2, candleSpacing * 0.55);
+      const barW = Math.max(2, barSpacing * 0.55);
       for (let i = 0; i < totalBars; i++) {
         const h = histogram[i];
         if (h !== null) {
-          const x = i * candleSpacing + candleSpacing / 2;
-          const y = getY_MACD(h);
-          ctx.fillStyle = h >= 0 ? 'rgba(10, 186, 181, 0.7)' : 'rgba(239, 68, 68, 0.7)';
-          ctx.fillRect(x - barW / 2, Math.min(y, zeroY), barW, Math.abs(y - zeroY));
+          const x = getX(i);
+          if (x >= -barW && x <= plotWidth + barW) {
+            const y = getY_MACD(h);
+            ctx.fillStyle = h >= 0 ? 'rgba(10, 186, 181, 0.7)' : 'rgba(239, 68, 68, 0.7)';
+            ctx.fillRect(x - barW / 2, Math.min(y, zeroY), barW, Math.abs(y - zeroY));
+          }
         }
       }
 
@@ -1124,7 +1358,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       for (let i = 0; i < totalBars; i++) {
         const m = macdLine[i];
         if (m !== null) {
-          const x = i * candleSpacing + candleSpacing / 2;
+          const x = getX(i);
           const y = getY_MACD(m);
           if (first) { ctx.moveTo(x, y); first = false; } else { ctx.lineTo(x, y); }
         }
@@ -1139,7 +1373,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       for (let i = 0; i < totalBars; i++) {
         const s = signalLine[i];
         if (s !== null) {
-          const x = i * candleSpacing + candleSpacing / 2;
+          const x = getX(i);
           const y = getY_MACD(s);
           if (first) { ctx.moveTo(x, y); first = false; } else { ctx.lineTo(x, y); }
         }
@@ -1168,11 +1402,6 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       ctx.stroke();
       ctx.setLineDash([]);
 
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '10px monospace';
-      ctx.fillText('80', plotWidth + 8, y80 + 3);
-      ctx.fillText('20', plotWidth + 8, y20 + 3);
-
       // %K Line (Cyan)
       ctx.strokeStyle = '#0abab5';
       ctx.lineWidth = 1.6;
@@ -1180,7 +1409,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       let first = true;
       for (let i = 0; i < totalBars; i++) {
         if (k[i] !== null) {
-          const x = i * candleSpacing + candleSpacing / 2;
+          const x = getX(i);
           const y = getY_Stoch(k[i] as number);
           if (first) { ctx.moveTo(x, y); first = false; } else { ctx.lineTo(x, y); }
         }
@@ -1194,7 +1423,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       first = true;
       for (let i = 0; i < totalBars; i++) {
         if (d[i] !== null) {
-          const x = i * candleSpacing + candleSpacing / 2;
+          const x = getX(i);
           const y = getY_Stoch(d[i] as number);
           if (first) { ctx.moveTo(x, y); first = false; } else { ctx.lineTo(x, y); }
         }
@@ -1207,12 +1436,16 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       const atr = indicatorData.atr;
       let minAtr = Infinity;
       let maxAtr = -Infinity;
-      atr.forEach(v => {
-        if (v !== null) {
-          if (v < minAtr) minAtr = v;
-          if (v > maxAtr) maxAtr = v;
+      for (let i = 0; i < totalBars; i++) {
+        const x = getX(i);
+        if (x >= -barSpacing && x <= plotWidth + barSpacing) {
+          const v = atr[i];
+          if (v !== null) {
+            if (v < minAtr) minAtr = v;
+            if (v > maxAtr) maxAtr = v;
+          }
         }
-      });
+      }
       const range = maxAtr - minAtr || 0.0001;
       const getY_ATR = (val: number) => paddingTop + plotHeight - ((val - minAtr) / range) * plotHeight;
 
@@ -1222,7 +1455,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       let first = true;
       for (let i = 0; i < totalBars; i++) {
         if (atr[i] !== null) {
-          const x = i * candleSpacing + candleSpacing / 2;
+          const x = getX(i);
           const y = getY_ATR(atr[i] as number);
           if (first) { ctx.moveTo(x, y); first = false; } else { ctx.lineTo(x, y); }
         }
@@ -1237,12 +1470,16 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
         const data = res.data;
         let minVal = Infinity;
         let maxVal = -Infinity;
-        data.forEach(v => {
-          if (v !== null && typeof v === 'number') {
-            if (v < minVal) minVal = v;
-            if (v > maxVal) maxVal = v;
+        for (let i = 0; i < totalBars; i++) {
+          const x = getX(i);
+          if (x >= -barSpacing && x <= plotWidth + barSpacing) {
+            const v = data[i];
+            if (v !== null && typeof v === 'number') {
+              if (v < minVal) minVal = v;
+              if (v > maxVal) maxVal = v;
+            }
           }
-        });
+        }
 
         if (minVal === Infinity) {
           minVal = 0;
@@ -1260,27 +1497,20 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
           ctx.moveTo(0, zY);
           ctx.lineTo(plotWidth, zY);
           ctx.stroke();
-          ctx.fillStyle = '#94a3b8';
-          ctx.font = '9px monospace';
-          ctx.fillText('0', plotWidth + 8, zY + 3);
         }
 
-        // Top & Bottom Bounds Text
-        ctx.fillStyle = '#64748b';
-        ctx.font = '9px monospace';
-        ctx.fillText(maxVal.toFixed(2), plotWidth + 8, paddingTop + 8);
-        ctx.fillText(minVal.toFixed(2), plotWidth + 8, paddingTop + plotHeight);
-
         if (activeCustomSubDef.plotType === 'HISTOGRAM') {
-          const barW = Math.max(2, candleSpacing * 0.6);
+          const barW = Math.max(2, barSpacing * 0.55);
           const zeroY = minVal < 0 && maxVal > 0 ? getY_Custom(0) : paddingTop + plotHeight;
           ctx.fillStyle = activeCustomSubDef.color;
           for (let i = 0; i < totalBars; i++) {
             const v = data[i];
             if (v !== null) {
-              const x = i * candleSpacing + candleSpacing / 2;
-              const y = getY_Custom(v);
-              ctx.fillRect(x - barW / 2, Math.min(y, zeroY), barW, Math.max(2, Math.abs(y - zeroY)));
+              const x = getX(i);
+              if (x >= -barW && x <= plotWidth + barW) {
+                const y = getY_Custom(v);
+                ctx.fillRect(x - barW / 2, Math.min(y, zeroY), barW, Math.max(2, Math.abs(y - zeroY)));
+              }
             }
           }
         } else {
@@ -1292,7 +1522,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
           for (let i = 0; i < totalBars; i++) {
             const val = data[i];
             if (val !== null) {
-              const x = i * candleSpacing + candleSpacing / 2;
+              const x = getX(i);
               const y = getY_Custom(val);
               if (first) {
                 ctx.moveTo(x, y);
@@ -1306,7 +1536,176 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
         }
       }
     }
-  }, [bars, indicators.subIndicator, indicatorData, activeCustomSubDef, customIndicatorResults]);
+
+    // End of Clipped Plot Area
+    ctx.restore();
+
+    // Right Axis Labels for Subpanel
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'left';
+    if (indicators.subIndicator === 'RSI') {
+      const getY_RSI = (val: number) => paddingTop + plotHeight - (val / 100) * plotHeight;
+      ctx.fillText('70 OB', plotWidth + 8, getY_RSI(70) + 3);
+      ctx.fillText('30 OS', plotWidth + 8, getY_RSI(30) + 3);
+    } else if (indicators.subIndicator === 'STOCH') {
+      const getY_Stoch = (val: number) => paddingTop + plotHeight - (val / 100) * plotHeight;
+      ctx.fillText('80', plotWidth + 8, getY_Stoch(80) + 3);
+      ctx.fillText('20', plotWidth + 8, getY_Stoch(20) + 3);
+    }
+
+    // Synchronized crosshair vertical line across sub-panel
+    if (mousePos && mousePos.x <= plotWidth) {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+      ctx.setLineDash([2, 2]);
+      ctx.beginPath();
+      ctx.moveTo(mousePos.x, 0);
+      ctx.lineTo(mousePos.x, chartHeight);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }, [bars, mousePos, indicators.subIndicator, indicatorData, activeCustomSubDef, customIndicatorResults, visibleBarsCount, panOffset]);
+
+  // Handle global mouse dragging for Price Scale, Time Scale, and Chart Panning
+  useEffect(() => {
+    const onWindowMouseMove = (e: MouseEvent) => {
+      const ds = dragStateRef.current;
+      if (!ds) return;
+
+      const deltaX = e.clientX - ds.startX;
+      const deltaY = e.clientY - ds.startY;
+      if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
+        ds.hasDragged = true;
+      }
+
+      if (ds.type === 'PRICE_SCALE') {
+        // Dragging UP stretches price range (candles taller), DOWN compresses
+        const sensitivity = 0.005;
+        const nextMultiplier = Math.max(0.12, Math.min(8.0, ds.startMultiplier * Math.exp(-deltaY * sensitivity)));
+        setPriceScaleMultiplier(nextMultiplier);
+        setIsAutoScale(false);
+      } else if (ds.type === 'TIME_SCALE') {
+        // Dragging left zooms out (increases bars), right zooms in (fewer bars)
+        const sensitivity = 0.35;
+        const nextBars = Math.max(15, Math.min(220, Math.round(ds.startVisibleBars - deltaX * sensitivity)));
+        setVisibleBarsCount(nextBars);
+      } else if (ds.type === 'CHART_PAN') {
+        const canvas = mainCanvasRef.current;
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        const plotWidth = rect.width - 85;
+        const barSpacing = plotWidth / (ds.startVisibleBars + 4);
+
+        // Dragging right pulls earlier bars (positive panOffset)
+        const barsDelta = deltaX / barSpacing;
+        const maxPan = Math.max(0, bars.length - 8);
+        const nextPan = Math.max(-10, Math.min(maxPan, ds.startPanOffset + barsDelta));
+        setPanOffset(nextPan);
+
+        // If price scale is manual, also pan vertically
+        if (!isAutoScale) {
+          const plotHeight = rect.height - 26 - 16;
+          const priceSensitivity = (adjustedRangeRef.current || 1) / plotHeight;
+          setPriceOffset(ds.startPriceOffset + deltaY * priceSensitivity);
+        }
+      }
+    };
+
+    const onWindowMouseUp = () => {
+      if (dragStateRef.current) {
+        dragStateRef.current = null;
+        setCursorType('crosshair');
+      }
+    };
+
+    window.addEventListener('mousemove', onWindowMouseMove);
+    window.addEventListener('mouseup', onWindowMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', onWindowMouseMove);
+      window.removeEventListener('mouseup', onWindowMouseUp);
+    };
+  }, [bars.length, isAutoScale]);
+
+  // Interactive mouse event handlers
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = mainCanvasRef.current;
+    if (!canvas || bars.length === 0) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const paddingRight = 85;
+    const paddingBottom = 26;
+    const plotWidth = rect.width - paddingRight;
+
+    let dragType: 'PRICE_SCALE' | 'TIME_SCALE' | 'CHART_PAN';
+    if (x >= plotWidth) {
+      dragType = 'PRICE_SCALE';
+      setCursorType('ns-resize');
+    } else if (y >= rect.height - paddingBottom) {
+      dragType = 'TIME_SCALE';
+      setCursorType('ew-resize');
+    } else {
+      dragType = 'CHART_PAN';
+      setCursorType('grabbing');
+    }
+
+    dragStateRef.current = {
+      type: dragType,
+      startX: e.clientX,
+      startY: e.clientY,
+      startMultiplier: priceScaleMultiplier,
+      startPanOffset: panOffset,
+      startPriceOffset: priceOffset,
+      startVisibleBars: visibleBarsCount,
+      hasDragged: false,
+    };
+  };
+
+  const handleDoubleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = mainCanvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const paddingRight = 85;
+    const paddingBottom = 26;
+    const plotWidth = rect.width - paddingRight;
+
+    if (x >= plotWidth) {
+      // Double click on price scale -> reset price auto-scale
+      setIsAutoScale(true);
+      setPriceScaleMultiplier(1.0);
+      setPriceOffset(0);
+    } else if (y >= rect.height - paddingBottom) {
+      // Double click on time scale -> reset zoom & pan
+      setVisibleBarsCount(55);
+      setPanOffset(0);
+    } else {
+      // Double click on chart body -> reset all
+      setIsAutoScale(true);
+      setPriceScaleMultiplier(1.0);
+      setPriceOffset(0);
+      setVisibleBarsCount(55);
+      setPanOffset(0);
+    }
+  };
+
+  const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    if (e.ctrlKey || e.metaKey) {
+      // Vertical price scaling
+      const factor = e.deltaY < 0 ? 1.08 : 0.92;
+      setPriceScaleMultiplier(prev => Math.max(0.12, Math.min(8.0, prev * factor)));
+      setIsAutoScale(false);
+    } else {
+      // Horizontal time scaling (zoom)
+      const zoomIn = e.deltaY < 0;
+      const factor = zoomIn ? 0.90 : 1.10;
+      setVisibleBarsCount(prev => Math.max(15, Math.min(220, Math.round(prev * factor))));
+    }
+  };
 
   // Mouse hover coordination
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -1317,21 +1716,40 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     const paddingRight = 85;
+    const paddingBottom = 26;
     const plotWidth = rect.width - paddingRight;
 
-    if (x <= plotWidth) {
-      setMousePos({ x, y });
-      const barIndex = Math.min(bars.length - 1, Math.max(0, Math.floor((x / plotWidth) * bars.length)));
-      setHoveredIndex(barIndex);
-    } else {
-      setMousePos(null);
-      setHoveredIndex(null);
+    setMousePos({ x, y });
+
+    // Update dynamic cursor if not currently dragging
+    if (!dragStateRef.current) {
+      if (x >= plotWidth) {
+        setCursorType('ns-resize');
+        setHoveredIndex(null);
+      } else if (y >= rect.height - paddingBottom) {
+        setCursorType('ew-resize');
+        setHoveredIndex(null);
+      } else {
+        setCursorType('crosshair');
+        const rightMarginBars = 4;
+        const barSpacing = plotWidth / (visibleBarsCount + rightMarginBars);
+        const rightmostX = plotWidth - (rightMarginBars + 0.5) * barSpacing;
+        const barIndex = Math.round((bars.length - 1 - panOffset) - (rightmostX - x) / barSpacing);
+        if (barIndex >= 0 && barIndex < bars.length) {
+          setHoveredIndex(barIndex);
+        } else {
+          setHoveredIndex(null);
+        }
+      }
     }
   };
 
   const handleMouseLeave = () => {
-    setMousePos(null);
-    setHoveredIndex(null);
+    if (!dragStateRef.current) {
+      setMousePos(null);
+      setHoveredIndex(null);
+      setCursorType('crosshair');
+    }
   };
 
   const activeIdx = hoveredIndex !== null ? hoveredIndex : bars.length - 1;
@@ -2199,15 +2617,132 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       <div style={{ position: 'relative', width: '100%', height: `${indicators.subIndicator !== 'NONE' ? height - 110 : height}px` }}>
         <canvas
           ref={mainCanvasRef}
+          onMouseDown={handleMouseDown}
+          onDoubleClick={handleDoubleClick}
+          onWheel={handleWheel}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
           style={{
             width: '100%',
             height: '100%',
             display: 'block',
-            cursor: 'crosshair',
+            cursor: cursorType,
+            userSelect: 'none',
           }}
         />
+
+        {/* Floating TradingView Scale Control Toolbar */}
+        <div
+          style={{
+            position: 'absolute',
+            right: '92px',
+            bottom: '30px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '3px',
+            background: 'rgba(6, 13, 17, 0.88)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(10, 186, 181, 0.28)',
+            borderRadius: '7px',
+            padding: '2px 4px',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.5)',
+            zIndex: 10,
+            userSelect: 'none',
+          }}
+        >
+          <button
+            onClick={() => setVisibleBarsCount(prev => Math.max(15, Math.round(prev * 0.82)))}
+            title="Zoom In (or Drag Time Scale)"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#94a3b8',
+              cursor: 'pointer',
+              padding: '2px 5px',
+              borderRadius: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#0abab5')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#94a3b8')}
+          >
+            <ZoomIn size={13} />
+          </button>
+          <button
+            onClick={() => setVisibleBarsCount(prev => Math.min(200, Math.round(prev * 1.22)))}
+            title="Zoom Out"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#94a3b8',
+              cursor: 'pointer',
+              padding: '2px 5px',
+              borderRadius: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#0abab5')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#94a3b8')}
+          >
+            <ZoomOut size={13} />
+          </button>
+          <button
+            onClick={() => {
+              setIsAutoScale(true);
+              setPriceScaleMultiplier(1.0);
+              setPriceOffset(0);
+              setVisibleBarsCount(55);
+              setPanOffset(0);
+            }}
+            title="Reset All Scales (Double-click chart)"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#94a3b8',
+              cursor: 'pointer',
+              padding: '2px 5px',
+              borderRadius: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#0abab5')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#94a3b8')}
+          >
+            <RotateCcw size={12} />
+          </button>
+          <button
+            onClick={() => {
+              if (isAutoScale) {
+                setIsAutoScale(false);
+              } else {
+                setIsAutoScale(true);
+                setPriceScaleMultiplier(1.0);
+                setPriceOffset(0);
+              }
+            }}
+            title={isAutoScale ? "Auto-scale Active (Click to lock manual)" : "Auto-scale Off (Click to reset auto)"}
+            style={{
+              background: isAutoScale ? 'rgba(10, 186, 181, 0.22)' : 'rgba(255, 255, 255, 0.05)',
+              color: isAutoScale ? '#0abab5' : '#64748b',
+              border: isAutoScale ? '1px solid rgba(10, 186, 181, 0.6)' : '1px solid rgba(255, 255, 255, 0.1)',
+              fontWeight: 800,
+              fontSize: '10px',
+              padding: '2px 7px',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              letterSpacing: '0.5px',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            AUTO
+          </button>
+        </div>
 
         {isLoading && (
           <div
@@ -2259,11 +2794,15 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
         </div>
       )}
 
-      {/* Footer Status Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', fontSize: '11px', color: '#64748b' }}>
+      {/* Footer Status Bar with Interactive Tips */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginTop: '10px', fontSize: '11px', color: '#64748b' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#0abab5', boxShadow: '0 0 6px #0abab5' }} />
           <span>{t.chart.liveStreamActive}</span>
+          <span style={{ color: 'rgba(255,255,255,0.2)' }}>•</span>
+          <span style={{ color: '#94a3b8' }}>
+            Drag Price Scale (↕) or Time (↔) • Scroll to zoom • Drag to pan • Double-click to auto
+          </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#0abab5', fontWeight: 600 }}>
           <span>MetaApi Live Broker Cloud Feed</span>
