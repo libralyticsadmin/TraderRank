@@ -254,9 +254,26 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
   const fetchCandles = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/market/candlesticks?symbol=${symbol}&timeframe=${timeframe}&count=80`);
+      const endpoint = `/api/market/candlesticks?symbol=${symbol}&timeframe=${timeframe}&count=80`;
+      let res = await fetch(endpoint);
+      let text = '';
       if (res.ok) {
-        const text = await res.text();
+        text = await res.text();
+      }
+      
+      // If Vercel rewrites to HTML or fails, fallback directly to live Render backend
+      if (!text || text.trim().startsWith('<') || !res.ok) {
+        try {
+          const directRes = await fetch(`https://traderrank.onrender.com${endpoint}`);
+          if (directRes.ok) {
+            text = await directRes.text();
+          }
+        } catch {
+          // Direct fallback failed
+        }
+      }
+
+      if (text && !text.trim().startsWith('<')) {
         try {
           const data = JSON.parse(text) as MarketCandlestickResponse;
           if (data.bars && data.bars.length > 0) {
@@ -267,9 +284,10 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
             return;
           }
         } catch {
-          // Not valid JSON on static hosting
+          // Not valid JSON
         }
       }
+
       // Fallback to high-fidelity seed candles
       const fallback = generateRealisticCandles(symbol, timeframe, 80);
       setBars(fallback);
@@ -300,9 +318,23 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
     let isSubscribed = true;
     const fetchLiveQuote = async () => {
       try {
-        const res = await fetch('/api/market/quotes');
+        let res = await fetch('/api/market/quotes');
+        let data: any = null;
         if (res.ok) {
-          const data = await res.json();
+          const text = await res.text();
+          if (text && !text.trim().startsWith('<')) {
+            try { data = JSON.parse(text); } catch {}
+          }
+        }
+        if (!data) {
+          try {
+            const directRes = await fetch('https://traderrank.onrender.com/api/market/quotes');
+            if (directRes.ok) {
+              data = await directRes.json();
+            }
+          } catch {}
+        }
+        if (data) {
           const cleanSym = symbol.replace('/', '').toUpperCase();
           const q = data.quotes?.[cleanSym] || data.quotes?.[symbol];
           if (q && typeof q.bid === 'number' && q.bid > 0) {
@@ -340,7 +372,10 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
   // WebSocket real-time tick and candle listener (for full server environments)
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    const wsHost = window.location.host.includes('localhost') || window.location.host.includes('127.0.0.1')
+      ? window.location.host
+      : 'traderrank.onrender.com';
+    const wsUrl = `${protocol}//${wsHost}/ws`;
     let ws: WebSocket | null = null;
 
     try {
