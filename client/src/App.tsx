@@ -325,8 +325,8 @@ export const App: React.FC = () => {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <h1 className="brand-wordmark" style={{ fontSize: '24px' }}>
-                Trader<span className="brand-wordmark-accent">Rank</span>
-                <span className="brand-fx-pill">FX</span>
+                Trade<span className="brand-wordmark-accent">Rank</span>
+                <span className="brand-live-domain">.live</span>
               </h1>
               <span className="brand-badge">{t.landing.badge}</span>
               {metaApiHealth && (
@@ -678,7 +678,7 @@ export const App: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <BrandMark size={20} variant="glyph" />
           <span>
-            <strong style={{ color: '#fff' }}>TraderRank FX</strong> • {t.landing.badge}
+            <strong style={{ color: '#fff' }}>TradeRank.live</strong> • {t.landing.badge}
           </span>
         </div>
 

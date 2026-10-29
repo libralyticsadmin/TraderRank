@@ -82,21 +82,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
             </span>
           </div>
 
-          <nav style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-            <a href="#rankings" style={{ color: '#848E9C', textDecoration: 'none', fontSize: '13px', fontWeight: 600, transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={(e) => (e.currentTarget.style.color = '#848E9C')}>
-              {t.nav.rankings}
-            </a>
-            <a href="#tournaments" style={{ color: '#848E9C', textDecoration: 'none', fontSize: '13px', fontWeight: 600, transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={(e) => (e.currentTarget.style.color = '#848E9C')}>
-              {t.nav.tournaments}
-            </a>
-            <a href="#security" style={{ color: '#848E9C', textDecoration: 'none', fontSize: '13px', fontWeight: 600, transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={(e) => (e.currentTarget.style.color = '#848E9C')}>
-              {t.nav.securityVault}
-            </a>
-            <a href="#rewards" style={{ color: '#848E9C', textDecoration: 'none', fontSize: '13px', fontWeight: 600, transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={(e) => (e.currentTarget.style.color = '#848E9C')}>
-              {t.nav.rewards}
-            </a>
-          </nav>
-
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <LanguageSelector />
             <button
@@ -944,8 +929,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
         <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <BrandMark size={22} variant="glyph" />
-            <strong style={{ fontSize: '15px', color: '#FFFFFF' }}>TraderRank FX</strong>
-            <span style={{ fontSize: '12px', color: '#848E9C' }}>© {new Date().getFullYear()} TraderRank. {t.footer.allRightsReserved}.</span>
+            <strong style={{ fontSize: '15px', color: '#FFFFFF' }}>TradeRank.live</strong>
+            <span style={{ fontSize: '12px', color: '#848E9C' }}>© {new Date().getFullYear()} TradeRank.live. {t.footer.allRightsReserved}.</span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

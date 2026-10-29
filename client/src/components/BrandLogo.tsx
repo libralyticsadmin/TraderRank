@@ -26,7 +26,7 @@ export const BrandMark: React.FC<BrandMarkProps> = ({ size = 40, variant = 'tile
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       role="img"
-      aria-label="TraderRank FX logo"
+      aria-label="TradeRank.live logo"
       className={isTile ? 'brand-mark brand-mark--tile' : 'brand-mark'}
     >
       <defs>
@@ -94,8 +94,8 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({ size = 40, showWordmark = 
     <BrandMark size={size} />
     {showWordmark && (
       <span className="brand-wordmark" style={{ fontSize: `${textSize}px` }}>
-        Trader<span className="brand-wordmark-accent">Rank</span>
-        <span className="brand-fx-pill">FX</span>
+        Trade<span className="brand-wordmark-accent">Rank</span>
+        <span className="brand-live-domain">.live</span>
       </span>
     )}
   </div>

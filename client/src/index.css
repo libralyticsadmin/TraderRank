@@ -168,6 +168,17 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
+.brand-live-domain {
+  background: linear-gradient(135deg, #00f0ff 0%, #0abab5 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-left: 1px;
+  filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.45));
+}
+
 .brand-fx-pill {
   margin-left: 8px;
   font-size: 0.48em;
