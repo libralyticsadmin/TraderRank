@@ -6,15 +6,15 @@ import { TraderAvatar } from './TraderAvatar.tsx';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 
 const AVATAR_SYMBOLS = [
-  { id: 'zap', label: '⚡ Flash Lightning' },
-  { id: 'crown', label: '👑 King Crown' },
-  { id: 'target', label: '🎯 Sniper Target' },
-  { id: 'shield', label: '🛡️ Vault Shield' },
-  { id: 'gem', label: '💎 Diamond' },
-  { id: 'flame', label: '🔥 Gold Flame' },
-  { id: 'EURUSD', label: '💱 EUR/USD' },
-  { id: 'XAUUSD', label: '🪙 Gold (XAU)' },
-  { id: 'BTCUSD', label: '₿ Bitcoin' },
+  { id: 'zap', label: 'Flash (Lightning)' },
+  { id: 'crown', label: 'Crown (King)' },
+  { id: 'target', label: 'Target (Sniper)' },
+  { id: 'shield', label: 'Shield (Vault)' },
+  { id: 'gem', label: 'Diamond (Gem)' },
+  { id: 'flame', label: 'Flame (Alpha)' },
+  { id: 'EURUSD', label: 'EUR / USD' },
+  { id: 'XAUUSD', label: 'Gold (XAU)' },
+  { id: 'BTCUSD', label: 'Bitcoin (BTC)' },
 ];
 
 export const ProfileEditModal: React.FC = () => {
