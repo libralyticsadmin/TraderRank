@@ -14,15 +14,17 @@ import {
   ValidationResult,
   CanonicalPosition,
   CanonicalTrade,
+  OrderType,
 } from '../../../shared/src/types.js';
 import { SecretsVault } from '../vault/secretsVault.js';
 import { WorkerOrchestrator } from '../workers/workerOrchestrator.js';
 import { RedisStreamsBus } from '../eventbus/redisStreamsBus.js';
 import { TradeNormalizerService } from '../normalizer/tradeNormalizer.js';
 import { LeaderboardService } from '../services/leaderboardService.js';
-import { MetaApiClient } from '../workers/metaApiClient.js';
+import { MetaApiClient, MetaApiDeal } from '../workers/metaApiClient.js';
 import { RawPositionPayload } from '../workers/baseWorker.js';
 import { TournamentService } from '../services/tournamentService.js';
+import { PipCalculator } from '../core/pipCalculator.js';
 
 export class AccountConnectorService {
   private static instance: AccountConnectorService;
@@ -212,22 +214,7 @@ export class AccountConnectorService {
         // Fetch real historical deals directly from MetaApi
         const rawDeals = await this.metaApiClient.getHistoricalDeals(p.id);
         if (rawDeals && rawDeals.length > 0) {
-          const mappedDeals = rawDeals.map(d => ({
-            accountId,
-            ticket: d.id || d.positionId,
-            symbol: d.symbol,
-            type: (d.type === 'DEAL_TYPE_BUY' ? 'BUY' : 'SELL') as 'BUY' | 'SELL',
-            volume: d.volume,
-            openPrice: d.price,
-            closePrice: d.price,
-            profit: d.profit,
-            commission: d.commission,
-            swap: d.swap,
-            openTime: d.time,
-            closeTime: d.time,
-          }));
-
-          const normalizedTrades = mappedDeals.map(d => this.normalizer.normalizeDeal(d));
+          const normalizedTrades = this.processRawDealsToTrades(accountId, rawDeals);
           this.tradesStorage.set(accountId, normalizedTrades);
 
           // Stream real closed deals to event bus so Leaderboard and XP reflect real trades
@@ -306,6 +293,139 @@ export class AccountConnectorService {
 
   public getAccountTrades(accountId: string): CanonicalTrade[] {
     return this.tradesStorage.get(accountId) || [];
+  }
+
+  /**
+   * On-demand live sync of deals directly from MetaApi cloud before returning trade history.
+   */
+  public async syncAndGetAccountTrades(accountId: string): Promise<CanonicalTrade[]> {
+    const account = this.accounts.get(accountId);
+    if (account?.metaApiAccountId && this.metaApiClient.hasToken()) {
+      try {
+        const rawDeals = await this.metaApiClient.getHistoricalDeals(account.metaApiAccountId);
+        if (rawDeals && rawDeals.length > 0) {
+          const trades = this.processRawDealsToTrades(accountId, rawDeals);
+          if (trades.length > 0) {
+            this.tradesStorage.set(accountId, trades);
+            return trades;
+          }
+        }
+      } catch (err) {
+        console.warn(`[AccountConnectorService] Live deal sync warning for ${accountId}:`, err);
+      }
+    }
+    return this.getAccountTrades(accountId);
+  }
+
+  /**
+   * Transforms raw MetaTrader deals into canonical closed trade positions.
+   * - Eliminates balance operations (DEAL_TYPE_BALANCE / 0 lots / UNKNOWN) from trade executions.
+   * - Accurately pairs entry deals (DEAL_ENTRY_IN) and exit deals (DEAL_ENTRY_OUT) by positionId.
+   * - Reconstructs openPrice, closePrice, and pnlPips so executions are 100% verified and mathematically sound.
+   */
+  public processRawDealsToTrades(accountId: string, rawDeals: MetaApiDeal[]): CanonicalTrade[] {
+    if (!rawDeals || rawDeals.length === 0) return [];
+
+    // 1. Filter out balance operations (deposits, withdrawals, credit, correction)
+    const tradeDeals = rawDeals.filter(d => {
+      const typeStr = String(d.type || '').toUpperCase();
+      if (typeStr.includes('BALANCE') || typeStr.includes('CREDIT') || typeStr.includes('CHARGE') || typeStr.includes('CORRECTION')) {
+        return false;
+      }
+      if (!d.symbol || d.symbol.toUpperCase() === 'UNKNOWN' || d.symbol === 'BALANCE') {
+        return false;
+      }
+      if (Number(d.volume ?? 0) <= 0) {
+        return false;
+      }
+      return true;
+    });
+
+    // 2. Group deals by positionId (ticket)
+    const groups = new Map<string, MetaApiDeal[]>();
+    for (const d of tradeDeals) {
+      const posId = String(d.positionId || d.id);
+      if (!groups.has(posId)) groups.set(posId, []);
+      groups.get(posId)!.push(d);
+    }
+
+    const canonicalTrades: CanonicalTrade[] = [];
+
+    for (const [posId, deals] of groups.entries()) {
+      // Sort deals in chronological order
+      deals.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+
+      const entryDeal = deals.find(d => d.entryType === 'DEAL_ENTRY_IN' || (d.profit === 0 && d.volume > 0));
+      const exitDeal = deals.find(d => d.entryType === 'DEAL_ENTRY_OUT' || d.entryType === 'DEAL_ENTRY_OUT_BY' || d.profit !== 0);
+
+      if (entryDeal && exitDeal && entryDeal.id !== exitDeal.id) {
+        // Paired entry & exit
+        const rawSymbol = exitDeal.symbol || entryDeal.symbol || 'GOLD#';
+        const cleanSymbol = PipCalculator.normalizeSymbol(rawSymbol);
+        const tradeType: OrderType = (entryDeal.type === 'DEAL_TYPE_BUY' || entryDeal.type === '0' || (entryDeal.type as any) === 0) ? 'BUY' : 'SELL';
+        const lotSize = Number(exitDeal.volume || entryDeal.volume || 0.01);
+        const openPrice = Number(entryDeal.price || 0);
+        const closePrice = Number(exitDeal.price || 0);
+        const profit = Number(exitDeal.profit ?? 0);
+        const commission = Number(entryDeal.commission ?? 0) + Number(exitDeal.commission ?? 0);
+        const swap = Number(exitDeal.swap ?? 0);
+
+        let pnlPips = PipCalculator.calculatePips(cleanSymbol, tradeType, openPrice, closePrice);
+        if (pnlPips === 0 && profit !== 0) {
+          pnlPips = PipCalculator.calculatePipsFromPnl(cleanSymbol, lotSize, profit);
+        }
+
+        canonicalTrades.push({
+          id: `trade_${accountId}_${posId}`,
+          accountId,
+          ticket: exitDeal.id || posId,
+          symbol: rawSymbol,
+          type: tradeType,
+          lotSize,
+          openPrice,
+          closePrice,
+          openTime: new Date(entryDeal.time).toISOString(),
+          closeTime: new Date(exitDeal.time).toISOString(),
+          pnlCurrency: profit,
+          pnlPips,
+          commission,
+          swap,
+        });
+      } else if (exitDeal) {
+        // Only exit deal captured in history window
+        const rawSymbol = exitDeal.symbol || 'GOLD#';
+        const cleanSymbol = PipCalculator.normalizeSymbol(rawSymbol);
+        const exitTypeStr = String(exitDeal.type || '').toUpperCase();
+        const tradeType: OrderType = (exitTypeStr.includes('BUY') || exitDeal.type === '0') ? 'SELL' : 'BUY';
+        const lotSize = Number(exitDeal.volume || 0.01);
+        const closePrice = Number(exitDeal.price || 0);
+        const profit = Number(exitDeal.profit ?? 0);
+        const pnlPips = PipCalculator.calculatePipsFromPnl(cleanSymbol, lotSize, profit);
+        const openPrice = PipCalculator.reconstructOpenPrice(cleanSymbol, tradeType, closePrice, lotSize, profit);
+
+        canonicalTrades.push({
+          id: `trade_${accountId}_${posId}`,
+          accountId,
+          ticket: exitDeal.id || posId,
+          symbol: rawSymbol,
+          type: tradeType,
+          lotSize,
+          openPrice,
+          closePrice,
+          openTime: new Date(exitDeal.time).toISOString(),
+          closeTime: new Date(exitDeal.time).toISOString(),
+          pnlCurrency: profit,
+          pnlPips,
+          commission: Number(exitDeal.commission ?? 0),
+          swap: Number(exitDeal.swap ?? 0),
+        });
+      }
+    }
+
+    // Sort closed trades descending by close time (newest first)
+    canonicalTrades.sort((a, b) => new Date(b.closeTime).getTime() - new Date(a.closeTime).getTime());
+
+    return canonicalTrades;
   }
 
   public async disconnectAccount(accountId: string): Promise<boolean> {

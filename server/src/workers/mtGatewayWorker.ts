@@ -172,7 +172,7 @@ export class MTGatewayWorker implements IBrokerWorker {
           return liveDeals.map(d => ({
             accountId,
             ticket: d.id || d.positionId,
-            symbol: d.symbol,
+            symbol: d.symbol || 'GOLD#',
             type: d.type === 'DEAL_TYPE_BUY' ? 'BUY' : 'SELL',
             volume: d.volume,
             openPrice: d.price,

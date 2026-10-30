@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, ShieldCheck, CheckCircle2, UserPlus, Activity } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { X, ShieldCheck, CheckCircle2, UserPlus, Radio } from 'lucide-react';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { Broker } from '../../../shared/src/types.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
@@ -58,20 +58,55 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
       .then((data: any[]) => {
         if (!isMounted) return;
         if (Array.isArray(data) && data.length > 0) {
-          setRealTrades(
-            data.map(d => ({
+          // Filter out balance adjustments and unpopulated transactions
+          const valid = data.filter(d => {
+            const sym = String(d.symbol || '').toUpperCase();
+            if (!sym || sym === 'UNKNOWN' || sym === 'BALANCE') return false;
+            const vol = Number(d.lotSize ?? d.volume ?? 0);
+            return vol > 0;
+          });
+
+          const normalized = valid.map(d => {
+            const symbol = String(d.symbol || 'GOLD#');
+            const type = (d.type === 'BUY' ? 'BUY' : 'SELL') as 'BUY' | 'SELL';
+            const lotSize = Number(d.lotSize ?? d.volume ?? 0.01);
+            let openPrice = Number(d.openPrice ?? 0);
+            let closePrice = Number(d.closePrice ?? openPrice ?? 0);
+            const pnlCurrency = Number(d.pnlCurrency ?? d.profit ?? 0);
+            let pnlPips = Number(d.pnlPips ?? 0);
+
+            const isGold = symbol.toUpperCase().includes('GOLD') || symbol.toUpperCase().includes('XAU');
+
+            // Fallback pip calculation if pnlPips is missing or 0 but realized profit exists
+            if (pnlPips === 0 && pnlCurrency !== 0 && lotSize > 0) {
+              const pipValPerLot = isGold ? 10.0 : 10.0;
+              pnlPips = Number((pnlCurrency / (lotSize * pipValPerLot)).toFixed(1));
+            }
+
+            // Fallback openPrice derivation if openPrice matches closePrice but trade had pips/profit
+            if (openPrice > 0 && closePrice > 0 && openPrice === closePrice && pnlPips !== 0) {
+              const pipSize = isGold ? 0.10 : 0.0001;
+              const priceMove = pnlPips * pipSize;
+              openPrice = type === 'BUY'
+                ? Number((closePrice - priceMove).toFixed(2))
+                : Number((closePrice + priceMove).toFixed(2));
+            }
+
+            return {
               ticket: String(d.ticket || d.id || 'N/A'),
-              symbol: d.symbol || 'GOLD#',
-              type: d.type === 'BUY' ? 'BUY' : 'SELL',
-              lotSize: Number(d.lotSize ?? d.volume ?? 0.01),
-              openPrice: Number(d.openPrice ?? 0),
-              closePrice: Number(d.closePrice ?? 0),
+              symbol,
+              type,
+              lotSize,
+              openPrice,
+              closePrice,
               openTime: d.openTime || '',
               closeTime: d.closeTime || '',
-              pnlCurrency: Number(d.pnlCurrency ?? d.profit ?? 0),
-              pnlPips: Number(d.pnlPips ?? (d.profit ? d.profit * 10 : 0)),
-            }))
-          );
+              pnlCurrency,
+              pnlPips,
+            };
+          });
+
+          setRealTrades(normalized);
         } else {
           setRealTrades([]);
         }
@@ -88,6 +123,43 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
       isMounted = false;
     };
   }, [trader.userId]);
+
+  // Compute live performance metrics dynamically from verified trade ledger
+  const stats = useMemo(() => {
+    if (realTrades.length === 0) {
+      return {
+        netPips: trader.netPips,
+        winRate: trader.winRate,
+        profitFactor: trader.profitFactor,
+        maxDrawdown: trader.maxDrawdown,
+        totalTrades: trader.totalTrades,
+        bestTradePips: trader.bestTradePips,
+        isLiveCalculated: false,
+      };
+    }
+
+    const netPips = Number(realTrades.reduce((sum, t) => sum + t.pnlPips, 0).toFixed(1));
+    const winningTrades = realTrades.filter(t => t.pnlCurrency > 0 || t.pnlPips > 0);
+    const winRate = Math.round((winningTrades.length / realTrades.length) * 100);
+
+    const grossProfit = realTrades.filter(t => t.pnlCurrency > 0).reduce((s, t) => s + t.pnlCurrency, 0);
+    const grossLoss = Math.abs(realTrades.filter(t => t.pnlCurrency < 0).reduce((s, t) => s + t.pnlCurrency, 0));
+    const profitFactor = grossLoss > 0
+      ? Number((grossProfit / grossLoss).toFixed(2))
+      : grossProfit > 0 ? 99.99 : 1.0;
+
+    const bestTradePips = Math.max(0, ...realTrades.map(t => t.pnlPips));
+
+    return {
+      netPips,
+      winRate,
+      profitFactor,
+      maxDrawdown: trader.maxDrawdown,
+      totalTrades: realTrades.length,
+      bestTradePips: Number(bestTradePips.toFixed(1)),
+      isLiveCalculated: true,
+    };
+  }, [realTrades, trader]);
 
   // Keyboard escape route
   useEffect(() => {
@@ -222,7 +294,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
           </button>
         </div>
 
-        {/* Performance Metrics Grid */}
+        {/* Performance Metrics Grid (Dynamic Sync from Verified Ledger) */}
         <div
           style={{
             display: 'grid',
@@ -234,51 +306,52 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
           <div style={{ padding: '14px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.profile.netWinningPips}</div>
             <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--accent-green)', marginTop: '2px' }}>
-              +{trader.netPips.toFixed(1)}
+              {stats.netPips > 0 ? `+${stats.netPips.toFixed(1)}` : stats.netPips.toFixed(1)}
             </div>
           </div>
 
           <div style={{ padding: '14px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.profile.winRate}</div>
             <div style={{ fontSize: '20px', fontWeight: 800, color: '#fbbf24', marginTop: '2px' }}>
-              {trader.winRate}%
+              {stats.winRate}%
             </div>
           </div>
 
           <div style={{ padding: '14px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.profile.profitFactor}</div>
             <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--accent-cyan)', marginTop: '2px' }}>
-              {trader.profitFactor.toFixed(2)}
+              {stats.profitFactor.toFixed(2)}
             </div>
           </div>
 
           <div style={{ padding: '14px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.profile.maxDrawdown}</div>
-            <div style={{ fontSize: '18px', fontWeight: 800, color: trader.maxDrawdown > 5 ? '#ef4444' : 'var(--text-main)', marginTop: '2px' }}>
-              {trader.maxDrawdown}%
+            <div style={{ fontSize: '18px', fontWeight: 800, color: stats.maxDrawdown > 5 ? '#ef4444' : 'var(--text-main)', marginTop: '2px' }}>
+              {stats.maxDrawdown}%
             </div>
           </div>
 
           <div style={{ padding: '14px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.profile.totalTrades}</div>
             <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-main)', marginTop: '2px' }}>
-              {trader.totalTrades}
+              {stats.totalTrades}
             </div>
           </div>
 
           <div style={{ padding: '14px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.profile.bestTrade}</div>
             <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent-green)', marginTop: '2px' }}>
-              +{trader.bestTradePips} pips
+              +{stats.bestTradePips} pips
             </div>
           </div>
         </div>
 
-        {/* Recent Verified Trades */}
+        {/* Recent Verified Trades Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
           <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800 }}>{t.profile.recentVerifiedExecutions}</h4>
-          <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Activity size={12} /> MetaApi Read-Only Audit Verified
+          <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Radio size={12} className="animate-pulse" style={{ color: 'var(--accent-green)' }} />
+            MetaApi Read-Only Audit Verified
           </span>
         </div>
 

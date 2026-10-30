@@ -76,7 +76,7 @@ export class PipCalculator {
     let clean = rawSymbol.toUpperCase().trim();
 
     // Strip common broker suffixes
-    clean = clean.replace(/(\.M|\.I|\.RAW|\.PRO|\.ECN|\.CASH|_I|_M|_SB|\+)$/i, '');
+    clean = clean.replace(/(\.M|\.I|\.RAW|\.PRO|\.ECN|\.CASH|_I|_M|_SB|\+|#)$/i, '');
 
     // Common aliases
     if (clean === 'XAUUSD' || clean === 'GOLD') return 'XAUUSD';
@@ -119,6 +119,82 @@ export class PipCalculator {
 
     // Generic fallback
     return { pipSize: 0.0001, digits: 5, category: 'forex_standard' };
+  }
+
+  /**
+   * Returns standard pip value in USD per 1.00 lot for P&L calculations.
+   */
+  public static getPipValuePerLot(rawSymbol: string): number {
+    const symbol = this.normalizeSymbol(rawSymbol);
+    const config = this.getPipConfig(symbol);
+
+    switch (config.category) {
+      case 'metals':
+        if (symbol === 'XAUUSD' || symbol.includes('GOLD')) {
+          // 1 standard lot = 100 oz. 1 pip = $0.10. 100 * 0.10 = $10.00 USD/pip/lot
+          return 10.0;
+        }
+        if (symbol === 'XAGUSD' || symbol.includes('SILVER')) {
+          // 1 standard lot = 5000 oz. 1 pip = $0.01. 5000 * 0.01 = $50.00 USD/pip/lot
+          return 50.0;
+        }
+        return 10.0;
+
+      case 'forex_standard':
+        // Standard forex 100k units. Quote USD (EURUSD, GBPUSD) = $10.00 USD/pip/lot
+        return 10.0;
+
+      case 'forex_jpy':
+        // JPY pairs: 100k * 0.01 = 1,000 JPY ≈ $6.50 - $7.00 USD
+        return 6.5;
+
+      case 'indices':
+        return 1.0;
+
+      case 'crypto':
+        return 1.0;
+
+      case 'commodities':
+        return 10.0;
+
+      default:
+        return 10.0;
+    }
+  }
+
+  /**
+   * Calculates profit/loss in standard pips directly from monetary P&L and lot size.
+   */
+  public static calculatePipsFromPnl(rawSymbol: string, lotSize: number, pnlCurrency: number): number {
+    if (!lotSize || lotSize <= 0) return 0;
+    const pipValPerLot = this.getPipValuePerLot(rawSymbol);
+    const totalPipVal = lotSize * pipValPerLot;
+    if (totalPipVal <= 0) return 0;
+    return Math.round((pnlCurrency / totalPipVal) * 10) / 10;
+  }
+
+  /**
+   * Reconstructs execution open price from close price, direction, volume, and realized P&L.
+   */
+  public static reconstructOpenPrice(
+    rawSymbol: string,
+    type: OrderType,
+    closePrice: number,
+    lotSize: number,
+    pnlCurrency: number
+  ): number {
+    if (closePrice <= 0 || lotSize <= 0) return closePrice;
+    const pips = this.calculatePipsFromPnl(rawSymbol, lotSize, pnlCurrency);
+    const { pipSize } = this.getPipConfig(rawSymbol);
+    const priceMove = pips * pipSize;
+
+    // BUY: profit = (close - open) -> open = close - priceMove
+    // SELL: profit = (open - close) -> open = close + priceMove
+    if (type === 'BUY') {
+      return Number((closePrice - priceMove).toFixed(2));
+    } else {
+      return Number((closePrice + priceMove).toFixed(2));
+    }
   }
 
   /**

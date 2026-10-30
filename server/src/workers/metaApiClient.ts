@@ -33,8 +33,9 @@ export interface MetaApiPosition {
 export interface MetaApiDeal {
   id: string;
   positionId: string;
-  symbol: string;
-  type: 'DEAL_TYPE_BUY' | 'DEAL_TYPE_SELL';
+  symbol?: string;
+  type: 'DEAL_TYPE_BUY' | 'DEAL_TYPE_SELL' | 'DEAL_TYPE_BALANCE' | 'DEAL_TYPE_CREDIT' | string;
+  entryType?: 'DEAL_ENTRY_IN' | 'DEAL_ENTRY_OUT' | 'DEAL_ENTRY_INOUT' | 'DEAL_ENTRY_OUT_BY' | string;
   volume: number;
   price: number;
   profit: number;
@@ -446,8 +447,9 @@ export class MetaApiClient {
       return deals.map((d: any) => ({
         id: String(d.id || d._id || d.dealId),
         positionId: String(d.positionId || d.id),
-        symbol: d.symbol,
-        type: d.type === 'DEAL_TYPE_BUY' || d.type === 0 ? 'DEAL_TYPE_BUY' : 'DEAL_TYPE_SELL',
+        symbol: d.symbol || (d.type === 'DEAL_TYPE_BALANCE' ? 'BALANCE' : undefined),
+        type: String(d.type || (d.entryType === 'DEAL_ENTRY_OUT' ? 'DEAL_TYPE_SELL' : 'DEAL_TYPE_BUY')),
+        entryType: d.entryType ? String(d.entryType) : (d.profit !== 0 ? 'DEAL_ENTRY_OUT' : 'DEAL_ENTRY_IN'),
         volume: Number(d.volume ?? 0),
         price: Number(d.price ?? 0),
         profit: Number(d.profit ?? 0),

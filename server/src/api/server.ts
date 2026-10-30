@@ -633,10 +633,9 @@ export function createServer() {
     res.json(positions);
   });
 
-  // 6. Historical Trades for Account
-  app.get('/api/accounts/:id/trades', (req: Request, res: Response) => {
-    let trades = connector.getAccountTrades(req.params.id);
-    if (!trades || trades.length === 0) {
+  // 6. Historical Trades for Account (Live MetaApi Ledger Sync)
+  app.get('/api/accounts/:id/trades', async (req: Request, res: Response) => {
+    try {
       const allAccounts = connector.getAccounts();
       const matched = allAccounts.find(
         a => a.id === req.params.id ||
@@ -644,17 +643,15 @@ export function createServer() {
              a.accountNumber === req.params.id ||
              (a.accountNumber && req.params.id.includes(a.accountNumber))
       );
-      if (matched) {
-        trades = connector.getAccountTrades(matched.id);
-      }
+
+      const targetId = matched ? matched.id : (allAccounts.length > 0 ? allAccounts[0].id : req.params.id);
+      const trades = await connector.syncAndGetAccountTrades(targetId);
+      res.json(trades || []);
+    } catch (err) {
+      console.warn('[Trades API] Error fetching trades for account:', req.params.id, err);
+      const fallbackTrades = connector.getAccountTrades(req.params.id);
+      res.json(fallbackTrades || []);
     }
-    if (!trades || trades.length === 0) {
-      const allAccounts = connector.getAccounts();
-      if (allAccounts.length > 0) {
-        trades = connector.getAccountTrades(allAccounts[0].id);
-      }
-    }
-    res.json(trades || []);
   });
 
   // 7. Disconnect Account
