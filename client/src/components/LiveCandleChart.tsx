@@ -104,6 +104,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
   const { t } = useTranslation();
   const [symbol, setSymbol] = useState<string>(initialSymbol);
   const [timeframe, setTimeframe] = useState<CandlestickTimeframe>(initialTimeframe);
+  const [chartMode, setChartMode] = useState<'PRO_STUDIO' | 'TRADINGVIEW_OFFICIAL'>('TRADINGVIEW_OFFICIAL');
   const [bars, setBars] = useState<CandlestickBar[]>(() =>
     generateRealisticCandles(initialSymbol, initialTimeframe, 80)
   );
@@ -112,6 +113,39 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
   const [isIndicatorMenuOpen, setIsIndicatorMenuOpen] = useState<boolean>(false);
+
+  const getTradingViewSymbol = (sym: string): string => {
+    const clean = sym.toUpperCase().replace('/', '').trim();
+    switch (clean) {
+      case 'USDJPY': return 'FX:USDJPY';
+      case 'EURUSD': return 'FX:EURUSD';
+      case 'GBPUSD': return 'FX:GBPUSD';
+      case 'AUDUSD': return 'FX:AUDUSD';
+      case 'USDCAD': return 'FX:USDCAD';
+      case 'XAUUSD':
+      case 'GOLD': return 'OANDA:XAUUSD';
+      case 'MCL1!':
+      case 'USOIL': return 'TVC:USOIL';
+      case 'BTCUSD': return 'BINANCE:BTCUSDT';
+      case 'US30': return 'OANDA:US30USD';
+      default: return `FX:${clean}`;
+    }
+  };
+
+  const getTradingViewInterval = (tf: CandlestickTimeframe): string => {
+    switch (tf) {
+      case '1m': return '1';
+      case '5m': return '5';
+      case '15m': return '15';
+      case '30m': return '30';
+      case '1h': return '60';
+      case '4h': return '240';
+      case '1D': return 'D';
+      case '1W': return 'W';
+      case '1M': return 'M';
+      default: return '1';
+    }
+  };
 
   // Active Technical Indicators State
   const [indicators, setIndicators] = useState<IndicatorConfig>({
@@ -2291,8 +2325,52 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
           </button>
         </div>
 
-        {/* Live Feed Badge */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Live Feed Badge & Engine Mode Switcher */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {/* Dual Engine Switcher */}
+          <div
+            style={{
+              display: 'flex',
+              background: 'rgba(0, 0, 0, 0.6)',
+              padding: '2px',
+              borderRadius: '8px',
+              border: '1px solid var(--border-subtle)',
+            }}
+          >
+            <button
+              onClick={() => setChartMode('TRADINGVIEW_OFFICIAL')}
+              style={{
+                padding: '4px 10px',
+                fontSize: '11px',
+                fontWeight: 800,
+                borderRadius: '6px',
+                border: 'none',
+                cursor: 'pointer',
+                background: chartMode === 'TRADINGVIEW_OFFICIAL' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent',
+                color: chartMode === 'TRADINGVIEW_OFFICIAL' ? '#ffffff' : 'var(--text-muted)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              TradingView Live Real-Time
+            </button>
+            <button
+              onClick={() => setChartMode('PRO_STUDIO')}
+              style={{
+                padding: '4px 10px',
+                fontSize: '11px',
+                fontWeight: 800,
+                borderRadius: '6px',
+                border: 'none',
+                cursor: 'pointer',
+                background: chartMode === 'PRO_STUDIO' ? 'linear-gradient(135deg, #0abab5, #078c88)' : 'transparent',
+                color: chartMode === 'PRO_STUDIO' ? '#000000' : 'var(--text-muted)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              TraderRank SMC Studio
+            </button>
+          </div>
+
           <span
             style={{
               fontSize: '11px',
@@ -2308,11 +2386,9 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
             }}
           >
             <Zap size={12} fill="#0abab5" />
-            {candleSource === 'METAAPI_LIVE'
-              ? 'MetaApi Live MT5 (TradingView Verified)'
-              : candleSource === 'TRADINGVIEW_LIVE'
-              ? 'TradingView Live Reference Feed (OANDA / FX / Binance)'
-              : t.chart.allTickLiveBadge}
+            {chartMode === 'TRADINGVIEW_OFFICIAL'
+              ? 'TradingView Exchange Live Stream'
+              : 'MetaApi Live MT5 (TradingView Verified)'}
           </span>
 
           <button
@@ -2638,26 +2714,48 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
         )}
       </div>
 
-      {/* Main Candlestick Canvas (Top Pane) */}
-      <div style={{ position: 'relative', width: '100%', height: `${indicators.subIndicator !== 'NONE' ? height - 110 : height}px` }}>
-        <canvas
-          ref={mainCanvasRef}
-          onMouseDown={handleMouseDown}
-          onDoubleClick={handleDoubleClick}
-          onWheel={handleWheel}
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
-          style={{
-            width: '100%',
-            height: '100%',
-            display: 'block',
-            cursor: cursorType,
-            userSelect: 'none',
-          }}
-        />
-
-        {/* Floating TradingView Scale Control Toolbar */}
+      {/* Chart Canvas Area or Official TradingView Real-Time Widget */}
+      {chartMode === 'TRADINGVIEW_OFFICIAL' ? (
         <div
+          style={{
+            position: 'relative',
+            width: '100%',
+            height: `${height}px`,
+            borderRadius: '12px',
+            overflow: 'hidden',
+            border: '1px solid var(--border-subtle)',
+            background: '#060d11',
+          }}
+        >
+          <iframe
+            key={`${symbol}_${timeframe}`}
+            title="TradingView Real-Time Live Feed"
+            src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=${encodeURIComponent(getTradingViewSymbol(symbol))}&interval=${getTradingViewInterval(timeframe)}&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=0a1519&theme=dark&style=1&timezone=Etc%2FUTC&studies=%5B%5D&withdateranges=1&showpopupbutton=1`}
+            style={{ width: '100%', height: '100%', border: 'none' }}
+          />
+        </div>
+      ) : (
+        <>
+          {/* Main Candlestick Canvas (Top Pane) */}
+          <div style={{ position: 'relative', width: '100%', height: `${indicators.subIndicator !== 'NONE' ? height - 110 : height}px` }}>
+            <canvas
+              ref={mainCanvasRef}
+              onMouseDown={handleMouseDown}
+              onDoubleClick={handleDoubleClick}
+              onWheel={handleWheel}
+              onMouseMove={handleMouseMove}
+              onMouseLeave={handleMouseLeave}
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'block',
+                cursor: cursorType,
+                userSelect: 'none',
+              }}
+            />
+
+            {/* Floating TradingView Scale Control Toolbar */}
+            <div
           style={{
             position: 'absolute',
             right: '92px',
@@ -2818,6 +2916,8 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
           </div>
         </div>
       )}
+        </>
+      )}
 
       {/* Footer Status Bar with Interactive Tips */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginTop: '10px', fontSize: '11px', color: '#64748b' }}>
@@ -2830,7 +2930,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#0abab5', fontWeight: 600 }}>
-          <span>MetaApi Live Broker Cloud Feed</span>
+          <span>{candleSource === 'METAAPI_LIVE' ? 'MetaApi Live Broker Cloud Feed' : `${candleSource} Real-Time Feed`}</span>
         </div>
       </div>
 

@@ -8,17 +8,17 @@ export interface SymbolMarketMetadata {
 }
 
 export const SYMBOL_METADATA_MAP: Record<string, SymbolMarketMetadata> = {
-  USDJPY: { basePrice: 158.240, decimals: 3, tickVolatility: 0.018, spread: 0.005 },
-  EURUSD: { basePrice: 1.11444, decimals: 5, tickVolatility: 0.00012, spread: 0.00005 },
-  GBPUSD: { basePrice: 1.33070, decimals: 5, tickVolatility: 0.00015, spread: 0.00015 },
-  AUDUSD: { basePrice: 0.70370, decimals: 5, tickVolatility: 0.00012, spread: 0.00010 },
-  USDCAD: { basePrice: 1.40390, decimals: 5, tickVolatility: 0.00014, spread: 0.00015 },
-  XAUUSD: { basePrice: 4038.50, decimals: 2, tickVolatility: 0.65, spread: 0.30 },
-  GOLD: { basePrice: 4038.50, decimals: 2, tickVolatility: 0.65, spread: 0.30 },
-  'MCL1!': { basePrice: 101.29, decimals: 2, tickVolatility: 0.05, spread: 0.04 },
-  USOIL: { basePrice: 101.29, decimals: 2, tickVolatility: 0.05, spread: 0.04 },
-  BTCUSD: { basePrice: 80316.97, decimals: 2, tickVolatility: 12.0, spread: 10.0 },
-  US30: { basePrice: 52525.00, decimals: 2, tickVolatility: 4.0, spread: 3.0 },
+  USDJPY: { basePrice: 157.480, decimals: 3, tickVolatility: 0.015, spread: 0.003 },
+  EURUSD: { basePrice: 1.11870, decimals: 5, tickVolatility: 0.00010, spread: 0.00003 },
+  GBPUSD: { basePrice: 1.33890, decimals: 5, tickVolatility: 0.00012, spread: 0.00005 },
+  AUDUSD: { basePrice: 0.70320, decimals: 5, tickVolatility: 0.00010, spread: 0.00004 },
+  USDCAD: { basePrice: 1.39720, decimals: 5, tickVolatility: 0.00012, spread: 0.00005 },
+  XAUUSD: { basePrice: 3982.60, decimals: 2, tickVolatility: 0.55, spread: 0.25 },
+  GOLD: { basePrice: 3982.60, decimals: 2, tickVolatility: 0.55, spread: 0.25 },
+  'MCL1!': { basePrice: 103.25, decimals: 2, tickVolatility: 0.05, spread: 0.03 },
+  USOIL: { basePrice: 103.25, decimals: 2, tickVolatility: 0.05, spread: 0.03 },
+  BTCUSD: { basePrice: 78500.00, decimals: 2, tickVolatility: 10.0, spread: 5.0 },
+  US30: { basePrice: 52300.00, decimals: 2, tickVolatility: 4.0, spread: 2.0 },
 };
 
 export const getTimeframeDurationSeconds = (timeframe: CandlestickTimeframe): number => {
@@ -162,33 +162,15 @@ export const applyLiveTick = (
   // Otherwise, fluctuate the current active bar
   let newClose: number;
   if (typeof externalPrice === 'number' && !isNaN(externalPrice) && externalPrice > 0) {
-    newClose = Number(externalPrice.toFixed(meta.decimals));
-    // If externalPrice jumps significantly from lastBar.close (e.g. from seed generator to live server quote),
-    // harmonize the previous bars so the chart maintains realistic scale and does not flatten into a pancake.
-    const jump = newClose - lastBar.close;
-    if (Math.abs(jump) > meta.tickVolatility * 4) {
-      for (let i = 0; i < next.length - 1; i++) {
-        next[i] = {
-          ...next[i],
-          open: Number((next[i].open + jump).toFixed(meta.decimals)),
-          high: Number((next[i].high + jump).toFixed(meta.decimals)),
-          low: Number((next[i].low + jump).toFixed(meta.decimals)),
-          close: Number((next[i].close + jump).toFixed(meta.decimals)),
-        };
-      }
-      lastBar.open = Number((lastBar.open + jump).toFixed(meta.decimals));
-      lastBar.high = Number((Math.max(lastBar.open, newClose) + meta.tickVolatility * 0.2).toFixed(meta.decimals));
-      lastBar.low = Number((Math.min(lastBar.open, newClose) - meta.tickVolatility * 0.2).toFixed(meta.decimals));
-    }
+    // Oscillate with realistic micro-spread tick around active live quote so bar stays alive
+    const microJitter = (Math.random() - 0.5) * (meta.tickVolatility * 0.2);
+    const target = externalPrice + microJitter;
+    newClose = Number(target.toFixed(meta.decimals));
   } else {
-    // Mean-reverting micro-jitter bounded tightly around benchmark basePrice (anti-drift)
-    const anchor = meta.basePrice;
-    const drift = lastBar.close - anchor;
-    const meanReversion = -drift * 0.35;
+    // Mean-reverting micro-jitter bounded tightly around lastBar.close (anti-drift, no jumps)
+    const anchor = lastBar.close;
     const microJitter = (Math.random() - 0.5) * (meta.tickVolatility * 0.15);
-    const maxDev = meta.tickVolatility * 1.5;
-    let target = lastBar.close + meanReversion + microJitter;
-    target = Math.max(anchor - maxDev, Math.min(anchor + maxDev, target));
+    const target = anchor + microJitter;
     newClose = Math.max(0.0001, Number(target.toFixed(meta.decimals)));
   }
 
