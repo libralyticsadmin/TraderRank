@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Broker } from '../../../shared/src/types.ts';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { TraderAvatar } from './TraderAvatar.tsx';
@@ -124,8 +124,6 @@ const DEFAULT_SPOTLIGHT_TRADES: BulletinTradeItem[] = [
   },
 ];
 
-type FilterType = 'ALL' | 'HOT' | 'XAUUSD' | 'FOREX';
-
 export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
   onSelectTrader,
 }) => {
@@ -134,7 +132,6 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const [isHovered, setIsHovered] = useState<boolean>(false);
-  const [activeFilter, setActiveFilter] = useState<FilterType>('ALL');
   const [progress, setProgress] = useState<number>(0);
 
   const SPOTLIGHT_INTERVAL_MS = 4500;
@@ -165,19 +162,40 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
               const rawTrades = await trRes.json();
               if (Array.isArray(rawTrades)) {
                 for (const tr of rawTrades) {
-                  const pips = Number((tr.profitPips ?? tr.pnlPips ?? 0).toFixed(1));
+                  if (!tr.symbol || tr.symbol === 'UNKNOWN' || tr.symbol.trim() === '') continue;
+
+                  let pips = Number((tr.profitPips ?? tr.pnlPips ?? 0).toFixed(1));
+                  const profit = Number((tr.profitCurrency ?? tr.profit ?? 0).toFixed(2));
+                  const lotSize = Number((tr.lotSize ?? tr.volume ?? 0.05).toFixed(2));
+
+                  // Calculate pips from price delta if server sent 0
+                  if (pips === 0 && tr.closePrice && tr.openPrice && tr.closePrice !== tr.openPrice) {
+                    const isJPY = tr.symbol.includes('JPY');
+                    const isGold = tr.symbol.includes('XAU') || tr.symbol.includes('GOLD');
+                    const mult = isJPY ? 100 : isGold ? 10 : 10000;
+                    const diff = tr.type === 'BUY' ? tr.closePrice - tr.openPrice : tr.openPrice - tr.closePrice;
+                    pips = Number((diff * mult).toFixed(1));
+                  } else if (pips === 0 && profit !== 0 && lotSize > 0) {
+                    const isGold = tr.symbol.includes('XAU') || tr.symbol.includes('GOLD');
+                    const pipVal = isGold ? 10 : 10;
+                    pips = Number((profit / (lotSize * pipVal)).toFixed(1));
+                  }
+
+                  // Skip duplicate zero-pip and zero-profit records
+                  if (pips === 0 && profit === 0) continue;
+
                   collected.push({
                     id: tr.id || `tr_${Math.random()}`,
                     trader: acc.username || `Trader-${acc.accountNumber}`,
                     broker: acc.broker || 'XM',
-                    symbol: tr.symbol || 'EURUSD',
+                    symbol: tr.symbol,
                     type: tr.type === 'BUY' ? 'BUY' : 'SELL',
                     pips,
-                    lotSize: Number((tr.lotSize ?? tr.volume ?? 0.1).toFixed(2)),
-                    profitUsd: Number((tr.profitCurrency ?? tr.profit ?? 0).toFixed(1)),
+                    lotSize,
+                    profitUsd: profit,
                     timeAgo: tr.closeTime ? new Date(tr.closeTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Live',
-                    tagKey: pips > 0 ? 'scalpWin' : 'verifiedDeal',
-                    isHot: pips > 20,
+                    tagKey: pips > 20 ? 'scalpWin' : 'takeProfit',
+                    isHot: pips >= 25,
                   });
                 }
               }
@@ -188,8 +206,8 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
         }
 
         if (isMounted && collected.length > 0) {
-          // Merge real trades at the top, followed by curated institutional trades
-          setTrades([...collected, ...DEFAULT_SPOTLIGHT_TRADES]);
+          const uniqueReal = collected.slice(0, 8);
+          setTrades([...uniqueReal, ...DEFAULT_SPOTLIGHT_TRADES]);
         }
       } catch {
         // ignore
@@ -204,22 +222,12 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
     };
   }, []);
 
-  // Filter trades based on active filter
-  const filteredTrades = useMemo(() => {
-    return trades.filter(tr => {
-      if (activeFilter === 'HOT') return tr.isHot || tr.pips >= 25;
-      if (activeFilter === 'XAUUSD') return tr.symbol.includes('XAU') || tr.symbol.includes('GOLD');
-      if (activeFilter === 'FOREX') return !tr.symbol.includes('XAU') && !tr.symbol.includes('BTC');
-      return true;
-    });
-  }, [trades, activeFilter]);
-
   // Ensure currentIndex stays within bounds
-  const currentTrade = filteredTrades[currentIndex % (filteredTrades.length || 1)] || trades[0];
+  const currentTrade = trades[currentIndex % (trades.length || 1)] || trades[0];
 
   // Auto advance timer with visual progress bar
   useEffect(() => {
-    if (!isPlaying || isHovered || filteredTrades.length <= 1) return;
+    if (!isPlaying || isHovered || trades.length <= 1) return;
 
     const tickInterval = 50;
     const increment = (tickInterval / SPOTLIGHT_INTERVAL_MS) * 100;
@@ -227,7 +235,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
     const timer = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) {
-          setCurrentIndex(curr => (curr + 1) % filteredTrades.length);
+          setCurrentIndex(curr => (curr + 1) % trades.length);
           return 0;
         }
         return prev + increment;
@@ -235,16 +243,16 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
     }, tickInterval);
 
     return () => clearInterval(timer);
-  }, [isPlaying, isHovered, filteredTrades.length]);
+  }, [isPlaying, isHovered, trades.length]);
 
   const handleNext = () => {
     setProgress(0);
-    setCurrentIndex(prev => (prev + 1) % filteredTrades.length);
+    setCurrentIndex(prev => (prev + 1) % trades.length);
   };
 
   const handlePrev = () => {
     setProgress(0);
-    setCurrentIndex(prev => (prev - 1 + filteredTrades.length) % filteredTrades.length);
+    setCurrentIndex(prev => (prev - 1 + trades.length) % trades.length);
   };
 
   const handleSelectMiniChip = (idx: number) => {
@@ -262,7 +270,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* 1. Left Sidebar: Badge, Live Radar, and Filter Chips */}
+      {/* 1. Left Sidebar: Badge and Live Radar */}
       <div className="bulletin-badge-pinned">
         <div className="bulletin-badge-header">
           <div className="bulletin-radar-wrap">
@@ -273,34 +281,6 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
             <span className="bulletin-title">{t.bulletin.badgeTitle}</span>
             <span className="bulletin-subtitle">{t.bulletin.badgeSubtitle}</span>
           </div>
-        </div>
-
-        {/* Filter Quick Chips */}
-        <div className="bulletin-filters">
-          <button
-            className={`bulletin-filter-chip ${activeFilter === 'ALL' ? 'active' : ''}`}
-            onClick={() => { setActiveFilter('ALL'); setCurrentIndex(0); setProgress(0); }}
-          >
-            All ({trades.length})
-          </button>
-          <button
-            className={`bulletin-filter-chip ${activeFilter === 'HOT' ? 'active' : ''}`}
-            onClick={() => { setActiveFilter('HOT'); setCurrentIndex(0); setProgress(0); }}
-          >
-            🔥 Hot
-          </button>
-          <button
-            className={`bulletin-filter-chip ${activeFilter === 'XAUUSD' ? 'active' : ''}`}
-            onClick={() => { setActiveFilter('XAUUSD'); setCurrentIndex(0); setProgress(0); }}
-          >
-            Gold
-          </button>
-          <button
-            className={`bulletin-filter-chip ${activeFilter === 'FOREX' ? 'active' : ''}`}
-            onClick={() => { setActiveFilter('FOREX'); setCurrentIndex(0); setProgress(0); }}
-          >
-            Forex
-          </button>
         </div>
       </div>
 
@@ -389,8 +369,8 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
         <div className="bulletin-controls-wrap">
           {/* Mini Chips of Upcoming Fills */}
           <div className="bulletin-mini-chips">
-            {filteredTrades.slice(0, 4).map((item, idx) => {
-              const active = idx === (currentIndex % filteredTrades.length);
+            {trades.slice(0, 4).map((item, idx) => {
+              const active = idx === (currentIndex % trades.length);
               return (
                 <button
                   key={`${item.id}-chip`}

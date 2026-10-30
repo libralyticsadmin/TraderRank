@@ -21,6 +21,7 @@ import { MarketLivePricesTicker } from './MarketLivePricesTicker.tsx';
 import { LiveCandleChart } from './LiveCandleChart.tsx';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { LanguageSelector } from './LanguageSelector.tsx';
+import { UserNavMenu } from './UserNavMenu.tsx';
 
 interface LandingPageProps {
   onEnterApp: (tab?: string) => void;
@@ -84,6 +85,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <LanguageSelector />
+            <UserNavMenu onOpenConnectWizard={onOpenConnectWizard} />
             <button
               onClick={onOpenConnectWizard}
               style={{

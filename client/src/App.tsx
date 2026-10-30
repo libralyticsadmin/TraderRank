@@ -25,6 +25,9 @@ import { DailyAnalysisHub } from './components/DailyAnalysisHub.tsx';
 import { SubscriptionModal } from './components/SubscriptionModal.tsx';
 import { LanguageSelector } from './components/LanguageSelector.tsx';
 import { useTranslation } from './context/LanguageContext.tsx';
+import { AuthModal } from './components/AuthModal.tsx';
+import { ProfileEditModal } from './components/ProfileEditModal.tsx';
+import { UserNavMenu } from './components/UserNavMenu.tsx';
 import {
   Plus,
   Shield,
@@ -312,6 +315,8 @@ export const App: React.FC = () => {
             onClose={() => setSelectedTrader(null)}
           />
         )}
+        <AuthModal />
+        <ProfileEditModal />
       </>
     );
   }
@@ -374,6 +379,7 @@ export const App: React.FC = () => {
         <div className="header-actions">
           {/* Language Selector Dropdown (Bitget Inspired) */}
           <LanguageSelector />
+          <UserNavMenu onOpenConnectWizard={() => setIsWizardOpen(true)} />
 
           <button
             className="btn-secondary"
@@ -659,6 +665,10 @@ export const App: React.FC = () => {
           setIsSubscriptionModalOpen(false);
         }}
       />
+
+      {/* User Authentication & Profile Edit Modals */}
+      <AuthModal />
+      <ProfileEditModal />
 
       {/* Global Application Footer */}
       <footer

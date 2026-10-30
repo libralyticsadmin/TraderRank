@@ -648,6 +648,8 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
     const firstTick = Math.ceil(adjustedMin / priceStep) * priceStep;
     const isForex = symbol === 'EURUSD' || symbol === 'GBPUSD' || symbol === 'AUDUSD' || symbol === 'USDCAD';
     const priceDecimals = symbol === 'USDJPY' ? 3 : isForex ? 5 : 2;
+    const lastBarClose = bars.length > 0 ? bars[bars.length - 1].close : null;
+    const lastBarY = lastBarClose !== null ? getY(lastBarClose) : null;
 
     for (let p = firstTick; p <= adjustedMax; p += priceStep) {
       const y = getY(p);
@@ -657,6 +659,9 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       ctx.moveTo(0, y);
       ctx.lineTo(plotWidth, y);
       ctx.stroke();
+
+      // Skip tick label if it collides with the live price badge
+      if (lastBarY !== null && Math.abs(y - lastBarY) < 15) continue;
 
       ctx.fillText(p.toFixed(priceDecimals), plotWidth + 8, y + 3);
     }
@@ -895,8 +900,13 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
         ctx.fillText(sw.structureType, x, isHigh ? y - 6 : y + 12);
       });
 
-      // 5b. Breakout Lines & Marker Badges
-      breaks.forEach(brk => {
+      // 5b. Breakout Lines & Marker Badges (Filtered for clean institutional spacing)
+      const visibleBreaks = breaks.filter((brk, idx, arr) => {
+        if (idx === 0) return true;
+        return brk.breakoutIndex - arr[idx - 1].breakoutIndex >= 6 || brk.isBullish !== arr[idx - 1].isBullish;
+      });
+
+      visibleBreaks.forEach(brk => {
         const startX = getX(brk.brokenIndex);
         const endX = getX(brk.breakoutIndex);
         if (endX < -20 || startX > plotWidth + 20) return;
@@ -1115,10 +1125,15 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
       const currentPriceColor = isUp ? '#0abab5' : '#ef4444';
 
       if (currentY >= paddingTop && currentY <= paddingTop + plotHeight) {
-        // Horizontal dashed line
-        ctx.strokeStyle = currentPriceColor;
-        ctx.setLineDash([4, 4]);
-        ctx.lineWidth = 1;
+        // High-tech laser price line with subtle gradient glow
+        const grad = ctx.createLinearGradient(0, 0, plotWidth, 0);
+        grad.addColorStop(0, 'rgba(255, 255, 255, 0.05)');
+        grad.addColorStop(0.65, isUp ? 'rgba(10, 186, 181, 0.35)' : 'rgba(239, 68, 68, 0.35)');
+        grad.addColorStop(1, currentPriceColor);
+
+        ctx.strokeStyle = grad;
+        ctx.setLineDash([5, 4]);
+        ctx.lineWidth = 1.2;
         ctx.beginPath();
         ctx.moveTo(0, currentY);
         ctx.lineTo(plotWidth, currentY);
@@ -1129,8 +1144,8 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
         const lastCandleX = getX(bars.length - 1);
         if (lastCandleX >= 0 && lastCandleX <= plotWidth) {
           ctx.beginPath();
-          ctx.arc(lastCandleX, currentY, 7, 0, Math.PI * 2);
-          ctx.fillStyle = isUp ? 'rgba(10, 186, 181, 0.25)' : 'rgba(239, 68, 68, 0.25)';
+          ctx.arc(lastCandleX, currentY, 8, 0, Math.PI * 2);
+          ctx.fillStyle = isUp ? 'rgba(10, 186, 181, 0.3)' : 'rgba(239, 68, 68, 0.3)';
           ctx.fill();
 
           ctx.beginPath();
@@ -1139,17 +1154,27 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
           ctx.fill();
         }
 
-        // Price Tag on Right Axis (Rounded Badge)
+        // TradingView High-Contrast Price Badge on Right Axis
+        const curPriceStr = currentBar.close.toFixed(priceDecimals);
+        const badgeW = 78;
+        const badgeH = 22;
+        const badgeX = plotWidth + 3;
+        const badgeY = currentY - badgeH / 2;
+
+        ctx.save();
+        ctx.shadowColor = currentPriceColor;
+        ctx.shadowBlur = 10;
         ctx.fillStyle = currentPriceColor;
         ctx.beginPath();
-        ctx.roundRect(plotWidth + 2, currentY - 10, 78, 20, 4);
+        ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 4);
         ctx.fill();
+        ctx.restore();
 
-        ctx.fillStyle = '#000000';
-        ctx.font = 'bold 11px monospace';
+        // High contrast text inside badge
+        ctx.fillStyle = '#051016';
+        ctx.font = '900 11px monospace';
         ctx.textAlign = 'center';
-        const curPriceStr = currentBar.close.toFixed(priceDecimals);
-        ctx.fillText(curPriceStr, plotWidth + 41, currentY + 4);
+        ctx.fillText(curPriceStr, badgeX + badgeW / 2, currentY + 4);
       }
     }
 

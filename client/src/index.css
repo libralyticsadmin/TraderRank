@@ -701,14 +701,13 @@ body {
 
 .bulletin-badge-pinned {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 14px 18px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
   background: linear-gradient(90deg, rgba(5, 12, 16, 0.98) 0%, rgba(7, 18, 23, 0.92) 100%);
   border-right: 1px solid rgba(10, 186, 181, 0.22);
   flex-shrink: 0;
-  min-width: 220px;
-  gap: 8px;
+  min-width: 200px;
   z-index: 10;
 }
 

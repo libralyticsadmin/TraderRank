@@ -8,7 +8,7 @@ export interface SymbolMarketMetadata {
 }
 
 export const SYMBOL_METADATA_MAP: Record<string, SymbolMarketMetadata> = {
-  USDJPY: { basePrice: 157.804, decimals: 3, tickVolatility: 0.018, spread: 0.005 },
+  USDJPY: { basePrice: 158.240, decimals: 3, tickVolatility: 0.018, spread: 0.005 },
   EURUSD: { basePrice: 1.11444, decimals: 5, tickVolatility: 0.00012, spread: 0.00005 },
   GBPUSD: { basePrice: 1.33070, decimals: 5, tickVolatility: 0.00015, spread: 0.00015 },
   AUDUSD: { basePrice: 0.70370, decimals: 5, tickVolatility: 0.00012, spread: 0.00010 },
@@ -163,6 +163,23 @@ export const applyLiveTick = (
   let newClose: number;
   if (typeof externalPrice === 'number' && !isNaN(externalPrice) && externalPrice > 0) {
     newClose = Number(externalPrice.toFixed(meta.decimals));
+    // If externalPrice jumps significantly from lastBar.close (e.g. from seed generator to live server quote),
+    // harmonize the previous bars so the chart maintains realistic scale and does not flatten into a pancake.
+    const jump = newClose - lastBar.close;
+    if (Math.abs(jump) > meta.tickVolatility * 4) {
+      for (let i = 0; i < next.length - 1; i++) {
+        next[i] = {
+          ...next[i],
+          open: Number((next[i].open + jump).toFixed(meta.decimals)),
+          high: Number((next[i].high + jump).toFixed(meta.decimals)),
+          low: Number((next[i].low + jump).toFixed(meta.decimals)),
+          close: Number((next[i].close + jump).toFixed(meta.decimals)),
+        };
+      }
+      lastBar.open = Number((lastBar.open + jump).toFixed(meta.decimals));
+      lastBar.high = Number((Math.max(lastBar.open, newClose) + meta.tickVolatility * 0.2).toFixed(meta.decimals));
+      lastBar.low = Number((Math.min(lastBar.open, newClose) - meta.tickVolatility * 0.2).toFixed(meta.decimals));
+    }
   } else {
     // Mean-reverting micro-jitter bounded tightly around benchmark basePrice (anti-drift)
     const anchor = meta.basePrice;

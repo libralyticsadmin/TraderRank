@@ -349,6 +349,100 @@ export function createServer() {
     };
   };
 
+  // User Profiles In-Memory Store
+  const userProfiles = new Map<string, any>([
+    [
+      'u_alex_vanguard',
+      {
+        id: 'u_alex_vanguard',
+        username: 'Alex_Vanguard',
+        email: 'alex.vanguard@traderank.live',
+        avatarSymbol: 'zap',
+        traderTitle: 'Institutional Gold & FX Scalper',
+        bio: 'Disciplined price-action scalper specializing in London/NY overlaps. Zero-write verified execution across XM and Exness.',
+        tradingStyle: 'SCALPER',
+        primaryBroker: 'Exness',
+        country: 'United States',
+        joinedAt: 'October 2026',
+        level: 5,
+        xp: 3420,
+        rank: 12,
+        telegramHandle: '@alex_trades',
+        discordHandle: 'vanguard_fx#1284',
+        twitterHandle: '@vanguard_fx',
+      },
+    ],
+  ]);
+
+  // Auth: Register
+  app.post('/api/auth/register', (req: Request, res: Response) => {
+    const { username, email, primaryBroker, tradingStyle } = req.body || {};
+    if (!username || !email) {
+      return res.status(400).json({ success: false, error: 'Username and email are required' });
+    }
+    const cleanId = `u_${String(username).toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+    const newUser = {
+      id: cleanId,
+      username: String(username).trim(),
+      email: String(email).trim(),
+      avatarSymbol: 'zap',
+      traderTitle: 'Verified Market Trader',
+      bio: '',
+      tradingStyle: tradingStyle || 'SCALPER',
+      primaryBroker: primaryBroker || 'Exness',
+      country: 'Global',
+      joinedAt: 'Today',
+      level: 1,
+      xp: 100,
+      rank: 99,
+    };
+    userProfiles.set(cleanId, newUser);
+    return res.status(201).json({ success: true, user: newUser });
+  });
+
+  // Auth: Login
+  app.post('/api/auth/login', (req: Request, res: Response) => {
+    const { emailOrUser } = req.body || {};
+    if (!emailOrUser) {
+      return res.status(400).json({ success: false, error: 'Username or email required' });
+    }
+    const needle = String(emailOrUser).trim().toLowerCase();
+    const found = Array.from(userProfiles.values()).find(
+      (u: any) => u.username.toLowerCase() === needle || u.email.toLowerCase() === needle
+    );
+    if (found) {
+      return res.json({ success: true, user: found });
+    }
+    // Auto-create/demo login for smooth UX
+    const autoUser = {
+      id: `u_${needle.replace(/[^a-z0-9]/g, '_')}`,
+      username: emailOrUser.includes('@') ? emailOrUser.split('@')[0] : emailOrUser,
+      email: emailOrUser.includes('@') ? emailOrUser : `${needle}@traderank.live`,
+      avatarSymbol: 'zap',
+      traderTitle: 'Verified Market Trader',
+      bio: '',
+      tradingStyle: 'SCALPER',
+      primaryBroker: 'Exness',
+      country: 'Global',
+      joinedAt: 'Today',
+      level: 1,
+      xp: 100,
+      rank: 99,
+    };
+    userProfiles.set(autoUser.id, autoUser);
+    return res.json({ success: true, user: autoUser });
+  });
+
+  // Auth: Update Profile
+  app.put('/api/auth/profile', (req: Request, res: Response) => {
+    const profile = req.body || {};
+    if (!profile.id) {
+      return res.status(400).json({ success: false, error: 'Profile ID required' });
+    }
+    userProfiles.set(profile.id, profile);
+    return res.json({ success: true, user: profile });
+  });
+
   // 1. Health & Telemetry
   app.get('/api/health', (_req: Request, res: Response) => {
     res.json({
