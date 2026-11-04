@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Check, Save, User, ShieldCheck } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { X, Check, Save, User, ShieldCheck, Camera, Upload, Instagram, Trash2 } from 'lucide-react';
 import { useAuth, UserProfile } from '../context/AuthContext.tsx';
 import { Broker } from '../../../shared/src/types.ts';
 import { TraderAvatar } from './TraderAvatar.tsx';
@@ -18,6 +18,17 @@ const AVATAR_SYMBOLS = [
   { id: 'BTCUSD', label: 'Bitcoin (BTC)' },
 ];
 
+const PRESET_PORTRAITS = [
+  { id: 'p1', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80', label: 'Alpha' },
+  { id: 'p2', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80', label: 'Gold Pro' },
+  { id: 'p3', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80', label: 'Quant' },
+  { id: 'p4', url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80', label: 'Scalper' },
+  { id: 'p5', url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&auto=format&fit=crop&q=80', label: 'Tokyo Rider' },
+  { id: 'p6', url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop&q=80', label: 'Apex' },
+  { id: 'p7', url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=200&auto=format&fit=crop&q=80', label: 'Crypto FX' },
+  { id: 'p8', url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&auto=format&fit=crop&q=80', label: 'Elite' },
+];
+
 export const ProfileEditModal: React.FC = () => {
   const { user, isProfileModalOpen, closeProfileModal, updateProfile } = useAuth();
 
@@ -27,10 +38,15 @@ export const ProfileEditModal: React.FC = () => {
   const [tradingStyle, setTradingStyle] = useState<UserProfile['tradingStyle']>(user?.tradingStyle || 'SCALPER');
   const [primaryBroker, setPrimaryBroker] = useState<Broker>(user?.primaryBroker || 'Exness');
   const [avatarSymbol, setAvatarSymbol] = useState(user?.avatarSymbol || 'zap');
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
   const [country, setCountry] = useState(user?.country || 'United States');
   const [telegramHandle, setTelegramHandle] = useState(user?.telegramHandle || '');
   const [discordHandle, setDiscordHandle] = useState(user?.discordHandle || '');
   const [twitterHandle, setTwitterHandle] = useState(user?.twitterHandle || '');
+  const [instagramHandle, setInstagramHandle] = useState(user?.instagramHandle || '');
+  const [customUrlInput, setCustomUrlInput] = useState('');
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
@@ -43,14 +59,35 @@ export const ProfileEditModal: React.FC = () => {
       setTradingStyle(user.tradingStyle || 'SCALPER');
       setPrimaryBroker(user.primaryBroker || 'Exness');
       setAvatarSymbol(user.avatarSymbol || 'zap');
+      setAvatarUrl(user.avatarUrl || '');
       setCountry(user.country || 'United States');
       setTelegramHandle(user.telegramHandle || '');
       setDiscordHandle(user.discordHandle || '');
       setTwitterHandle(user.twitterHandle || '');
+      setInstagramHandle(user.instagramHandle || '');
+      setCustomUrlInput(user.avatarUrl || '');
+      setUploadError(null);
     }
   }, [user, isProfileModalOpen]);
 
   if (!isProfileModalOpen || !user) return null;
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('Image must be under 5MB');
+      return;
+    }
+    setUploadError(null);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (typeof event.target?.result === 'string') {
+        setAvatarUrl(event.target.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,10 +100,12 @@ export const ProfileEditModal: React.FC = () => {
       tradingStyle,
       primaryBroker,
       avatarSymbol,
+      avatarUrl: avatarUrl.trim(),
       country: country.trim(),
       telegramHandle: telegramHandle.trim(),
       discordHandle: discordHandle.trim(),
       twitterHandle: twitterHandle.trim(),
+      instagramHandle: instagramHandle.trim(),
     });
 
     setSaving(false);
@@ -172,7 +211,33 @@ export const ProfileEditModal: React.FC = () => {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <TraderAvatar username={username || user.username} symbol={avatarSymbol} size={52} />
+            <div style={{ position: 'relative' }}>
+              <TraderAvatar username={username || user.username} symbol={avatarSymbol} avatarUrl={avatarUrl} size={56} />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                title="Click to upload profile photo"
+                style={{
+                  position: 'absolute',
+                  bottom: '-3px',
+                  right: '-3px',
+                  background: 'linear-gradient(135deg, #0abab5, #00f0ff)',
+                  color: '#080b11',
+                  border: '2px solid #090e18',
+                  borderRadius: '50%',
+                  width: '22px',
+                  height: '22px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.6)',
+                  padding: 0,
+                }}
+              >
+                <Camera size={11} />
+              </button>
+            </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <strong style={{ fontSize: '16px', color: '#ffffff' }}>{username || user.username}</strong>
@@ -264,6 +329,168 @@ export const ProfileEditModal: React.FC = () => {
                   boxSizing: 'border-box',
                 }}
               />
+            </div>
+          </div>
+
+          {/* Profile Picture Customizer (Upload, URL & Presets) */}
+          <div
+            style={{
+              padding: '16px',
+              borderRadius: '14px',
+              background: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid rgba(10, 186, 181, 0.25)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+              <div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 800, color: '#ffffff' }}>
+                  <Camera size={14} color="#0abab5" /> Profile Picture & Avatar Photo
+                </label>
+                <span style={{ fontSize: '11px', color: '#848E9C' }}>
+                  Upload a photo from your device, choose from verified presets, or enter an image URL
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={handleFileUpload}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '7px 14px',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, rgba(10, 186, 181, 0.2), rgba(0, 240, 255, 0.15))',
+                    border: '1px solid rgba(10, 186, 181, 0.45)',
+                    color: '#00F0FF',
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <Upload size={13} /> Upload Photo
+                </button>
+                {avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={() => { setAvatarUrl(''); setCustomUrlInput(''); }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '7px 10px',
+                      borderRadius: '8px',
+                      background: 'rgba(239, 68, 68, 0.12)',
+                      border: '1px solid rgba(239, 68, 68, 0.35)',
+                      color: '#f87171',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                    title="Remove custom photo and reset to default"
+                  >
+                    <Trash2 size={12} /> Reset
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {uploadError && (
+              <div style={{ fontSize: '11px', color: '#f87171', background: 'rgba(239, 68, 68, 0.1)', padding: '6px 10px', borderRadius: '6px' }}>
+                {uploadError}
+              </div>
+            )}
+
+            {/* Quick Preset Portraits Grid */}
+            <div>
+              <span style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Select from Institutional Pro Presets
+              </span>
+              <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '6px' }}>
+                {PRESET_PORTRAITS.map((p) => {
+                  const isSelected = avatarUrl === p.url;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setAvatarUrl(p.url)}
+                      style={{
+                        position: 'relative',
+                        width: '46px',
+                        height: '46px',
+                        borderRadius: '10px',
+                        overflow: 'hidden',
+                        padding: 0,
+                        border: isSelected ? '2px solid #00F0FF' : '1px solid rgba(255, 255, 255, 0.12)',
+                        boxShadow: isSelected ? '0 0 12px rgba(0, 240, 255, 0.5)' : 'none',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                        transition: 'all 0.15s ease',
+                      }}
+                      title={p.label}
+                    >
+                      <img src={p.url} alt={p.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      {isSelected && (
+                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0, 240, 255, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Check size={16} color="#ffffff" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Direct Image URL input */}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <input
+                type="text"
+                placeholder="Or paste an image URL (https://...)"
+                value={customUrlInput}
+                onChange={(e) => setCustomUrlInput(e.target.value)}
+                style={{
+                  flex: 1,
+                  padding: '7px 10px',
+                  borderRadius: '6px',
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: '#ffffff',
+                  fontSize: '11px',
+                  outline: 'none',
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (customUrlInput.trim()) {
+                    setAvatarUrl(customUrlInput.trim());
+                  }
+                }}
+                style={{
+                  padding: '7px 12px',
+                  borderRadius: '6px',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  color: '#ffffff',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Apply URL
+              </button>
             </div>
           </div>
 
@@ -384,74 +611,102 @@ export const ProfileEditModal: React.FC = () => {
           </div>
 
           {/* Social Handles */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#94a3b8', marginBottom: '4px' }}>
-                Telegram
-              </label>
-              <input
-                type="text"
-                placeholder="@username"
-                value={telegramHandle}
-                onChange={(e) => setTelegramHandle(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px 10px',
-                  borderRadius: '6px',
-                  background: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  color: '#ffffff',
-                  fontSize: '12px',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                }}
-              />
-            </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#94a3b8', marginBottom: '6px' }}>
+              Social & Community Profiles
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#94a3b8', marginBottom: '4px' }}>
+                  Telegram
+                </label>
+                <input
+                  type="text"
+                  placeholder="@username"
+                  value={telegramHandle}
+                  onChange={(e) => setTelegramHandle(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#ffffff',
+                    fontSize: '12px',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#94a3b8', marginBottom: '4px' }}>
-                Discord
-              </label>
-              <input
-                type="text"
-                placeholder="handle#0000"
-                value={discordHandle}
-                onChange={(e) => setDiscordHandle(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px 10px',
-                  borderRadius: '6px',
-                  background: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  color: '#ffffff',
-                  fontSize: '12px',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                }}
-              />
-            </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#94a3b8', marginBottom: '4px' }}>
+                  Discord
+                </label>
+                <input
+                  type="text"
+                  placeholder="handle#0000"
+                  value={discordHandle}
+                  onChange={(e) => setDiscordHandle(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#ffffff',
+                    fontSize: '12px',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#94a3b8', marginBottom: '4px' }}>
-                X / Twitter
-              </label>
-              <input
-                type="text"
-                placeholder="@handle"
-                value={twitterHandle}
-                onChange={(e) => setTwitterHandle(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px 10px',
-                  borderRadius: '6px',
-                  background: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  color: '#ffffff',
-                  fontSize: '12px',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                }}
-              />
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#94a3b8', marginBottom: '4px' }}>
+                  X / Twitter
+                </label>
+                <input
+                  type="text"
+                  placeholder="@handle"
+                  value={twitterHandle}
+                  onChange={(e) => setTwitterHandle(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#ffffff',
+                    fontSize: '12px',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 700, color: '#e1306c', marginBottom: '4px' }}>
+                  <Instagram size={12} color="#e1306c" /> Instagram
+                </label>
+                <input
+                  type="text"
+                  placeholder="@username"
+                  value={instagramHandle}
+                  onChange={(e) => setInstagramHandle(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    background: 'rgba(225, 48, 108, 0.05)',
+                    border: '1px solid rgba(225, 48, 108, 0.35)',
+                    color: '#ffffff',
+                    fontSize: '12px',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
             </div>
           </div>
 

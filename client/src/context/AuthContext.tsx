@@ -6,6 +6,7 @@ export interface UserProfile {
   username: string;
   email: string;
   avatarSymbol: string;
+  avatarUrl?: string;
   traderTitle: string;
   bio: string;
   tradingStyle: 'SCALPER' | 'DAY_TRADER' | 'SWING_TRADER' | 'ALGORITHMIC';
@@ -18,6 +19,7 @@ export interface UserProfile {
   telegramHandle?: string;
   discordHandle?: string;
   twitterHandle?: string;
+  instagramHandle?: string;
 }
 
 interface AuthContextType {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, ShieldCheck, CheckCircle2, UserPlus, Radio } from 'lucide-react';
+import { X, ShieldCheck, CheckCircle2, UserPlus, Radio, Instagram } from 'lucide-react';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { Broker } from '../../../shared/src/types.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
@@ -10,6 +10,7 @@ export interface TraderProfileData {
   username: string;
   broker: Broker;
   avatarSymbol: string;
+  avatarUrl?: string;
   tier: string;
   level: number;
   xp: number;
@@ -23,6 +24,10 @@ export interface TraderProfileData {
   avgHoldingTime: string;
   verifiedSince: string;
   isFollowing?: boolean;
+  telegramHandle?: string;
+  discordHandle?: string;
+  twitterHandle?: string;
+  instagramHandle?: string;
 }
 
 interface VerifiedTrade {
@@ -206,7 +211,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <TraderAvatar username={trader.username} symbol={trader.avatarSymbol} size={64} />
+            <TraderAvatar username={trader.username} symbol={trader.avatarSymbol} avatarUrl={trader.avatarUrl} size={64} />
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                 <h3 style={{ margin: 0, fontSize: '22px', fontWeight: 900 }}>{trader.username}</h3>
@@ -226,6 +231,30 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                 >
                   <ShieldCheck size={12} /> {trader.broker} {t.profile.verifiedSince}
                 </span>
+                {trader.instagramHandle && (
+                  <a
+                    href={`https://instagram.com/${trader.instagramHandle.replace(/^@/, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`Instagram: ${trader.instagramHandle}`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '10px',
+                      fontWeight: 800,
+                      color: '#e1306c',
+                      background: 'rgba(225, 48, 108, 0.12)',
+                      border: '1px solid rgba(225, 48, 108, 0.35)',
+                      padding: '2px 7px',
+                      borderRadius: '8px',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    <Instagram size={11} color="#e1306c" />
+                    <span>{trader.instagramHandle.startsWith('@') ? trader.instagramHandle : `@${trader.instagramHandle}`}</span>
+                  </a>
+                )}
               </div>
               <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
                 {trader.tier} • {t.profile.levelLabel} {trader.level} ({trader.xp.toLocaleString()} XP) • {t.profile.verifiedSinceLabel} {trader.verifiedSince}

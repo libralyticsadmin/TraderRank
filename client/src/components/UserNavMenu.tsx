@@ -84,7 +84,7 @@ export const UserNavMenu: React.FC<UserNavMenuProps> = ({ onOpenConnectWizard })
           e.currentTarget.style.borderColor = 'rgba(10, 186, 181, 0.35)';
         }}
       >
-        <TraderAvatar username={user.username} symbol={user.avatarSymbol} size={28} />
+        <TraderAvatar username={user.username} symbol={user.avatarSymbol} avatarUrl={user.avatarUrl} size={28} />
         <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
           <span style={{ fontSize: '12px', fontWeight: 800, color: '#ffffff', lineHeight: 1.2 }}>
             {user.username}
