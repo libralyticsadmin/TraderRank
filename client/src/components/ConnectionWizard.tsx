@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 
 import { BrokerSymbol } from './BrokerSymbol.tsx';
+import { LanguageSelector } from './LanguageSelector.tsx';
 import { useTranslation } from '../context/LanguageContext.tsx';
 
 interface ConnectionWizardProps {
@@ -186,10 +187,13 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="modal-content">
-        <button className="modal-close" onClick={onClose} aria-label="Close">
-          <X size={20} />
-        </button>
+      <div className="modal-content" style={{ position: 'relative' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <LanguageSelector variant="compact" />
+          <button className="modal-close" onClick={onClose} aria-label="Close" style={{ position: 'static' }}>
+            <X size={20} />
+          </button>
+        </div>
 
         {/* Stepper */}
         <div className="stepper-header">
@@ -253,6 +257,22 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
             {selectedBroker === 'Exness' ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div
+                  className={`broker-card ${selectedPath === 'mt_gateway' ? 'selected' : ''}`}
+                  onClick={() => setSelectedPath('mt_gateway')}
+                >
+                  <Server size={28} color="#0abab5" />
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <strong>{t.connector.mtGatewayTitle}</strong>
+                      <span className="brand-badge">Recommended for Exness App & MT4/MT5</span>
+                    </div>
+                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      Connect using your Exness Account Number, Server, and Read-Only (Investor) Password.
+                    </p>
+                  </div>
+                </div>
+
+                <div
                   className={`broker-card ${selectedPath === 'exness_native' ? 'selected' : ''}`}
                   onClick={() => setSelectedPath('exness_native')}
                 >
@@ -260,23 +280,10 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <strong>{t.connector.exnessNativeTitle}</strong>
-                      <span className="brand-badge">Optimized</span>
+                      <span className="brand-badge">B2B / OpenAPI</span>
                     </div>
                     <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
                       {t.connector.exnessNativeDesc}
-                    </p>
-                  </div>
-                </div>
-
-                <div
-                  className={`broker-card ${selectedPath === 'mt_gateway' ? 'selected' : ''}`}
-                  onClick={() => setSelectedPath('mt_gateway')}
-                >
-                  <Server size={28} color="#0abab5" />
-                  <div>
-                    <strong>{t.connector.mtGatewayTitle}</strong>
-                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                      {t.connector.mtGatewayDesc}
                     </p>
                   </div>
                 </div>
@@ -346,7 +353,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                   const serverPresets: Record<string, string[]> = {
                     IC_MARKETS: ['ICMarketsSC-Live01', 'ICMarketsSC-Live02', 'ICMarkets-Live 01', 'ICMarketsGlobal-Live01', 'ICTrading-Live01'],
                     XM: ['XMGlobal-MT5 10', 'XMGlobal-Real 55', 'XMGlobal-Real 1', 'XMGlobal-MT5', 'XMGlobal-Real 30'],
-                    Exness: ['Exness-Real10', 'Exness-Real9', 'Exness-MT5Real', 'Exness-MT5Real2'],
+                    Exness: ['Exness-MT5Real', 'Exness-MT5Real2', 'Exness-MT5Real3', 'Exness-MT5Real9', 'Exness-Real1', 'Exness-Real2', 'Exness-Real9', 'Exness-Real10'],
                     Axiory: ['Axiory-Live 01', 'Axiory-Live 02', 'AxioryAsia-Live'],
                     Vantage: ['VantageFX-Live 2', 'VantageFX-Live 1', 'VantageInternational-Live 1'],
                   };
@@ -363,7 +370,11 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                           <button
                             key={srv}
                             type="button"
-                            onClick={() => setServerName(srv)}
+                            onClick={() => {
+                              setServerName(srv);
+                              if (srv.toLowerCase().includes('mt5')) setPlatform('MT5');
+                              else if (srv.toLowerCase().includes('real') && !srv.toLowerCase().includes('mt5')) setPlatform('MT4');
+                            }}
                             style={{
                               padding: '3px 8px',
                               borderRadius: '5px',

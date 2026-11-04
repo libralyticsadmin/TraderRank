@@ -12,6 +12,7 @@ import {
   NewsImpact,
 } from '../../../shared/src/types.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
+import { LanguageSelector } from './LanguageSelector.tsx';
 
 interface ForexFactoryCalendarModalProps {
   isOpen: boolean;
@@ -217,6 +218,7 @@ export const ForexFactoryCalendarModal: React.FC<ForexFactoryCalendarModalProps>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <LanguageSelector variant="compact" />
             <button
               onClick={() => fetchCalendar(true)}
               disabled={isLoading || isRefreshing}

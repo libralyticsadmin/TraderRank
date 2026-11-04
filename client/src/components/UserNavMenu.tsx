@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { User, Settings, LogOut, ChevronDown, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { TraderAvatar } from './TraderAvatar.tsx';
+import { LanguageSelector } from './LanguageSelector.tsx';
 
 interface UserNavMenuProps {
   onOpenConnectWizard?: () => void;
@@ -169,6 +170,13 @@ export const UserNavMenu: React.FC<UserNavMenuProps> = ({ onOpenConnectWizard })
               <span>Connect Broker MT4/MT5</span>
             </button>
           )}
+
+          <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.08)', margin: '4px 0' }}></div>
+
+          <div style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '12px', color: '#848E9C', fontWeight: 600 }}>Language</span>
+            <LanguageSelector variant="compact" />
+          </div>
 
           <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.08)', margin: '4px 0' }}></div>
 

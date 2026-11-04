@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { X, ShieldCheck, Mail, Lock, User, Sparkles, CheckCircle2, ArrowRight } from 'lucide-react';
+import { X, ShieldCheck, Mail, Lock, User, CheckCircle2, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { Broker } from '../../../shared/src/types.ts';
 import { BrandLogo } from './BrandLogo.tsx';
+import { LanguageSelector } from './LanguageSelector.tsx';
 
 export const AuthModal: React.FC = () => {
   const { isAuthModalOpen, closeAuthModal, authModalTab, login, register } = useAuth();
@@ -68,14 +69,6 @@ export const AuthModal: React.FC = () => {
     }
   };
 
-  const handleQuickDemo = async () => {
-    setError(null);
-    setLoading(true);
-    await login('Alex_Vanguard');
-    setLoading(false);
-    closeAuthModal();
-  };
-
   return (
     <div
       style={{
@@ -106,31 +99,43 @@ export const AuthModal: React.FC = () => {
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
-        <button
-          onClick={closeAuthModal}
-          style={{
-            position: 'absolute',
-            top: '18px',
-            right: '18px',
-            background: 'rgba(255, 255, 255, 0.06)',
-            border: 'none',
-            borderRadius: '8px',
-            padding: '6px',
-            color: '#94a3b8',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
-          onMouseLeave={(e) => (e.currentTarget.style.color = '#94a3b8')}
-        >
-          <X size={18} />
-        </button>
+        {/* Top Bar: Language Selector & Close Button */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <LanguageSelector variant="compact" />
+          <button
+            type="button"
+            onClick={closeAuthModal}
+            style={{
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '6px',
+              color: '#94a3b8',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = '#94a3b8')}
+            aria-label="Close"
+          >
+            <X size={18} />
+          </button>
+        </div>
 
         {/* Brand Header */}
         <div style={{ textAlign: 'center', marginBottom: '22px' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
-            <BrandLogo size={36} textSize={20} />
+            <BrandLogo
+              size={36}
+              textSize={20}
+              onClick={() => {
+                closeAuthModal();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            />
           </div>
           <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>
             {activeTab === 'signin'
@@ -466,36 +471,6 @@ export const AuthModal: React.FC = () => {
           </form>
         )}
 
-        {/* Quick Instant Demo Sign-In Shortcut */}
-        <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px dashed rgba(255, 255, 255, 0.1)', textAlign: 'center' }}>
-          <button
-            type="button"
-            onClick={handleQuickDemo}
-            style={{
-              background: 'rgba(10, 186, 181, 0.1)',
-              border: '1px solid rgba(10, 186, 181, 0.3)',
-              color: 'var(--tiffany-light, #81d8d0)',
-              padding: '8px 14px',
-              borderRadius: '8px',
-              fontSize: '12px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(10, 186, 181, 0.2)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(10, 186, 181, 0.1)';
-            }}
-          >
-            <Sparkles size={14} color="#0abab5" />
-            Instant One-Click Demo Pro (Alex_Vanguard)
-          </button>
-        </div>
 
         {/* Security Footer */}
         <div style={{ marginTop: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '11px', color: '#64748b' }}>

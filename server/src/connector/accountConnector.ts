@@ -263,12 +263,16 @@ export class AccountConnectorService {
     if (account?.metaApiAccountId) {
       try {
         const metaPositions = await this.metaApiClient.getPositions(account.metaApiAccountId);
-        if (metaPositions && metaPositions.length > 0) {
+        if (Array.isArray(metaPositions)) {
+          if (metaPositions.length === 0) {
+            await this.eventBus.publish('stream:position.normalized', 'position.normalized', accountId, []);
+            return [];
+          }
           const rawPositions: RawPositionPayload[] = metaPositions.map(p => ({
             accountId,
             ticket: p.id,
             symbol: p.symbol,
-            type: p.type === 'POSITION_TYPE_BUY' ? 'BUY' : 'SELL',
+            type: p.type === 'POSITION_TYPE_BUY' || (p.type as any) === 0 ? 'BUY' : 'SELL',
             volume: p.volume,
             openPrice: p.openPrice,
             currentPrice: p.currentPrice,
@@ -278,7 +282,9 @@ export class AccountConnectorService {
             openTime: p.openTime,
             updateTime: p.updateTime,
           }));
-          return this.normalizer.normalizePositions(rawPositions);
+          const canonical = this.normalizer.normalizePositions(rawPositions);
+          await this.eventBus.publish('stream:position.normalized', 'position.normalized', accountId, canonical);
+          return canonical;
         }
       } catch (err) {
         console.warn('[AccountConnectorService] MetaApi positions fetch error:', err);

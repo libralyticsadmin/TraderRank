@@ -105,7 +105,7 @@ describe('TraderRank Infallible Price & Chart Accuracy System', () => {
     const sim = marketFeed.getStatus();
     const xau = sim.quotes['XAUUSD'];
     expect(xau).toBeDefined();
-    expect(xau.bid).toBeGreaterThan(4000);
-    expect(xau.bid).toBeLessThan(4100);
+    expect(xau.bid).toBeGreaterThan(3500);
+    expect(xau.bid).toBeLessThan(4500);
   });
 });

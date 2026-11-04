@@ -25,6 +25,7 @@ import {
   CustomIndicatorParam,
 } from '../utils/customIndicatorEngine.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
+import { LanguageSelector } from './LanguageSelector.tsx';
 
 interface CustomIndicatorModalProps {
   isOpen: boolean;
@@ -360,25 +361,28 @@ function calculate(bars, params, indicators) {
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: '8px',
-              width: '32px',
-              height: '32px',
-              color: '#94aeb0',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '16px',
-              fontWeight: 700,
-            }}
-          >
-            <X size={15} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <LanguageSelector variant="compact" />
+            <button
+              onClick={onClose}
+              style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '8px',
+                width: '32px',
+                height: '32px',
+                color: '#94aeb0',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '16px',
+                fontWeight: 700,
+              }}
+            >
+              <X size={15} />
+            </button>
+          </div>
         </div>
 
         {/* Modal Navigation Tabs */}

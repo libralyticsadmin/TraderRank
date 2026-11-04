@@ -181,6 +181,13 @@ export function createServer() {
   const tournamentService = TournamentService.getInstance();
   const eventBus = RedisStreamsBus.getInstance();
 
+  // Automatically sync provisioned cloud broker accounts on startup
+  if (process.env.NODE_ENV !== 'test') {
+    connector.syncCloudProvisionedAccounts().catch(err => {
+      console.warn('[Startup] Cloud provisioned accounts sync warning:', err);
+    });
+  }
+
   // Connected WebSocket clients
   const clients = new Set<WebSocket>();
 
@@ -462,14 +469,17 @@ export function createServer() {
   app.post('/api/connector/validate', connectorRateLimit, async (req: Request, res: Response) => {
     try {
       const { broker, credentials } = req.body as { broker: Broker; credentials: AccountCredentials };
+      console.log(`[CONNECTOR] Incoming validate request for broker: ${broker}, server: ${(credentials as any)?.serverName || 'N/A'}, login: ${(credentials as any)?.login || (credentials as any)?.accountId || 'N/A'}`);
       if (!broker || !credentials) {
         return res.status(400).json({ success: false, error: 'Missing broker or credentials payload' });
       }
 
       const result = await connector.validateCredentials(broker, credentials);
+      console.log(`[CONNECTOR] Validation result:`, result.success ? 'PASSED' : `FAILED (${result.error})`);
       return res.json(result);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[CONNECTOR] Validation error:`, msg);
       return res.status(400).json({ success: false, error: msg });
     }
   });
@@ -483,6 +493,7 @@ export function createServer() {
         broker: Broker;
         credentials: AccountCredentials;
       };
+      console.log(`[CONNECTOR] Incoming connect request for user: ${userId}, username: ${username}, broker: ${broker}`);
 
       if (!broker || !credentials) {
         return res.status(400).json({ success: false, error: 'Broker and credentials are required' });

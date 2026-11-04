@@ -25,6 +25,7 @@ import { DailyAnalysisHub } from './components/DailyAnalysisHub.tsx';
 import { SubscriptionModal } from './components/SubscriptionModal.tsx';
 import { LanguageSelector } from './components/LanguageSelector.tsx';
 import { useTranslation } from './context/LanguageContext.tsx';
+import { useAuth } from './context/AuthContext.tsx';
 import { AuthModal } from './components/AuthModal.tsx';
 import { ProfileEditModal } from './components/ProfileEditModal.tsx';
 import { UserNavMenu } from './components/UserNavMenu.tsx';
@@ -64,12 +65,20 @@ interface MarketStatus {
 
 export const App: React.FC = () => {
   const { t } = useTranslation();
+  const { isAuthenticated, openAuthModal } = useAuth();
   const [currentView, setCurrentView] = useState<'landing' | 'app'>('landing');
   const [activeTab, setActiveTab] = useState<
     'overview' | 'daily-analysis' | 'charts' | 'ranking' | 'tournaments' | 'rewards' | 'community' | 'positions' | 'security'
   >('overview');
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+
+  // Guarantee everyone registers before accessing the arena view
+  useEffect(() => {
+    if (!isAuthenticated && currentView === 'app') {
+      setCurrentView('landing');
+    }
+  }, [isAuthenticated, currentView]);
 
   // Pro Subscription State persisted in localStorage
   const [subscription, setSubscription] = useState<SubscriptionStatus>(() => {
@@ -290,6 +299,10 @@ export const App: React.FC = () => {
           leaderboard={leaderboard}
           onSelectTrader={handleSelectTrader}
           onEnterApp={(tab?: string) => {
+            if (!isAuthenticated) {
+              openAuthModal('register');
+              return;
+            }
             if (tab === 'leaderboard') tab = 'ranking';
             if (tab) {
               setActiveTab(tab as any);
@@ -297,6 +310,10 @@ export const App: React.FC = () => {
             setCurrentView('app');
           }}
           onOpenConnectWizard={() => {
+            if (!isAuthenticated) {
+              openAuthModal('register');
+              return;
+            }
             setCurrentView('app');
             setIsWizardOpen(true);
           }}
@@ -325,11 +342,26 @@ export const App: React.FC = () => {
     <div className="app-container">
       {/* Top Header Banner */}
       <header className="header-banner">
-        <div className="brand-wrapper">
-          <BrandLogo size={44} showWordmark={false} onClick={() => setCurrentView('landing')} />
+        <div
+          className="brand-wrapper"
+          onClick={() => {
+            setCurrentView('landing');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          style={{ cursor: 'pointer' }}
+          title="Return to Home"
+        >
+          <BrandLogo
+            size={44}
+            showWordmark={false}
+            onClick={() => {
+              setCurrentView('landing');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          />
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h1 className="brand-wordmark" style={{ fontSize: '24px' }}>
+              <h1 className="brand-wordmark" style={{ fontSize: '24px', cursor: 'pointer' }}>
                 Trade<span className="brand-wordmark-accent">Rank</span>
                 <span className="brand-live-domain">.live</span>
               </h1>
@@ -685,7 +717,14 @@ export const App: React.FC = () => {
           color: 'var(--text-muted)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div
+          style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
+          onClick={() => {
+            setCurrentView('landing');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          title="Return to Home"
+        >
           <BrandMark size={20} variant="glyph" />
           <span>
             <strong style={{ color: '#fff' }}>TradeRank.live</strong> • {t.landing.badge}

@@ -4,6 +4,7 @@ import { useAuth, UserProfile } from '../context/AuthContext.tsx';
 import { Broker } from '../../../shared/src/types.ts';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
+import { LanguageSelector } from './LanguageSelector.tsx';
 
 const AVATAR_SYMBOLS = [
   { id: 'zap', label: 'Flash (Lightning)' },
@@ -108,23 +109,26 @@ export const ProfileEditModal: React.FC = () => {
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
-        <button
-          onClick={closeProfileModal}
-          style={{
-            position: 'absolute',
-            top: '20px',
-            right: '20px',
-            background: 'rgba(255, 255, 255, 0.06)',
-            border: 'none',
-            borderRadius: '8px',
-            padding: '6px',
-            color: '#94a3b8',
-            cursor: 'pointer',
-          }}
-        >
-          <X size={18} />
-        </button>
+        {/* Top Controls: Language Selector & Close Button */}
+        <div style={{ position: 'absolute', top: '20px', right: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <LanguageSelector variant="compact" />
+          <button
+            onClick={closeProfileModal}
+            style={{
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '6px',
+              color: '#94a3b8',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <X size={18} />
+          </button>
+        </div>
 
         {/* Modal Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '22px' }}>

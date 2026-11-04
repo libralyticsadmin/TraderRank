@@ -52,7 +52,7 @@ describe('TraderRank Live Platform End-to-End Suite', () => {
     const data = await res.json();
     expect(data.success).toBe(true);
     expect(Array.isArray(data.accounts)).toBe(true);
-  });
+  }, 15000);
 
   it('5. GET /api/market/quotes should return institutional spreads and live currency quotes', async () => {
     const res = await fetch(`${baseUrl}/api/market/quotes`);

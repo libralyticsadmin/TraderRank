@@ -4,6 +4,7 @@ import {
   SubscriptionStatus,
 } from '../../../shared/src/types.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
+import { LanguageSelector } from './LanguageSelector.tsx';
 import {
   Crown,
   CheckCircle2,
@@ -263,29 +264,29 @@ Libralytic Co.,Ltd / TraderRank FX Global Trading Platform.
         }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          style={{
-            position: 'absolute',
-            top: '20px',
-            right: '20px',
-            background: 'rgba(255,255,255,0.06)',
-            border: 'none',
-            borderRadius: '50%',
-            width: '32px',
-            height: '32px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--text-muted)',
-            cursor: 'pointer',
-            transition: 'all 0.15s ease',
-          }}
-          title="Close Modal"
-        >
-          <X size={18} />
-        </button>
+        {/* Top Controls: Language Switcher + Close button */}
+        <div style={{ position: 'absolute', top: '20px', right: '20px', display: 'flex', alignItems: 'center', gap: '10px', zIndex: 10 }}>
+          <LanguageSelector variant="compact" />
+          <button
+            onClick={onClose}
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              border: 'none',
+              borderRadius: '50%',
+              width: '32px',
+              height: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+            title="Close Modal"
+          >
+            <X size={18} />
+          </button>
+        </div>
 
         {/* ======================================================== */}
         {/* VIEW 1: SUCCESS CELEBRATION SCREEN (POST-PURCHASE)       */}

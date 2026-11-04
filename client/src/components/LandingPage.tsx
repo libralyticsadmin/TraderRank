@@ -8,10 +8,10 @@ import {
   Lock,
   ArrowRight,
   ChevronRight,
-  Play,
   Target,
   Flame,
   Check,
+  User,
 } from 'lucide-react';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { TraderAvatar } from './TraderAvatar.tsx';
@@ -20,6 +20,7 @@ import { LiveTradeBulletin } from './LiveTradeBulletin.tsx';
 import { MarketLivePricesTicker } from './MarketLivePricesTicker.tsx';
 import { LiveCandleChart } from './LiveCandleChart.tsx';
 import { useTranslation } from '../context/LanguageContext.tsx';
+import { useAuth } from '../context/AuthContext.tsx';
 import { LanguageSelector } from './LanguageSelector.tsx';
 import { UserNavMenu } from './UserNavMenu.tsx';
 
@@ -32,6 +33,7 @@ interface LandingPageProps {
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConnectWizard, onSelectTrader, leaderboard = [] }) => {
   const { t, language } = useTranslation();
+  const { isAuthenticated, openAuthModal } = useAuth();
   const [activeTabRanking, setActiveTabRanking] = useState<'pips' | 'profit' | 'rate'>('pips');
 
   // Derive top 3 exclusively from verified real leaderboard entries (zero mock traders)
@@ -66,7 +68,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
       >
         <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <BrandLogo size={38} textSize={20} onClick={() => onEnterApp()} />
+            <BrandLogo
+              size={38}
+              textSize={20}
+              onClick={() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            />
             <span
               style={{
                 fontSize: '10px',
@@ -86,56 +94,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <LanguageSelector />
             <UserNavMenu onOpenConnectWizard={onOpenConnectWizard} />
-            <button
-              onClick={onOpenConnectWizard}
-              style={{
-                background: 'rgba(255, 255, 255, 0.06)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                color: '#ffffff',
-                padding: '8px 16px',
-                borderRadius: '8px',
-                fontSize: '13px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-              }}
-            >
-              {t.landing.connectBrokerBtn}
-            </button>
-            <button
-              onClick={() => onEnterApp()}
-              style={{
-                background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 50%, #0891b2 100%)',
-                border: 'none',
-                color: '#080b11',
-                padding: '8px 18px',
-                borderRadius: '8px',
-                fontSize: '13px',
-                fontWeight: 800,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 4px 18px rgba(0, 240, 255, 0.35)',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-1px)';
-                e.currentTarget.style.boxShadow = '0 6px 24px rgba(0, 240, 255, 0.5)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 18px rgba(0, 240, 255, 0.35)';
-              }}
-            >
-              <Play size={14} fill="#080b11" /> {t.landing.enterArenaBtn}
-            </button>
           </div>
         </div>
       </header>
@@ -221,47 +179,94 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
           </p>
 
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', flexWrap: 'wrap', marginBottom: '48px' }}>
-            <button
-              onClick={() => onEnterApp()}
-              style={{
-                background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 100%)',
-                border: 'none',
-                color: '#080b11',
-                padding: '16px 36px',
-                borderRadius: '12px',
-                fontSize: '15px',
-                fontWeight: 900,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                boxShadow: '0 8px 30px rgba(0, 240, 255, 0.4)',
-                transition: 'all 0.2s',
-              }}
-            >
-              <Trophy size={18} /> {t.landing.enterArenaBtn} <ArrowRight size={18} />
-            </button>
+            {isAuthenticated ? (
+              <>
+                <button
+                  onClick={() => onEnterApp()}
+                  style={{
+                    background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 100%)',
+                    border: 'none',
+                    color: '#080b11',
+                    padding: '16px 36px',
+                    borderRadius: '12px',
+                    fontSize: '15px',
+                    fontWeight: 900,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    boxShadow: '0 8px 30px rgba(0, 240, 255, 0.4)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <Trophy size={18} /> {t.landing.enterArenaBtn} <ArrowRight size={18} />
+                </button>
 
-            <button
-              onClick={onOpenConnectWizard}
-              style={{
-                background: 'rgba(14, 20, 31, 0.9)',
-                border: '1px solid rgba(0, 240, 255, 0.3)',
-                color: '#FFFFFF',
-                padding: '16px 30px',
-                borderRadius: '12px',
-                fontSize: '15px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                backdropFilter: 'blur(10px)',
-                transition: 'all 0.2s',
-              }}
-            >
-              <Shield size={18} style={{ color: '#00F0FF' }} /> {t.landing.connectBrokerBtn}
-            </button>
+                <button
+                  onClick={onOpenConnectWizard}
+                  style={{
+                    background: 'rgba(14, 20, 31, 0.9)',
+                    border: '1px solid rgba(0, 240, 255, 0.3)',
+                    color: '#FFFFFF',
+                    padding: '16px 30px',
+                    borderRadius: '12px',
+                    fontSize: '15px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    backdropFilter: 'blur(10px)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <Shield size={18} style={{ color: '#00F0FF' }} /> {t.landing.connectBrokerBtn}
+                </button>
+              </>
+            ) : (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => openAuthModal('register')}
+                  style={{
+                    background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 100%)',
+                    border: 'none',
+                    color: '#080b11',
+                    padding: '16px 36px',
+                    borderRadius: '12px',
+                    fontSize: '15px',
+                    fontWeight: 900,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    boxShadow: '0 8px 30px rgba(0, 240, 255, 0.4)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <Zap size={18} fill="#080b11" /> Register to Enter Arena <ArrowRight size={18} />
+                </button>
+                <button
+                  onClick={() => openAuthModal('signin')}
+                  style={{
+                    background: 'rgba(14, 20, 31, 0.9)',
+                    border: '1px solid rgba(0, 240, 255, 0.3)',
+                    color: '#FFFFFF',
+                    padding: '16px 30px',
+                    borderRadius: '12px',
+                    fontSize: '15px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    backdropFilter: 'blur(10px)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <User size={18} style={{ color: '#00F0FF' }} /> Sign In
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Social Proof Stats Bar */}
@@ -907,7 +912,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
           </p>
 
           <button
-            onClick={() => onEnterApp()}
+            onClick={() => {
+              if (isAuthenticated) {
+                onEnterApp();
+              } else {
+                openAuthModal('register');
+              }
+            }}
             style={{
               background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 100%)',
               border: 'none',
@@ -921,7 +932,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
               transition: 'all 0.2s',
             }}
           >
-            {t.landing.ctaButton}
+            {isAuthenticated ? t.landing.ctaButton : 'Register & Enter Arena'}
           </button>
         </div>
       </section>
@@ -929,7 +940,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
       {/* Footer */}
       <footer style={{ padding: '40px 24px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: '#05070a', textAlign: 'center' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            title="Return to Home"
+          >
             <BrandMark size={22} variant="glyph" />
             <strong style={{ fontSize: '15px', color: '#FFFFFF' }}>TradeRank.live</strong>
             <span style={{ fontSize: '12px', color: '#848E9C' }}>© {new Date().getFullYear()} TradeRank.live. {t.footer.allRightsReserved}.</span>

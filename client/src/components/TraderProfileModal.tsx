@@ -3,6 +3,7 @@ import { X, ShieldCheck, CheckCircle2, UserPlus, Radio } from 'lucide-react';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { Broker } from '../../../shared/src/types.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
+import { LanguageSelector } from './LanguageSelector.tsx';
 
 export interface TraderProfileData {
   userId: string;
@@ -232,19 +233,22 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '6px',
-              color: 'var(--text-muted)',
-              cursor: 'pointer',
-            }}
-          >
-            <X size={20} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <LanguageSelector variant="compact" />
+            <button
+              onClick={onClose}
+              style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '6px',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+              }}
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Action Row */}

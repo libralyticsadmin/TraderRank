@@ -162,10 +162,7 @@ export const applyLiveTick = (
   // Otherwise, fluctuate the current active bar
   let newClose: number;
   if (typeof externalPrice === 'number' && !isNaN(externalPrice) && externalPrice > 0) {
-    // Oscillate with realistic micro-spread tick around active live quote so bar stays alive
-    const microJitter = (Math.random() - 0.5) * (meta.tickVolatility * 0.2);
-    const target = externalPrice + microJitter;
-    newClose = Number(target.toFixed(meta.decimals));
+    newClose = Number(externalPrice.toFixed(meta.decimals));
   } else {
     // Mean-reverting micro-jitter bounded tightly around lastBar.close (anti-drift, no jumps)
     const anchor = lastBar.close;

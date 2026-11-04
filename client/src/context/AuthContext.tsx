@@ -44,24 +44,18 @@ interface AuthContextType {
 
 const STORAGE_KEY = 'traderank_auth_user_v1';
 
-// Default initial demo profile if newly registered or guest testing
-const DEFAULT_DEMO_USER: UserProfile = {
-  id: 'u_traderrank_master',
-  username: 'Alex_Vanguard',
-  email: 'alex.vanguard@traderank.live',
+// Default profile template for newly registered users
+const DEFAULT_USER_TEMPLATE: Omit<UserProfile, 'id' | 'username' | 'email'> = {
   avatarSymbol: 'zap',
-  traderTitle: 'Institutional Gold & FX Scalper',
-  bio: 'Disciplined price-action scalper specializing in London/NY overlaps. Zero-write verified execution across XM and Exness.',
+  traderTitle: 'Verified Market Trader',
+  bio: '',
   tradingStyle: 'SCALPER',
   primaryBroker: 'Exness',
-  country: 'United States',
-  joinedAt: 'October 2026',
-  level: 5,
-  xp: 3420,
-  rank: 12,
-  telegramHandle: '@alex_trades',
-  discordHandle: 'vanguard_fx#1284',
-  twitterHandle: '@vanguard_fx',
+  country: 'Global',
+  joinedAt: 'Today',
+  level: 1,
+  xp: 100,
+  rank: 99,
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -139,7 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Client-side authentication fallback for seamless UX
     const newUser: UserProfile = {
-      ...DEFAULT_DEMO_USER,
+      ...DEFAULT_USER_TEMPLATE,
       id: `u_${trimmed.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
       username: trimmed.includes('@') ? trimmed.split('@')[0] : trimmed,
       email: trimmed.includes('@') ? trimmed : `${trimmed.toLowerCase()}@traderank.live`,
@@ -192,16 +186,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const newUser: UserProfile = {
-      ...DEFAULT_DEMO_USER,
+      ...DEFAULT_USER_TEMPLATE,
       id: `u_${cleanUser.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
       username: cleanUser,
       email: cleanEmail,
       primaryBroker: data.primaryBroker || 'Exness',
       tradingStyle: data.tradingStyle || 'SCALPER',
-      joinedAt: 'Today',
-      level: 1,
-      xp: 100,
-      rank: 99,
     };
 
     setUser(newUser);
