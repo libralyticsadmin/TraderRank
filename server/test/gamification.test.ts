@@ -93,3 +93,4 @@ describe('Gamification System & Number Alignment', () => {
     expect(streak[3].locked).toBe(true);
   });
 });
+

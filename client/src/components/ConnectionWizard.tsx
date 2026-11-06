@@ -20,12 +20,19 @@ import {
   Lock,
   Zap,
   Loader2,
+  ExternalLink,
+  Copy,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Gift,
 } from 'lucide-react';
 
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { LanguageSelector } from './LanguageSelector.tsx';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
+import { BROKER_PARTNERS } from '../../../shared/src/config/brokerPartners.ts';
 
 interface ConnectionWizardProps {
   onClose: () => void;
@@ -64,6 +71,10 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Partner Affiliate helper state
+  const [showSubAccountGuide, setShowSubAccountGuide] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
 
   // Keyboard escape route
   useEffect(() => {
@@ -325,6 +336,138 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                 <strong>{t.connector.securityCalloutTitle}:</strong> {t.connector.securityCalloutDesc}
               </div>
             </div>
+
+            {/* Official Partner Affiliate Registration & Sub-Account Banner */}
+            {(() => {
+              const partner = BROKER_PARTNERS[selectedBroker] || BROKER_PARTNERS.IC_MARKETS;
+              return (
+                <div
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.08) 0%, rgba(14, 20, 31, 0.95) 100%)',
+                    border: '1px solid rgba(0, 240, 255, 0.25)',
+                    borderRadius: '14px',
+                    padding: '18px 20px',
+                    marginBottom: '20px',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Gift size={16} color="#00F0FF" />
+                      <span style={{ fontSize: '13px', fontWeight: 800, color: '#FFFFFF' }}>
+                        Need an Official {partner.displayName} Account?
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '10px',
+                          fontWeight: 700,
+                          padding: '2px 8px',
+                          borderRadius: '10px',
+                          background: 'rgba(0, 218, 198, 0.15)',
+                          border: '1px solid #00DAC6',
+                          color: '#00DAC6',
+                        }}
+                      >
+                        +500 XP Welcome Bonus
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <a
+                        href={partner.affiliateUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: '8px',
+                          background: 'linear-gradient(90deg, #00F0FF 0%, #00DAC6 100%)',
+                          color: '#080E14',
+                          fontWeight: 800,
+                          fontSize: '12px',
+                          textDecoration: 'none',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        <span>Open Partner Account</span>
+                        <ExternalLink size={12} />
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(partner.partnerCode);
+                          setCopiedCode(true);
+                          setTimeout(() => setCopiedCode(false), 2000);
+                        }}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          color: copiedCode ? '#00DAC6' : '#FFFFFF',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        {copiedCode ? <Check size={12} /> : <Copy size={12} />}
+                        <span>Code: {partner.partnerCode}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Sub-Account Accordion Toggle for Existing Users */}
+                  <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '10px', marginTop: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowSubAccountGuide(!showSubAccountGuide)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#848E9C',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        padding: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <span>Already have an account? Create a 30-sec sub-account under our partner code</span>
+                      {showSubAccountGuide ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    </button>
+
+                    {showSubAccountGuide && (
+                      <div
+                        style={{
+                          marginTop: '10px',
+                          padding: '12px 14px',
+                          borderRadius: '8px',
+                          background: 'rgba(0, 0, 0, 0.3)',
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                          fontSize: '12px',
+                          color: '#CBD5E1',
+                        }}
+                      >
+                        <ol style={{ margin: '0 0 8px 18px', padding: 0, lineHeight: 1.6 }}>
+                          {partner.subAccountGuide.steps.map((st, i) => (
+                            <li key={i}>{st}</li>
+                          ))}
+                        </ol>
+                        <div style={{ fontSize: '11px', color: '#848E9C', fontStyle: 'italic' }}>
+                          💡 {partner.subAccountGuide.note}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             {selectedPath === 'mt_gateway' ? (
               <div>

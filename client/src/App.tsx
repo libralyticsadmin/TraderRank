@@ -23,6 +23,7 @@ import { LiveTradeBulletin } from './components/LiveTradeBulletin.tsx';
 import { LiveCandleChart } from './components/LiveCandleChart.tsx';
 import { DailyAnalysisHub } from './components/DailyAnalysisHub.tsx';
 import { SubscriptionModal } from './components/SubscriptionModal.tsx';
+import { AffiliateModal } from './components/AffiliateModal.tsx';
 import { LanguageSelector } from './components/LanguageSelector.tsx';
 import { useTranslation } from './context/LanguageContext.tsx';
 import { useAuth } from './context/AuthContext.tsx';
@@ -72,6 +73,20 @@ export const App: React.FC = () => {
   >('overview');
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+  const [isAffiliateModalOpen, setIsAffiliateModalOpen] = useState(false);
+
+  // Detect referral invite code from URL (?ref=...)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const refCode = params.get('ref');
+      if (refCode) {
+        localStorage.setItem('traderrank_referrer', refCode.trim());
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Guarantee everyone registers before accessing the arena view
   useEffect(() => {
@@ -462,6 +477,7 @@ export const App: React.FC = () => {
           <UserNavMenu
             onOpenConnectWizard={() => setIsWizardOpen(true)}
             onOpenSubscriptionModal={() => setIsSubscriptionModalOpen(true)}
+            onOpenAffiliateModal={() => setIsAffiliateModalOpen(true)}
           />
 
           <button
@@ -737,7 +753,7 @@ export const App: React.FC = () => {
         />
       )}
 
-      {/* Pro Subscription Unlock Modal ($9/mo) */}
+      {/* Pro Membership & Capabilities Modal */}
       <SubscriptionModal
         isOpen={isSubscriptionModalOpen}
         onClose={() => setIsSubscriptionModalOpen(false)}
@@ -747,6 +763,12 @@ export const App: React.FC = () => {
           setActiveTab('daily-analysis');
           setIsSubscriptionModalOpen(false);
         }}
+      />
+
+      {/* Community Gamification Affiliate Program Modal */}
+      <AffiliateModal
+        isOpen={isAffiliateModalOpen}
+        onClose={() => setIsAffiliateModalOpen(false)}
       />
 
       {/* User Authentication & Profile Edit Modals */}

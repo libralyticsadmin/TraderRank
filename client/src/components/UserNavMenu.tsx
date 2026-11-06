@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Settings, LogOut, ChevronDown, ShieldCheck, Crown } from 'lucide-react';
+import { User, Settings, LogOut, ChevronDown, ShieldCheck, Crown, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { TraderAvatar } from './TraderAvatar.tsx';
@@ -8,9 +8,10 @@ import { LanguageSelector } from './LanguageSelector.tsx';
 interface UserNavMenuProps {
   onOpenConnectWizard?: () => void;
   onOpenSubscriptionModal?: () => void;
+  onOpenAffiliateModal?: () => void;
 }
 
-export const UserNavMenu: React.FC<UserNavMenuProps> = ({ onOpenConnectWizard, onOpenSubscriptionModal }) => {
+export const UserNavMenu: React.FC<UserNavMenuProps> = ({ onOpenConnectWizard, onOpenSubscriptionModal, onOpenAffiliateModal }) => {
   const { user, isAuthenticated, openAuthModal, openProfileModal, logout } = useAuth();
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -173,6 +174,33 @@ export const UserNavMenu: React.FC<UserNavMenuProps> = ({ onOpenConnectWizard, o
             >
               <ShieldCheck size={15} color="#0abab5" />
               <span>{t.auth.connectBrokerNav}</span>
+            </button>
+          )}
+
+          {onOpenAffiliateModal && (
+            <button
+              onClick={() => { setMenuOpen(false); onOpenAffiliateModal(); }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '9px 12px',
+                background: 'transparent',
+                border: 'none',
+                borderRadius: '8px',
+                color: '#00F0FF',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(0, 240, 255, 0.15)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+            >
+              <Users size={15} color="#00F0FF" />
+              <span>Invite Friends (+500 XP)</span>
             </button>
           )}
 
