@@ -131,7 +131,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onOpenConnectWizar
               if (Array.isArray(trades) && trades.length > 0) {
                 totalTradesCount += trades.length;
                 const wins = trades.filter(
-                  (tr: any) => Number(tr.profitCurrency ?? tr.profit ?? 0) > 0
+                  (tr: any) => Number(tr.pnlCurrency ?? tr.profitCurrency ?? tr.profit ?? 0) > 0
                 );
                 totalWinsCount += wins.length;
 
@@ -144,7 +144,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onOpenConnectWizar
                 const recentSlice = trades.slice(0, 45);
                 for (const tr of recentSlice) {
                   const pips = Number((tr.profitPips ?? tr.pnlPips ?? 0).toFixed(1));
-                  const profit = Number((tr.profitCurrency ?? tr.profit ?? 0).toFixed(2));
+                  const profit = Number((tr.pnlCurrency ?? tr.profitCurrency ?? tr.profit ?? 0).toFixed(2));
                   if (pips === 0 && profit === 0) continue;
 
                   const isWin = profit > 0 || (profit === 0 && pips > 0);
