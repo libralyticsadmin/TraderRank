@@ -676,6 +676,36 @@ export function createServer() {
     }
   });
 
+  // 6b. Monthly Balance & Cashflows Ledger (Live MetaApi DEAL_TYPE_BALANCE + Swap + Profit)
+  app.get('/api/accounts/:id/cashflows', async (req: Request, res: Response) => {
+    try {
+      const paramId = req.params.id;
+      let allAccounts = connector.getAccounts();
+      if (allAccounts.length === 0 && metaApiClient.hasToken()) {
+        allAccounts = await connector.syncCloudProvisionedAccounts();
+      }
+      const lbAccountIds = new Set(leaderboard.getAccountIdsForTrader(paramId));
+      const matched =
+        allAccounts.find(
+          a =>
+            a.id === paramId ||
+            a.userId === paramId ||
+            a.accountNumber === paramId ||
+            (a.accountNumber && paramId.includes(a.accountNumber)) ||
+            lbAccountIds.has(a.id)
+        ) ||
+        allAccounts.find(a => a.metaApiAccountId && !a.metaApiAccountId.startsWith('mock_'));
+
+      const targetId = matched ? matched.id : (allAccounts.length > 0 ? allAccounts[0].id : paramId);
+      await connector.syncAndGetAccountTrades(targetId);
+      const cashflows = connector.getAccountMonthlyCashflows(targetId);
+      res.json(cashflows || {});
+    } catch (err) {
+      console.warn('[Cashflows API] Error fetching monthly cashflows:', req.params.id, err);
+      res.json({});
+    }
+  });
+
   // 7. Disconnect Account
   app.delete('/api/accounts/:id', async (req: Request, res: Response) => {
     const success = await connector.disconnectAccount(req.params.id);

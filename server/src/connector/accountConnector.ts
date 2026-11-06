@@ -329,6 +329,118 @@ export class AccountConnectorService {
   }
 
   /**
+   * Computes exact monthly balance, deposits, withdrawals, active capital, and ending balance
+   * directly from MetaApi's raw deals ledger (including DEAL_TYPE_BALANCE & swap).
+   */
+  public getAccountMonthlyCashflows(accountId: string): Record<
+    string,
+    {
+      ym: string;
+      startBalance: number;
+      deposits: number;
+      withdrawals: number;
+      activeCapital: number;
+      tradeProfit: number;
+      swap: number;
+      commission: number;
+      tradingEndingCapital: number;
+      endBalance: number;
+      roiPct: number;
+    }
+  > {
+    const rawDeals = this.rawDealsCache.get(accountId) || [];
+    if (rawDeals.length === 0) return {};
+
+    const sorted = [...rawDeals].sort(
+      (a, b) => new Date(a.time).getTime() - new Date(b.time).getTime()
+    );
+
+    const monthSet = new Set<string>(['2026-05', '2026-06', '2026-07', '2026-08', '2026-09', '2026-10']);
+    for (const d of sorted) {
+      if (d.time && d.time.length >= 7) {
+        monthSet.add(d.time.slice(0, 7));
+      }
+    }
+    const months = Array.from(monthSet).sort();
+
+    let runningBalance = 0;
+    const result: Record<
+      string,
+      {
+        ym: string;
+        startBalance: number;
+        deposits: number;
+        withdrawals: number;
+        activeCapital: number;
+        tradeProfit: number;
+        swap: number;
+        commission: number;
+        tradingEndingCapital: number;
+        endBalance: number;
+        roiPct: number;
+      }
+    > = {};
+
+    for (const ym of months) {
+      const mDeals = sorted.filter(d => d.time && d.time.startsWith(ym));
+      const startBalance = Number(runningBalance.toFixed(2));
+      let deposits = 0;
+      let withdrawals = 0;
+      let tradeProfit = 0;
+      let swap = 0;
+      let commission = 0;
+
+      for (const d of mDeals) {
+        const typeStr = String(d.type ?? '').toUpperCase().trim();
+        const profit = Number(d.profit ?? 0);
+        const sw = Number(d.swap ?? 0);
+        const comm = Number(d.commission ?? 0);
+
+        if (typeStr.includes('BALANCE') || typeStr.includes('CREDIT')) {
+          if (profit >= 0) deposits += profit;
+          else withdrawals += profit;
+        } else {
+          tradeProfit += profit;
+          swap += sw;
+          commission += comm;
+        }
+        runningBalance += profit + sw + comm;
+      }
+
+      deposits = Number(deposits.toFixed(2));
+      withdrawals = Number(withdrawals.toFixed(2));
+      tradeProfit = Number(tradeProfit.toFixed(2));
+      swap = Number(swap.toFixed(2));
+      commission = Number(commission.toFixed(2));
+      const activeCapital = Number(Math.max(0.01, startBalance + deposits).toFixed(2));
+      const tradingEndingCapital = Number(Math.max(0.01, activeCapital + tradeProfit).toFixed(2));
+      const endBalance = Number(Math.max(0, runningBalance).toFixed(2));
+      const roiPct =
+        tradeProfit === 0
+          ? 0
+          : activeCapital > 0
+          ? Number(((tradeProfit / activeCapital) * 100).toFixed(2))
+          : 0;
+
+      result[ym] = {
+        ym,
+        startBalance,
+        deposits,
+        withdrawals,
+        activeCapital,
+        tradeProfit,
+        swap,
+        commission,
+        tradingEndingCapital,
+        endBalance,
+        roiPct,
+      };
+    }
+
+    return result;
+  }
+
+  /**
    * On-demand live sync of deals directly from MetaApi cloud before returning trade history.
    * Uses a 15-second TTL cache and incremental delta cursor syncing so repeat calls return in <1ms.
    */

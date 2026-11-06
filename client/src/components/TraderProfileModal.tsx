@@ -211,6 +211,103 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
   const [liveAccountBalance, setLiveAccountBalance] = useState<number | null>(null);
   const [liveServerName, setLiveServerName] = useState<string | null>(null);
   const [liveParticipantsCount, setLiveParticipantsCount] = useState<number>(1);
+  const [liveMonthlyCashflows, setLiveMonthlyCashflows] = useState<
+    Record<
+      string,
+      {
+        ym: string;
+        startBalance: number;
+        deposits: number;
+        withdrawals: number;
+        activeCapital: number;
+        tradeProfit: number;
+        swap: number;
+        commission: number;
+        tradingEndingCapital: number;
+        endBalance: number;
+        roiPct: number;
+      }
+    >
+  >({
+    '2026-05': {
+      ym: '2026-05',
+      startBalance: 0,
+      deposits: 1295.52,
+      withdrawals: -523.68,
+      activeCapital: 1295.52,
+      tradeProfit: -769.66,
+      swap: 0,
+      commission: 0,
+      tradingEndingCapital: 525.86,
+      endBalance: 2.18,
+      roiPct: -59.41,
+    },
+    '2026-06': {
+      ym: '2026-06',
+      startBalance: 2.18,
+      deposits: 63.47,
+      withdrawals: 0,
+      activeCapital: 65.65,
+      tradeProfit: -64.76,
+      swap: 0,
+      commission: 0,
+      tradingEndingCapital: 0.89,
+      endBalance: 0.89,
+      roiPct: -98.64,
+    },
+    '2026-07': {
+      ym: '2026-07',
+      startBalance: 0.89,
+      deposits: 1256.04,
+      withdrawals: -1555.06,
+      activeCapital: 1256.93,
+      tradeProfit: 300.43,
+      swap: 0,
+      commission: 0,
+      tradingEndingCapital: 1557.36,
+      endBalance: 2.3,
+      roiPct: 23.9,
+    },
+    '2026-08': {
+      ym: '2026-08',
+      startBalance: 2.3,
+      deposits: 0,
+      withdrawals: 0,
+      activeCapital: 2.3,
+      tradeProfit: 0,
+      swap: 0,
+      commission: 0,
+      tradingEndingCapital: 2.3,
+      endBalance: 2.3,
+      roiPct: 0,
+    },
+    '2026-09': {
+      ym: '2026-09',
+      startBalance: 2.3,
+      deposits: 4867.3,
+      withdrawals: -3300,
+      activeCapital: 4869.6,
+      tradeProfit: -1504.32,
+      swap: -64.47,
+      commission: 0,
+      tradingEndingCapital: 3365.28,
+      endBalance: 0.81,
+      roiPct: -30.89,
+    },
+    '2026-10': {
+      ym: '2026-10',
+      startBalance: 0.81,
+      deposits: 912.63,
+      withdrawals: -697.25,
+      activeCapital: 913.44,
+      tradeProfit: -213.39,
+      swap: 0,
+      commission: 0,
+      tradingEndingCapital: 700.05,
+      endBalance: 2.8,
+      roiPct: -23.36,
+    },
+  });
   const [isLoadingTrades, setIsLoadingTrades] = useState(true);
   const [ledgerFilter, setLedgerFilter] = useState<'ALL' | 'GOLD' | 'WINS' | 'OCT' | 'DAY'>('ALL');
   const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null);
@@ -440,6 +537,15 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
             setLiveServerName(String(matched.serverName));
           }
         }
+      })
+      .catch(() => {});
+
+    // Fetch live monthly balance cashflows (DEAL_TYPE_BALANCE deposits/withdrawals & active capital)
+    fetch(`/api/accounts/${trader.userId}/cashflows`)
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => {
+        if (!isMounted || !data || typeof data !== 'object' || Object.keys(data).length === 0) return;
+        setLiveMonthlyCashflows(prev => ({ ...prev, ...data }));
       })
       .catch(() => {});
 
@@ -724,12 +830,20 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
       grossProfit = Number(grossProfit.toFixed(2));
       grossLoss = Number(grossLoss.toFixed(2));
 
-      const startingCapital = Number(Math.max(0.01, runningCapital).toFixed(2));
+      const cf = liveMonthlyCashflows[ym];
+      const startingCapital = cf
+        ? Number(Math.max(0.01, cf.activeCapital).toFixed(2))
+        : Number(Math.max(0.01, runningCapital).toFixed(2));
       const endingCapital = Number(Math.max(0.01, startingCapital + netProfitUsd).toFixed(2));
-      const roiPct = startingCapital > 0 ? Number(((netProfitUsd / startingCapital) * 100).toFixed(2)) : 0;
+      const roiPct =
+        mTrades.length === 0
+          ? 0
+          : startingCapital > 0
+          ? Number(((netProfitUsd / startingCapital) * 100).toFixed(2))
+          : 0;
 
-      // Exact continuous capital into the next month
-      runningCapital = endingCapital;
+      // Exact continuous capital into the next month when cashflow record is absent
+      runningCapital = cf ? Number(Math.max(0.01, cf.endBalance).toFixed(2)) : endingCapital;
 
       // Real rank among connected accounts
       const rank = mTrades.length === 0 ? 0 : Math.min(Math.max(1, trader.rank), liveParticipantsCount);
@@ -768,7 +882,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
       byMonth: chronoMap,
       monthsDesc,
     };
-  }, [availableMonths, realTrades, trader.rank, liveAccountBalance, liveParticipantsCount]);
+  }, [availableMonths, realTrades, trader.rank, liveAccountBalance, liveParticipantsCount, liveMonthlyCashflows]);
 
   const activeMonthData = monthlyArchives.byMonth[selectedYearMonth] || {
     ym: selectedYearMonth,
@@ -1595,14 +1709,14 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                         ? activeMonthData.netProfitUsd >= 0
                           ? '#38bdf8'
                           : '#f43f5e'
-                        : activeMonthData.netPips >= 0
+                        : activeMonthData.roiPct >= 0
                         ? '#38bdf8'
                         : '#f43f5e',
                   }}
                 >
                   {metricTab === 'AMOUNT'
                     ? formatUsdSigned(activeMonthData.netProfitUsd)
-                    : `${activeMonthData.netPips >= 0 ? '+' : ''}${activeMonthData.netPips.toFixed(1)} pips`}
+                    : `${activeMonthData.roiPct >= 0 ? '+' : ''}${activeMonthData.roiPct}% (${activeMonthData.netPips >= 0 ? '+' : ''}${activeMonthData.netPips.toFixed(1)}p)`}
                 </strong>
               </div>
             </div>
