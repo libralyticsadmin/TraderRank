@@ -830,6 +830,46 @@ export interface TranslationDictionary {
     sslVault: string;
   };
 
+  // Authentication & Sign In / Register
+  auth: {
+    signInTab: string;
+    createAccountTab: string;
+    signInSubtitle: string;
+    registerSubtitle: string;
+    emailOrUsername: string;
+    emailOrUsernamePlaceholder: string;
+    emailAddress: string;
+    emailPlaceholder: string;
+    username: string;
+    usernamePlaceholder: string;
+    password: string;
+    passwordPlaceholder: string;
+    passwordCreatePlaceholder: string;
+    primaryBroker: string;
+    tradingStyle: string;
+    styleScalper: string;
+    styleDayTrader: string;
+    styleSwingTrader: string;
+    styleAlgorithmic: string;
+    signInBtn: string;
+    registerBtn: string;
+    signingIn: string;
+    registering: string;
+    signInSuccess: string;
+    registerSuccess: string;
+    signInFailed: string;
+    registerFailed: string;
+    securityBadge: string;
+    signInRegisterNav: string;
+    registerToEnterHero: string;
+    signInHero: string;
+    registerToEnterCta: string;
+    editProfileNav: string;
+    connectBrokerNav: string;
+    signOutNav: string;
+    languageNav: string;
+  };
+
   // Footer
   footer: {
     poweredBy: string;
@@ -1627,6 +1667,44 @@ export const translations: Record<Language, TranslationDictionary> = {
       syncing: 'Syncing...',
       sslVault: '256-Bit SSL Isolated Vault',
     },
+    auth: {
+      signInTab: 'Sign In',
+      createAccountTab: 'Create Account',
+      signInSubtitle: 'Access your institutional verified performance & tournaments',
+      registerSubtitle: 'Join the premier global arena for verified forex & gold traders',
+      emailOrUsername: 'Email or Username',
+      emailOrUsernamePlaceholder: 'e.g. Alex_Vanguard or alex@example.com',
+      emailAddress: 'Email Address',
+      emailPlaceholder: 'trader@domain.com',
+      username: 'Trader Username',
+      usernamePlaceholder: 'e.g. GoldSniper_99',
+      password: 'Password',
+      passwordPlaceholder: '••••••••',
+      passwordCreatePlaceholder: 'Create secure password',
+      primaryBroker: 'Primary Broker',
+      tradingStyle: 'Trading Style',
+      styleScalper: 'Scalper',
+      styleDayTrader: 'Day Trader',
+      styleSwingTrader: 'Swing Trader',
+      styleAlgorithmic: 'Algorithmic / EA',
+      signInBtn: 'Sign In to TradeRank',
+      registerBtn: 'Register Profile & Join Arena',
+      signingIn: 'Authenticating...',
+      registering: 'Creating Profile...',
+      signInSuccess: 'Signed in successfully!',
+      registerSuccess: 'Account created successfully! Welcome to TradeRank.live.',
+      signInFailed: 'Failed to sign in. Please verify your credentials.',
+      registerFailed: 'Failed to create account. Please try again.',
+      securityBadge: 'AES-256-GCM Vault • 100% Zero-Write Observer Protection',
+      signInRegisterNav: 'Sign In / Register',
+      registerToEnterHero: 'Register to Enter Arena',
+      signInHero: 'Sign In',
+      registerToEnterCta: 'Register & Enter Arena',
+      editProfileNav: 'Edit Profile & Avatar',
+      connectBrokerNav: 'Connect Broker MT4/MT5',
+      signOutNav: 'Sign Out',
+      languageNav: 'Language',
+    },
     footer: {
       poweredBy: 'Powered by',
       companyName: 'Libralytic Co.,Ltd',
@@ -2422,6 +2500,44 @@ export const translations: Record<Language, TranslationDictionary> = {
       syncing: '同期中...',
       sslVault: '256ビットSSL隔離金庫',
     },
+    auth: {
+      signInTab: 'ログイン',
+      createAccountTab: '新規アカウント登録',
+      signInSubtitle: '監査認証済みの実盤パフォーマンスと大会にアクセス',
+      registerSubtitle: '世界屈指の検証済みFX・ゴールドトレーダー対戦アリーナに参加',
+      emailOrUsername: 'メールアドレス または ユーザー名',
+      emailOrUsernamePlaceholder: '例: Alex_Vanguard または alex@example.com',
+      emailAddress: 'メールアドレス',
+      emailPlaceholder: 'trader@domain.com',
+      username: 'トレーダー名（表示名）',
+      usernamePlaceholder: '例: GoldSniper_99',
+      password: 'パスワード',
+      passwordPlaceholder: '••••••••',
+      passwordCreatePlaceholder: '安全なパスワードを設定',
+      primaryBroker: 'メイン取引ブローカー',
+      tradingStyle: 'トレードスタイル',
+      styleScalper: 'スキャルピング',
+      styleDayTrader: 'デイトレード',
+      styleSwingTrader: 'スイングトレード',
+      styleAlgorithmic: 'EA / 自動売買',
+      signInBtn: 'TradeRankにログイン',
+      registerBtn: 'プロフィール登録してアリーナに参加',
+      signingIn: '認証中...',
+      registering: 'アカウント作成中...',
+      signInSuccess: 'ログインに成功しました！',
+      registerSuccess: 'アカウント作成が完了しました！TradeRankへようこそ。',
+      signInFailed: 'ログインに失敗しました。認証情報をご確認ください。',
+      registerFailed: 'アカウント作成に失敗しました。再度お試しください。',
+      securityBadge: 'AES-256-GCM 暗号化金庫 • 100% 発注遮断オブザーバー保護',
+      signInRegisterNav: 'ログイン / 新規登録',
+      registerToEnterHero: '登録してアリーナに参加',
+      signInHero: 'ログイン',
+      registerToEnterCta: '登録してアリーナへ入場',
+      editProfileNav: 'プロフィール・アバター編集',
+      connectBrokerNav: 'MT4/MT5ブローカー連携',
+      signOutNav: 'ログアウト',
+      languageNav: '表示言語',
+    },
     footer: {
       poweredBy: '運営・提供:',
       companyName: 'Libralytic Co.,Ltd',
@@ -3216,6 +3332,44 @@ export const translations: Record<Language, TranslationDictionary> = {
       heroSubheading: '支持多经纪商实盘验真的外汇、大宗商品及加密竞技排位殿堂',
       syncing: '正在同步...',
       sslVault: '256位 SSL 隔离金库',
+    },
+    auth: {
+      signInTab: '登录',
+      createAccountTab: '注册新账号',
+      signInSubtitle: '开启只读验真交易档案，征战全球交易锦标赛',
+      registerSubtitle: '加入顶级机构级外汇与黄金实盘验真竞技排位联盟',
+      emailOrUsername: '电子邮箱 或 交易员账号',
+      emailOrUsernamePlaceholder: '例如: Alex_Vanguard 或 alex@example.com',
+      emailAddress: '电子邮箱地址',
+      emailPlaceholder: 'trader@domain.com',
+      username: '交易员用户名（昵称）',
+      usernamePlaceholder: '例如: GoldSniper_99',
+      password: '登录密码',
+      passwordPlaceholder: '••••••••',
+      passwordCreatePlaceholder: '请设置安全登录密码',
+      primaryBroker: '主要交易经纪商',
+      tradingStyle: '交易手法流派',
+      styleScalper: '超短线剥头皮',
+      styleDayTrader: '日内交易',
+      styleSwingTrader: '波段趋势交易',
+      styleAlgorithmic: '量化EA / 算法交易',
+      signInBtn: '立即登录 TradeRank',
+      registerBtn: '完成注册并进入竞技场',
+      signingIn: '正在验证身份...',
+      registering: '正在建立交易档案...',
+      signInSuccess: '登录成功！',
+      registerSuccess: '账号注册成功！欢迎加入 TradeRank.live。',
+      signInFailed: '登录失败，请核对您的账号或密码。',
+      registerFailed: '账号创建失败，请稍后重试。',
+      securityBadge: 'AES-256-GCM 隔离金库 • 100% 零写入只读观察者保护',
+      signInRegisterNav: '登录 / 注册',
+      registerToEnterHero: '注册进入排位赛',
+      signInHero: '登录账户',
+      registerToEnterCta: '注册并入场角逐',
+      editProfileNav: '编辑实盘档案与头像',
+      connectBrokerNav: '绑定 MT4/MT5 交易账号',
+      signOutNav: '退出登录',
+      languageNav: '切换语言',
     },
     footer: {
       poweredBy: '运营与技术支持:',

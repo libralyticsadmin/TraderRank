@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { User, Settings, LogOut, ChevronDown, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
+import { useTranslation } from '../context/LanguageContext.tsx';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { LanguageSelector } from './LanguageSelector.tsx';
 
@@ -10,6 +11,7 @@ interface UserNavMenuProps {
 
 export const UserNavMenu: React.FC<UserNavMenuProps> = ({ onOpenConnectWizard }) => {
   const { user, isAuthenticated, openAuthModal, openProfileModal, logout } = useAuth();
+  const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -41,6 +43,7 @@ export const UserNavMenu: React.FC<UserNavMenuProps> = ({ onOpenConnectWizard })
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
+            whiteSpace: 'nowrap',
             transition: 'all 0.2s',
             boxShadow: '0 0 14px rgba(10, 186, 181, 0.15)',
           }}
@@ -54,7 +57,7 @@ export const UserNavMenu: React.FC<UserNavMenuProps> = ({ onOpenConnectWizard })
           }}
         >
           <User size={14} color="#0abab5" />
-          <span>Sign In / Register</span>
+          <span>{t.auth.signInRegisterNav}</span>
         </button>
       </div>
     );
@@ -141,7 +144,7 @@ export const UserNavMenu: React.FC<UserNavMenuProps> = ({ onOpenConnectWizard })
             onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
           >
             <Settings size={15} color="#0abab5" />
-            <span>Edit Profile & Avatar</span>
+            <span>{t.auth.editProfileNav}</span>
           </button>
 
           {onOpenConnectWizard && (
@@ -167,14 +170,14 @@ export const UserNavMenu: React.FC<UserNavMenuProps> = ({ onOpenConnectWizard })
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             >
               <ShieldCheck size={15} color="#0abab5" />
-              <span>Connect Broker MT4/MT5</span>
+              <span>{t.auth.connectBrokerNav}</span>
             </button>
           )}
 
           <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.08)', margin: '4px 0' }}></div>
 
           <div style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '12px', color: '#848E9C', fontWeight: 600 }}>Language</span>
+            <span style={{ fontSize: '12px', color: '#848E9C', fontWeight: 600 }}>{t.auth.languageNav}</span>
             <LanguageSelector variant="compact" />
           </div>
 
@@ -202,7 +205,7 @@ export const UserNavMenu: React.FC<UserNavMenuProps> = ({ onOpenConnectWizard })
             onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
           >
             <LogOut size={15} color="#ef4444" />
-            <span>Sign Out</span>
+            <span>{t.auth.signOutNav}</span>
           </button>
         </div>
       )}

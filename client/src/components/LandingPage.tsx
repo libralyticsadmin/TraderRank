@@ -315,11 +315,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
                     display: 'flex',
                     alignItems: 'center',
                     gap: '10px',
+                    whiteSpace: 'nowrap',
                     boxShadow: '0 8px 30px rgba(0, 240, 255, 0.4)',
                     transition: 'all 0.2s',
                   }}
                 >
-                  <Zap size={18} fill="#080b11" /> Register to Enter Arena <ArrowRight size={18} />
+                  <Zap size={18} fill="#080b11" /> {t.auth.registerToEnterHero} <ArrowRight size={18} />
                 </button>
                 <button
                   onClick={() => openAuthModal('signin')}
@@ -335,11 +336,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
                     display: 'flex',
                     alignItems: 'center',
                     gap: '10px',
+                    whiteSpace: 'nowrap',
                     backdropFilter: 'blur(10px)',
                     transition: 'all 0.2s',
                   }}
                 >
-                  <User size={18} style={{ color: '#00F0FF' }} /> Sign In
+                  <User size={18} style={{ color: '#00F0FF' }} /> {t.auth.signInHero}
                 </button>
               </div>
             )}
@@ -1032,11 +1034,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
               fontSize: '16px',
               fontWeight: 900,
               cursor: 'pointer',
+              whiteSpace: 'nowrap',
               boxShadow: '0 8px 32px rgba(0, 240, 255, 0.4)',
               transition: 'all 0.2s',
             }}
           >
-            {isAuthenticated ? t.landing.ctaButton : 'Register & Enter Arena'}
+            {isAuthenticated ? t.landing.ctaButton : t.auth.registerToEnterCta}
           </button>
         </div>
       </section>
