@@ -31,12 +31,12 @@ export interface HonorBadge {
 export const RewardsBadges: React.FC = () => {
   const { t, language } = useTranslation();
 
-  const [currentXp, setCurrentXp] = useState<number>(2750);
+  const [currentXp, setCurrentXp] = useState<number>(13275);
   const [streakClaimed, setStreakClaimed] = useState<boolean>(false);
-  const [tradeCount, setTradeCount] = useState<number>(0);
-  const nextLevelXp = 5000;
-  const prevLevelXp = 2001;
-  const progressPct = Math.min(100, Math.round(((currentXp - prevLevelXp) / (nextLevelXp - prevLevelXp)) * 100));
+  const [tradeCount, setTradeCount] = useState<number>(531);
+  const nextLevelXp = 15000;
+  const prevLevelXp = 10000;
+  const progressPct = Math.min(100, Math.max(0, Math.round(((currentXp - prevLevelXp) / (nextLevelXp - prevLevelXp)) * 100)));
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [selectedBadge, setSelectedBadge] = useState<HonorBadge | null>(null);
@@ -54,8 +54,7 @@ export const RewardsBadges: React.FC = () => {
             const trades = await tradesRes.json();
             if (Array.isArray(trades) && trades.length > 0 && isMounted) {
               setTradeCount(trades.length);
-              const winningTrades = trades.filter((t: any) => Number(t.pnlCurrency || t.profit || 0) > 0);
-              const computedXp = 2500 + trades.length * 20 + winningTrades.length * 35;
+              const computedXp = trades.length * 25;
               setCurrentXp(computedXp);
             }
           }

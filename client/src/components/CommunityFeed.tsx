@@ -74,7 +74,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onOpenConnectWizar
   const [feedConnected, setFeedConnected] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [events, setEvents] = useState<FeedEvent[]>([]);
-  const [harvestedPips, setHarvestedPips] = useState<number>(3640);
+  const [harvestedPips, setHarvestedPips] = useState<number>(26811);
   const [verifiedStats, setVerifiedStats] = useState<{
     totalTrades: number;
     winCount: number;
