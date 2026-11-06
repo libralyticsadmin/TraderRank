@@ -135,7 +135,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const data = await res.json();
         if (data.user) {
           setUser(data.user);
-          setIsAuthModalOpen(false);
           return { success: true };
         }
       }
@@ -152,7 +151,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     setUser(newUser);
-    setIsAuthModalOpen(false);
     return { success: true };
   };
 
@@ -189,7 +187,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const body = await res.json();
         if (body.user) {
           setUser(body.user);
-          setIsAuthModalOpen(false);
           return { success: true };
         }
       }
@@ -207,7 +204,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     setUser(newUser);
-    setIsAuthModalOpen(false);
+    return { success: true };
     return { success: true };
   };
 
