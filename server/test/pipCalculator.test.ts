@@ -53,4 +53,13 @@ describe('PipCalculator - Gauntlet Quality Verification', () => {
     expect(PipCalculator.calculatePips('BTCUSD', 'BUY', 65000.00, 65250.00)).toBe(250.0);
     expect(PipCalculator.calculatePips('BTCUSD', 'SELL', 65000.00, 64500.00)).toBe(500.0);
   });
+
+  it('should reconstruct openPrice respecting instrument digits precision', () => {
+    // 5-digit Forex: BUY EURUSD 0.10 lot, closePrice 1.11500, profit $20.00 (+20 pips = +0.00200) -> openPrice 1.11300
+    expect(PipCalculator.reconstructOpenPrice('EURUSD', 'BUY', 1.11500, 0.10, 20.00)).toBe(1.113);
+    // 5-digit Forex fractional pip: BUY EURUSD 0.10 lot, closePrice 1.11425, profit $12.50 (+12.5 pips = +0.00125) -> openPrice 1.11300
+    expect(PipCalculator.reconstructOpenPrice('EURUSD', 'BUY', 1.11425, 0.10, 12.50)).toBe(1.113);
+    // 2-digit Gold: SELL XAUUSD 0.05 lot, closePrice 4513.68, profit $26.20 (+52.4 pips = +5.24) -> openPrice 4518.92
+    expect(PipCalculator.reconstructOpenPrice('XAUUSD', 'SELL', 4513.68, 0.05, 26.20)).toBe(4518.92);
+  });
 });

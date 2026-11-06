@@ -185,15 +185,15 @@ export class PipCalculator {
   ): number {
     if (closePrice <= 0 || lotSize <= 0) return closePrice;
     const pips = this.calculatePipsFromPnl(rawSymbol, lotSize, pnlCurrency);
-    const { pipSize } = this.getPipConfig(rawSymbol);
+    const { pipSize, digits } = this.getPipConfig(rawSymbol);
     const priceMove = pips * pipSize;
 
     // BUY: profit = (close - open) -> open = close - priceMove
     // SELL: profit = (open - close) -> open = close + priceMove
     if (type === 'BUY') {
-      return Number((closePrice - priceMove).toFixed(2));
+      return Number((closePrice - priceMove).toFixed(digits));
     } else {
-      return Number((closePrice + priceMove).toFixed(2));
+      return Number((closePrice + priceMove).toFixed(digits));
     }
   }
 

@@ -41,6 +41,38 @@ interface VerifiedTrade {
   closeTime: string;
   pnlCurrency: number;
   pnlPips: number;
+  digits: number;
+}
+
+function getInstrumentSpec(rawSymbol: string): { pipSize: number; digits: number; pipValPerLot: number } {
+  const sym = rawSymbol.toUpperCase().replace(/(\.M|\.I|\.RAW|\.PRO|\.ECN|\.CASH|_I|_M|_SB|\+|#)$/i, '');
+  if (sym.includes('XAU') || sym.includes('GOLD')) {
+    return { pipSize: 0.10, digits: 2, pipValPerLot: 10.0 };
+  }
+  if (sym.includes('XAG') || sym.includes('SILVER')) {
+    return { pipSize: 0.01, digits: 3, pipValPerLot: 50.0 };
+  }
+  if (sym.endsWith('JPY')) {
+    return { pipSize: 0.01, digits: 3, pipValPerLot: 6.5 };
+  }
+  if (
+    sym.includes('BTC') ||
+    sym.includes('ETH') ||
+    sym.includes('US30') ||
+    sym.includes('DJ30') ||
+    sym.includes('NAS100') ||
+    sym.includes('USTEC') ||
+    sym.includes('SPX') ||
+    sym.includes('US500') ||
+    sym.includes('GER40') ||
+    sym.includes('UK100')
+  ) {
+    return { pipSize: 1.0, digits: 2, pipValPerLot: 1.0 };
+  }
+  if (sym.includes('OIL') || sym.includes('WTI') || sym.includes('MCL') || sym.includes('XTI')) {
+    return { pipSize: 0.01, digits: 2, pipValPerLot: 10.0 };
+  }
+  return { pipSize: 0.0001, digits: 5, pipValPerLot: 10.0 };
 }
 
 interface TraderProfileModalProps {
@@ -73,7 +105,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
           });
 
           const normalized = valid.map(d => {
-            const symbol = String(d.symbol || 'GOLD#');
+            const symbol = String(d.symbol).trim();
             const type = (d.type === 'BUY' ? 'BUY' : 'SELL') as 'BUY' | 'SELL';
             const lotSize = Number(d.lotSize ?? d.volume ?? 0.01);
             let openPrice = Number(d.openPrice ?? 0);
@@ -81,21 +113,28 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
             const pnlCurrency = Number(d.pnlCurrency ?? d.profit ?? 0);
             let pnlPips = Number(d.pnlPips ?? 0);
 
-            const isGold = symbol.toUpperCase().includes('GOLD') || symbol.toUpperCase().includes('XAU');
+            const { pipSize, digits, pipValPerLot } = getInstrumentSpec(symbol);
 
-            // Fallback pip calculation if pnlPips is missing or 0 but realized profit exists
+            // 1. Primary pip calculation from verified open & close prices if pnlPips was 0
+            if (pnlPips === 0 && openPrice > 0 && closePrice > 0 && openPrice !== closePrice) {
+              const priceDiff = type === 'BUY' ? closePrice - openPrice : openPrice - closePrice;
+              pnlPips = Number((priceDiff / pipSize).toFixed(1));
+            }
+
+            // 2. Fallback pip calculation if openPrice === closePrice and realized profit exists
             if (pnlPips === 0 && pnlCurrency !== 0 && lotSize > 0) {
-              const pipValPerLot = isGold ? 10.0 : 10.0;
               pnlPips = Number((pnlCurrency / (lotSize * pipValPerLot)).toFixed(1));
             }
 
-            // Fallback openPrice derivation if openPrice matches closePrice but trade had pips/profit
+            // 3. Fallback openPrice derivation if openPrice matches closePrice but trade had pips/profit
             if (openPrice > 0 && closePrice > 0 && openPrice === closePrice && pnlPips !== 0) {
-              const pipSize = isGold ? 0.10 : 0.0001;
               const priceMove = pnlPips * pipSize;
               openPrice = type === 'BUY'
-                ? Number((closePrice - priceMove).toFixed(2))
-                : Number((closePrice + priceMove).toFixed(2));
+                ? Number((closePrice - priceMove).toFixed(digits))
+                : Number((closePrice + priceMove).toFixed(digits));
+            } else {
+              if (openPrice > 0) openPrice = Number(openPrice.toFixed(digits));
+              if (closePrice > 0) closePrice = Number(closePrice.toFixed(digits));
             }
 
             return {
@@ -109,6 +148,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
               closeTime: d.closeTime || '',
               pnlCurrency,
               pnlPips,
+              digits,
             };
           });
 
@@ -338,7 +378,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
         >
           <div style={{ padding: '14px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.profile.netWinningPips}</div>
-            <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--accent-green)', marginTop: '2px' }}>
+            <div style={{ fontSize: '20px', fontWeight: 800, color: stats.netPips >= 0 ? 'var(--accent-green)' : '#ef4444', marginTop: '2px' }}>
               {stats.netPips > 0 ? `+${stats.netPips.toFixed(1)}` : stats.netPips.toFixed(1)}
             </div>
           </div>
@@ -444,7 +484,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                         </span>
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        {trade.openPrice > 0 ? `@ ${trade.openPrice}` : ''} {trade.closePrice > 0 ? `→ ${trade.closePrice}` : ''} • {formattedTime}
+                        {trade.openPrice > 0 ? `@ ${trade.openPrice.toFixed(trade.digits)}` : ''} {trade.closePrice > 0 ? `→ ${trade.closePrice.toFixed(trade.digits)}` : ''} • {formattedTime}
                       </div>
                     </div>
                   </div>

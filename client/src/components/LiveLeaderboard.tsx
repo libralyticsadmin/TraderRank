@@ -18,7 +18,7 @@ import {
 interface LiveLeaderboardProps {
   entries: LeaderboardEntry[];
   dailyResult?: DailyLeaderboardResult | null;
-  onSelectTrader?: (trader: { username: string; broker: Broker; rank: number; score: number }) => void;
+  onSelectTrader?: (trader: { userId?: string; username: string; broker: Broker; rank: number; score: number; winRate?: number; tradesCount?: number }) => void;
 }
 
 export type RankingMetric = 'pips' | 'profit' | 'rate';
@@ -332,7 +332,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             return (
               <div
                 key={trader.userId}
-                onClick={() => onSelectTrader?.({ username: trader.username, broker: trader.broker, rank: trader.displayRank, score: trader.winningPips })}
+                onClick={() => onSelectTrader?.({ userId: trader.userId, username: trader.username, broker: trader.broker, rank: trader.displayRank, score: trader.winningPips, winRate: trader.winRate, tradesCount: trader.tradesCount })}
                 style={{
                   background: `linear-gradient(180deg, ${glowColor}15 0%, rgba(15, 23, 42, 0.9) 100%)`,
                   border: `1px solid ${glowColor}40`,
@@ -389,14 +389,14 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                 >
                   <div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.winningPips}</div>
-                    <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--accent-green)' }}>
-                      +{trader.winningPips.toFixed(1)}
+                    <div style={{ fontSize: '16px', fontWeight: 800, color: trader.winningPips >= 0 ? 'var(--accent-green)' : '#ef4444' }}>
+                      {trader.winningPips >= 0 ? `+${trader.winningPips.toFixed(1)}` : trader.winningPips.toFixed(1)}
                     </div>
                   </div>
                   <div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.estProfit}</div>
-                    <div style={{ fontSize: '16px', fontWeight: 800, color: '#fbbf24' }}>
-                      +${trader.profitAmount.toLocaleString()}
+                    <div style={{ fontSize: '16px', fontWeight: 800, color: trader.profitAmount >= 0 ? '#fbbf24' : '#ef4444' }}>
+                      {trader.profitAmount >= 0 ? `+$${trader.profitAmount.toLocaleString()}` : `-$${Math.abs(trader.profitAmount).toLocaleString()}`}
                     </div>
                   </div>
                 </div>
@@ -447,7 +447,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             return (
               <div
                 key={trader.userId}
-                onClick={() => onSelectTrader?.({ username: trader.username, broker: trader.broker, rank: trader.displayRank, score: trader.winningPips })}
+                onClick={() => onSelectTrader?.({ userId: trader.userId, username: trader.username, broker: trader.broker, rank: trader.displayRank, score: trader.winningPips, winRate: trader.winRate, tradesCount: trader.tradesCount })}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -493,22 +493,22 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '24px', textAlign: 'right' }}>
                   <div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.netPips}</div>
-                    <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--accent-green)' }}>
-                      +{trader.winningPips.toFixed(1)}
+                    <div style={{ fontSize: '16px', fontWeight: 800, color: trader.winningPips >= 0 ? 'var(--accent-green)' : '#ef4444' }}>
+                      {trader.winningPips >= 0 ? `+${trader.winningPips.toFixed(1)}` : trader.winningPips.toFixed(1)}
                     </div>
                   </div>
 
                   <div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.profit}</div>
-                    <div style={{ fontSize: '16px', fontWeight: 800, color: '#fbbf24' }}>
-                      +${trader.profitAmount.toLocaleString()}
+                    <div style={{ fontSize: '16px', fontWeight: 800, color: trader.profitAmount >= 0 ? '#fbbf24' : '#ef4444' }}>
+                      {trader.profitAmount >= 0 ? `+$${trader.profitAmount.toLocaleString()}` : `-$${Math.abs(trader.profitAmount).toLocaleString()}`}
                     </div>
                   </div>
 
                   <div style={{ minWidth: '70px' }}>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.rate}</div>
-                    <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--accent-cyan)' }}>
-                      +{trader.profitRate}%
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: trader.profitRate >= 0 ? 'var(--accent-cyan)' : '#ef4444' }}>
+                      {trader.profitRate >= 0 ? `+${trader.profitRate}%` : `${trader.profitRate}%`}
                     </div>
                   </div>
 

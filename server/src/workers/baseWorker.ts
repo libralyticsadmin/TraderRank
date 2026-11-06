@@ -53,7 +53,7 @@ export interface IBrokerWorker {
   /**
    * Provision and start streaming for an account.
    */
-  connectAccount(accountId: string, creds: unknown): Promise<void>;
+  connectAccount(accountId: string, creds: unknown, metaApiAccountId?: string): Promise<void>;
 
   /**
    * Stop tracking an account.

@@ -647,15 +647,26 @@ export function createServer() {
   // 6. Historical Trades for Account (Live MetaApi Ledger Sync)
   app.get('/api/accounts/:id/trades', async (req: Request, res: Response) => {
     try {
-      const allAccounts = connector.getAccounts();
-      const matched = allAccounts.find(
-        a => a.id === req.params.id ||
-             a.userId === req.params.id ||
-             a.accountNumber === req.params.id ||
-             (a.accountNumber && req.params.id.includes(a.accountNumber))
-      );
+      const paramId = req.params.id;
+      let allAccounts = connector.getAccounts();
+      if (allAccounts.length === 0 && metaApiClient.hasToken()) {
+        allAccounts = await connector.syncCloudProvisionedAccounts();
+      }
 
-      const targetId = matched ? matched.id : (allAccounts.length > 0 ? allAccounts[0].id : req.params.id);
+      const lbAccountIds = new Set(leaderboard.getAccountIdsForTrader(paramId));
+
+      const matched =
+        allAccounts.find(
+          a =>
+            a.id === paramId ||
+            a.userId === paramId ||
+            a.accountNumber === paramId ||
+            (a.accountNumber && paramId.includes(a.accountNumber)) ||
+            lbAccountIds.has(a.id)
+        ) ||
+        allAccounts.find(a => a.metaApiAccountId && !a.metaApiAccountId.startsWith('mock_'));
+
+      const targetId = matched ? matched.id : (allAccounts.length > 0 ? allAccounts[0].id : paramId);
       const trades = await connector.syncAndGetAccountTrades(targetId);
       res.json(trades || []);
     } catch (err) {
@@ -825,10 +836,10 @@ export function createServer() {
       }
 
       if (account.metaApiAccountId) {
-        const [info, positions, deals] = await Promise.all([
+        const [info, positions, trades] = await Promise.all([
           metaApiClient.getAccountInformation(account.metaApiAccountId),
-          metaApiClient.getPositions(account.metaApiAccountId),
-          metaApiClient.getHistoricalDeals(account.metaApiAccountId),
+          connector.getActivePositions(accountId),
+          connector.syncAndGetAccountTrades(accountId, true),
         ]);
 
         if (info) {
@@ -846,7 +857,7 @@ export function createServer() {
           metaApiAccountId: account.metaApiAccountId,
           liveInfo: info,
           positionsCount: positions.length,
-          dealsCount: deals.length,
+          dealsCount: trades.length,
         });
       }
 

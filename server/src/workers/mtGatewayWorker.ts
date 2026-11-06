@@ -25,7 +25,10 @@ export class MTGatewayWorker implements IBrokerWorker {
   public readonly broker: Broker;
   public readonly integrationType: IntegrationType = 'mt_gateway';
 
-  private activeAccounts = new Map<string, { creds: GatewayCredentials; positions: RawPositionPayload[] }>();
+  private activeAccounts = new Map<
+    string,
+    { creds: GatewayCredentials; positions: RawPositionPayload[]; metaApiAccountId?: string }
+  >();
   private positionListeners: PositionUpdateListener[] = [];
   private dealListeners: DealListener[] = [];
   private healthListeners: HealthListener[] = [];
@@ -145,6 +148,7 @@ export class MTGatewayWorker implements IBrokerWorker {
     this.activeAccounts.set(accountId, {
       creds: gatewayCreds,
       positions,
+      metaApiAccountId,
     });
 
     // Notify initial positions immediately
@@ -161,31 +165,37 @@ export class MTGatewayWorker implements IBrokerWorker {
   }
 
   public async getTradeHistory(accountId: string, from?: Date, to?: Date): Promise<RawDealPayload[]> {
-    if (this.metaApiClient.hasToken()) {
+    const acc = this.activeAccounts.get(accountId);
+    const targetMetaId = acc?.metaApiAccountId || (accountId.startsWith('acc_') ? undefined : accountId);
+
+    if (this.metaApiClient.hasToken() && targetMetaId && !targetMetaId.startsWith('mock_')) {
       try {
         const liveDeals = await this.metaApiClient.getHistoricalDeals(
-          accountId,
+          targetMetaId,
           from?.toISOString(),
           to?.toISOString()
         );
         if (liveDeals && liveDeals.length > 0) {
-          return liveDeals.map(d => ({
-            accountId,
-            ticket: d.id || d.positionId,
-            symbol: d.symbol || 'GOLD#',
-            type: d.type === 'DEAL_TYPE_BUY' ? 'BUY' : 'SELL',
-            volume: d.volume,
-            openPrice: d.price,
-            closePrice: d.price,
-            profit: d.profit,
-            commission: d.commission,
-            swap: d.swap,
-            openTime: d.time,
-            closeTime: d.time,
-          }));
+          return liveDeals
+            .filter(d => d.symbol && d.symbol !== 'BALANCE' && d.volume > 0)
+            .map(d => ({
+              accountId,
+              ticket: d.id || d.positionId,
+              symbol: d.symbol!,
+              type: d.type === 'DEAL_TYPE_BUY' ? 'BUY' : 'SELL',
+              volume: d.volume,
+              openPrice: d.price,
+              closePrice: d.price,
+              profit: d.profit,
+              commission: d.commission,
+              swap: d.swap,
+              openTime: d.time,
+              closeTime: d.time,
+            }));
         }
+        return [];
       } catch {
-        // Fall back to simulation if MetaApi is offline
+        return [];
       }
     }
     return this.marketSim.generateHistoricalDeals(accountId, this.broker);

@@ -18,6 +18,8 @@ import { useTranslation } from '../context/LanguageContext.tsx';
 
 export interface BulletinTradeItem {
   id: string;
+  accountId?: string;
+  userId?: string;
   trader: string;
   broker: Broker;
   symbol: string;
@@ -33,7 +35,7 @@ export interface BulletinTradeItem {
 }
 
 interface LiveTradeBulletinProps {
-  onSelectTrader?: (trader: { username: string; broker?: Broker; rank?: number; score?: number }) => void;
+  onSelectTrader?: (trader: { userId?: string; username: string; broker?: Broker; rank?: number; score?: number }) => void;
   speed?: 'normal' | 'fast' | 'slow';
 }
 
@@ -186,6 +188,8 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
 
                   collected.push({
                     id: tr.id || `tr_${Math.random()}`,
+                    accountId: acc.id,
+                    userId: acc.userId || acc.id,
                     trader: acc.username || `Trader-${acc.accountNumber}`,
                     broker: acc.broker || 'XM',
                     symbol: tr.symbol,
@@ -293,6 +297,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
             onClick={() =>
               onSelectTrader &&
               onSelectTrader({
+                userId: currentTrade.accountId || currentTrade.userId,
                 username: currentTrade.trader,
                 broker: currentTrade.broker,
                 score: currentTrade.pips,

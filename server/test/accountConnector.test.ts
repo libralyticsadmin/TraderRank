@@ -191,5 +191,75 @@ describe('AccountConnectorService - Connection & Routing Standard', () => {
     expect(trade2.pnlCurrency).toBe(50.52);
     expect(trade2.pnlPips).toBe(168.4);
   });
+
+  it('should aggregate partial closes, preserve 5-digit FX precision, and filter commission/bonus deals', () => {
+    const rawDeals = [
+      {
+        id: 'd_comm_1',
+        positionId: 'pos_comm',
+        symbol: 'EURUSD',
+        type: 'DEAL_TYPE_COMMISSION',
+        entryType: 'DEAL_ENTRY_IN',
+        volume: 0.1,
+        price: 1.11,
+        profit: -0.7,
+        commission: -0.7,
+        swap: 0,
+        time: '2026-05-27T10:00:00Z',
+      },
+      {
+        id: 'd_fx_in',
+        positionId: 'pos_fx_1',
+        symbol: 'EURUSD',
+        type: '0', // numeric BUY
+        entryType: '0', // numeric DEAL_ENTRY_IN
+        volume: 0.2,
+        price: 1.11234,
+        profit: 0,
+        commission: -1.4,
+        swap: 0,
+        time: '2026-05-27T10:05:00Z',
+      },
+      {
+        id: 'd_fx_out_1',
+        positionId: 'pos_fx_1',
+        symbol: 'EURUSD',
+        type: '1', // numeric SELL
+        entryType: '1', // numeric DEAL_ENTRY_OUT
+        volume: 0.1,
+        price: 1.11434,
+        profit: 20.0,
+        commission: 0,
+        swap: -0.2,
+        time: '2026-05-27T11:00:00Z',
+      },
+      {
+        id: 'd_fx_out_2',
+        positionId: 'pos_fx_1',
+        symbol: 'EURUSD',
+        type: '1', // numeric SELL
+        entryType: '1', // numeric DEAL_ENTRY_OUT
+        volume: 0.1,
+        price: 1.11634,
+        profit: 40.0,
+        commission: 0,
+        swap: -0.3,
+        time: '2026-05-27T11:30:00Z',
+      },
+    ];
+
+    const trades = connector.processRawDealsToTrades('acc_test_fx', rawDeals);
+    expect(trades.length).toBe(1);
+    const fxTrade = trades[0];
+    expect(fxTrade.symbol).toBe('EURUSD');
+    expect(fxTrade.type).toBe('BUY');
+    expect(fxTrade.lotSize).toBe(0.2);
+    expect(fxTrade.openPrice).toBe(1.11234);
+    expect(fxTrade.closePrice).toBe(1.11534); // Volume-weighted average of 1.11434 and 1.11634
+    expect(fxTrade.pnlCurrency).toBe(60.0);
+    expect(fxTrade.pnlPips).toBe(30.0);
+    expect(fxTrade.commission).toBe(-1.4);
+    expect(fxTrade.swap).toBe(-0.5);
+  });
 });
 

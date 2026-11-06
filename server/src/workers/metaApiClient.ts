@@ -199,6 +199,9 @@ export class MetaApiClient {
 
     const created = await res.json() as any;
     const id = created ? String(created.id || created._id || '') : '';
+    if (id && created?.region) {
+      this.accountRegions.set(id, String(created.region));
+    }
     return { id, isNew: true, state: created?.state || 'DRAFT' };
   }
 
@@ -236,6 +239,9 @@ export class MetaApiClient {
       });
       if (!res.ok) return null;
       const data = await res.json() as any;
+      if (data?.region) {
+        this.accountRegions.set(metaApiAccountId, String(data.region));
+      }
       return { state: data.state, connectionStatus: data.connectionStatus };
     } catch {
       return null;
@@ -418,7 +424,8 @@ export class MetaApiClient {
   }
 
   /**
-   * Fetches historical closed deals from MetaApi Client REST Gateway
+   * Fetches historical closed deals from MetaApi Client REST Gateway.
+   * Automatically paginates past MetaApi's 1,000-deal per-request cap so the newest executions are never truncated.
    */
   public async getHistoricalDeals(
     metaApiAccountId: string,
@@ -431,32 +438,56 @@ export class MetaApiClient {
       const clientUrl = this.getClientBaseUrl(metaApiAccountId);
       const startEncoded = encodeURIComponent(startTime);
       const endEncoded = encodeURIComponent(endTime);
-      const res = await fetch(
-        `${clientUrl}/users/current/accounts/${metaApiAccountId}/history-deals/time/${startEncoded}/${endEncoded}`,
-        {
+      const limit = 1000;
+      const maxPages = 5;
+      const allRawDeals: any[] = [];
+
+      for (let page = 0; page < maxPages; page++) {
+        const offset = page * limit;
+        const url = `${clientUrl}/users/current/accounts/${metaApiAccountId}/history-deals/time/${startEncoded}/${endEncoded}?offset=${offset}&limit=${limit}`;
+        const res = await fetch(url, {
           headers: {
             'auth-token': this.token,
             'Accept': 'application/json',
           },
-        }
-      );
+        });
 
-      if (!res.ok) return [];
-      const data = await res.json() as any;
-      const deals = Array.isArray(data?.deals) ? data.deals : Array.isArray(data) ? data : [];
-      return deals.map((d: any) => ({
-        id: String(d.id || d._id || d.dealId),
-        positionId: String(d.positionId || d.id),
-        symbol: d.symbol || (d.type === 'DEAL_TYPE_BALANCE' ? 'BALANCE' : undefined),
-        type: String(d.type || (d.entryType === 'DEAL_ENTRY_OUT' ? 'DEAL_TYPE_SELL' : 'DEAL_TYPE_BUY')),
-        entryType: d.entryType ? String(d.entryType) : (d.profit !== 0 ? 'DEAL_ENTRY_OUT' : 'DEAL_ENTRY_IN'),
-        volume: Number(d.volume ?? 0),
-        price: Number(d.price ?? 0),
-        profit: Number(d.profit ?? 0),
-        commission: Number(d.commission ?? 0),
-        swap: Number(d.swap ?? 0),
-        time: d.time ? new Date(d.time).toISOString() : new Date().toISOString(),
-      }));
+        if (!res.ok) break;
+        const data = await res.json() as any;
+        const batch = Array.isArray(data?.deals) ? data.deals : Array.isArray(data) ? data : [];
+        allRawDeals.push(...batch);
+        if (batch.length < limit) {
+          break;
+        }
+      }
+
+      return allRawDeals.map((d: any) => {
+        const rawType =
+          d.type === 0 || d.type === '0' ? 'DEAL_TYPE_BUY' :
+          d.type === 1 || d.type === '1' ? 'DEAL_TYPE_SELL' :
+          d.type !== undefined && d.type !== null && d.type !== '' ? String(d.type) :
+          (d.entryType === 'DEAL_ENTRY_OUT' ? 'DEAL_TYPE_SELL' : 'DEAL_TYPE_BUY');
+
+        const rawEntryType =
+          d.entryType === 0 || d.entryType === '0' ? 'DEAL_ENTRY_IN' :
+          d.entryType === 1 || d.entryType === '1' ? 'DEAL_ENTRY_OUT' :
+          d.entryType !== undefined && d.entryType !== null && d.entryType !== '' ? String(d.entryType) :
+          (Number(d.profit ?? 0) !== 0 ? 'DEAL_ENTRY_OUT' : 'DEAL_ENTRY_IN');
+
+        return {
+          id: String(d.id || d._id || d.dealId),
+          positionId: String(d.positionId || d.orderId || d.id),
+          symbol: d.symbol || (rawType === 'DEAL_TYPE_BALANCE' ? 'BALANCE' : undefined),
+          type: rawType,
+          entryType: rawEntryType,
+          volume: Number(d.volume ?? 0),
+          price: Number(d.price ?? d.openPrice ?? d.closePrice ?? 0),
+          profit: Number(d.profit ?? 0),
+          commission: Number(d.commission ?? 0),
+          swap: Number(d.swap ?? 0),
+          time: d.time ? new Date(d.time).toISOString() : new Date().toISOString(),
+        };
+      });
     } catch {
       return [];
     }

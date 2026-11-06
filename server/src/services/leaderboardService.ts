@@ -22,6 +22,7 @@ interface TraderAggregate {
   avatarSymbol: string; // Symbolic representation (no emojis)
   brokers: Set<Broker>;
   accounts: Set<string>;
+  processedTradeIds: Set<string>;
   closedPips: number;
   floatingPips: number;
   winningTrades: number;
@@ -186,6 +187,7 @@ export class LeaderboardService {
         avatarSymbol: s.avatarSymbol,
         brokers: new Set(s.brokers),
         accounts: new Set([`acc_${s.userId}`]),
+        processedTradeIds: new Set(),
         closedPips: s.closedPips,
         floatingPips: s.floatingPips,
         winningTrades: s.wins,
@@ -215,6 +217,7 @@ export class LeaderboardService {
         avatarSymbol: 'user',
         brokers: new Set([broker]),
         accounts: new Set([accountId]),
+        processedTradeIds: new Set(),
         closedPips: 0,
         floatingPips: 0,
         winningTrades: 0,
@@ -231,9 +234,30 @@ export class LeaderboardService {
       });
     } else {
       const trader = this.traders.get(userId)!;
+      if (username && trader.username.startsWith('LiveTrader_')) {
+        trader.username = username;
+      }
       trader.brokers.add(broker);
       trader.accounts.add(accountId);
     }
+  }
+
+  public getAccountIdsForTrader(idOrUsername: string): string[] {
+    if (!idOrUsername) return [];
+    const direct = this.traders.get(idOrUsername);
+    if (direct) return Array.from(direct.accounts);
+
+    const normalized = idOrUsername.toLowerCase().replace(/^u_/, '');
+    for (const t of this.traders.values()) {
+      if (
+        t.userId.toLowerCase() === idOrUsername.toLowerCase() ||
+        t.username.toLowerCase() === idOrUsername.toLowerCase() ||
+        t.username.toLowerCase() === normalized
+      ) {
+        return Array.from(t.accounts);
+      }
+    }
+    return [];
   }
 
   private checkDateRollover(trader: TraderAggregate): void {
@@ -287,6 +311,14 @@ export class LeaderboardService {
         this.checkDateRollover(trader);
 
         const trade = envelope.payload;
+        const tradeKey = trade.id || (trade.ticket ? `${envelope.accountId}_${trade.ticket}` : '');
+        if (tradeKey) {
+          if (trader.processedTradeIds.has(tradeKey)) {
+            return;
+          }
+          trader.processedTradeIds.add(tradeKey);
+        }
+
         trader.closedPips = Number((trader.closedPips + trade.pnlPips).toFixed(1));
         trader.totalTrades += 1;
         if (trade.pnlPips > 0) trader.winningTrades += 1;

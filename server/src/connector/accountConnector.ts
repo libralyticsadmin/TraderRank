@@ -38,6 +38,10 @@ export class AccountConnectorService {
   // Relational storage simulation for connected trading accounts (Postgres model)
   private accounts = new Map<string, TradingAccount>();
   private tradesStorage = new Map<string, CanonicalTrade[]>();
+  private rawDealsCache = new Map<string, MetaApiDeal[]>();
+  private lastDealSyncAt = new Map<string, number>();
+  private lastDealCursorTime = new Map<string, string>();
+  private static readonly DEAL_SYNC_TTL_MS = 15_000;
 
   constructor() {
     this.initWorkerEventWiring();
@@ -128,19 +132,32 @@ export class AccountConnectorService {
     this.leaderboard.registerAccountMapping(accountId, userId, username, broker);
 
     // 4. Provision worker
-    await this.orchestrator.provisionAccount(accountId, broker, creds);
+    await this.orchestrator.provisionAccount(accountId, broker, creds, account.metaApiAccountId);
 
     // 5. Initial historical trade sync backfill (PRD §6 step 5)
-    const worker = this.orchestrator.getWorkerForAccount(accountId);
-    if (worker) {
-      const rawDeals = await worker.getTradeHistory(accountId, new Date(Date.now() - 30 * 86400000), new Date());
-      const normalizedTrades = rawDeals.map(d => this.normalizer.normalizeDeal(d));
-      this.tradesStorage.set(accountId, normalizedTrades);
+    let normalizedTrades: CanonicalTrade[] = [];
+    const isLiveMetaApi = Boolean(
+      account.metaApiAccountId &&
+      !account.metaApiAccountId.startsWith('mock_') &&
+      this.metaApiClient.hasToken()
+    );
 
-      // Publish settled trades to event bus for XP & tournament scoring
-      for (const trade of normalizedTrades) {
-        await this.eventBus.publish('stream:trade.closed.normalized', 'trade.closed.normalized', accountId, trade);
+    if (isLiveMetaApi && account.metaApiAccountId) {
+      const rawDeals = await this.metaApiClient.getHistoricalDeals(account.metaApiAccountId);
+      normalizedTrades = this.processRawDealsToTrades(accountId, rawDeals);
+    } else {
+      const worker = this.orchestrator.getWorkerForAccount(accountId);
+      if (worker) {
+        const rawDeals = await worker.getTradeHistory(accountId, new Date(Date.now() - 30 * 86400000), new Date());
+        normalizedTrades = rawDeals.map(d => this.normalizer.normalizeDeal(d));
       }
+    }
+
+    this.tradesStorage.set(accountId, normalizedTrades);
+
+    // Publish settled trades to event bus for XP & tournament scoring
+    for (const trade of normalizedTrades) {
+      await this.eventBus.publish('stream:trade.closed.normalized', 'trade.closed.normalized', accountId, trade);
     }
 
     return { account, validation };
@@ -182,8 +199,11 @@ export class AccountConnectorService {
           serverLower.includes('vantage') ? 'Vantage' : 'OTHER'
         );
 
-        const accountId = `acc_meta_${p.login}`;
-        const userId = 'usr_live_meta';
+        const existingAcc = Array.from(this.accounts.values()).find(
+          a => a.accountNumber === p.login || a.metaApiAccountId === p.id
+        );
+        const accountId = existingAcc?.id || `acc_meta_${p.login}`;
+        const userId = existingAcc?.userId || (provisionedList.length === 1 ? 'usr_live_meta' : `usr_meta_${p.login}`);
         const username = p.name || `LiveTrader_${p.login}`;
 
         const tradingAccount: TradingAccount = {
@@ -214,6 +234,13 @@ export class AccountConnectorService {
         // Fetch real historical deals directly from MetaApi
         const rawDeals = await this.metaApiClient.getHistoricalDeals(p.id);
         if (rawDeals && rawDeals.length > 0) {
+          this.rawDealsCache.set(accountId, rawDeals);
+          this.lastDealSyncAt.set(accountId, Date.now());
+          const latestDealTime = rawDeals[rawDeals.length - 1]?.time;
+          if (latestDealTime) {
+            this.lastDealCursorTime.set(accountId, latestDealTime);
+          }
+
           const normalizedTrades = this.processRawDealsToTrades(accountId, rawDeals);
           this.tradesStorage.set(accountId, normalizedTrades);
 
@@ -303,18 +330,49 @@ export class AccountConnectorService {
 
   /**
    * On-demand live sync of deals directly from MetaApi cloud before returning trade history.
+   * Uses a 15-second TTL cache and incremental delta cursor syncing so repeat calls return in <1ms.
    */
-  public async syncAndGetAccountTrades(accountId: string): Promise<CanonicalTrade[]> {
+  public async syncAndGetAccountTrades(accountId: string, forceRefresh = false): Promise<CanonicalTrade[]> {
     const account = this.accounts.get(accountId);
-    if (account?.metaApiAccountId && this.metaApiClient.hasToken()) {
+    if (account?.metaApiAccountId && !account.metaApiAccountId.startsWith('mock_') && this.metaApiClient.hasToken()) {
+      const existingTrades = this.tradesStorage.get(accountId);
+      const lastSync = this.lastDealSyncAt.get(accountId) || 0;
+      if (!forceRefresh && existingTrades && existingTrades.length > 0 && Date.now() - lastSync < AccountConnectorService.DEAL_SYNC_TTL_MS) {
+        return existingTrades;
+      }
+
       try {
-        const rawDeals = await this.metaApiClient.getHistoricalDeals(account.metaApiAccountId);
-        if (rawDeals && rawDeals.length > 0) {
-          const trades = this.processRawDealsToTrades(accountId, rawDeals);
-          if (trades.length > 0) {
-            this.tradesStorage.set(accountId, trades);
-            return trades;
+        const cachedRaw = this.rawDealsCache.get(accountId);
+        const lastCursor = this.lastDealCursorTime.get(accountId);
+        let mergedDeals: MetaApiDeal[] = [];
+
+        if (cachedRaw && cachedRaw.length > 0 && lastCursor && !forceRefresh) {
+          // Incremental delta sync: fetch only deals since 24h before last cursor
+          const deltaStart = new Date(new Date(lastCursor).getTime() - 86400 * 1000).toISOString();
+          const deltaDeals = await this.metaApiClient.getHistoricalDeals(account.metaApiAccountId, deltaStart);
+          const byId = new Map<string, MetaApiDeal>();
+          for (const d of cachedRaw) byId.set(d.id, d);
+          for (const d of deltaDeals) byId.set(d.id, d);
+          mergedDeals = Array.from(byId.values());
+        } else {
+          // Initial full paginated sync
+          mergedDeals = await this.metaApiClient.getHistoricalDeals(account.metaApiAccountId);
+        }
+
+        if (Array.isArray(mergedDeals) && mergedDeals.length > 0) {
+          this.rawDealsCache.set(accountId, mergedDeals);
+          this.lastDealSyncAt.set(accountId, Date.now());
+          const latestDealTime = mergedDeals[mergedDeals.length - 1]?.time;
+          if (latestDealTime) {
+            this.lastDealCursorTime.set(accountId, latestDealTime);
           }
+
+          const trades = this.processRawDealsToTrades(accountId, mergedDeals);
+          this.tradesStorage.set(accountId, trades);
+          for (const trade of trades) {
+            await this.eventBus.publish('stream:trade.closed.normalized', 'trade.closed.normalized', accountId, trade);
+          }
+          return trades;
         }
       } catch (err) {
         console.warn(`[AccountConnectorService] Live deal sync warning for ${accountId}:`, err);
@@ -327,18 +385,39 @@ export class AccountConnectorService {
    * Transforms raw MetaTrader deals into canonical closed trade positions.
    * - Eliminates balance operations (DEAL_TYPE_BALANCE / 0 lots / UNKNOWN) from trade executions.
    * - Accurately pairs entry deals (DEAL_ENTRY_IN) and exit deals (DEAL_ENTRY_OUT) by positionId.
+   * - Aggregates partial closes and scale-ins using volume-weighted average prices.
    * - Reconstructs openPrice, closePrice, and pnlPips so executions are 100% verified and mathematically sound.
    */
   public processRawDealsToTrades(accountId: string, rawDeals: MetaApiDeal[]): CanonicalTrade[] {
     if (!rawDeals || rawDeals.length === 0) return [];
 
-    // 1. Filter out balance operations (deposits, withdrawals, credit, correction)
+    // 1. Filter out balance/non-execution operations (deposits, withdrawals, credit, commission, swap)
     const tradeDeals = rawDeals.filter(d => {
-      const typeStr = String(d.type || '').toUpperCase();
-      if (typeStr.includes('BALANCE') || typeStr.includes('CREDIT') || typeStr.includes('CHARGE') || typeStr.includes('CORRECTION')) {
+      const typeStr = String(d.type ?? '').toUpperCase().trim();
+      if (
+        typeStr.includes('BALANCE') ||
+        typeStr.includes('CREDIT') ||
+        typeStr.includes('CHARGE') ||
+        typeStr.includes('CORRECTION') ||
+        typeStr.includes('BONUS') ||
+        typeStr.includes('COMMISSION') ||
+        typeStr.includes('DIVIDEND') ||
+        typeStr.includes('INTEREST')
+      ) {
         return false;
       }
-      if (!d.symbol || d.symbol.toUpperCase() === 'UNKNOWN' || d.symbol === 'BALANCE') {
+      const isBuyOrSell =
+        typeStr === 'DEAL_TYPE_BUY' ||
+        typeStr === 'DEAL_TYPE_SELL' ||
+        typeStr === 'BUY' ||
+        typeStr === 'SELL' ||
+        typeStr === '0' ||
+        typeStr === '1';
+      if (!isBuyOrSell) {
+        return false;
+      }
+      const sym = String(d.symbol || '').trim();
+      if (!sym || sym.toUpperCase() === 'UNKNOWN' || sym.toUpperCase() === 'BALANCE') {
         return false;
       }
       if (Number(d.volume ?? 0) <= 0) {
@@ -361,69 +440,125 @@ export class AccountConnectorService {
       // Sort deals in chronological order
       deals.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
 
-      const entryDeal = deals.find(d => d.entryType === 'DEAL_ENTRY_IN' || (d.profit === 0 && d.volume > 0));
-      const exitDeal = deals.find(d => d.entryType === 'DEAL_ENTRY_OUT' || d.entryType === 'DEAL_ENTRY_OUT_BY' || d.profit !== 0);
+      const inDeals: MetaApiDeal[] = [];
+      const outDeals: MetaApiDeal[] = [];
 
-      if (entryDeal && exitDeal && entryDeal.id !== exitDeal.id) {
-        // Paired entry & exit
-        const rawSymbol = exitDeal.symbol || entryDeal.symbol || 'GOLD#';
+      for (const d of deals) {
+        const entryStr = String(d.entryType ?? '').toUpperCase().trim();
+        if (entryStr === 'DEAL_ENTRY_IN' || entryStr === '0') {
+          inDeals.push(d);
+        } else if (
+          entryStr === 'DEAL_ENTRY_OUT' ||
+          entryStr === 'DEAL_ENTRY_OUT_BY' ||
+          entryStr === 'DEAL_ENTRY_INOUT' ||
+          entryStr === '1' ||
+          entryStr === '2' ||
+          entryStr === '3'
+        ) {
+          outDeals.push(d);
+        } else if (Number(d.profit ?? 0) !== 0) {
+          outDeals.push(d);
+        } else {
+          inDeals.push(d);
+        }
+      }
+
+      // Only closed executions (must have at least one exit deal) belong in verified trade history
+      if (outDeals.length === 0) {
+        continue;
+      }
+
+      if (inDeals.length > 0) {
+        const firstIn = inDeals[0];
+        const lastOut = outDeals[outDeals.length - 1];
+        const rawSymbol = String(lastOut.symbol || firstIn.symbol || '').trim();
+        if (!rawSymbol) continue;
+
         const cleanSymbol = PipCalculator.normalizeSymbol(rawSymbol);
-        const tradeType: OrderType = (entryDeal.type === 'DEAL_TYPE_BUY' || entryDeal.type === '0' || (entryDeal.type as any) === 0) ? 'BUY' : 'SELL';
-        const lotSize = Number(exitDeal.volume || entryDeal.volume || 0.01);
-        const openPrice = Number(entryDeal.price || 0);
-        const closePrice = Number(exitDeal.price || 0);
-        const profit = Number(exitDeal.profit ?? 0);
-        const commission = Number(entryDeal.commission ?? 0) + Number(exitDeal.commission ?? 0);
-        const swap = Number(exitDeal.swap ?? 0);
+        const { digits } = PipCalculator.getPipConfig(cleanSymbol);
+        const inTypeStr = String(firstIn.type ?? '').toUpperCase().trim();
+        const tradeType: OrderType =
+          inTypeStr === 'DEAL_TYPE_BUY' || inTypeStr === 'BUY' || inTypeStr === '0' ? 'BUY' : 'SELL';
+
+        const totalInVol = inDeals.reduce((sum, d) => sum + Number(d.volume || 0), 0);
+        const totalOutVol = outDeals.reduce((sum, d) => sum + Number(d.volume || 0), 0);
+        const lotSize = Number((totalOutVol || totalInVol || 0.01).toFixed(2));
+
+        const weightedOpen =
+          totalInVol > 0
+            ? inDeals.reduce((sum, d) => sum + Number(d.price || 0) * Number(d.volume || 0), 0) / totalInVol
+            : Number(firstIn.price || 0);
+        const weightedClose =
+          totalOutVol > 0
+            ? outDeals.reduce((sum, d) => sum + Number(d.price || 0) * Number(d.volume || 0), 0) / totalOutVol
+            : Number(lastOut.price || 0);
+
+        const openPrice = Number(weightedOpen.toFixed(digits));
+        const closePrice = Number(weightedClose.toFixed(digits));
+        const profit = Number(outDeals.reduce((sum, d) => sum + Number(d.profit ?? 0), 0).toFixed(2));
+        const commission = Number(deals.reduce((sum, d) => sum + Number(d.commission ?? 0), 0).toFixed(2));
+        const swap = Number(deals.reduce((sum, d) => sum + Number(d.swap ?? 0), 0).toFixed(2));
 
         let pnlPips = PipCalculator.calculatePips(cleanSymbol, tradeType, openPrice, closePrice);
-        if (pnlPips === 0 && profit !== 0) {
+        if (pnlPips === 0 && profit !== 0 && openPrice === closePrice) {
           pnlPips = PipCalculator.calculatePipsFromPnl(cleanSymbol, lotSize, profit);
         }
 
         canonicalTrades.push({
           id: `trade_${accountId}_${posId}`,
           accountId,
-          ticket: exitDeal.id || posId,
+          ticket: lastOut.id || posId,
           symbol: rawSymbol,
           type: tradeType,
           lotSize,
           openPrice,
           closePrice,
-          openTime: new Date(entryDeal.time).toISOString(),
-          closeTime: new Date(exitDeal.time).toISOString(),
+          openTime: new Date(firstIn.time).toISOString(),
+          closeTime: new Date(lastOut.time).toISOString(),
           pnlCurrency: profit,
           pnlPips,
           commission,
           swap,
         });
-      } else if (exitDeal) {
-        // Only exit deal captured in history window
-        const rawSymbol = exitDeal.symbol || 'GOLD#';
+      } else {
+        // Only exit deal(s) captured in history window
+        const lastOut = outDeals[outDeals.length - 1];
+        const rawSymbol = String(lastOut.symbol || '').trim();
+        if (!rawSymbol) continue;
+
         const cleanSymbol = PipCalculator.normalizeSymbol(rawSymbol);
-        const exitTypeStr = String(exitDeal.type || '').toUpperCase();
-        const tradeType: OrderType = (exitTypeStr.includes('BUY') || exitDeal.type === '0') ? 'SELL' : 'BUY';
-        const lotSize = Number(exitDeal.volume || 0.01);
-        const closePrice = Number(exitDeal.price || 0);
-        const profit = Number(exitDeal.profit ?? 0);
+        const { digits } = PipCalculator.getPipConfig(cleanSymbol);
+        const exitTypeStr = String(lastOut.type ?? '').toUpperCase().trim();
+        // Closing a SELL position requires a BUY deal; closing a BUY position requires a SELL deal
+        const tradeType: OrderType =
+          exitTypeStr.includes('BUY') || exitTypeStr === '0' ? 'SELL' : 'BUY';
+
+        const totalOutVol = outDeals.reduce((sum, d) => sum + Number(d.volume || 0), 0);
+        const lotSize = Number((totalOutVol || 0.01).toFixed(2));
+        const weightedClose =
+          totalOutVol > 0
+            ? outDeals.reduce((sum, d) => sum + Number(d.price || 0) * Number(d.volume || 0), 0) / totalOutVol
+            : Number(lastOut.price || 0);
+        const closePrice = Number(weightedClose.toFixed(digits));
+        const profit = Number(outDeals.reduce((sum, d) => sum + Number(d.profit ?? 0), 0).toFixed(2));
         const pnlPips = PipCalculator.calculatePipsFromPnl(cleanSymbol, lotSize, profit);
         const openPrice = PipCalculator.reconstructOpenPrice(cleanSymbol, tradeType, closePrice, lotSize, profit);
 
         canonicalTrades.push({
           id: `trade_${accountId}_${posId}`,
           accountId,
-          ticket: exitDeal.id || posId,
+          ticket: lastOut.id || posId,
           symbol: rawSymbol,
           type: tradeType,
           lotSize,
           openPrice,
           closePrice,
-          openTime: new Date(exitDeal.time).toISOString(),
-          closeTime: new Date(exitDeal.time).toISOString(),
+          openTime: new Date(outDeals[0].time).toISOString(),
+          closeTime: new Date(lastOut.time).toISOString(),
           pnlCurrency: profit,
           pnlPips,
-          commission: Number(exitDeal.commission ?? 0),
-          swap: Number(exitDeal.swap ?? 0),
+          commission: Number(outDeals.reduce((sum, d) => sum + Number(d.commission ?? 0), 0).toFixed(2)),
+          swap: Number(outDeals.reduce((sum, d) => sum + Number(d.swap ?? 0), 0).toFixed(2)),
         });
       }
     }

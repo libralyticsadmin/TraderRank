@@ -27,7 +27,7 @@ import { UserNavMenu } from './UserNavMenu.tsx';
 interface LandingPageProps {
   onEnterApp: (tab?: string) => void;
   onOpenConnectWizard: () => void;
-  onSelectTrader?: (trader: { username: string; broker?: any; rank?: number; score?: number }) => void;
+  onSelectTrader?: (trader: { userId?: string; username: string; broker?: any; rank?: number; score?: number; winRate?: number; tradesCount?: number }) => void;
   leaderboard?: any[];
 }
 
@@ -39,6 +39,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
   // Derive top 3 exclusively from verified real leaderboard entries (zero mock traders)
   const topPodiumTraders = leaderboard.slice(0, 3).map((trader, idx) => ({
     rank: idx + 1,
+    userId: trader.userId,
     username: trader.username,
     broker: (trader.brokers?.[0] || 'XM') as any,
     avatarSymbol: trader.avatarSymbol || 'zap',
@@ -420,7 +421,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
               {topPodiumTraders.map(trader => (
                 <div
                   key={trader.rank}
-                  onClick={() => onSelectTrader?.({ username: trader.username, broker: trader.broker, rank: trader.rank, score: trader.pips })}
+                  onClick={() => onSelectTrader?.({ userId: trader.userId, username: trader.username, broker: trader.broker, rank: trader.rank, score: trader.pips, winRate: trader.winRate, tradesCount: trader.trades })}
                   style={{
                     background: 'rgba(14, 20, 31, 0.85)',
                     border: trader.rank === 1 ? '1px solid rgba(0, 240, 255, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
@@ -468,8 +469,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '14px', borderRadius: '10px', background: 'rgba(8, 11, 17, 0.7)', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
                     <div>
                       <div style={{ fontSize: '11px', color: '#848E9C' }}>{t.landing.gainCol}</div>
-                      <div style={{ fontSize: '20px', fontWeight: 900, color: '#00F0FF' }}>
-                        +{trader.pips.toFixed(1)}
+                      <div style={{ fontSize: '20px', fontWeight: 900, color: trader.pips >= 0 ? '#00F0FF' : '#ef4444' }}>
+                        {trader.pips >= 0 ? `+${trader.pips.toFixed(1)}` : trader.pips.toFixed(1)}
                       </div>
                     </div>
                     <div>

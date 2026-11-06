@@ -185,13 +185,32 @@ export class MarketSimulator {
       const isBuy = Math.random() > 0.35; // 65% win bias for demo fun
       const isWin = Math.random() > 0.32;
       const volume = Number((0.2 + Math.random() * 0.8).toFixed(2));
-      const basePrice = sym === 'XAUUSD' ? 4038.50 : sym === 'USDJPY' ? 158.24 : sym === 'BTCUSD' ? 80720 : sym === 'MCL1!' || sym === 'USOIL' ? 102.85 : 1.114;
+      const basePrice =
+        sym === 'XAUUSD' ? 4038.50 :
+        sym === 'USDJPY' ? 158.240 :
+        sym === 'BTCUSD' ? 80720.00 :
+        sym === 'US30' ? 52524.00 :
+        sym === 'GBPUSD' ? 1.33070 :
+        sym === 'MCL1!' || sym === 'USOIL' ? 102.85 : 1.11400;
 
-      const openPrice = basePrice;
-      const delta = (isWin ? 1 : -1) * (Math.random() * 0.006 + 0.001);
-      const closePrice = Math.max(0.01, isBuy ? openPrice + delta : openPrice - delta);
+      const pipSize =
+        sym === 'XAUUSD' ? 0.10 :
+        sym === 'USDJPY' || sym === 'MCL1!' || sym === 'USOIL' ? 0.01 :
+        sym === 'BTCUSD' || sym === 'US30' ? 1.0 : 0.0001;
+      const decimals =
+        sym === 'USDJPY' ? 3 :
+        sym === 'XAUUSD' || sym === 'BTCUSD' || sym === 'US30' || sym === 'MCL1!' || sym === 'USOIL' ? 2 : 5;
+      const pipValPerLot =
+        sym === 'USDJPY' ? 6.5 :
+        sym === 'BTCUSD' || sym === 'US30' ? 1.0 : 10.0;
 
-      const profit = (isBuy ? (closePrice - openPrice) : (openPrice - closePrice)) * volume * 10000;
+      const pipsMoved = 10 + Math.random() * 45;
+      const openPrice = Number(basePrice.toFixed(decimals));
+      const delta = (isWin ? 1 : -1) * (pipsMoved * pipSize);
+      const closePrice = Number(Math.max(0.01, isBuy ? openPrice + delta : openPrice - delta).toFixed(decimals));
+
+      const actualPips = ((isBuy ? closePrice - openPrice : openPrice - closePrice) / pipSize);
+      const profit = actualPips * volume * pipValPerLot;
 
       deals.push({
         accountId,
@@ -199,8 +218,8 @@ export class MarketSimulator {
         symbol: broker === 'XM' ? `${sym}.m` : sym,
         type: isBuy ? 'BUY' : 'SELL',
         volume,
-        openPrice: Number(openPrice.toFixed(3)),
-        closePrice: Number(closePrice.toFixed(3)),
+        openPrice,
+        closePrice,
         profit: Number(profit.toFixed(2)),
         commission: -4.00,
         swap: -0.50,

@@ -72,12 +72,17 @@ export class WorkerOrchestrator {
     return worker.validateConnection(creds);
   }
 
-  public async provisionAccount(accountId: string, broker: Broker, creds: AccountCredentials): Promise<void> {
+  public async provisionAccount(
+    accountId: string,
+    broker: Broker,
+    creds: AccountCredentials,
+    metaApiAccountId?: string
+  ): Promise<void> {
     const workerKey = this.resolveWorkerKey(broker, creds.type);
     const worker = this.workers.get(workerKey)!;
 
     this.accountWorkerMap.set(accountId, workerKey);
-    await worker.connectAccount(accountId, creds);
+    await worker.connectAccount(accountId, creds, metaApiAccountId);
   }
 
   public async deprovisionAccount(accountId: string): Promise<void> {

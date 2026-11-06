@@ -269,22 +269,32 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleSelectTrader = (t: { username: string; broker?: Broker; rank?: number; score?: number }) => {
+  const handleSelectTrader = (t: { userId?: string; username: string; broker?: Broker; rank?: number; score?: number; winRate?: number; tradesCount?: number }) => {
     const safeBroker: Broker = t.broker || 'Exness';
+    const matchedLb = leaderboard.find(
+      e => (t.userId && e.userId === t.userId) || e.username.toLowerCase() === t.username.toLowerCase()
+    );
+    const matchedAcc = accounts.find(
+      a =>
+        (t.userId && (a.id === t.userId || a.userId === t.userId)) ||
+        (a.accountNumber && t.username.includes(a.accountNumber))
+    );
+    const resolvedId = t.userId || matchedAcc?.id || matchedLb?.userId || `u_${t.username.toLowerCase()}`;
+
     setSelectedTrader({
-      userId: `u_${t.username.toLowerCase()}`,
+      userId: resolvedId,
       username: t.username,
       broker: safeBroker,
-      avatarSymbol: 'EURUSD',
+      avatarSymbol: matchedLb?.avatarSymbol || 'EURUSD',
       tier: 'Market Veteran',
-      level: 3,
-      xp: 2850,
-      rank: t.rank || 1,
-      netPips: t.score || 88.4,
-      winRate: 74.5,
+      level: matchedLb?.level || 3,
+      xp: matchedLb?.xp || 2850,
+      rank: t.rank || matchedLb?.rank || 1,
+      netPips: t.score ?? matchedLb?.totalPips ?? 88.4,
+      winRate: t.winRate ?? matchedLb?.winRate ?? 74.5,
       profitFactor: 2.15,
       maxDrawdown: 2.4,
-      totalTrades: 38,
+      totalTrades: t.tradesCount ?? matchedLb?.tradesCount ?? 38,
       bestTradePips: 42.0,
       avgHoldingTime: '2h 15m',
       verifiedSince: 'August 2026',
