@@ -82,7 +82,7 @@ export const AuthModal: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '16px',
+        padding: '10px 8px',
         animation: 'fadeIn 0.2s ease-out',
       }}
       onClick={closeAuthModal}
@@ -92,10 +92,13 @@ export const AuthModal: React.FC = () => {
         style={{
           width: '100%',
           maxWidth: '480px',
+          maxHeight: '94vh',
+          overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
           background: 'linear-gradient(180deg, #0e1724 0%, #090e18 100%)',
           border: '1px solid rgba(10, 186, 181, 0.35)',
-          borderRadius: '20px',
-          padding: '24px 28px',
+          borderRadius: '18px',
+          padding: '22px 18px',
           boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(10, 186, 181, 0.2)',
           position: 'relative',
         }}

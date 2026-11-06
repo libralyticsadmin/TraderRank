@@ -445,14 +445,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
 
       {/* Top 3 Podium Showcase */}
       {top3.length > 0 && !searchQuery && (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-            gap: '14px',
-            marginBottom: '24px',
-          }}
-        >
+        <div className="leaderboard-podium-grid">
           {top3.map(trader => {
             const is1 = trader.displayRank === 1;
             const is2 = trader.displayRank === 2;
@@ -577,50 +570,52 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             return (
               <div
                 key={trader.userId}
+                className="leaderboard-row"
                 onClick={() => onSelectTrader?.({ userId: trader.userId, username: trader.username, broker: trader.broker, rank: trader.displayRank, score: trader.winningPips, winRate: trader.winRate, tradesCount: trader.tradesCount })}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '12px 18px',
-                  borderRadius: '12px',
                   background: isTop3 ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.01)',
-                  border: '1px solid var(--border-subtle)',
-                  cursor: 'pointer',
-                  transition: 'background 0.2s',
                 }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)')}
                 onMouseLeave={e => (e.currentTarget.style.background = isTop3 ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.01)')}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div
-                    style={{
-                      width: '32px',
-                      fontWeight: 800,
-                      fontSize: '14px',
-                      textAlign: 'center',
-                      color: trader.displayRank === 1 ? '#fbbf24' : trader.displayRank === 2 ? '#94a3b8' : trader.displayRank === 3 ? '#d97706' : 'var(--text-muted)',
-                    }}
-                  >
-                    #{trader.displayRank}
+                {/* Left / Top User Identifier */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                    <div
+                      style={{
+                        width: '28px',
+                        fontWeight: 800,
+                        fontSize: '13px',
+                        textAlign: 'center',
+                        color: trader.displayRank === 1 ? '#fbbf24' : trader.displayRank === 2 ? '#94a3b8' : trader.displayRank === 3 ? '#d97706' : 'var(--text-muted)',
+                        flexShrink: 0,
+                      }}
+                    >
+                      #{trader.displayRank}
+                    </div>
+
+                    <TraderAvatar username={trader.username} symbol={trader.avatarSymbol} size={36} />
+
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <strong style={{ fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{trader.username}</strong>
+                        <BrokerSymbol broker={trader.broker} />
+                        <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>• {trader.tier}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '10px', fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        <span>{t.leaderboard.winRate} <strong style={{ color: 'var(--text-main)' }}>{trader.winRate}%</strong></span>
+                        <span>{t.leaderboard.xp} <strong style={{ color: 'var(--accent-cyan)' }}>{trader.xp}</strong></span>
+                      </div>
+                    </div>
                   </div>
 
-                  <TraderAvatar username={trader.username} symbol={trader.avatarSymbol} size={38} />
-
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <strong style={{ fontSize: '15px' }}>{trader.username}</strong>
-                      <BrokerSymbol broker={trader.broker} />
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>• {trader.tier}</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                      <span>{t.leaderboard.winRate} <strong style={{ color: 'var(--text-main)' }}>{trader.winRate}%</strong></span>
-                      <span>{t.leaderboard.xp} <strong style={{ color: 'var(--accent-cyan)' }}>{trader.xp}</strong></span>
-                    </div>
+                  <div className="show-on-mobile" style={{ flexShrink: 0, color: 'var(--text-muted)' }}>
+                    <ExternalLink size={15} />
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '24px', textAlign: 'right' }}>
+                {/* Desktop Multi-Column Metrics */}
+                <div className="leaderboard-row-desktop-stats">
                   <div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.netPips}</div>
                     <div style={{ fontSize: '16px', fontWeight: 800, color: trader.winningPips >= 0 ? 'var(--accent-green)' : '#ef4444' }}>
@@ -643,6 +638,28 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                   </div>
 
                   <ExternalLink size={16} color="var(--text-muted)" />
+                </div>
+
+                {/* Mobile Responsive 3-Col Chip Grid */}
+                <div className="leaderboard-row-mobile-stats">
+                  <div>
+                    <div style={{ fontSize: '9.5px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{t.leaderboard.netPips}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: trader.winningPips >= 0 ? 'var(--accent-green)' : '#ef4444', marginTop: '1px' }}>
+                      {trader.winningPips >= 0 ? `+${trader.winningPips.toFixed(1)}` : trader.winningPips.toFixed(1)}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '9.5px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{t.leaderboard.profit}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: trader.profitAmount >= 0 ? '#fbbf24' : '#ef4444', marginTop: '1px' }}>
+                      {trader.profitAmount >= 0 ? `+$${trader.profitAmount.toLocaleString()}` : `-$${Math.abs(trader.profitAmount).toLocaleString()}`}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '9.5px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{t.leaderboard.rate}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: trader.profitRate >= 0 ? 'var(--accent-cyan)' : '#ef4444', marginTop: '1px' }}>
+                      {trader.profitRate >= 0 ? `+${trader.profitRate}%` : `${trader.profitRate}%`}
+                    </div>
+                  </div>
                 </div>
               </div>
             );

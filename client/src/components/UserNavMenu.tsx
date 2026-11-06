@@ -107,6 +107,7 @@ export const UserNavMenu: React.FC<UserNavMenuProps> = ({ onOpenConnectWizard })
             top: 'calc(100% + 8px)',
             right: 0,
             width: '230px',
+            maxWidth: 'calc(100vw - 24px)',
             background: 'linear-gradient(180deg, #101927 0%, #080d15 100%)',
             border: '1px solid rgba(10, 186, 181, 0.35)',
             borderRadius: '14px',

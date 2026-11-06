@@ -135,19 +135,7 @@ export const DailyBestTraderCard: React.FC<DailyBestTraderCardProps> = ({
       </div>
 
       {champion ? (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'auto 1fr auto',
-            alignItems: 'center',
-            gap: '20px',
-            marginTop: '18px',
-            padding: '16px',
-            background: 'rgba(0, 0, 0, 0.3)',
-            borderRadius: '12px',
-            border: '1px solid rgba(245, 158, 11, 0.2)',
-          }}
-        >
+        <div className="daily-best-champion-grid">
           <div style={{ position: 'relative' }}>
             <TraderAvatar username={champion.username} symbol={champion.avatarSymbol} size={54} />
             <div

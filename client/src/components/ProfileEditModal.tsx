@@ -154,22 +154,23 @@ export const ProfileEditModal: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '16px',
+        padding: '10px 8px',
         animation: 'fadeIn 0.2s ease-out',
       }}
       onClick={closeProfileModal}
     >
       <div
-        className="card-panel"
+        className="card-panel profile-modal-content"
         style={{
           width: '100%',
           maxWidth: '680px',
-          maxHeight: '90vh',
+          maxHeight: '94vh',
           overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
           background: 'linear-gradient(180deg, #101927 0%, #090e18 100%)',
           border: '1px solid rgba(10, 186, 181, 0.4)',
-          borderRadius: '24px',
-          padding: '28px',
+          borderRadius: '20px',
+          padding: '22px 18px',
           boxShadow: '0 25px 60px rgba(0, 0, 0, 0.85), 0 0 30px rgba(10, 186, 181, 0.15)',
           position: 'relative',
         }}

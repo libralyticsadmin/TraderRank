@@ -416,7 +416,7 @@ export const App: React.FC = () => {
                 </span>
               )}
             </div>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', whiteSpace: 'nowrap', wordBreak: 'keep-all', lineBreak: 'strict' }}>
+            <p className="hide-on-mobile" style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', whiteSpace: 'nowrap', wordBreak: 'keep-all', lineBreak: 'strict' }}>
               {t.app.heroSubheading}
             </p>
           </div>

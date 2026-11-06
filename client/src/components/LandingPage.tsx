@@ -131,27 +131,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
   return (
     <div style={{ backgroundColor: '#080b11', color: '#ffffff', minHeight: '100vh', overflowX: 'hidden' }}>
       {/* Top Floating Glass Navigation */}
-      <header
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-          backgroundColor: 'rgba(8, 11, 17, 0.88)',
-          backdropFilter: 'blur(16px)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-          padding: '14px 24px',
-        }}
-      >
+      <header className="landing-header">
         <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <BrandLogo
-              size={38}
-              textSize={20}
+              size={36}
+              textSize={19}
               onClick={() => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             />
             <span
+              className="hide-on-mobile"
               style={{
                 fontSize: '10px',
                 fontWeight: 800,
@@ -167,7 +158,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <LanguageSelector />
             <UserNavMenu onOpenConnectWizard={onOpenConnectWizard} />
           </div>
@@ -175,12 +166,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
       </header>
 
       {/* Live Moving Trade Bulletin (Motion Graphic Spot Ticker) */}
-      <div style={{ maxWidth: '1280px', margin: '14px auto 0', padding: '0 20px' }}>
+      <div style={{ maxWidth: '1280px', margin: '10px auto 0', padding: '0 12px' }}>
         <LiveTradeBulletin onSelectTrader={onSelectTrader} />
       </div>
 
       {/* Hero Section */}
-      <section style={{ position: 'relative', padding: '64px 24px 60px', overflow: 'hidden' }}>
+      <section className="landing-hero-section">
         {/* Ambient Glows */}
         <div
           style={{
@@ -189,6 +180,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
             left: '50%',
             transform: 'translateX(-50%)',
             width: '900px',
+            maxWidth: '100vw',
             height: '450px',
             borderRadius: '50%',
             background: 'radial-gradient(circle, rgba(0, 240, 255, 0.18) 0%, rgba(0, 218, 198, 0.08) 40%, transparent 70%)',
@@ -210,7 +202,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
               fontSize: '12px',
               fontWeight: 800,
               color: '#00F0FF',
-              marginBottom: '24px',
+              marginBottom: '20px',
               letterSpacing: '0.4px',
             }}
           >
@@ -220,11 +212,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
 
           <h1
             style={{
-              fontSize: 'clamp(36px, 5.5vw, 64px)',
+              fontSize: 'clamp(28px, 6.5vw, 64px)',
               fontWeight: 900,
-              lineHeight: 1.12,
-              letterSpacing: '-1.5px',
-              margin: '0 0 20px',
+              lineHeight: 1.15,
+              letterSpacing: '-1.2px',
+              margin: '0 0 16px',
               color: '#FFFFFF',
             }}
           >
@@ -243,18 +235,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
 
           <p
             style={{
-              fontSize: '16px',
+              fontSize: 'clamp(14px, 3.2vw, 16px)',
               lineHeight: 1.6,
               color: '#848E9C',
               maxWidth: '820px',
-              margin: '0 auto 36px',
+              margin: '0 auto 28px',
               fontWeight: 500,
+              padding: '0 8px',
             }}
           >
             {t.landing.heroSubtitle}
           </p>
 
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', flexWrap: 'wrap', marginBottom: '48px' }}>
+          <div className="landing-hero-buttons">
             {isAuthenticated ? (
               <>
                 <button
@@ -348,38 +341,26 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
           </div>
 
           {/* Social Proof Stats Bar */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '16px',
-              padding: '24px 32px',
-              borderRadius: '16px',
-              background: 'rgba(14, 20, 31, 0.85)',
-              border: '1px solid rgba(0, 240, 255, 0.15)',
-              backdropFilter: 'blur(16px)',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
-            }}
-          >
+          <div className="landing-stats-bar">
             <div>
-              <div style={{ fontSize: '12px', color: '#848E9C', marginBottom: '4px', fontWeight: 600 }}>{t.landing.verifiedPnlBadge}</div>
-              <div style={{ fontSize: '24px', fontWeight: 900, color: '#00F0FF' }}>
+              <div style={{ fontSize: '11px', color: '#848E9C', marginBottom: '4px', fontWeight: 600 }}>{t.landing.verifiedPnlBadge}</div>
+              <div style={{ fontSize: '22px', fontWeight: 900, color: '#00F0FF' }}>
                 {liveAuditStats
                   ? `+${liveAuditStats.winningPips.toLocaleString()}p (${liveAuditStats.tradesCount})`
                   : '531 Fills'}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: '12px', color: '#848E9C', marginBottom: '4px', fontWeight: 600 }}>{t.arena.prizePool}</div>
-              <div style={{ fontSize: '24px', fontWeight: 900, color: '#F0B90B' }}>$31,500 USD</div>
+              <div style={{ fontSize: '11px', color: '#848E9C', marginBottom: '4px', fontWeight: 600 }}>{t.arena.prizePool}</div>
+              <div style={{ fontSize: '22px', fontWeight: 900, color: '#F0B90B' }}>$31,500 USD</div>
             </div>
             <div>
-              <div style={{ fontSize: '12px', color: '#848E9C', marginBottom: '4px', fontWeight: 600 }}>{t.landing.liveBrokersCount}</div>
-              <div style={{ fontSize: '24px', fontWeight: 900, color: '#00DAC6' }}>5 Tier-1 Brokers</div>
+              <div style={{ fontSize: '11px', color: '#848E9C', marginBottom: '4px', fontWeight: 600 }}>{t.landing.liveBrokersCount}</div>
+              <div style={{ fontSize: '22px', fontWeight: 900, color: '#00DAC6' }}>5 Tier-1 Brokers</div>
             </div>
             <div>
-              <div style={{ fontSize: '12px', color: '#848E9C', marginBottom: '4px', fontWeight: 600 }}>{t.nav.viewOnlyBadge}</div>
-              <div style={{ fontSize: '24px', fontWeight: 900, color: '#FFFFFF' }}>100% Zero-Write</div>
+              <div style={{ fontSize: '11px', color: '#848E9C', marginBottom: '4px', fontWeight: 600 }}>{t.nav.viewOnlyBadge}</div>
+              <div style={{ fontSize: '22px', fontWeight: 900, color: '#FFFFFF' }}>100% Zero-Write</div>
             </div>
           </div>
         </div>
@@ -498,7 +479,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
               </button>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginBottom: '32px' }}>
+            <div className="landing-podium-grid">
               {topPodiumTraders.map(trader => (
                 <div
                   key={trader.rank}
@@ -632,7 +613,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px' }}>
+          <div className="landing-tournaments-grid">
             <div
               style={{
                 background: 'rgba(14, 20, 31, 0.85)',
@@ -782,7 +763,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
             </div>
 
             {/* Daily Streak Days Bar */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '10px', marginTop: '16px' }}>
+            <div className="landing-streak-grid">
               {[
                 { dayNum: 1, xp: '+50 XP', claimed: true },
                 { dayNum: 2, xp: '+75 XP', claimed: true },
@@ -831,7 +812,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
           </div>
 
           {/* Honor Badges 4-Column Showcase */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '36px' }}>
+          <div className="landing-badges-grid">
             <div
               style={{
                 background: 'rgba(14, 20, 31, 0.85)',
@@ -973,7 +954,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+          <div className="landing-security-grid">
             <div style={{ padding: '28px', borderRadius: '16px', background: 'rgba(14, 20, 31, 0.85)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
               <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(0, 240, 255, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
                 <Lock size={20} color="#00F0FF" />
@@ -1046,7 +1027,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
 
       {/* Footer */}
       <footer style={{ padding: '40px 24px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: '#05070a', textAlign: 'center' }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+        <div className="landing-footer-container">
           <div
             style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}

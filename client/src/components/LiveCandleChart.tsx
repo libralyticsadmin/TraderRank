@@ -1867,6 +1867,9 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
               padding: '3px',
               borderRadius: '10px',
               border: '1px solid var(--border-subtle)',
+              overflowX: 'auto',
+              maxWidth: '100%',
+              WebkitOverflowScrolling: 'touch',
             }}
           >
             {SUPPORTED_SYMBOLS.map(s => {
@@ -1876,8 +1879,8 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
                   key={s.symbol}
                   onClick={() => setSymbol(s.symbol)}
                   style={{
-                    padding: '6px 12px',
-                    fontSize: '12px',
+                    padding: '6px 10px',
+                    fontSize: '11.5px',
                     fontWeight: 800,
                     borderRadius: '7px',
                     border: 'none',
@@ -1885,6 +1888,8 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
                     background: active ? 'linear-gradient(135deg, #0abab5, #078c88)' : 'transparent',
                     color: active ? '#000000' : 'var(--text-muted)',
                     transition: 'all 0.15s ease',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
                   }}
                 >
                   {s.symbol}
@@ -1902,6 +1907,9 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
               padding: '3px',
               borderRadius: '8px',
               border: '1px solid var(--border-subtle)',
+              overflowX: 'auto',
+              maxWidth: '100%',
+              WebkitOverflowScrolling: 'touch',
             }}
           >
             {TIMEFRAMES.map(tf => {
@@ -1911,7 +1919,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
                   key={tf.id}
                   onClick={() => setTimeframe(tf.id)}
                   style={{
-                    padding: '4px 8px',
+                    padding: '4px 7px',
                     fontSize: '11px',
                     fontWeight: 700,
                     borderRadius: '5px',
@@ -1919,6 +1927,8 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
                     cursor: 'pointer',
                     background: active ? 'rgba(129, 216, 208, 0.25)' : 'transparent',
                     color: active ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
                   }}
                 >
                   {tf.label}

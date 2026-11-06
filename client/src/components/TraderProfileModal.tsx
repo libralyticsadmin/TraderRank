@@ -1110,6 +1110,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
 
   return (
     <div
+      className="profile-modal-overlay"
       style={{
         position: 'fixed',
         inset: 0,
@@ -1119,21 +1120,19 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '16px',
       }}
       onClick={onClose}
     >
       <div
-        className="card-panel"
+        className="card-panel profile-modal-content"
         style={{
           width: '100%',
           maxWidth: '960px',
           maxHeight: '92vh',
           overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
           background: 'linear-gradient(180deg, #0b1120 0%, #070b14 100%)',
           border: '1px solid rgba(129, 216, 208, 0.28)',
-          borderRadius: '20px',
-          padding: '28px',
           boxShadow: '0 25px 60px -12px rgba(0, 0, 0, 0.85)',
           color: '#f8fafc',
         }}
@@ -1310,13 +1309,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
 
           {/* Trading Methodology Donut Chart & Legend (トレード手法 - Ref 1) */}
           <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '28px',
-              padding: '8px 12px 20px 12px',
-              flexWrap: 'wrap',
-            }}
+            className="profile-methodology-container"
           >
             <div style={{ position: 'relative', width: '148px', height: '148px', flexShrink: 0 }}>
               <svg width="148" height="148" viewBox="0 0 148 148">
@@ -1766,6 +1759,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                 return (
                   <div
                     key={cell.dateKey || `empty_${idx}`}
+                    className="profile-calendar-cell"
                     onClick={() => {
                       if (!cell.dateKey || !hasActivity) return;
                       if (selectedDayKey === cell.dateKey && ledgerFilter === 'DAY') {
@@ -1783,8 +1777,6 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                         : undefined
                     }
                     style={{
-                      minHeight: '56px',
-                      padding: '6px 4px',
                       borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.05)',
                       borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
                       background: isSelected
@@ -1796,7 +1788,6 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                       flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'flex-start',
-                      gap: '4px',
                       cursor: hasActivity ? 'pointer' : 'default',
                       transition: 'background 0.15s',
                     }}
@@ -1804,8 +1795,8 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                     {cell.day !== null && (
                       <>
                         <span
+                          className="profile-calendar-day-num"
                           style={{
-                            fontSize: '12.5px',
                             fontWeight: 800,
                             color: hasActivity ? '#ffffff' : '#64748b',
                           }}
@@ -1814,12 +1805,11 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                         </span>
                         {hasActivity && (
                           <span
+                            className="profile-calendar-day-val"
                             style={{
-                              fontSize: '11px',
                               fontWeight: 800,
                               fontFamily: 'var(--font-mono, monospace)',
                               color: isPositive ? '#38bdf8' : '#f43f5e',
-                              letterSpacing: '-0.02em',
                             }}
                           >
                             {displayVal}
@@ -1835,11 +1825,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
 
           {/* 2x5 Breakdown Cards Grid Below Calendar (10 Cards matching Ref 2) */}
           <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-              gap: '10px',
-            }}
+            className="profile-breakdown-grid"
           >
             {/* Card 1: Monthly Net Profit & Return Rate */}
             <div
@@ -2253,7 +2239,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
               {copy.historicalTableTitle}
             </h3>
 
-            <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.12)' }}>
+            <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.12)' }}>
               <table
                 style={{
                   width: '100%',
