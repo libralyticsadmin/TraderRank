@@ -847,7 +847,7 @@ export const translations: Record<Language, TranslationDictionary> = {
   en: {
     nav: {
       terminal: 'Live Terminal',
-      landing: 'Trade Island',
+      landing: 'TradeRank Arena',
       overview: 'Overview',
       dailyIntel: 'Daily Intel Hub',
       liveCharts: 'Live Charts & SMC',
@@ -1642,7 +1642,7 @@ export const translations: Record<Language, TranslationDictionary> = {
   ja: {
     nav: {
       terminal: 'ライブターミナル',
-      landing: 'トレードアイランド',
+      landing: 'トレードランク',
       overview: '概要',
       dailyIntel: 'デイリーニュース・情報',
       liveCharts: 'ライブチャート & SMC',
@@ -2437,7 +2437,7 @@ export const translations: Record<Language, TranslationDictionary> = {
   zh: {
     nav: {
       terminal: '实盘终端',
-      landing: '交易之岛',
+      landing: 'TradeRank 竞技场',
       overview: '总览看板',
       dailyIntel: '每日交易情报',
       liveCharts: '实时图表 & SMC',

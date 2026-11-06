@@ -33,6 +33,9 @@ export const ProfileEditModal: React.FC = () => {
   const [discordHandle, setDiscordHandle] = useState(user?.discordHandle || '');
   const [twitterHandle, setTwitterHandle] = useState(user?.twitterHandle || '');
   const [instagramHandle, setInstagramHandle] = useState(user?.instagramHandle || '');
+  const [techRatio, setTechRatio] = useState(user?.methodology?.technical ?? 40);
+  const [fundRatio, setFundRatio] = useState(user?.methodology?.fundamental ?? 10);
+  const [intuitionRatio, setIntuitionRatio] = useState(user?.methodology?.intuition ?? 50);
   const [customUrlInput, setCustomUrlInput] = useState('');
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -54,6 +57,9 @@ export const ProfileEditModal: React.FC = () => {
       setDiscordHandle(user.discordHandle || '');
       setTwitterHandle(user.twitterHandle || '');
       setInstagramHandle(user.instagramHandle || '');
+      setTechRatio(user.methodology?.technical ?? 40);
+      setFundRatio(user.methodology?.fundamental ?? 10);
+      setIntuitionRatio(user.methodology?.intuition ?? 50);
       setCustomUrlInput(
         user.avatarUrl && !user.avatarUrl.startsWith('data:image/')
           ? user.avatarUrl
@@ -99,6 +105,11 @@ export const ProfileEditModal: React.FC = () => {
       discordHandle: discordHandle.trim(),
       twitterHandle: twitterHandle.trim(),
       instagramHandle: instagramHandle.trim(),
+      methodology: {
+        technical: techRatio,
+        fundamental: fundRatio,
+        intuition: intuitionRatio,
+      },
     });
 
     setSaving(false);
@@ -652,10 +663,10 @@ export const ProfileEditModal: React.FC = () => {
           {/* Bio */}
           <div>
             <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#94a3b8', marginBottom: '6px' }}>
-              Trader Bio & Philosophy
+              Trader Bio & Philosophy (自己紹介)
             </label>
             <textarea
-              rows={3}
+              rows={2}
               placeholder="Describe your edge, favorite setups (e.g. London breakout on Gold), risk management rules..."
               value={bio}
               onChange={(e) => setBio(e.target.value)}
@@ -673,6 +684,112 @@ export const ProfileEditModal: React.FC = () => {
                 fontFamily: 'inherit',
               }}
             />
+          </div>
+
+          {/* Trading Methodology Donut Ratio (トレード手法) */}
+          <div
+            style={{
+              padding: '14px 16px',
+              borderRadius: '12px',
+              background: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 800, color: '#ffffff' }}>
+                Trading Methodology Mix (トレード手法)
+              </label>
+              <span style={{ fontSize: '10.5px', color: '#94a3b8', fontFamily: 'var(--font-mono, monospace)' }}>
+                Tech {techRatio}% • Fund {fundRatio}% • Price Action/Intuition {intuitionRatio}%
+              </span>
+            </div>
+
+            {/* Visual Ratio Bar */}
+            <div
+              style={{
+                display: 'flex',
+                height: '8px',
+                borderRadius: '999px',
+                overflow: 'hidden',
+                marginBottom: '12px',
+                background: '#0f172a',
+              }}
+            >
+              <div style={{ width: `${techRatio}%`, background: '#2b9af3', transition: 'width 0.2s' }} />
+              <div style={{ width: `${fundRatio}%`, background: '#10b981', transition: 'width 0.2s' }} />
+              <div style={{ width: `${intuitionRatio}%`, background: '#ec4899', transition: 'width 0.2s' }} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
+                  <span style={{ color: '#2b9af3', fontWeight: 700 }}>● Technical</span>
+                  <span style={{ color: '#e2e8f0', fontWeight: 800 }}>{techRatio}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={techRatio}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    const rem = Math.max(0, 100 - val);
+                    const newFund = Math.min(fundRatio, rem);
+                    setTechRatio(val);
+                    setFundRatio(newFund);
+                    setIntuitionRatio(Math.max(0, rem - newFund));
+                  }}
+                  style={{ width: '100%', accentColor: '#2b9af3', cursor: 'pointer' }}
+                />
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
+                  <span style={{ color: '#10b981', fontWeight: 700 }}>● Fundamental</span>
+                  <span style={{ color: '#e2e8f0', fontWeight: 800 }}>{fundRatio}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={fundRatio}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    const rem = Math.max(0, 100 - val);
+                    const newTech = Math.min(techRatio, rem);
+                    setFundRatio(val);
+                    setTechRatio(newTech);
+                    setIntuitionRatio(Math.max(0, rem - newTech));
+                  }}
+                  style={{ width: '100%', accentColor: '#10b981', cursor: 'pointer' }}
+                />
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
+                  <span style={{ color: '#ec4899', fontWeight: 700 }}>● Intuition / PA</span>
+                  <span style={{ color: '#e2e8f0', fontWeight: 800 }}>{intuitionRatio}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={intuitionRatio}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    const rem = Math.max(0, 100 - val);
+                    const newTech = Math.min(techRatio, rem);
+                    setIntuitionRatio(val);
+                    setTechRatio(newTech);
+                    setFundRatio(Math.max(0, rem - newTech));
+                  }}
+                  style={{ width: '100%', accentColor: '#ec4899', cursor: 'pointer' }}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Social Handles */}

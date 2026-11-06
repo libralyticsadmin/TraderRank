@@ -20,6 +20,11 @@ export interface UserProfile {
   discordHandle?: string;
   twitterHandle?: string;
   instagramHandle?: string;
+  methodology?: {
+    technical: number;
+    fundamental: number;
+    intuition: number;
+  };
 }
 
 interface AuthContextType {
@@ -58,6 +63,11 @@ const DEFAULT_USER_TEMPLATE: Omit<UserProfile, 'id' | 'username' | 'email'> = {
   level: 1,
   xp: 100,
   rank: 99,
+  methodology: {
+    technical: 40,
+    fundamental: 10,
+    intuition: 50,
+  },
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
