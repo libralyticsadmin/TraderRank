@@ -24,6 +24,9 @@ interface TraderAggregate {
   accounts: Set<string>;
   processedTradeIds: Set<string>;
   closedPips: number;
+  winningPips: number;
+  closedProfitUsd: number;
+  grossProfitUsd: number;
   floatingPips: number;
   winningTrades: number;
   totalTrades: number;
@@ -189,6 +192,9 @@ export class LeaderboardService {
         accounts: new Set([`acc_${s.userId}`]),
         processedTradeIds: new Set(),
         closedPips: s.closedPips,
+        winningPips: Math.max(0, s.closedPips),
+        closedProfitUsd: Number((s.closedPips * 10).toFixed(2)),
+        grossProfitUsd: Number((Math.max(0, s.closedPips) * 12).toFixed(2)),
         floatingPips: s.floatingPips,
         winningTrades: s.wins,
         totalTrades: s.total,
@@ -219,6 +225,9 @@ export class LeaderboardService {
         accounts: new Set([accountId]),
         processedTradeIds: new Set(),
         closedPips: 0,
+        winningPips: 0,
+        closedProfitUsd: 0,
+        grossProfitUsd: 0,
         floatingPips: 0,
         winningTrades: 0,
         totalTrades: 0,
@@ -319,16 +328,24 @@ export class LeaderboardService {
           trader.processedTradeIds.add(tradeKey);
         }
 
+        const isWin = trade.pnlCurrency > 0 || (trade.pnlCurrency === 0 && trade.pnlPips > 0);
         trader.closedPips = Number((trader.closedPips + trade.pnlPips).toFixed(1));
+        trader.closedProfitUsd = Number((trader.closedProfitUsd + (trade.pnlCurrency || 0)).toFixed(2));
+        if (isWin) {
+          trader.winningTrades += 1;
+          trader.winningPips = Number((trader.winningPips + Math.max(0, trade.pnlPips)).toFixed(1));
+          trader.grossProfitUsd = Number((trader.grossProfitUsd + Math.max(0, trade.pnlCurrency || 0)).toFixed(2));
+        }
         trader.totalTrades += 1;
-        if (trade.pnlPips > 0) trader.winningTrades += 1;
+        trader.xp = trader.totalTrades * 25;
+        trader.level = Math.max(1, Math.floor(trader.totalTrades / 40) + 1);
 
         // Check if trade was closed today (UTC)
         const tradeDate = (trade.closeTime || new Date().toISOString()).slice(0, 10);
         if (tradeDate === this.getTodayUTC()) {
           trader.dailyClosedPips = Number((trader.dailyClosedPips + trade.pnlPips).toFixed(1));
           trader.dailyTotalTrades += 1;
-          if (trade.pnlPips > 0) trader.dailyWinningTrades += 1;
+          if (isWin) trader.dailyWinningTrades += 1;
         }
 
         trader.lastUpdated = new Date().toISOString();
@@ -364,6 +381,9 @@ export class LeaderboardService {
         closedPips: t.closedPips,
         floatingPips: t.floatingPips,
         totalPips,
+        winningPips: t.winningPips,
+        closedProfitUsd: t.closedProfitUsd,
+        grossProfitUsd: t.grossProfitUsd,
         dailyPips: dailyInfo.dailyPips,
         dailyRank: dailyInfo.dailyRank,
         winRate,

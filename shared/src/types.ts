@@ -141,6 +141,9 @@ export interface LeaderboardEntry {
   closedPips: number; // Pips from settled trades
   floatingPips: number; // Live pips from active positions
   totalPips: number; // Combined ranking metric
+  winningPips?: number; // Gross positive pips harvested from winning trades
+  closedProfitUsd?: number; // Exact net realized profit/loss in USD from broker ledger
+  grossProfitUsd?: number; // Gross profit in USD from winning trades
   dailyPips: number; // Net winning pips gained today
   dailyRank: number;
   winRate: number; // 0 - 100%

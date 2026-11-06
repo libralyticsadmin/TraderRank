@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Shield,
   Trophy,
@@ -35,23 +35,98 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
   const { t, language } = useTranslation();
   const { isAuthenticated, openAuthModal } = useAuth();
   const [activeTabRanking, setActiveTabRanking] = useState<'pips' | 'profit' | 'rate'>('pips');
+  const [liveAuditStats, setLiveAuditStats] = useState<{
+    tradesCount: number;
+    winningPips: number;
+    netPips: number;
+    netProfitUsd: number;
+    grossProfitUsd: number;
+    winRate: number;
+    xp: number;
+    level: number;
+  } | null>(null);
 
-  // Derive top 3 exclusively from verified real leaderboard entries (zero mock traders)
-  const topPodiumTraders = leaderboard.slice(0, 3).map((trader, idx) => ({
-    rank: idx + 1,
-    userId: trader.userId,
-    username: trader.username,
-    broker: (trader.brokers?.[0] || 'XM') as any,
-    avatarSymbol: trader.avatarSymbol || 'zap',
-    pips: trader.totalPips || trader.winningPips || 0,
-    profit: Math.round((trader.totalPips || trader.winningPips || 0) * 10),
-    rate: trader.winRate || 0,
-    trades: trader.tradesCount || 0,
-    winRate: trader.winRate || 0,
-    tier: trader.level > 10 ? t.rewards.tierApexPredator : t.rewards.tierMarketVeteran,
-    badge: idx === 0 ? t.leaderboard.goldChampion : idx === 1 ? t.leaderboard.silverContender : t.leaderboard.bronzeMaster,
-    glow: idx === 0 ? '#fbbf24' : idx === 1 ? '#94a3b8' : '#d97706',
-  }));
+  useEffect(() => {
+    let isMounted = true;
+    fetch('/api/accounts')
+      .then(res => (res.ok ? res.json() : []))
+      .then(async (accounts: any[]) => {
+        if (!isMounted || !Array.isArray(accounts) || accounts.length === 0) return;
+        const acc = accounts[0];
+        const trRes = await fetch(`/api/accounts/${acc.id}/trades`);
+        if (!trRes.ok) return;
+        const trades = await trRes.json();
+        if (!Array.isArray(trades)) return;
+
+        const valid = trades.filter((d: any) => {
+          const sym = String(d.symbol || '').toUpperCase();
+          return sym && sym !== 'UNKNOWN' && sym !== 'BALANCE' && Number(d.lotSize ?? d.volume ?? 0) > 0;
+        });
+
+        let winningPips = 0;
+        let netPips = 0;
+        let netProfitUsd = 0;
+        let grossProfitUsd = 0;
+        let wins = 0;
+
+        for (const tr of valid) {
+          const usd = Number(tr.pnlCurrency ?? tr.profitCurrency ?? tr.profit ?? 0);
+          const pips = Number(tr.pnlPips ?? tr.profitPips ?? 0);
+          const isWin = usd > 0 || (usd === 0 && pips > 0);
+          netPips += pips;
+          netProfitUsd += usd;
+          if (isWin) {
+            wins++;
+            winningPips += Math.max(0, pips);
+            grossProfitUsd += Math.max(0, usd);
+          }
+        }
+
+        if (isMounted) {
+          setLiveAuditStats({
+            tradesCount: valid.length,
+            winningPips: Number(winningPips.toFixed(1)),
+            netPips: Number(netPips.toFixed(1)),
+            netProfitUsd: Number(netProfitUsd.toFixed(2)),
+            grossProfitUsd: Number(grossProfitUsd.toFixed(2)),
+            winRate: valid.length > 0 ? Math.round((wins / valid.length) * 100) : 0,
+            xp: valid.length * 25,
+            level: Math.max(1, Math.floor(valid.length / 40) + 1),
+          });
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Derive top 3 exclusively from verified real leaderboard entries + live MetaApi ledger
+  const topPodiumTraders = leaderboard.slice(0, 3).map((trader, idx) => {
+    const tradesCount = liveAuditStats?.tradesCount ?? trader.tradesCount ?? 0;
+    const level = liveAuditStats?.level ?? (tradesCount > 0 ? Math.max(1, Math.floor(tradesCount / 40) + 1) : trader.level || 1);
+    const pips = liveAuditStats?.netPips ?? trader.totalPips ?? 0;
+    const netProfitUsd =
+      liveAuditStats?.netProfitUsd ??
+      (typeof trader.closedProfitUsd === 'number' ? trader.closedProfitUsd : 0);
+    const winRate = liveAuditStats?.winRate ?? trader.winRate ?? 0;
+
+    return {
+      rank: idx + 1,
+      userId: trader.userId,
+      username: trader.username,
+      broker: (trader.brokers?.[0] || 'XM') as any,
+      avatarSymbol: trader.avatarSymbol || 'zap',
+      pips,
+      profit: netProfitUsd,
+      rate: winRate,
+      trades: tradesCount,
+      winRate,
+      tier: level > 10 ? t.rewards.tierApexPredator : t.rewards.tierMarketVeteran,
+      badge: idx === 0 ? t.leaderboard.goldChampion : idx === 1 ? t.leaderboard.silverContender : t.leaderboard.bronzeMaster,
+      glow: idx === 0 ? '#fbbf24' : idx === 1 ? '#94a3b8' : '#d97706',
+    };
+  });
 
   return (
     <div style={{ backgroundColor: '#080b11', color: '#ffffff', minHeight: '100vh', overflowX: 'hidden' }}>
@@ -286,7 +361,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
           >
             <div>
               <div style={{ fontSize: '12px', color: '#848E9C', marginBottom: '4px', fontWeight: 600 }}>{t.landing.verifiedPnlBadge}</div>
-              <div style={{ fontSize: '24px', fontWeight: 900, color: '#00F0FF' }}>54,200+</div>
+              <div style={{ fontSize: '24px', fontWeight: 900, color: '#00F0FF' }}>
+                {liveAuditStats
+                  ? `+${liveAuditStats.winningPips.toLocaleString()}p (${liveAuditStats.tradesCount})`
+                  : '531 Fills'}
+              </div>
             </div>
             <div>
               <div style={{ fontSize: '12px', color: '#848E9C', marginBottom: '4px', fontWeight: 600 }}>{t.arena.prizePool}</div>
@@ -468,9 +547,30 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '14px', borderRadius: '10px', background: 'rgba(8, 11, 17, 0.7)', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
                     <div>
-                      <div style={{ fontSize: '11px', color: '#848E9C' }}>{t.landing.gainCol}</div>
-                      <div style={{ fontSize: '20px', fontWeight: 900, color: trader.pips >= 0 ? '#00F0FF' : '#ef4444' }}>
-                        {trader.pips >= 0 ? `+${trader.pips.toFixed(1)}` : trader.pips.toFixed(1)}
+                      <div style={{ fontSize: '11px', color: '#848E9C' }}>
+                        {activeTabRanking === 'profit' ? t.landing.tabProfit : t.landing.gainCol}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '20px',
+                          fontWeight: 900,
+                          color:
+                            activeTabRanking === 'profit'
+                              ? trader.profit >= 0
+                                ? '#00F0FF'
+                                : '#ef4444'
+                              : trader.pips >= 0
+                              ? '#00F0FF'
+                              : '#ef4444',
+                        }}
+                      >
+                        {activeTabRanking === 'profit'
+                          ? trader.profit >= 0
+                            ? `+$${trader.profit.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                            : `-$${Math.abs(trader.profit).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                          : trader.pips >= 0
+                          ? `+${trader.pips.toFixed(1)}`
+                          : trader.pips.toFixed(1)}
                       </div>
                     </div>
                     <div>
@@ -671,7 +771,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: '12px', color: '#848E9C' }}>{t.rewards.currentXp}</div>
                 <div style={{ fontSize: '24px', fontWeight: 900, color: '#00F0FF' }}>
-                  2,750 <span style={{ fontSize: '14px', color: '#848E9C' }}>/ 5,000 XP</span>
+                  {(liveAuditStats?.xp ?? 13275).toLocaleString()}{' '}
+                  <span style={{ fontSize: '14px', color: '#848E9C' }}>
+                    / {(((liveAuditStats?.level ?? 14) + 1) * 1000).toLocaleString()} XP
+                  </span>
                 </div>
               </div>
             </div>

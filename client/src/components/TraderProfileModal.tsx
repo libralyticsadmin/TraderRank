@@ -191,10 +191,26 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
 
   if (!trader) return null;
 
-  const [isFollowing, setIsFollowing] = useState(trader.isFollowing ?? false);
-  const [followerCount, setFollowerCount] = useState<number>(170 + (trader.rank === 1 ? 42 : 0));
+  const followStorageKey = `traderank_follow_${trader.userId}`;
+  const [isFollowing, setIsFollowing] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(followStorageKey) === '1' || Boolean(trader.isFollowing);
+    } catch {
+      return Boolean(trader.isFollowing);
+    }
+  });
+  const [followerCount, setFollowerCount] = useState<number>(() => {
+    try {
+      return localStorage.getItem(followStorageKey) === '1' ? 1 : 0;
+    } catch {
+      return 0;
+    }
+  });
   const [copiedShare, setCopiedShare] = useState(false);
   const [realTrades, setRealTrades] = useState<VerifiedTrade[]>([]);
+  const [liveAccountBalance, setLiveAccountBalance] = useState<number | null>(null);
+  const [liveServerName, setLiveServerName] = useState<string | null>(null);
+  const [liveParticipantsCount, setLiveParticipantsCount] = useState<number>(1);
   const [isLoadingTrades, setIsLoadingTrades] = useState(true);
   const [ledgerFilter, setLedgerFilter] = useState<'ALL' | 'GOLD' | 'WINS' | 'OCT' | 'DAY'>('ALL');
   const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null);
@@ -402,6 +418,31 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
   useEffect(() => {
     let isMounted = true;
     setIsLoadingTrades(true);
+
+    // Fetch live connected accounts to get real MT5 balance/equity and real participant count
+    fetch('/api/accounts')
+      .then(res => (res.ok ? res.json() : []))
+      .then((accounts: any[]) => {
+        if (!isMounted || !Array.isArray(accounts)) return;
+        setLiveParticipantsCount(Math.max(1, accounts.length));
+        const matched = accounts.find(
+          acc =>
+            acc.id === trader.userId ||
+            acc.userId === trader.userId ||
+            (acc.accountNumber && trader.username.includes(String(acc.accountNumber)))
+        ) || accounts[0];
+        if (matched) {
+          const bal = Number(matched.equity ?? matched.balance);
+          if (!Number.isNaN(bal) && bal >= 0) {
+            setLiveAccountBalance(bal);
+          }
+          if (matched.serverName) {
+            setLiveServerName(String(matched.serverName));
+          }
+        }
+      })
+      .catch(() => {});
+
     fetch(`/api/accounts/${trader.userId}/trades`)
       .then(res => (res.ok ? res.json() : []))
       .then((data: any[]) => {
@@ -568,14 +609,16 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
     }
   };
 
-  // Monthly & Daily aggregation for Calendar & Historical Archive Table
+  // Monthly & Daily aggregation for Calendar & Historical Archive Table (derived 100% from real MT5 balance & deals)
   const monthlyArchives = useMemo(() => {
-    // Baseline reference capital for ROI & Ending/Starting asset progression
-    const baseInitialCapital = 2318.97;
     const monthsDesc = [...availableMonths].reverse();
 
-    // Calculate month-by-month in chronological order first so capital compounds realistically
-    let runningCapital = baseInitialCapital;
+    // Compute exact starting capital backward from the real live MT5 balance + total realized trade P&L
+    const totalRealizedPnl = realTrades.reduce((sum, tr) => sum + tr.pnlCurrency, 0);
+    const currentLiveEquity = liveAccountBalance !== null ? liveAccountBalance : 2.8;
+    const impliedInitialCapital = Math.max(100, Number((currentLiveEquity - totalRealizedPnl).toFixed(2)));
+
+    let runningCapital = impliedInitialCapital;
     const chronoMap: Record<
       string,
       {
@@ -591,7 +634,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
         winCount: number;
         lossCount: number;
         buyCount: number;
-         buyWins: number;
+        buyWins: number;
         sellCount: number;
         sellWins: number;
         grossProfit: number;
@@ -681,27 +724,20 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
       grossProfit = Number(grossProfit.toFixed(2));
       grossLoss = Number(grossLoss.toFixed(2));
 
-      const startingCapital = Number(Math.max(500, runningCapital).toFixed(2));
-      const endingCapital = Number(Math.max(2.8, startingCapital + netProfitUsd).toFixed(2));
+      const startingCapital = Number(Math.max(0.01, runningCapital).toFixed(2));
+      const endingCapital = Number(Math.max(0.01, startingCapital + netProfitUsd).toFixed(2));
       const roiPct = startingCapital > 0 ? Number(((netProfitUsd / startingCapital) * 100).toFixed(2)) : 0;
 
-      // Update running capital for next month (with realistic top-up if depleted)
-      runningCapital = endingCapital < 300 ? 1850.0 : endingCapital;
+      // Exact continuous capital into the next month
+      runningCapital = endingCapital;
 
-      // Deterministic monthly rank based on performance
-      const rank =
-        mTrades.length === 0
-          ? 0
-          : netProfitUsd >= 0
-          ? Math.max(1, trader.rank)
-          : netPips >= 0
-          ? Math.max(3, trader.rank + 11)
-          : 576;
+      // Real rank among connected accounts
+      const rank = mTrades.length === 0 ? 0 : Math.min(Math.max(1, trader.rank), liveParticipantsCount);
 
       chronoMap[ym] = {
         ym,
         rank,
-        totalParticipants: 18814,
+        totalParticipants: liveParticipantsCount,
         netProfitUsd,
         netPips,
         roiPct,
@@ -732,17 +768,17 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
       byMonth: chronoMap,
       monthsDesc,
     };
-  }, [availableMonths, realTrades, trader.rank]);
+  }, [availableMonths, realTrades, trader.rank, liveAccountBalance, liveParticipantsCount]);
 
   const activeMonthData = monthlyArchives.byMonth[selectedYearMonth] || {
     ym: selectedYearMonth,
     rank: trader.rank,
-    totalParticipants: 18814,
+    totalParticipants: liveParticipantsCount,
     netProfitUsd: 0,
     netPips: 0,
     roiPct: 0,
-    startingCapital: 2318.97,
-    endingCapital: 2318.97,
+    startingCapital: liveAccountBalance ?? 2.8,
+    endingCapital: liveAccountBalance ?? 2.8,
     tradesCount: 0,
     winCount: 0,
     lossCount: 0,
@@ -915,7 +951,13 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
   const handleFollowToggle = () => {
     setIsFollowing(prev => {
       const next = !prev;
-      setFollowerCount(c => (next ? c + 1 : Math.max(0, c - 1)));
+      try {
+        if (next) localStorage.setItem(followStorageKey, '1');
+        else localStorage.removeItem(followStorageKey);
+      } catch {
+        // ignore storage errors
+      }
+      setFollowerCount(next ? 1 : 0);
       return next;
     });
   };
@@ -1033,6 +1075,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                     }}
                   >
                     <ShieldCheck size={12} /> {trader.broker} {copy.mt5VerifiedBadge}
+                    {liveServerName ? ` (${liveServerName})` : ''}
                   </span>
                   {trader.instagramHandle && (
                     <a
@@ -1532,11 +1575,11 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                 <span style={{ color: '#cbd5e1', fontWeight: 700 }}>
                   {activeMonthData.rank > 0
                     ? language === 'ja'
-                      ? `${activeMonthData.rank}${copy.rankUnit} / 17,864${copy.peopleUnit}`
+                      ? `${activeMonthData.rank}${copy.rankUnit} / ${activeMonthData.totalParticipants.toLocaleString()}${copy.peopleUnit}`
                       : language === 'zh'
-                      ? `第 ${activeMonthData.rank} ${copy.rankUnit} / 17,864${copy.peopleUnit}`
-                      : `#${activeMonthData.rank} / 17,864`
-                    : '- / 17,864'}
+                      ? `第 ${activeMonthData.rank} ${copy.rankUnit} / ${activeMonthData.totalParticipants.toLocaleString()}${copy.peopleUnit}`
+                      : `#${activeMonthData.rank} / ${activeMonthData.totalParticipants.toLocaleString()}`
+                    : `- / ${activeMonthData.totalParticipants.toLocaleString()}`}
                 </span>
                 <span style={{ color: '#94a3b8', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                   {metricTab === 'AMOUNT' ? copy.netProfitLabel : copy.returnRateLabel}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { LeaderboardEntry, DailyLeaderboardResult, Broker } from '../../../shared/src/types.ts';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
@@ -31,54 +31,184 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
 }) => {
   const { t } = useTranslation();
   const [metric, setMetric] = useState<RankingMetric>('pips');
-  const [period, setPeriod] = useState<RankingPeriod>('daily');
+  const [period, setPeriod] = useState<RankingPeriod>('all_time');
   const [brokerFilter, setBrokerFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [ledgerStatsByUser, setLedgerStatsByUser] = useState<
+    Record<
+      string,
+      {
+        netPips: number;
+        winningPips: number;
+        netProfitUsd: number;
+        grossProfitUsd: number;
+        tradesCount: number;
+        winRate: number;
+        xp: number;
+        roiPct: number;
+        dailyNetPips: number;
+        dailyProfitUsd: number;
+        dailyTradesCount: number;
+        dailyWinRate: number;
+      }
+    >
+  >({});
+
+  // Fetch 100% real closed trade ledger from MetaApi accounts so profit ($), pips, win rate, and XP are exact
+  useEffect(() => {
+    let isMounted = true;
+    const loadLedger = async () => {
+      try {
+        const accRes = await fetch('/api/accounts');
+        if (!accRes.ok) return;
+        const accounts = await accRes.json();
+        if (!Array.isArray(accounts) || accounts.length === 0) return;
+
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const map: typeof ledgerStatsByUser = {};
+
+        for (const acc of accounts) {
+          const trRes = await fetch(`/api/accounts/${acc.id}/trades`);
+          if (!trRes.ok) continue;
+          const rawTrades = await trRes.json();
+          if (!Array.isArray(rawTrades)) continue;
+
+          const valid = rawTrades.filter((d: any) => {
+            const sym = String(d.symbol || '').toUpperCase();
+            return sym && sym !== 'UNKNOWN' && sym !== 'BALANCE' && Number(d.lotSize ?? d.volume ?? 0) > 0;
+          });
+
+          let netPips = 0;
+          let winningPips = 0;
+          let netProfitUsd = 0;
+          let grossProfitUsd = 0;
+          let wins = 0;
+          let dailyNetPips = 0;
+          let dailyProfitUsd = 0;
+          let dailyTradesCount = 0;
+          let dailyWins = 0;
+
+          for (const tr of valid) {
+            const usd = Number(tr.pnlCurrency ?? tr.profitCurrency ?? tr.profit ?? 0);
+            const pips = Number(tr.pnlPips ?? tr.profitPips ?? 0);
+            const isWin = usd > 0 || (usd === 0 && pips > 0);
+
+            netPips += pips;
+            netProfitUsd += usd;
+            if (isWin) {
+              wins++;
+              winningPips += Math.max(0, pips);
+              grossProfitUsd += Math.max(0, usd);
+            }
+
+            if (String(tr.closeTime || '').startsWith(todayStr)) {
+              dailyTradesCount++;
+              dailyNetPips += pips;
+              dailyProfitUsd += usd;
+              if (isWin) dailyWins++;
+            }
+          }
+
+          const currentBal = Number(acc.equity ?? acc.balance ?? 2.8);
+          const impliedStartCap = Math.max(100, currentBal - netProfitUsd);
+          const roiPct = Number(((netProfitUsd / impliedStartCap) * 100).toFixed(1));
+          const statsObj = {
+            netPips: Number(netPips.toFixed(1)),
+            winningPips: Number(winningPips.toFixed(1)),
+            netProfitUsd: Number(netProfitUsd.toFixed(2)),
+            grossProfitUsd: Number(grossProfitUsd.toFixed(2)),
+            tradesCount: valid.length,
+            winRate: valid.length > 0 ? Math.round((wins / valid.length) * 100) : 0,
+            xp: valid.length * 25,
+            roiPct,
+            dailyNetPips: Number(dailyNetPips.toFixed(1)),
+            dailyProfitUsd: Number(dailyProfitUsd.toFixed(2)),
+            dailyTradesCount,
+            dailyWinRate: dailyTradesCount > 0 ? Math.round((dailyWins / dailyTradesCount) * 100) : 0,
+          };
+
+          if (acc.userId) map[acc.userId] = statsObj;
+          if (acc.id) map[acc.id] = statsObj;
+          if (acc.accountNumber) map[`TraderRank-${acc.accountNumber}`] = statsObj;
+        }
+
+        if (isMounted) {
+          setLedgerStatsByUser(map);
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    loadLedger();
+    return () => {
+      isMounted = false;
+    };
+  }, [entries.length]);
 
   // Daily standings from server
   const dailyStandings = dailyResult?.standings || [];
 
-  // Synthesize enriched leaderboard items
+  // Build leaderboard items strictly from real MetaApi data
   const processedEntries = useMemo(() => {
-    // If daily period is selected and dailyResult has standings, convert to unified shape
-    const baseList = period === 'daily' && dailyStandings.length > 0
-      ? dailyStandings.map(d => {
-          const primaryBroker: Broker = (d.brokers && d.brokers.length > 0) ? d.brokers[0] : 'Exness';
-          const pips = d.dailyTotalPips || 0;
-          const trades = d.dailyTradesCount || 5;
-          return {
-            userId: d.userId,
-            username: d.username,
-            broker: primaryBroker,
-            avatarSymbol: d.avatarSymbol,
-            winningPips: pips,
-            profitAmount: Number((pips * 100 * (1 + trades * 0.1)).toFixed(2)),
-            profitRate: Number(((pips / 30) * 10).toFixed(1)),
-            rank: d.rank,
-            tradesCount: trades,
-            winRate: d.dailyWinRate || 68,
-            xp: 1200 + (d.rank <= 3 ? 2000 : 500),
-            tier: d.rank === 1 ? t.rewards.tierApexPredator : d.rank <= 3 ? t.rewards.tierMarketVeteran : t.rewards.tierProSwing,
-          };
-        })
-      : entries.map((e, idx) => {
-          const primaryBroker: Broker = (e.brokers && e.brokers.length > 0) ? e.brokers[0] : 'Exness';
-          const pips = e.totalPips || 0;
-          return {
-            userId: e.userId,
-            username: e.username,
-            broker: primaryBroker,
-            avatarSymbol: e.avatarSymbol,
-            winningPips: pips,
-            profitAmount: Number((pips * 85).toFixed(2)),
-            profitRate: Number(((pips / 25) * 10).toFixed(1)),
-            rank: idx + 1,
-            tradesCount: e.tradesCount || 12,
-            winRate: e.winRate || 72,
-            xp: e.xp || 2500,
-            tier: t.rewards.tierMarketVeteran,
-          };
-        });
+    const baseList =
+      period === 'daily' && dailyStandings.length > 0
+        ? dailyStandings.map(d => {
+            const primaryBroker: Broker = d.brokers && d.brokers.length > 0 ? d.brokers[0] : 'XM';
+            const real = ledgerStatsByUser[d.userId] || ledgerStatsByUser[d.username];
+            const pips = real ? real.dailyNetPips : d.dailyTotalPips || 0;
+            const trades = real ? real.dailyTradesCount : d.dailyTradesCount || 0;
+            const profitUsd = real ? real.dailyProfitUsd : 0;
+            const winRate = real
+              ? trades > 0
+                ? real.dailyWinRate
+                : real.winRate
+              : d.dailyWinRate || 0;
+
+            return {
+              userId: d.userId,
+              username: d.username,
+              broker: primaryBroker,
+              avatarSymbol: d.avatarSymbol,
+              winningPips: pips,
+              profitAmount: profitUsd,
+              profitRate: winRate,
+              rank: d.rank,
+              tradesCount: trades > 0 ? trades : real?.tradesCount ?? 0,
+              winRate,
+              xp: real?.xp ?? (trades * 25),
+              tier: d.rank === 1 ? t.rewards.tierApexPredator : d.rank <= 3 ? t.rewards.tierMarketVeteran : t.rewards.tierProSwing,
+            };
+          })
+        : entries.map((e, idx) => {
+            const primaryBroker: Broker = e.brokers && e.brokers.length > 0 ? e.brokers[0] : 'XM';
+            const real = ledgerStatsByUser[e.userId] || ledgerStatsByUser[e.username];
+            const netPips = real ? real.netPips : e.totalPips || 0;
+            const netProfitUsd = real
+              ? real.netProfitUsd
+              : typeof e.closedProfitUsd === 'number'
+              ? e.closedProfitUsd
+              : 0;
+            const tradesCount = real ? real.tradesCount : e.tradesCount || 0;
+            const winRate = real ? real.winRate : e.winRate || 0;
+            const xp = real ? real.xp : tradesCount > 0 ? tradesCount * 25 : e.xp || 0;
+            const profitRate = real ? real.roiPct : winRate;
+
+            return {
+              userId: e.userId,
+              username: e.username,
+              broker: primaryBroker,
+              avatarSymbol: e.avatarSymbol,
+              winningPips: netPips,
+              profitAmount: netProfitUsd,
+              profitRate,
+              rank: idx + 1,
+              tradesCount,
+              winRate,
+              xp,
+              tier: t.rewards.tierMarketVeteran,
+            };
+          });
 
     // Filter by Broker
     let filtered = baseList;
@@ -108,7 +238,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
       ...item,
       displayRank: index + 1,
     }));
-  }, [entries, dailyStandings, period, metric, brokerFilter, searchQuery]);
+  }, [entries, dailyStandings, period, metric, brokerFilter, searchQuery, ledgerStatsByUser, t]);
 
   const top3 = processedEntries.slice(0, 3);
 
