@@ -5,6 +5,7 @@ import { Broker } from '../../../shared/src/types.ts';
 import { TraderAvatar, INSTITUTIONAL_ANIMAL_PRESETS } from './TraderAvatar.tsx';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { LanguageSelector } from './LanguageSelector.tsx';
+import { useTranslation } from '../context/LanguageContext.tsx';
 
 const AVATAR_SYMBOLS = [
   { id: 'zap', label: 'Flash (Lightning)' },
@@ -20,6 +21,7 @@ const AVATAR_SYMBOLS = [
 
 export const ProfileEditModal: React.FC = () => {
   const { user, isProfileModalOpen, closeProfileModal, updateProfile } = useAuth();
+  const { language } = useTranslation();
 
   const [username, setUsername] = useState(user?.username || '');
   const [traderTitle, setTraderTitle] = useState(user?.traderTitle || '');
@@ -663,11 +665,21 @@ export const ProfileEditModal: React.FC = () => {
           {/* Bio */}
           <div>
             <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#94a3b8', marginBottom: '6px' }}>
-              Trader Bio & Philosophy (自己紹介)
+              {language === 'ja'
+                ? '自己紹介・トレード哲学'
+                : language === 'zh'
+                ? '自我介绍与交易理念'
+                : 'Trader Bio & Philosophy'}
             </label>
             <textarea
               rows={2}
-              placeholder="Describe your edge, favorite setups (e.g. London breakout on Gold), risk management rules..."
+              placeholder={
+                language === 'ja'
+                  ? '得意な通貨ペアやトレード手法、資金管理ルールなどを入力してください...'
+                  : language === 'zh'
+                  ? '描述您的交易优势、擅长品种（如黄金伦敦盘突破）与风控原则...'
+                  : 'Describe your edge, favorite setups (e.g. London breakout on Gold), risk management rules...'
+              }
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               style={{
@@ -686,7 +698,7 @@ export const ProfileEditModal: React.FC = () => {
             />
           </div>
 
-          {/* Trading Methodology Donut Ratio (トレード手法) */}
+          {/* Trading Methodology Donut Ratio */}
           <div
             style={{
               padding: '14px 16px',
@@ -697,10 +709,18 @@ export const ProfileEditModal: React.FC = () => {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
               <label style={{ fontSize: '11px', fontWeight: 800, color: '#ffffff' }}>
-                Trading Methodology Mix (トレード手法)
+                {language === 'ja'
+                  ? 'トレード手法の比率'
+                  : language === 'zh'
+                  ? '交易流派占比配置'
+                  : 'Trading Methodology Mix'}
               </label>
               <span style={{ fontSize: '10.5px', color: '#94a3b8', fontFamily: 'var(--font-mono, monospace)' }}>
-                Tech {techRatio}% • Fund {fundRatio}% • Price Action/Intuition {intuitionRatio}%
+                {language === 'ja'
+                  ? `テクニカル ${techRatio}% • ファンダ ${fundRatio}% • 感覚 ${intuitionRatio}%`
+                  : language === 'zh'
+                  ? `技术面 ${techRatio}% • 基本面 ${fundRatio}% • 盘感 ${intuitionRatio}%`
+                  : `Tech ${techRatio}% • Fund ${fundRatio}% • Price Action/Intuition ${intuitionRatio}%`}
               </span>
             </div>
 
@@ -723,7 +743,9 @@ export const ProfileEditModal: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-                  <span style={{ color: '#2b9af3', fontWeight: 700 }}>● Technical</span>
+                  <span style={{ color: '#2b9af3', fontWeight: 700 }}>
+                    ● {language === 'ja' ? 'テクニカル' : language === 'zh' ? '技术面' : 'Technical'}
+                  </span>
                   <span style={{ color: '#e2e8f0', fontWeight: 800 }}>{techRatio}%</span>
                 </div>
                 <input
@@ -746,7 +768,9 @@ export const ProfileEditModal: React.FC = () => {
 
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-                  <span style={{ color: '#10b981', fontWeight: 700 }}>● Fundamental</span>
+                  <span style={{ color: '#10b981', fontWeight: 700 }}>
+                    ● {language === 'ja' ? 'ファンダメンタル' : language === 'zh' ? '基本面' : 'Fundamental'}
+                  </span>
                   <span style={{ color: '#e2e8f0', fontWeight: 800 }}>{fundRatio}%</span>
                 </div>
                 <input
@@ -769,7 +793,9 @@ export const ProfileEditModal: React.FC = () => {
 
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-                  <span style={{ color: '#ec4899', fontWeight: 700 }}>● Intuition / PA</span>
+                  <span style={{ color: '#ec4899', fontWeight: 700 }}>
+                    ● {language === 'ja' ? '感覚・PA' : language === 'zh' ? '盘感/价格行为' : 'Intuition / PA'}
+                  </span>
                   <span style={{ color: '#e2e8f0', fontWeight: 800 }}>{intuitionRatio}%</span>
                 </div>
                 <input

@@ -205,14 +205,16 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
   const [selectedYearMonth, setSelectedYearMonth] = useState<string>('2026-10');
   const [showHistoricalArchive, setShowHistoricalArchive] = useState<boolean>(true);
 
-  // Localized UI copy matching the TradeRank / Trade Island reference layout
+  // Localized UI copy matching the TradeRank reference layout across EN / JA / ZH
   const copy = useMemo(() => {
     if (language === 'ja') {
       return {
+        mt5VerifiedBadge: 'MT5 閲覧専用・監査済',
         following: 'フォロー中',
         followers: 'フォロワー',
         follow: 'フォロー',
         followingActive: 'フォロー中',
+        shareTooltip: 'トレーダープロフィールを共有',
         methodologyTitle: 'トレード手法',
         technical: 'テクニカル',
         fundamental: 'ファンダメンタル',
@@ -223,8 +225,10 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
         rankingSectionTitle: 'ランキング・月間収支カレンダー',
         profitAmountTab: '収益額',
         returnRateTab: '収益率',
+        toggleTableTooltip: '月間過去データ表の表示切替',
         rankUnit: '位',
         peopleUnit: '人',
+        weekdays: ['日', '月', '火', '水', '木', '金', '土'],
         netProfitLabel: '収益額',
         returnRateLabel: '収益率',
         currentAssetsLabel: '現在資産 (純資産)',
@@ -254,14 +258,27 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
         cryptoCol: '暗号資産回数 / 約定代金',
         cfdCol: 'CFD回数 / 約定代金',
         pipsWinCol: '獲得Pips / 勝率',
+        filterAll: 'すべて',
+        filterGold: 'GOLD#',
+        filterWins: '勝ちトレード',
+        filterDayPrefix: '日付',
+        auditVerifiedTag: 'MetaApi 閲覧専用・監査認証済',
+        verifyingLedgerMsg: 'ブローカー元帳から決済済み取引を検証中...',
+        noTradesMsg: 'このフィルター条件に一致する決済履歴はありません。',
+        lotsLabel: 'ロット',
+        posLabel: 'Pos #',
+        loadMoreExecutions: 'さらに検証済み約定履歴を表示',
+        remainingLabel: '件残り',
       };
     }
     if (language === 'zh') {
       return {
+        mt5VerifiedBadge: 'MT5 只读实盘认证',
         following: '关注中',
         followers: '粉丝',
         follow: '关注',
         followingActive: '已关注',
+        shareTooltip: '分享交易员实盘档案',
         methodologyTitle: '交易流派占比',
         technical: '技术面分析',
         fundamental: '基本面分析',
@@ -272,8 +289,10 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
         rankingSectionTitle: '月度排行与每日盈亏日历',
         profitAmountTab: '收益额 ($)',
         returnRateTab: '收益率 / 点数',
+        toggleTableTooltip: '切换历史月度战绩表',
         rankUnit: '名',
         peopleUnit: '人',
+        weekdays: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'],
         netProfitLabel: '月度收益额',
         returnRateLabel: '月度收益率',
         currentAssetsLabel: '期末净值',
@@ -303,13 +322,26 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
         cryptoCol: '加密笔数 / 成交额',
         cfdCol: 'CFD笔数 / 成交额',
         pipsWinCol: '净点数 / 胜率',
+        filterAll: '全部',
+        filterGold: '黄金 GOLD#',
+        filterWins: '盈利单',
+        filterDayPrefix: '日期',
+        auditVerifiedTag: 'MetaApi 只读实盘审计认证',
+        verifyingLedgerMsg: '正在从经纪商账本验证已平仓交割单...',
+        noTradesMsg: '当前筛选条件下暂无已平仓交割记录。',
+        lotsLabel: '手',
+        posLabel: '持仓 #',
+        loadMoreExecutions: '加载更多实盘交割记录',
+        remainingLabel: '条剩余',
       };
     }
     return {
+      mt5VerifiedBadge: 'MT5 Read-Only Verified',
       following: 'Following',
       followers: 'Followers',
       follow: 'Follow',
       followingActive: 'Following',
+      shareTooltip: 'Share Verified Trader Profile',
       methodologyTitle: 'Trading Methodology',
       technical: 'Technical Analysis',
       fundamental: 'Fundamental Macro',
@@ -320,8 +352,10 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
       rankingSectionTitle: 'Ranking & Monthly P&L Calendar',
       profitAmountTab: 'Profit Amount ($)',
       returnRateTab: 'Return Rate / Pips',
+      toggleTableTooltip: 'Toggle Monthly Historical Table',
       rankUnit: '',
       peopleUnit: 'Traders',
+      weekdays: ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'],
       netProfitLabel: 'Net Profit / Loss',
       returnRateLabel: 'Return Rate (ROI)',
       currentAssetsLabel: 'Ending Equity',
@@ -351,6 +385,17 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
       cryptoCol: 'Crypto Trades / Volume',
       cfdCol: 'CFD Trades / Volume',
       pipsWinCol: 'Net Pips / Win Rate',
+      filterAll: 'All',
+      filterGold: 'GOLD#',
+      filterWins: 'Wins',
+      filterDayPrefix: 'Day',
+      auditVerifiedTag: 'MetaApi Read-Only Audit Verified',
+      verifyingLedgerMsg: 'Verifying closed deals directly from broker ledger...',
+      noTradesMsg: 'No closed executions recorded for this filter.',
+      lotsLabel: 'lots',
+      posLabel: 'Pos #',
+      loadMoreExecutions: 'Load More Verified Executions',
+      remainingLabel: 'remaining',
     };
   }, [language]);
 
@@ -759,9 +804,14 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
 
   const formattedSelectedMonthLabel = useMemo(() => {
     const [yearStr, monthStr] = selectedYearMonth.split('-');
-    const d = new Date(Number(yearStr), Number(monthStr) - 1, 1);
+    const year = Number(yearStr) || 2026;
+    const month = Number(monthStr) || 10;
+    if (language === 'ja' || language === 'zh') {
+      return `${year}年 ${month}月`;
+    }
+    const d = new Date(year, month - 1, 1);
     return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  }, [selectedYearMonth]);
+  }, [selectedYearMonth, language]);
 
   const filteredTrades = useMemo(() => {
     if (ledgerFilter === 'DAY' && selectedDayKey) {
@@ -982,7 +1032,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                       gap: '4px',
                     }}
                   >
-                    <ShieldCheck size={12} /> {trader.broker} MT5 Verified
+                    <ShieldCheck size={12} /> {trader.broker} {copy.mt5VerifiedBadge}
                   </span>
                   {trader.instagramHandle && (
                     <a
@@ -1061,7 +1111,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
               <button
                 type="button"
                 onClick={handleShareProfile}
-                title="Share Verified Trader Profile"
+                title={copy.shareTooltip}
                 style={{
                   width: '36px',
                   height: '36px',
@@ -1356,6 +1406,8 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                 <span>
                   {language === 'ja'
                     ? `${trader.rank}${copy.rankUnit} / ${activeMonthData.totalParticipants.toLocaleString()}${copy.peopleUnit}`
+                    : language === 'zh'
+                    ? `第 ${trader.rank} ${copy.rankUnit} / ${activeMonthData.totalParticipants.toLocaleString()} ${copy.peopleUnit}`
                     : `Rank #${trader.rank} / ${activeMonthData.totalParticipants.toLocaleString()} ${copy.peopleUnit}`}
                 </span>
                 <span style={{ color: '#34d399', fontFamily: 'var(--font-mono, monospace)' }}>
@@ -1367,7 +1419,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
             <button
               type="button"
               onClick={() => setShowHistoricalArchive(prev => !prev)}
-              title="Toggle Monthly Historical Table"
+              title={copy.toggleTableTooltip}
               style={{
                 width: '32px',
                 height: '32px',
@@ -1478,7 +1530,13 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
               {/* Right: Monthly Rank & Monthly Net P&L */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px' }}>
                 <span style={{ color: '#cbd5e1', fontWeight: 700 }}>
-                  {activeMonthData.rank > 0 ? `#${activeMonthData.rank}` : '-'} / 17,864
+                  {activeMonthData.rank > 0
+                    ? language === 'ja'
+                      ? `${activeMonthData.rank}${copy.rankUnit} / 17,864${copy.peopleUnit}`
+                      : language === 'zh'
+                      ? `第 ${activeMonthData.rank} ${copy.rankUnit} / 17,864${copy.peopleUnit}`
+                      : `#${activeMonthData.rank} / 17,864`
+                    : '- / 17,864'}
                 </span>
                 <span style={{ color: '#94a3b8', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                   {metricTab === 'AMOUNT' ? copy.netProfitLabel : copy.returnRateLabel}
@@ -1506,7 +1564,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
               </div>
             </div>
 
-            {/* 7-Column Weekday Header (SUN..SAT) */}
+            {/* 7-Column Weekday Header (SUN..SAT / 日..土 / 周日..周六) */}
             <div
               style={{
                 display: 'grid',
@@ -1515,7 +1573,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                 borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
               }}
             >
-              {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(dayName => (
+              {copy.weekdays.map(dayName => (
                 <div
                   key={dayName}
                   style={{
@@ -2135,10 +2193,15 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                             fontWeight: 800,
                             color: isSelectedMonth ? '#00f0ff' : '#f8fafc',
                             borderRight: '1px solid rgba(255,255,255,0.06)',
+                            whiteSpace: 'nowrap',
                           }}
                         >
-                          <div>{y}年</div>
-                          <div>{Number(m)}月</div>
+                          <div>{language === 'en' ? y : `${y}年`}</div>
+                          <div>
+                            {language === 'en'
+                              ? new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('en-US', { month: 'short' })
+                              : `${Number(m)}月`}
+                          </div>
                         </td>
 
                         {/* Rank */}
@@ -2149,9 +2212,14 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                             fontWeight: 800,
                             color: '#e2e8f0',
                             borderRight: '1px solid rgba(255,255,255,0.06)',
+                            whiteSpace: 'nowrap',
                           }}
                         >
-                          {row.tradesCount > 0 ? `${row.rank.toLocaleString()}${copy.rankUnit || ''}` : '-'}
+                          {row.tradesCount > 0
+                            ? language === 'en'
+                              ? `#${row.rank.toLocaleString()}`
+                              : `${row.rank.toLocaleString()}${copy.rankUnit}`
+                            : '-'}
                         </td>
 
                         {/* ROI % / Net P&L */}
@@ -2161,6 +2229,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                             textAlign: 'right',
                             fontWeight: 800,
                             borderRight: '1px solid rgba(255,255,255,0.06)',
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           <div
@@ -2185,6 +2254,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                             textAlign: 'right',
                             color: '#e2e8f0',
                             borderRight: '1px solid rgba(255,255,255,0.06)',
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           <div
@@ -2209,6 +2279,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                             textAlign: 'right',
                             color: '#e2e8f0',
                             borderRight: '1px solid rgba(255,255,255,0.06)',
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           <div
@@ -2219,7 +2290,8 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                               fontWeight: 700,
                             }}
                           >
-                            {row.goldCount}回
+                            {row.goldCount}
+                            {copy.timesUnit}
                           </div>
                           <div style={{ color: '#94a3b8' }}>${row.goldVolumeUsd.toLocaleString()}</div>
                         </td>
@@ -2231,6 +2303,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                             textAlign: 'right',
                             color: '#e2e8f0',
                             borderRight: '1px solid rgba(255,255,255,0.06)',
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           <div
@@ -2241,7 +2314,8 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                               fontWeight: 700,
                             }}
                           >
-                            {row.fxCount}回
+                            {row.fxCount}
+                            {copy.timesUnit}
                           </div>
                           <div style={{ color: '#94a3b8' }}>${row.fxVolumeUsd.toLocaleString()}</div>
                         </td>
@@ -2253,6 +2327,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                             textAlign: 'right',
                             color: '#e2e8f0',
                             borderRight: '1px solid rgba(255,255,255,0.06)',
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           <div
@@ -2263,7 +2338,8 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                               fontWeight: 700,
                             }}
                           >
-                            {row.cryptoCount}回
+                            {row.cryptoCount}
+                            {copy.timesUnit}
                           </div>
                           <div style={{ color: '#94a3b8' }}>${row.cryptoVolumeUsd.toLocaleString()}</div>
                         </td>
@@ -2275,6 +2351,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                             textAlign: 'right',
                             color: '#e2e8f0',
                             borderRight: '1px solid rgba(255,255,255,0.06)',
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           <div
@@ -2285,13 +2362,14 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                               fontWeight: 700,
                             }}
                           >
-                            {row.cfdCount}回
+                            {row.cfdCount}
+                            {copy.timesUnit}
                           </div>
                           <div style={{ color: '#94a3b8' }}>${row.cfdVolumeUsd.toLocaleString()}</div>
                         </td>
 
                         {/* Net Pips / Win Rate */}
-                        <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 800 }}>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 800, whiteSpace: 'nowrap' }}>
                           <div
                             style={{
                               color: row.netPips >= 0 ? '#34d399' : '#f43f5e',
@@ -2302,7 +2380,13 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                           >
                             {row.netPips >= 0 ? `+${row.netPips.toFixed(1)}p` : `${row.netPips.toFixed(1)}p`}
                           </div>
-                          <div style={{ color: '#fbbf24' }}>{winRateMonth}% Win</div>
+                          <div style={{ color: '#fbbf24' }}>
+                            {language === 'ja'
+                              ? `勝率 ${winRateMonth}%`
+                              : language === 'zh'
+                              ? `胜率 ${winRateMonth}%`
+                              : `${winRateMonth}% Win`}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -2343,13 +2427,13 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                 }}
               >
                 {[
-                  { id: 'ALL', label: `All (${realTrades.length})` },
-                  { id: 'GOLD', label: `GOLD# (${realTrades.filter(t => t.symbol.includes('GOLD')).length})` },
+                  { id: 'ALL', label: `${copy.filterAll} (${realTrades.length})` },
+                  { id: 'GOLD', label: `${copy.filterGold} (${realTrades.filter(t => t.symbol.includes('GOLD')).length})` },
                   {
                     id: 'OCT',
                     label: `${selectedYearMonth} (${realTrades.filter(t => t.closeTime.startsWith(selectedYearMonth)).length})`,
                   },
-                  { id: 'WINS', label: `Wins (${realTrades.filter(t => t.pnlCurrency > 0).length})` },
+                  { id: 'WINS', label: `${copy.filterWins} (${realTrades.filter(t => t.pnlCurrency > 0).length})` },
                 ].map(tab => (
                   <button
                     key={tab.id}
@@ -2391,7 +2475,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                       color: '#00f0ff',
                     }}
                   >
-                    Day: {selectedDayKey} ✕
+                    {copy.filterDayPrefix}: {selectedDayKey} ✕
                   </button>
                 )}
               </div>
@@ -2400,25 +2484,26 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
 
           <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Radio size={12} className="animate-pulse" style={{ color: 'var(--accent-green)' }} />
-            MetaApi Read-Only Audit Verified
+            {copy.auditVerifiedTag}
           </span>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {isLoadingTrades ? (
             <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
-              Verifying closed deals directly from broker ledger...
+              {copy.verifyingLedgerMsg}
             </div>
           ) : filteredTrades.length === 0 ? (
             <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '10px' }}>
-              No closed executions recorded for this filter.
+              {copy.noTradesMsg}
             </div>
           ) : (
             <>
               {filteredTrades.slice(0, visibleLimit).map((trade, idx) => {
                 const isProfit = trade.pnlCurrency >= 0;
+                const localeCode = language === 'ja' ? 'ja-JP' : language === 'zh' ? 'zh-CN' : 'en-US';
                 const formattedTime = trade.closeTime
-                  ? new Date(trade.closeTime).toLocaleDateString(undefined, {
+                  ? new Date(trade.closeTime).toLocaleDateString(localeCode, {
                       month: 'short',
                       day: 'numeric',
                       hour: '2-digit',
@@ -2456,7 +2541,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                           <strong style={{ fontSize: '14px' }}>{trade.symbol}</strong>
                           <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
-                            {trade.lotSize} lots
+                            {trade.lotSize} {copy.lotsLabel}
                           </span>
                           <span
                             style={{
@@ -2469,7 +2554,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                             }}
                             title={`MT5 Position ID: #${trade.positionId} • Exit Deal ID: #${trade.ticket}`}
                           >
-                            Pos #{trade.positionId}
+                            {copy.posLabel}{trade.positionId}
                           </span>
                         </div>
                         <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', fontFamily: 'var(--font-mono, monospace)' }}>
@@ -2507,7 +2592,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                     cursor: 'pointer',
                   }}
                 >
-                  Load More Verified Executions ({filteredTrades.length - visibleLimit} remaining)
+                  {copy.loadMoreExecutions} ({filteredTrades.length - visibleLimit} {copy.remainingLabel})
                 </button>
               )}
             </>
