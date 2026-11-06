@@ -4,6 +4,7 @@ import {
   SubscriptionStatus,
 } from '../../../shared/src/types.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
+import { useAuth } from '../context/AuthContext.tsx';
 import { LanguageSelector } from './LanguageSelector.tsx';
 import {
   Crown,
@@ -41,6 +42,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   onNavigateToDailyIntel,
 }) => {
   const { t } = useTranslation();
+  const { user, updateProfile } = useAuth();
   const [selectedTier, setSelectedTier] = useState<SubscriptionTier>('PRO_MONTHLY');
   const [paymentMethod, setPaymentMethod] = useState<'CARD' | 'APPLE_PAY' | 'CRYPTO'>('CARD');
   const [selectedCrypto, setSelectedCrypto] = useState<CryptoNetwork>('USDT_TRC20');
@@ -163,6 +165,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          userId: user?.id || 'global',
           tier: selectedTier,
           paymentMethod: methodLabel,
         }),
@@ -173,6 +176,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         const newSub: SubscriptionStatus = data.subscription;
         localStorage.setItem('traderrank_sub_status_v1', JSON.stringify(newSub));
         onSubscriptionChange(newSub);
+        if (user) {
+          updateProfile({
+            traderTitle: `Verified ${selectedTier === 'PRO_ANNUAL' ? 'Pro Annual' : 'Pro'} Trader`,
+          });
+        }
         setIsProcessing(false);
         setIsSuccessCelebration(true);
       }

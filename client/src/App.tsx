@@ -364,6 +364,7 @@ export const App: React.FC = () => {
             setCurrentView('app');
             setIsWizardOpen(true);
           }}
+          onOpenSubscriptionModal={() => setIsSubscriptionModalOpen(true)}
         />
         {/* Connection Wizard Modal if triggered from landing page */}
         {isWizardOpen && (
@@ -458,7 +459,10 @@ export const App: React.FC = () => {
         <div className="header-actions">
           {/* Language Selector Dropdown (Bitget Inspired) */}
           <LanguageSelector />
-          <UserNavMenu onOpenConnectWizard={() => setIsWizardOpen(true)} />
+          <UserNavMenu
+            onOpenConnectWizard={() => setIsWizardOpen(true)}
+            onOpenSubscriptionModal={() => setIsSubscriptionModalOpen(true)}
+          />
 
           <button
             className="btn-secondary"

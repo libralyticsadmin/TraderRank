@@ -27,11 +27,18 @@ import { UserNavMenu } from './UserNavMenu.tsx';
 interface LandingPageProps {
   onEnterApp: (tab?: string) => void;
   onOpenConnectWizard: () => void;
+  onOpenSubscriptionModal?: () => void;
   onSelectTrader?: (trader: { userId?: string; username: string; broker?: any; rank?: number; score?: number; winRate?: number; tradesCount?: number }) => void;
   leaderboard?: any[];
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConnectWizard, onSelectTrader, leaderboard = [] }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({
+  onEnterApp,
+  onOpenConnectWizard,
+  onOpenSubscriptionModal,
+  onSelectTrader,
+  leaderboard = [],
+}) => {
   const { t, language } = useTranslation();
   const { isAuthenticated, openAuthModal } = useAuth();
   const [activeTabRanking, setActiveTabRanking] = useState<'pips' | 'profit' | 'rate'>('pips');
@@ -160,7 +167,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp, onOpenConn
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <LanguageSelector />
-            <UserNavMenu onOpenConnectWizard={onOpenConnectWizard} />
+            <UserNavMenu
+              onOpenConnectWizard={onOpenConnectWizard}
+              onOpenSubscriptionModal={onOpenSubscriptionModal}
+            />
           </div>
         </div>
       </header>

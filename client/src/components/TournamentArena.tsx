@@ -4,6 +4,7 @@ import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { Broker } from '../../../shared/src/types.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
+import { useAuth } from '../context/AuthContext.tsx';
 
 export interface Tournament {
   id: string;
@@ -45,17 +46,31 @@ export interface TournamentArenaProps {
 
 export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectWizard }) => {
   const { t } = useTranslation();
+  const { user, isAuthenticated, openAuthModal } = useAuth();
   const [selectedTournamentId, setSelectedTournamentId] = useState<string>('tourn_weekly_fx_blitz_01');
   const [isUserEntered, setIsUserEntered] = useState<boolean>(false);
   const [isJoining, setIsJoining] = useState<boolean>(false);
   const [joinSuccessMsg, setJoinSuccessMsg] = useState<string | null>(null);
   const [serverTournaments, setServerTournaments] = useState<any[]>([]);
+  const [connectedAccounts, setConnectedAccounts] = useState<any[]>([]);
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({
     days: 3,
     hours: 14,
     minutes: 22,
     seconds: 45,
   });
+
+  const loadAccounts = async () => {
+    try {
+      const res = await fetch('/api/accounts');
+      if (res.ok) {
+        const data = await res.json();
+        setConnectedAccounts(data);
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   const loadTournaments = async () => {
     try {
@@ -76,30 +91,29 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
 
   useEffect(() => {
     loadTournaments();
+    loadAccounts();
   }, []);
 
   const handleJoinTournament = async () => {
+    // 1. If not authenticated, open registration/signin modal
+    if (!isAuthenticated) {
+      openAuthModal('register');
+      return;
+    }
+
     setIsJoining(true);
     setJoinSuccessMsg(null);
     try {
-      // Fetch verified connected accounts
+      // 2. Fetch fresh accounts
       const accRes = await fetch('/api/accounts');
       const accounts = accRes.ok ? await accRes.json() : [];
+      setConnectedAccounts(accounts);
       const primaryAcc = accounts[0];
 
-      if (!primaryAcc) {
-        setIsJoining(false);
-        if (onOpenConnectWizard) {
-          onOpenConnectWizard();
-        } else {
-          setJoinSuccessMsg('Please connect your verified broker account first to enter the tournament.');
-        }
-        return;
-      }
-
-      const userId = primaryAcc.userId || `usr_${primaryAcc.id}`;
-      const username = primaryAcc.accountNumber ? `TraderRank-${primaryAcc.accountNumber}` : primaryAcc.id;
-      const broker = primaryAcc.broker || 'XM';
+      // Identify registered user identity
+      const userId = user?.id || (primaryAcc ? primaryAcc.userId || `usr_${primaryAcc.id}` : `usr_${Date.now()}`);
+      const username = user?.username || (primaryAcc?.accountNumber ? `TraderRank-${primaryAcc.accountNumber}` : 'VerifiedTrader');
+      const broker: Broker = primaryAcc?.broker || user?.primaryBroker || 'XM';
 
       const res = await fetch(`/api/tournaments/${selectedTournamentId}/join`, {
         method: 'POST',
@@ -107,18 +121,26 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
         body: JSON.stringify({
           userId,
           username,
-          avatarSymbol: broker.slice(0, 2).toUpperCase(),
+          avatarSymbol: user?.avatarSymbol || broker.slice(0, 2).toUpperCase(),
           broker,
         }),
       });
 
       if (res.ok) {
         setIsUserEntered(true);
-        setJoinSuccessMsg(`Account ${primaryAcc?.accountNumber || '342186831'} (${broker}) entered into ${currentTourney.title}! Institutional risk rules active.`);
+        if (!primaryAcc && onOpenConnectWizard) {
+          setJoinSuccessMsg(`Registered for ${currentTourney.title}! Connect your trading account now to start tracking live pips.`);
+        } else {
+          setJoinSuccessMsg(`Trader ${username} (${broker}) successfully registered into ${currentTourney.title}! Institutional risk rules active.`);
+        }
         await loadTournaments();
+      } else {
+        const data = await res.json();
+        setJoinSuccessMsg(data.error || 'Tournament registration failed');
       }
     } catch (err) {
       console.error('Failed to join tournament', err);
+      setJoinSuccessMsg('Network error registering for tournament');
     } finally {
       setIsJoining(false);
     }
@@ -356,6 +378,15 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
           const remainingUsers = Math.max(0, targetUsers - currentTourney.entrantsCount);
           const progressPct = Math.min(100, Math.round((currentTourney.entrantsCount / targetUsers) * 100));
 
+          const isUserRegisteredInCurrentTourney = Boolean(
+            isUserEntered ||
+            (activeServerTourn?.standings && activeServerTourn.standings.some((s: any) =>
+              (user?.id && s.userId === user.id) ||
+              (user?.username && s.username?.toLowerCase() === user.username.toLowerCase()) ||
+              connectedAccounts.some((a: any) => a.id === s.userId || a.userId === s.userId || (a.accountNumber && s.username?.includes(a.accountNumber)))
+            ))
+          );
+
           return (
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
@@ -424,18 +455,22 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
                       fontWeight: 800,
                       borderRadius: '10px',
                       cursor: isJoining ? 'not-allowed' : 'pointer',
-                      background: isUserEntered
+                      background: isUserRegisteredInCurrentTourney
                         ? 'rgba(10, 186, 181, 0.2)'
                         : 'linear-gradient(135deg, var(--accent-green), #078c88)',
-                      color: isUserEntered ? 'var(--accent-green)' : '#000000',
-                      border: isUserEntered ? '1px solid var(--accent-green)' : 'none',
+                      color: isUserRegisteredInCurrentTourney ? 'var(--accent-green)' : '#000000',
+                      border: isUserRegisteredInCurrentTourney ? '1px solid var(--accent-green)' : 'none',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
                       transition: 'all 0.2s',
                     }}
                   >
-                    {isUserEntered ? (
+                    {!isAuthenticated ? (
+                      <>
+                        <Zap size={16} /> Sign in / Register to Join
+                      </>
+                    ) : isUserRegisteredInCurrentTourney ? (
                       <>
                         <CheckCircle2 size={16} />{' '}
                         {isTournamentLive
@@ -518,12 +553,33 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
               fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
               gap: '8px',
               marginBottom: '16px',
             }}
           >
-            <CheckCircle2 size={16} />
-            {joinSuccessMsg}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <CheckCircle2 size={16} />
+              <span>{joinSuccessMsg}</span>
+            </div>
+            {!connectedAccounts.length && onOpenConnectWizard && (
+              <button
+                onClick={onOpenConnectWizard}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  background: 'var(--accent-cyan)',
+                  color: '#000000',
+                  border: 'none',
+                  fontWeight: 700,
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                }}
+              >
+                Connect Broker Account
+              </button>
+            )}
           </div>
         )}
 

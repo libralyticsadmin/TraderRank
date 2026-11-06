@@ -1018,39 +1018,80 @@ export function createServer() {
     }
   });
 
+  // Subscription Store in memory
+  const userSubscriptions = new Map<string, any>();
+
   // 20. Pro Subscription Plans ($9/mo)
   app.get('/api/subscription/plans', (_req: Request, res: Response) => {
     const plans = dailyIntel.getSubscriptionPlans();
     res.json(plans);
   });
 
-  // 21. Pro Subscription Activation Simulation
+  // 20b. Subscription Status Check
+  app.get('/api/subscription/status', (req: Request, res: Response) => {
+    const userId = (req.query.userId as string) || 'global';
+    const sub = userSubscriptions.get(userId) || {
+      isActive: false,
+      tier: 'FREE',
+      planName: 'Free Account',
+      priceMonthly: 0,
+      startedAt: new Date().toISOString(),
+      expiresAt: new Date().toISOString(),
+      features: ['Standard Leaderboard Viewing', 'Basic Charts'],
+    };
+    res.json({ success: true, subscription: sub });
+  });
+
+  // 21. Pro Subscription Activation / Registration
   app.post('/api/subscription/subscribe', (req: Request, res: Response) => {
     try {
-      const { tier = 'PRO_MONTHLY', paymentMethod = 'SIMULATED_CARD' } = req.body;
+      const { userId = 'global', tier = 'PRO_MONTHLY', paymentMethod = 'SIMULATED_CARD' } = req.body;
       const now = new Date();
       const isAnnual = tier === 'PRO_ANNUAL';
+      const isInst = tier === 'INSTITUTIONAL';
       const expiresAt = new Date(now.getTime() + (isAnnual ? 365 : 30) * 24 * 60 * 60 * 1000).toISOString();
+
+      const planName = isAnnual
+        ? 'Pro Annual All-Access'
+        : isInst
+        ? 'Institutional VIP Tier'
+        : 'Pro Daily Intelligence';
+
+      const priceMonthly = isAnnual ? 6.58 : isInst ? 49.00 : 9.00;
+
+      const subRecord = {
+        isActive: true,
+        tier,
+        planName,
+        priceMonthly,
+        startedAt: now.toISOString(),
+        expiresAt,
+        paymentMethod,
+        features: [
+          'Full Daily Technical & Fundamental Summaries',
+          'ForexFactory High-Impact News Breakdown & Impact Notes',
+          'Custom Strategic Timeframe Generator (1m - 1W)',
+          'SMC Institutional Order Block & Demand/Supply Key Levels',
+          'Tactical Stop Loss, Entry Zones & Multi-Take Profit Targets',
+          'Optimal Trading Session Windows (London, NY, Asian)',
+          'Automated 1% Risk Lot Size Calculator',
+          'Priority Tournament Registration & Hall of Fame Eligibility',
+        ],
+      };
+
+      userSubscriptions.set(userId, subRecord);
+
+      // Update user profile if exists
+      if (userId && userProfiles.has(userId)) {
+        const u = userProfiles.get(userId);
+        u.subscriptionTier = tier;
+        u.isPro = true;
+        userProfiles.set(userId, u);
+      }
 
       res.json({
         success: true,
-        subscription: {
-          isActive: true,
-          tier,
-          planName: isAnnual ? 'Pro Annual All-Access' : 'Pro Daily Intelligence',
-          priceMonthly: isAnnual ? 6.58 : 9.00,
-          startedAt: now.toISOString(),
-          expiresAt,
-          paymentMethod,
-          features: [
-            'Full Daily Technical & Fundamental Summaries',
-            'ForexFactory High-Impact News Breakdown & Impact Notes',
-            'Custom Strategic Timeframe Generator (1m - 1W)',
-            'SMC Institutional Order Block & Demand/Supply Key Levels',
-            'Tactical Stop Loss, Entry Zones & Multi-Take Profit Targets',
-            'Optimal Trading Session Windows (London, NY, Asian)',
-          ],
-        },
+        subscription: subRecord,
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);

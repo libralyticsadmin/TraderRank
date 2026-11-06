@@ -75,8 +75,54 @@ export class TournamentService {
       standings: [],
     };
 
+    // Global Gold Rush Sprint (XAUUSD Special)
+    const goldRushEndDate = new Date(now);
+    goldRushEndDate.setDate(goldRushEndDate.getDate() + 5);
+
+    const goldRush: Tournament = {
+      id: 'tourney_gold_rush',
+      title: 'Global Gold Rush Invitational',
+      description: 'Dedicated high-volatility sprint for Gold (XAUUSD) traders across verified broker feeds. Strict 4.5% daily loss limit applies.',
+      type: 'WEEKLY_SPRINT',
+      status: 'UPCOMING',
+      startDate: now.toISOString(),
+      endDate: goldRushEndDate.toISOString(),
+      prizePoolPips: 5000,
+      prizeDetails: '$50,000 Apex Allocation + Gold Rush Trophy Crest',
+      minTradesRequired: 8,
+      maxDailyLossPercent: 4.5,
+      maxDrawdownPercent: 9.0,
+      participantCount: 0,
+      minParticipantsToStart: 50,
+      standings: [],
+    };
+
+    // Tokyo / London Overlap Daily Blitz
+    const dailyBlitzEndDate = new Date(now);
+    dailyBlitzEndDate.setHours(dailyBlitzEndDate.getHours() + 18);
+
+    const dailyBlitz: Tournament = {
+      id: 'tourney_daily_rush',
+      title: 'Tokyo / London Overlap Daily Blitz',
+      description: 'Ultra-fast intraday liquidity sprint during the Tokyo/London market open. Maximum 3% daily loss limit applies.',
+      type: 'DAILY_BLITZ',
+      status: 'UPCOMING',
+      startDate: now.toISOString(),
+      endDate: dailyBlitzEndDate.toISOString(),
+      prizePoolPips: 1500,
+      prizeDetails: '$10,000 Scalper Challenge + 5,000 XP Boost',
+      minTradesRequired: 3,
+      maxDailyLossPercent: 3.0,
+      maxDrawdownPercent: 6.0,
+      participantCount: 0,
+      minParticipantsToStart: 50,
+      standings: [],
+    };
+
     this.tournaments.set(weeklyBlitz.id, weeklyBlitz);
     this.tournaments.set(monthlyChallenge.id, monthlyChallenge);
+    this.tournaments.set(goldRush.id, goldRush);
+    this.tournaments.set(dailyBlitz.id, dailyBlitz);
   }
 
   public getTournaments(): Tournament[] {

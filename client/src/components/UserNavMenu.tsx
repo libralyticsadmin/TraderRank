@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Settings, LogOut, ChevronDown, ShieldCheck } from 'lucide-react';
+import { User, Settings, LogOut, ChevronDown, ShieldCheck, Crown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { TraderAvatar } from './TraderAvatar.tsx';
@@ -7,9 +7,10 @@ import { LanguageSelector } from './LanguageSelector.tsx';
 
 interface UserNavMenuProps {
   onOpenConnectWizard?: () => void;
+  onOpenSubscriptionModal?: () => void;
 }
 
-export const UserNavMenu: React.FC<UserNavMenuProps> = ({ onOpenConnectWizard }) => {
+export const UserNavMenu: React.FC<UserNavMenuProps> = ({ onOpenConnectWizard, onOpenSubscriptionModal }) => {
   const { user, isAuthenticated, openAuthModal, openProfileModal, logout } = useAuth();
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -172,6 +173,33 @@ export const UserNavMenu: React.FC<UserNavMenuProps> = ({ onOpenConnectWizard })
             >
               <ShieldCheck size={15} color="#0abab5" />
               <span>{t.auth.connectBrokerNav}</span>
+            </button>
+          )}
+
+          {onOpenSubscriptionModal && (
+            <button
+              onClick={() => { setMenuOpen(false); onOpenSubscriptionModal(); }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '9px 12px',
+                background: 'transparent',
+                border: 'none',
+                borderRadius: '8px',
+                color: '#fbbf24',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(251, 191, 36, 0.15)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+            >
+              <Crown size={15} color="#fbbf24" />
+              <span>{(user as any)?.isPro || (user as any)?.subscriptionTier ? 'Membership & Tier Plans' : 'Register / Upgrade Tier'}</span>
             </button>
           )}
 
