@@ -112,7 +112,7 @@ const DEFAULT_SPOTLIGHT_TRADES: BulletinTradeItem[] = [
 export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
   onSelectTrader,
 }) => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [allRealTrades, setAllRealTrades] = useState<BulletinTradeItem[]>([]);
   const [winningRealTrades, setWinningRealTrades] = useState<BulletinTradeItem[]>([]);
   const [deckMode, setDeckMode] = useState<'WINS' | 'LATEST'>('WINS');
@@ -138,6 +138,9 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
   const getTagLabel = (item: BulletinTradeItem) => {
     if (item.tagKey && (t.bulletin as any)[item.tagKey]) {
       return (t.bulletin as any)[item.tagKey];
+    }
+    if (item.tag === 'Verified Fill') {
+      return language === 'ja' ? '監査済約定' : language === 'zh' ? '实盘成交' : 'Verified Fill';
     }
     return item.tag || t.bulletin.verifiedBridge;
   };
@@ -432,7 +435,13 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '12px' }}>
             <Zap size={14} color="#0abab5" />
-            <span>Waiting for verified executions...</span>
+            <span>
+              {language === 'ja'
+                ? '検証済み約定フィードを受信中...'
+                : language === 'zh'
+                ? '正在等待实盘交割推送...'
+                : 'Waiting for verified executions...'}
+            </span>
           </div>
         )}
 
@@ -443,11 +452,24 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
             <div className="bulletin-deck-stats">
               <span className="bulletin-stat-pill">
                 <Activity size={11} color="#0abab5" />
-                <strong>{summaryStats.totalFills || activeDeck.length}</strong> Fills
+                <strong>{summaryStats.totalFills || activeDeck.length}</strong>{' '}
+                {language === 'ja' ? '約定' : language === 'zh' ? '笔成交' : 'Fills'}
               </span>
               {summaryStats.totalFills > 0 && (
                 <span className="bulletin-stat-pill win-pill">
-                  <strong>{summaryStats.winRate}%</strong> Win ({summaryStats.winsCount}W)
+                  {language === 'ja' ? (
+                    <>
+                      勝率 <strong>{summaryStats.winRate}%</strong> ({summaryStats.winsCount}勝)
+                    </>
+                  ) : language === 'zh' ? (
+                    <>
+                      胜率 <strong>{summaryStats.winRate}%</strong> ({summaryStats.winsCount}胜)
+                    </>
+                  ) : (
+                    <>
+                      <strong>{summaryStats.winRate}%</strong> Win ({summaryStats.winsCount}W)
+                    </>
+                  )}
                 </span>
               )}
               <div className="bulletin-mode-toggle">
@@ -460,7 +482,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                     setProgress(0);
                   }}
                 >
-                  Top Wins
+                  {language === 'ja' ? '高獲得Pips' : language === 'zh' ? '高盈亏单' : 'Top Wins'}
                 </button>
                 <button
                   type="button"
@@ -471,7 +493,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                     setProgress(0);
                   }}
                 >
-                  Latest
+                  {language === 'ja' ? '最新約定' : language === 'zh' ? '最新交割' : 'Latest'}
                 </button>
               </div>
             </div>

@@ -7,17 +7,32 @@ import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { LanguageSelector } from './LanguageSelector.tsx';
 import { useTranslation } from '../context/LanguageContext.tsx';
 
-const AVATAR_SYMBOLS = [
-  { id: 'zap', label: 'Flash (Lightning)' },
-  { id: 'crown', label: 'Crown (King)' },
-  { id: 'target', label: 'Target (Sniper)' },
-  { id: 'shield', label: 'Shield (Vault)' },
-  { id: 'gem', label: 'Diamond (Gem)' },
-  { id: 'flame', label: 'Flame (Alpha)' },
-  { id: 'EURUSD', label: 'EUR / USD' },
-  { id: 'XAUUSD', label: 'Gold (XAU)' },
-  { id: 'BTCUSD', label: 'Bitcoin (BTC)' },
+const AVATAR_SYMBOLS: Array<{ id: string; label: Record<'en' | 'ja' | 'zh', string> }> = [
+  { id: 'zap', label: { en: 'Flash (Lightning)', ja: 'フラッシュ (稲妻)', zh: '闪电 (极速)' } },
+  { id: 'crown', label: { en: 'Crown (King)', ja: 'クラウン (王者)', zh: '皇冠 (王者)' } },
+  { id: 'target', label: { en: 'Target (Sniper)', ja: 'ターゲット (狙撃)', zh: '准星 (狙击手)' } },
+  { id: 'shield', label: { en: 'Shield (Vault)', ja: 'シールド (堅牢)', zh: '护盾 (稳健)' } },
+  { id: 'gem', label: { en: 'Diamond (Gem)', ja: 'ダイヤモンド', zh: '钻石 (精锐)' } },
+  { id: 'flame', label: { en: 'Flame (Alpha)', ja: 'フレイム (アルファ)', zh: '烈焰 (Alpha)' } },
+  { id: 'EURUSD', label: { en: 'EUR / USD', ja: 'EUR / USD', zh: 'EUR / USD' } },
+  { id: 'XAUUSD', label: { en: 'Gold (XAU)', ja: 'ゴールド (XAU)', zh: '黄金 (XAU)' } },
+  { id: 'BTCUSD', label: { en: 'Bitcoin (BTC)', ja: 'ビットコイン (BTC)', zh: '比特币 (BTC)' } },
 ];
+
+const ANIMAL_CREST_I18N: Record<string, { ja: { label: string; badge: string }; zh: { label: string; badge: string } }> = {
+  bull: { ja: { label: 'ゴールデンブル', badge: 'マクロ' }, zh: { label: '黄金公牛', badge: '宏观突破' } },
+  wolf: { ja: { label: 'ティファニーウルフ', badge: 'アルファ' }, zh: { label: '蒂芙尼苍狼', badge: '头狼领航' } },
+  bear: { ja: { label: 'クリムゾンベア', badge: 'ショート' }, zh: { label: '绯红巨熊', badge: '空头猎手' } },
+  lion: { ja: { label: 'インペリアルライオン', badge: '王者' }, zh: { label: '帝国雄狮', badge: '主权皇冠' } },
+  viper: { ja: { label: 'エメラルドバイパー', badge: '精密' }, zh: { label: '翡翠毒蛇', badge: '高频剥头皮' } },
+  falcon: { ja: { label: 'ソーラーファルコン', badge: '高速' }, zh: { label: '烈阳猎鹰', badge: '极速动量' } },
+  panther: { ja: { label: 'ステルパンサー', badge: 'ステルス' }, zh: { label: '暗影黑豹', badge: '暗池执行' } },
+  shark: { ja: { label: 'アビサルシャーク', badge: 'クジラ' }, zh: { label: '深渊巨鲨', badge: '巨鲸订单流' } },
+  fox: { ja: { label: 'サイバー九尾', badge: 'アルゴ' }, zh: { label: '赛博九尾狐', badge: '算法套利' } },
+  owl: { ja: { label: 'クオンタムアウル', badge: 'クオンツ' }, zh: { label: '量子猫头鹰', badge: '夜盘量化' } },
+  dragon: { ja: { label: 'ジェイドドラゴン', badge: 'アジア覇者' }, zh: { label: '翡翠神龙', badge: '亚盘主宰' } },
+  tiger: { ja: { label: 'ブレイズタイガー', badge: 'ボラ撃破' }, zh: { label: '烈焰猛虎', badge: '波动率猎手' } },
+};
 
 export const ProfileEditModal: React.FC = () => {
   const { user, isProfileModalOpen, closeProfileModal, updateProfile } = useAuth();
@@ -77,7 +92,13 @@ export const ProfileEditModal: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      setUploadError('Image must be under 5MB');
+      setUploadError(
+        language === 'ja'
+          ? '画像サイズは5MB以下にしてください'
+          : language === 'zh'
+          ? '图片大小不能超过 5MB'
+          : 'Image must be under 5MB'
+      );
       return;
     }
     setUploadError(null);
@@ -176,7 +197,7 @@ export const ProfileEditModal: React.FC = () => {
         </div>
 
         {/* Modal Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '22px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '22px', paddingRight: '88px' }}>
           <div
             style={{
               width: '42px',
@@ -187,16 +208,25 @@ export const ProfileEditModal: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              flexShrink: 0,
             }}
           >
             <User size={22} color="#0abab5" />
           </div>
           <div>
             <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 900, color: '#ffffff' }}>
-              Edit Trader Profile
+              {language === 'ja'
+                ? 'トレーダープロフィール編集'
+                : language === 'zh'
+                ? '编辑交易员实盘档案'
+                : 'Edit Trader Profile'}
             </h3>
             <p style={{ margin: 0, fontSize: '12px', color: '#848E9C' }}>
-              Customize how your verified account appears across leaderboards, tournaments, and bulletins
+              {language === 'ja'
+                ? 'ランキング・大会・約定速報に表示される認証アカウント情報をカスタマイズします'
+                : language === 'zh'
+                ? '自定义您的实盘认证账户在排行榜、锦标赛及交割速报中的展示形象'
+                : 'Customize how your verified account appears across leaderboards, tournaments, and bulletins'}
             </p>
           </div>
         </div>
@@ -222,7 +252,13 @@ export const ProfileEditModal: React.FC = () => {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                title="Click to upload profile photo"
+                title={
+                  language === 'ja'
+                    ? 'プロフィール写真をアップロード'
+                    : language === 'zh'
+                    ? '点击上传头像照片'
+                    : 'Click to upload profile photo'
+                }
                 style={{
                   position: 'absolute',
                   bottom: '-3px',
@@ -263,7 +299,13 @@ export const ProfileEditModal: React.FC = () => {
                 </span>
               </div>
               <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
-                {traderTitle || 'Verified Institutional Trader'} • {tradingStyle}
+                {traderTitle ||
+                  (language === 'ja'
+                    ? '認証プロトレーダー'
+                    : language === 'zh'
+                    ? '实盘认证机构交易员'
+                    : 'Verified Institutional Trader')}{' '}
+                • {tradingStyle}
               </div>
             </div>
           </div>
@@ -279,10 +321,19 @@ export const ProfileEditModal: React.FC = () => {
                 fontWeight: 700,
               }}
             >
-              <ShieldCheck size={13} /> MetaApi Read-Only Verified
+              <ShieldCheck size={13} />{' '}
+              {language === 'ja'
+                ? 'MetaApi 閲覧専用・認証済'
+                : language === 'zh'
+                ? 'MetaApi 只读实盘认证'
+                : 'MetaApi Read-Only Verified'}
             </span>
             <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-              Rank #{user.rank || 12} Global • {user.xp} XP
+              {language === 'ja'
+                ? `世界ランキング #${user.rank || 12} • ${user.xp} XP`
+                : language === 'zh'
+                ? `全球排名 #${user.rank || 12} • ${user.xp} XP`
+                : `Rank #${user.rank || 12} Global • ${user.xp} XP`}
             </div>
           </div>
         </div>
@@ -293,7 +344,7 @@ export const ProfileEditModal: React.FC = () => {
             {/* Display Name */}
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#94a3b8', marginBottom: '6px' }}>
-                Display Username
+                {language === 'ja' ? '表示ユーザー名' : language === 'zh' ? '显示用户名' : 'Display Username'}
               </label>
               <input
                 type="text"
@@ -316,11 +367,21 @@ export const ProfileEditModal: React.FC = () => {
             {/* Trader Title */}
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#94a3b8', marginBottom: '6px' }}>
-                Trader Title / Headline
+                {language === 'ja'
+                  ? '肩書き・トレーダー称号'
+                  : language === 'zh'
+                  ? '交易员头衔 / 专长标签'
+                  : 'Trader Title / Headline'}
               </label>
               <input
                 type="text"
-                placeholder="e.g. Gold Scalper & Session Breakouts"
+                placeholder={
+                  language === 'ja'
+                    ? '例: ゴールドスキャルパー＆ロンドンブレイク'
+                    : language === 'zh'
+                    ? '例如：黄金剥头皮 & 伦敦盘突破猎手'
+                    : 'e.g. Gold Scalper & Session Breakouts'
+                }
                 value={traderTitle}
                 onChange={(e) => setTraderTitle(e.target.value)}
                 style={{
@@ -353,10 +414,19 @@ export const ProfileEditModal: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
               <div>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 800, color: '#ffffff' }}>
-                  <Camera size={14} color="#0abab5" /> Profile Picture & Avatar Photo
+                  <Camera size={14} color="#0abab5" />{' '}
+                  {language === 'ja'
+                    ? 'プロフィール画像・アバター設定'
+                    : language === 'zh'
+                    ? '个人头像与专属图腾设置'
+                    : 'Profile Picture & Avatar Photo'}
                 </label>
                 <span style={{ fontSize: '11px', color: '#848E9C' }}>
-                  Upload a photo from your device, choose from verified presets, or enter an image URL
+                  {language === 'ja'
+                    ? '端末からの画像アップロード、12種類の動物エンブレム、または画像URLを指定できます'
+                    : language === 'zh'
+                    ? '支持从设备上传照片、选择 12 款机构级动物图腾，或直接粘贴图片链接'
+                    : 'Upload a photo from your device, choose from verified presets, or enter an image URL'}
                 </span>
               </div>
 
@@ -386,7 +456,8 @@ export const ProfileEditModal: React.FC = () => {
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  <Upload size={13} /> Upload Photo
+                  <Upload size={13} />{' '}
+                  {language === 'ja' ? '写真をアップロード' : language === 'zh' ? '上传照片' : 'Upload Photo'}
                 </button>
                 {avatarUrl && (
                   <button
@@ -405,9 +476,15 @@ export const ProfileEditModal: React.FC = () => {
                       fontWeight: 700,
                       cursor: 'pointer',
                     }}
-                    title="Remove custom photo and reset to default"
+                    title={
+                      language === 'ja'
+                        ? 'デフォルトに戻す'
+                        : language === 'zh'
+                        ? '移除自定义图片并恢复默认'
+                        : 'Remove custom photo and reset to default'
+                    }
                   >
-                    <Trash2 size={12} /> Reset
+                    <Trash2 size={12} /> {language === 'ja' ? 'リセット' : language === 'zh' ? '重置' : 'Reset'}
                   </button>
                 )}
               </div>
@@ -423,10 +500,14 @@ export const ProfileEditModal: React.FC = () => {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <span style={{ fontSize: '10px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                  Select from Institutional Pro Presets (Animal Crests)
+                  {language === 'ja'
+                    ? 'プロ仕様アニマル・クレスト（動物エンブレム）を選択'
+                    : language === 'zh'
+                    ? '选择机构级交易员动物图腾 (Animal Crests)'
+                    : 'Select from Institutional Pro Presets (Animal Crests)'}
                 </span>
                 <span style={{ fontSize: '10px', color: '#0abab5', fontWeight: 700 }}>
-                  12 Unique Editions
+                  {language === 'ja' ? '全12種類' : language === 'zh' ? '12 款限定图腾' : '12 Unique Editions'}
                 </span>
               </div>
               <div
@@ -438,6 +519,20 @@ export const ProfileEditModal: React.FC = () => {
               >
                 {INSTITUTIONAL_ANIMAL_PRESETS.map((p) => {
                   const isSelected = avatarUrl === p.url;
+                  const crestI18n = ANIMAL_CREST_I18N[p.id];
+                  const displayLabel =
+                    language === 'ja' && crestI18n
+                      ? crestI18n.ja.label
+                      : language === 'zh' && crestI18n
+                      ? crestI18n.zh.label
+                      : p.label;
+                  const displayBadge =
+                    language === 'ja' && crestI18n
+                      ? crestI18n.ja.badge
+                      : language === 'zh' && crestI18n
+                      ? crestI18n.zh.badge
+                      : p.archetype.split(' ')[0];
+
                   return (
                     <button
                       key={p.id}
@@ -463,7 +558,7 @@ export const ProfileEditModal: React.FC = () => {
                         cursor: 'pointer',
                         transition: 'all 0.18s ease',
                       }}
-                      title={`${p.label} — ${p.archetype}`}
+                      title={`${displayLabel} — ${p.archetype}`}
                     >
                       <div
                         style={{
@@ -478,7 +573,7 @@ export const ProfileEditModal: React.FC = () => {
                       >
                         <img
                           src={p.url}
-                          alt={p.label}
+                          alt={displayLabel}
                           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                         />
                         {isSelected && (
@@ -503,15 +598,18 @@ export const ProfileEditModal: React.FC = () => {
                       </div>
                       <span
                         style={{
-                          fontSize: '10px',
+                          fontSize: '9.5px',
                           fontWeight: 800,
                           color: isSelected ? '#ffffff' : '#cbd5e1',
-                          lineHeight: 1.1,
+                          lineHeight: 1.15,
                           textAlign: 'center',
                           whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          maxWidth: '100%',
                         }}
                       >
-                        {p.label}
+                        {displayLabel}
                       </span>
                       <span
                         style={{
@@ -523,7 +621,7 @@ export const ProfileEditModal: React.FC = () => {
                           opacity: 0.9,
                         }}
                       >
-                        {p.archetype.split(' ')[0]}
+                        {displayBadge}
                       </span>
                     </button>
                   );
@@ -535,7 +633,13 @@ export const ProfileEditModal: React.FC = () => {
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <input
                 type="text"
-                placeholder="Or paste an image URL (https://...)"
+                placeholder={
+                  language === 'ja'
+                    ? 'または画像URLを貼り付け (https://...)'
+                    : language === 'zh'
+                    ? '或直接粘贴图片 URL (https://...)'
+                    : 'Or paste an image URL (https://...)'
+                }
                 value={customUrlInput}
                 onChange={(e) => setCustomUrlInput(e.target.value)}
                 style={{
@@ -567,7 +671,7 @@ export const ProfileEditModal: React.FC = () => {
                   cursor: 'pointer',
                 }}
               >
-                Apply URL
+                {language === 'ja' ? 'URL適用' : language === 'zh' ? '应用链接' : 'Apply URL'}
               </button>
             </div>
           </div>
@@ -575,9 +679,13 @@ export const ProfileEditModal: React.FC = () => {
           {/* Avatar Icon Selector */}
           <div>
             <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#94a3b8', marginBottom: '6px' }}>
-              Avatar Symbol & Mark
+              {language === 'ja'
+                ? 'アバターバッジ・シンボルマーク'
+                : language === 'zh'
+                ? '头像徽章与品种标识'
+                : 'Avatar Symbol & Mark'}
             </label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '8px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(115px, 1fr))', gap: '8px' }}>
               {AVATAR_SYMBOLS.map((sym) => {
                 const isSelected = avatarSymbol === sym.id;
                 return (
@@ -600,7 +708,9 @@ export const ProfileEditModal: React.FC = () => {
                       transition: 'all 0.15s ease',
                     }}
                   >
-                    <span>{sym.label}</span>
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {sym.label[language] || sym.label.en}
+                    </span>
                   </button>
                 );
               })}
@@ -611,7 +721,7 @@ export const ProfileEditModal: React.FC = () => {
             {/* Primary Broker */}
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#94a3b8', marginBottom: '6px' }}>
-                Primary Broker
+                {language === 'ja' ? 'メイン利用ブローカー' : language === 'zh' ? '主用经纪商' : 'Primary Broker'}
               </label>
               <select
                 value={primaryBroker}
@@ -638,7 +748,7 @@ export const ProfileEditModal: React.FC = () => {
             {/* Trading Style */}
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#94a3b8', marginBottom: '6px' }}>
-                Trading Style
+                {language === 'ja' ? 'トレードスタイル' : language === 'zh' ? '交易风格' : 'Trading Style'}
               </label>
               <select
                 value={tradingStyle}
@@ -654,10 +764,34 @@ export const ProfileEditModal: React.FC = () => {
                   outline: 'none',
                 }}
               >
-                <option value="SCALPER">Scalper (Minutes / M1-M5)</option>
-                <option value="DAY_TRADER">Day Trader (Intraday M15-H1)</option>
-                <option value="SWING_TRADER">Swing Trader (Multi-Day H4-D1)</option>
-                <option value="ALGORITHMIC">Algorithmic / Automated EA</option>
+                <option value="SCALPER">
+                  {language === 'ja'
+                    ? 'スキャルパー (1分〜5分足)'
+                    : language === 'zh'
+                    ? '超短线剥头皮 (M1-M5)'
+                    : 'Scalper (Minutes / M1-M5)'}
+                </option>
+                <option value="DAY_TRADER">
+                  {language === 'ja'
+                    ? 'デイトレーダー (15分〜1時間足)'
+                    : language === 'zh'
+                    ? '日内波段交易 (M15-H1)'
+                    : 'Day Trader (Intraday M15-H1)'}
+                </option>
+                <option value="SWING_TRADER">
+                  {language === 'ja'
+                    ? 'スイングトレーダー (4時間〜日足)'
+                    : language === 'zh'
+                    ? '中长线趋势交易 (H4-D1)'
+                    : 'Swing Trader (Multi-Day H4-D1)'}
+                </option>
+                <option value="ALGORITHMIC">
+                  {language === 'ja'
+                    ? 'アルゴリズム / 自動売買 EA'
+                    : language === 'zh'
+                    ? '量化算法 / 自动 EA'
+                    : 'Algorithmic / Automated EA'}
+                </option>
               </select>
             </div>
           </div>
@@ -821,7 +955,11 @@ export const ProfileEditModal: React.FC = () => {
           {/* Social Handles */}
           <div>
             <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#94a3b8', marginBottom: '6px' }}>
-              Social & Community Profiles
+              {language === 'ja'
+                ? 'SNS・コミュニティアカウント連携'
+                : language === 'zh'
+                ? '社交与社区主页绑定'
+                : 'Social & Community Profiles'}
             </label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
               <div>
@@ -934,7 +1072,7 @@ export const ProfileEditModal: React.FC = () => {
                 cursor: 'pointer',
               }}
             >
-              Cancel
+              {language === 'ja' ? 'キャンセル' : language === 'zh' ? '取消' : 'Cancel'}
             </button>
 
             <button
@@ -960,11 +1098,23 @@ export const ProfileEditModal: React.FC = () => {
             >
               {savedSuccess ? (
                 <>
-                  <Check size={16} /> Saved!
+                  <Check size={16} />{' '}
+                  {language === 'ja' ? '保存完了！' : language === 'zh' ? '已保存！' : 'Saved!'}
                 </>
               ) : (
                 <>
-                  <Save size={16} /> {saving ? 'Saving...' : 'Save Profile Changes'}
+                  <Save size={16} />{' '}
+                  {saving
+                    ? language === 'ja'
+                      ? '保存中...'
+                      : language === 'zh'
+                      ? '保存中...'
+                      : 'Saving...'
+                    : language === 'ja'
+                    ? 'プロフィール変更を保存'
+                    : language === 'zh'
+                    ? '保存档案修改'
+                    : 'Save Profile Changes'}
                 </>
               )}
             </button>

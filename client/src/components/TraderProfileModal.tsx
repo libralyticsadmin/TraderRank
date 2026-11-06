@@ -1622,7 +1622,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                     }}
                     title={
                       hasActivity
-                        ? `${cell.dateKey}: ${cell.count} trades • ${formatUsdSigned(cell.pnlUsd)} (${cell.pnlPips >= 0 ? '+' : ''}${cell.pnlPips} pips)`
+                        ? `${cell.dateKey}: ${cell.count}${copy.timesUnit} • ${formatUsdSigned(cell.pnlUsd)} (${cell.pnlPips >= 0 ? '+' : ''}${cell.pnlPips} pips)`
                         : undefined
                     }
                     style={{
@@ -1680,7 +1680,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(165px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
               gap: '10px',
             }}
           >
@@ -1808,7 +1808,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                 padding: '12px 14px',
               }}
             >
-              <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700 }}>{copy.fxCountLabel}</div>
+              <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700, whiteSpace: 'nowrap' }}>{copy.fxCountLabel}</div>
               <div
                 style={{
                   fontSize: '16px',
@@ -1820,10 +1820,10 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                   fontFamily: 'var(--font-mono, monospace)',
                 }}
               >
-                {activeMonthData.fxCount > 0 ? activeMonthData.fxCount : '-'}
+                {activeMonthData.fxCount}
                 <span style={{ fontSize: '11px', color: '#94a3b8', marginLeft: '2px' }}>{copy.timesUnit}</span>
               </div>
-              <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700 }}>{copy.notionalValueLabel}</div>
+              <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700, whiteSpace: 'nowrap' }}>{copy.notionalValueLabel}</div>
               <div
                 style={{
                   fontSize: '14px',
@@ -1834,7 +1834,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                   fontFamily: 'var(--font-mono, monospace)',
                 }}
               >
-                {activeMonthData.fxVolumeUsd > 0 ? `$${activeMonthData.fxVolumeUsd.toLocaleString()}` : '-$'}
+                ${activeMonthData.fxVolumeUsd.toLocaleString()}
               </div>
             </div>
 
@@ -1847,7 +1847,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                 padding: '12px 14px',
               }}
             >
-              <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700 }}>{copy.cfdCountLabel}</div>
+              <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700, whiteSpace: 'nowrap' }}>{copy.cfdCountLabel}</div>
               <div
                 style={{
                   fontSize: '16px',
@@ -1859,10 +1859,10 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                   fontFamily: 'var(--font-mono, monospace)',
                 }}
               >
-                {activeMonthData.cfdCount > 0 ? activeMonthData.cfdCount : '-'}
+                {activeMonthData.cfdCount}
                 <span style={{ fontSize: '11px', color: '#94a3b8', marginLeft: '2px' }}>{copy.timesUnit}</span>
               </div>
-              <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700 }}>{copy.notionalValueLabel}</div>
+              <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700, whiteSpace: 'nowrap' }}>{copy.notionalValueLabel}</div>
               <div
                 style={{
                   fontSize: '14px',
@@ -1873,7 +1873,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                   fontFamily: 'var(--font-mono, monospace)',
                 }}
               >
-                {activeMonthData.cfdVolumeUsd > 0 ? `$${activeMonthData.cfdVolumeUsd.toLocaleString()}` : '-$'}
+                ${activeMonthData.cfdVolumeUsd.toLocaleString()}
               </div>
             </div>
 
@@ -1886,7 +1886,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                 padding: '12px 14px',
               }}
             >
-              <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700 }}>{copy.cryptoCountLabel}</div>
+              <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700, whiteSpace: 'nowrap' }}>{copy.cryptoCountLabel}</div>
               <div
                 style={{
                   fontSize: '16px',
@@ -1898,10 +1898,10 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                   fontFamily: 'var(--font-mono, monospace)',
                 }}
               >
-                {activeMonthData.cryptoCount > 0 ? activeMonthData.cryptoCount : '-'}
+                {activeMonthData.cryptoCount}
                 <span style={{ fontSize: '11px', color: '#94a3b8', marginLeft: '2px' }}>{copy.timesUnit}</span>
               </div>
-              <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700 }}>{copy.notionalValueLabel}</div>
+              <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700, whiteSpace: 'nowrap' }}>{copy.notionalValueLabel}</div>
               <div
                 style={{
                   fontSize: '14px',
@@ -1912,7 +1912,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                   fontFamily: 'var(--font-mono, monospace)',
                 }}
               >
-                {activeMonthData.cryptoVolumeUsd > 0 ? `$${activeMonthData.cryptoVolumeUsd.toLocaleString()}` : '-$'}
+                ${activeMonthData.cryptoVolumeUsd.toLocaleString()}
               </div>
             </div>
 
@@ -2133,33 +2133,43 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                     </th>
                   </tr>
 
-                  {/* Column Sub-Headers */}
-                  <tr style={{ background: '#1e293b', color: '#cbd5e1', fontSize: '11px' }}>
-                    <th style={{ padding: '8px', borderRight: '1px solid rgba(255,255,255,0.08)', textAlign: 'center' }}>
-                      {copy.yearMonthCol}
-                    </th>
-                    <th style={{ padding: '8px', borderRight: '1px solid rgba(255,255,255,0.08)', textAlign: 'center' }}>
-                      {copy.rankCol}
-                    </th>
-                    <th style={{ padding: '8px', borderRight: '1px solid rgba(255,255,255,0.08)', textAlign: 'right' }}>
-                      {copy.roiAndProfitCol}
-                    </th>
-                    <th style={{ padding: '8px', borderRight: '1px solid rgba(255,255,255,0.08)', textAlign: 'right' }}>
-                      {copy.assetsCol}
-                    </th>
-                    <th style={{ padding: '8px', borderRight: '1px solid rgba(255,255,255,0.08)', textAlign: 'right' }}>
-                      {copy.goldCol}
-                    </th>
-                    <th style={{ padding: '8px', borderRight: '1px solid rgba(255,255,255,0.08)', textAlign: 'right' }}>
-                      {copy.fxCol}
-                    </th>
-                    <th style={{ padding: '8px', borderRight: '1px solid rgba(255,255,255,0.08)', textAlign: 'right' }}>
-                      {copy.cryptoCol}
-                    </th>
-                    <th style={{ padding: '8px', borderRight: '1px solid rgba(255,255,255,0.08)', textAlign: 'right' }}>
-                      {copy.cfdCol}
-                    </th>
-                    <th style={{ padding: '8px', textAlign: 'right' }}>{copy.pipsWinCol}</th>
+                  {/* Column Sub-Headers — 2-line stacked format so EN / JA / ZH never wrap mid-word */}
+                  <tr style={{ background: '#1e293b', color: '#cbd5e1', fontSize: '11px', lineHeight: 1.3 }}>
+                    {[
+                      { label: copy.yearMonthCol, align: 'center' as const },
+                      { label: copy.rankCol, align: 'center' as const },
+                      { label: copy.roiAndProfitCol, align: 'right' as const },
+                      { label: copy.assetsCol, align: 'right' as const },
+                      { label: copy.goldCol, align: 'right' as const },
+                      { label: copy.fxCol, align: 'right' as const },
+                      { label: copy.cryptoCol, align: 'right' as const },
+                      { label: copy.cfdCol, align: 'right' as const },
+                      { label: copy.pipsWinCol, align: 'right' as const, isLast: true },
+                    ].map((col, idx) => {
+                      const parts = col.label.split(' / ');
+                      return (
+                        <th
+                          key={idx}
+                          style={{
+                            padding: '8px 10px',
+                            borderRight: col.isLast ? 'none' : '1px solid rgba(255,255,255,0.08)',
+                            textAlign: col.align,
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {parts.length === 2 ? (
+                            <>
+                              <div style={{ color: '#f1f5f9', fontWeight: 800 }}>{parts[0]}</div>
+                              <div style={{ color: '#94a3b8', fontWeight: 600, fontSize: '10px', marginTop: '2px' }}>
+                                {parts[1]}
+                              </div>
+                            </>
+                          ) : (
+                            <div style={{ color: '#f1f5f9', fontWeight: 800 }}>{col.label}</div>
+                          )}
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody>
