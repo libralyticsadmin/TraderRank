@@ -25,6 +25,7 @@ import {
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { LanguageSelector } from './LanguageSelector.tsx';
 import { useTranslation } from '../context/LanguageContext.tsx';
+import { useAuth } from '../context/AuthContext.tsx';
 
 interface ConnectionWizardProps {
   onClose: () => void;
@@ -42,6 +43,7 @@ const BROKERS: { id: Broker; name: string; tag: string; desc: string; url?: stri
 
 export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onSuccess }) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [selectedBroker, setSelectedBroker] = useState<Broker>('IC_MARKETS');
   const [selectedPath, setSelectedPath] = useState<IntegrationType>('mt_gateway');
@@ -159,8 +161,8 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: `u_${login || accountId || Date.now()}`,
-          username: login ? `TraderRank-${login}` : (accountId ? `TraderRank-${accountId}` : 'TraderRank-User'),
+          userId: user?.id || `u_${login || accountId || Date.now()}`,
+          username: user?.username || (login ? `TraderRank-${login}` : (accountId ? `TraderRank-${accountId}` : 'TraderRank-User')),
           broker: selectedBroker,
           credentials: payloadCreds,
         }),

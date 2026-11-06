@@ -681,7 +681,7 @@ export class AccountConnectorService {
     return canonicalTrades;
   }
 
-  public async disconnectAccount(accountId: string): Promise<boolean> {
+  public async disconnectAccount(accountId: string, purge: boolean = false): Promise<boolean> {
     const account = this.accounts.get(accountId);
     if (!account) return false;
 
@@ -693,6 +693,14 @@ export class AccountConnectorService {
 
     account.connectionStatus = 'DISCONNECTED';
     account.updatedAt = new Date().toISOString();
+
+    if (purge) {
+      this.accounts.delete(accountId);
+      this.tradesStorage.delete(accountId);
+      this.rawDealsCache.delete(accountId);
+      this.lastDealSyncAt.delete(accountId);
+      this.lastDealCursorTime.delete(accountId);
+    }
 
     await this.eventBus.publish('stream:account.events', 'account.disconnected', accountId, {
       accountId,

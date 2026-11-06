@@ -156,8 +156,8 @@ export function createServer() {
       path.includes('/orders') ||
       path.includes('/positions/close')
     ) {
-      // Allow legitimate read endpoints and connect/disconnect/refresh
-      if (!path.includes('/api/connector/connect') && !path.includes('/api/connector/validate') && !path.includes('/api/market/refresh') && !path.includes('/trades')) {
+      // Allow legitimate connector and market refresh endpoints
+      if (!path.includes('/api/connector/connect') && !path.includes('/api/connector/validate') && !path.includes('/api/market/refresh')) {
         return res.status(403).json({
           success: false,
           error: `SECURITY ENFORCEMENT: Write operation '${method} ${req.path}' is blocked. TraderRank runs in immutable view-only mode.`,
@@ -518,6 +518,25 @@ export function createServer() {
       accounts = await connector.syncCloudProvisionedAccounts();
     }
     res.json(accounts.map(maskAccountSecrets));
+  });
+
+  // 4a. Disconnect / Remove Account
+  app.delete('/api/accounts/:id', async (req: Request, res: Response) => {
+    try {
+      const accountId = req.params.id;
+      const purge = req.query.purge !== 'false';
+      const success = await connector.disconnectAccount(accountId, purge);
+      if (!success) {
+        return res.status(404).json({ success: false, error: 'Account not found' });
+      }
+      return res.json({
+        success: true,
+        message: `Account ${accountId} disconnected and deprovisioned successfully`,
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return res.status(500).json({ success: false, error: msg });
+    }
   });
 
   // 4c. Trigger live cloud accounts sync

@@ -306,6 +306,39 @@ export const App: React.FC = () => {
     });
   };
 
+  // URL Deep-Linking: Synchronize ?trader= parameter with selected trader modal
+  useEffect(() => {
+    if (selectedTrader) {
+      const targetQuery = `?trader=${encodeURIComponent(selectedTrader.username)}`;
+      if (window.location.search !== targetQuery) {
+        window.history.replaceState({}, '', `${window.location.pathname}${targetQuery}`);
+      }
+    } else {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('trader')) {
+        urlParams.delete('trader');
+        const remaining = urlParams.toString();
+        window.history.replaceState({}, '', remaining ? `${window.location.pathname}?${remaining}` : window.location.pathname);
+      }
+    }
+  }, [selectedTrader]);
+
+  // URL Deep-Linking: Check on mount and when leaderboard changes
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const traderQuery = urlParams.get('trader');
+    if (traderQuery && !selectedTrader && leaderboard.length > 0) {
+      const match = leaderboard.find(
+        entry =>
+          entry.username.toLowerCase() === traderQuery.toLowerCase() ||
+          entry.userId.toLowerCase() === traderQuery.toLowerCase()
+      );
+      if (match) {
+        handleSelectTrader(match);
+      }
+    }
+  }, [leaderboard]);
+
   if (currentView === 'landing') {
     return (
       <>
