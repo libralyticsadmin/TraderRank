@@ -14,7 +14,6 @@ import { useTranslation } from '../context/LanguageContext.tsx';
 import {
   Calendar,
   Sparkles,
-  Lock,
   Crown,
   Sliders,
   CheckCircle2,
@@ -28,12 +27,11 @@ import {
 
 interface DailyAnalysisHubProps {
   subscription: SubscriptionStatus;
-  onOpenSubscriptionModal: () => void;
+  onOpenSubscriptionModal?: () => void;
 }
 
 export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
   subscription,
-  onOpenSubscriptionModal,
 }) => {
   const { t } = useTranslation();
   const [report, setReport] = useState<DailyIntelReport | null>(null);
@@ -75,11 +73,6 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
   // Generate Custom Strategy
   const handleGenerateCustomStrategy = async (e?: React.FormEvent, overrideSymbol?: string) => {
     if (e) e.preventDefault();
-
-    if (!subscription.isActive) {
-      onOpenSubscriptionModal();
-      return;
-    }
 
     const targetSymbol = overrideSymbol || customSymbol;
     if (overrideSymbol) {
@@ -172,43 +165,23 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {subscription.isActive ? (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '8px 16px',
-                borderRadius: '12px',
-                background: 'rgba(10, 186, 181, 0.15)',
-                border: '1px solid var(--accent-cyan)',
-                color: 'var(--accent-cyan)',
-                fontSize: '13px',
-                fontWeight: 700,
-              }}
-            >
-              <Crown size={16} color="#ffd700" />
-              <span>{t.intel.proUnlocked}</span>
-            </div>
-          ) : (
-            <button
-              className="btn-primary"
-              onClick={onOpenSubscriptionModal}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 20px',
-                fontSize: '14px',
-                fontWeight: 700,
-                background: 'linear-gradient(90deg, #0ABAB5 0%, #81d8d0 100%)',
-                color: '#081014',
-                boxShadow: '0 4px 20px rgba(10, 186, 181, 0.4)',
-              }}
-            >
-              <Crown size={16} /> {t.intel.unlockProBtn}
-            </button>
-          )}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 16px',
+              borderRadius: '12px',
+              background: 'rgba(10, 186, 181, 0.15)',
+              border: '1px solid var(--accent-cyan)',
+              color: 'var(--accent-cyan)',
+              fontSize: '13px',
+              fontWeight: 700,
+            }}
+          >
+            <Crown size={16} color="#ffd700" />
+            <span>{t.intel.proUnlocked}</span>
+          </div>
 
           <button
             onClick={fetchDailyReport}
@@ -797,73 +770,6 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
                 ))}
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Non-Subscriber Paywall Layer for Custom Strategy */}
-        {!subscription.isActive && (
-          <div
-            style={{
-              position: 'absolute',
-              top: '120px',
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(13, 21, 24, 0.85)',
-              backdropFilter: 'blur(8px)',
-              borderRadius: '16px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '40px 20px',
-              textAlign: 'center',
-              zIndex: 10,
-            }}
-          >
-            <div
-              style={{
-                width: '56px',
-                height: '56px',
-                borderRadius: '50%',
-                background: 'rgba(10, 186, 181, 0.15)',
-                border: '1px solid var(--accent-cyan)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--accent-cyan)',
-                marginBottom: '16px',
-              }}
-            >
-              <Lock size={26} />
-            </div>
-
-            <h4 style={{ fontSize: '22px', fontWeight: 800, color: '#fff', margin: '0 0 8px 0' }}>
-              {t.intel.unlockGeneratorModalTitle}
-            </h4>
-            <p style={{ color: 'var(--text-muted)', fontSize: '14px', maxWidth: '460px', marginBottom: '20px' }}>
-              {t.intel.unlockGeneratorModalDesc}
-            </p>
-
-            <button
-              onClick={onOpenSubscriptionModal}
-              style={{
-                padding: '12px 28px',
-                borderRadius: '10px',
-                background: 'linear-gradient(90deg, #0ABAB5 0%, #81d8d0 100%)',
-                border: 'none',
-                color: '#081014',
-                fontSize: '15px',
-                fontWeight: 800,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                cursor: 'pointer',
-                boxShadow: '0 4px 20px rgba(10, 186, 181, 0.4)',
-              }}
-            >
-              <Crown size={16} /> {t.intel.unlockBtn}
-            </button>
           </div>
         )}
       </div>

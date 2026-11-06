@@ -91,13 +91,13 @@ export const App: React.FC = () => {
       console.error('Failed to parse subscription from localStorage', e);
     }
     return {
-      isActive: false,
-      tier: 'FREE',
-      planName: 'Free Account',
+      isActive: true,
+      tier: 'PRO_ANNUAL',
+      planName: 'Pro All-Access',
       priceMonthly: 0,
       startedAt: new Date().toISOString(),
-      expiresAt: new Date().toISOString(),
-      features: ['Standard Leaderboard Viewing', 'Basic Charts'],
+      expiresAt: new Date(Date.now() + 365 * 86400000).toISOString(),
+      features: ['Full Leaderboard Access', 'Daily Intelligence', 'SMC Analysis', 'Tournament Eligibility'],
     };
   });
 

@@ -16,14 +16,19 @@ import type { Server } from 'http';
 
 describe('Tiering System & Tournament Registration Readiness Suite', () => {
   let server: Server;
-  const PORT = 4099;
-  const baseUrl = `http://127.0.0.1:${PORT}`;
+  let baseUrl = '';
   const tournamentService = TournamentService.getInstance();
 
   beforeAll(async () => {
     const instance = createServer();
     server = instance.server;
-    await new Promise<void>((resolve) => server.listen(PORT, '127.0.0.1', resolve));
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => {
+      const addr = server.address();
+      if (typeof addr === 'object' && addr) {
+        baseUrl = `http://127.0.0.1:${addr.port}`;
+      }
+      resolve();
+    }));
   });
 
   afterAll(async () => {

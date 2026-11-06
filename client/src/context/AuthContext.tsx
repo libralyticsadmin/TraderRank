@@ -61,7 +61,7 @@ const DEFAULT_USER_TEMPLATE: Omit<UserProfile, 'id' | 'username' | 'email'> = {
   country: 'Global',
   joinedAt: 'Today',
   level: 1,
-  xp: 100,
+  xp: 0,
   rank: 99,
   methodology: {
     technical: 40,

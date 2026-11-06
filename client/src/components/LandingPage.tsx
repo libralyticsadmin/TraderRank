@@ -23,6 +23,7 @@ import { useTranslation } from '../context/LanguageContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
 import { LanguageSelector } from './LanguageSelector.tsx';
 import { UserNavMenu } from './UserNavMenu.tsx';
+import { calculateTraderGamification, getStreakStatus } from '../../../shared/src/gamification.ts';
 
 interface LandingPageProps {
   onEnterApp: (tab?: string) => void;
@@ -40,7 +41,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   leaderboard = [],
 }) => {
   const { t, language } = useTranslation();
-  const { isAuthenticated, openAuthModal } = useAuth();
+  const { user, isAuthenticated, openAuthModal } = useAuth();
   const [activeTabRanking, setActiveTabRanking] = useState<'pips' | 'profit' | 'rate'>('pips');
   const [liveAuditStats, setLiveAuditStats] = useState<{
     tradesCount: number;
@@ -730,96 +731,118 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           {/* Daily Streak & XP Progression Card */}
-          <div
-            style={{
-              background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(14, 20, 31, 0.95) 100%)',
-              border: '1px solid rgba(0, 240, 255, 0.25)',
-              borderRadius: '20px',
-              padding: '32px',
-              marginBottom: '32px',
-              boxShadow: '0 12px 40px rgba(0, 0, 0, 0.4)',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
-              <div>
-                <span
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 800,
-                    padding: '3px 10px',
-                    borderRadius: '12px',
-                    background: 'rgba(0, 240, 255, 0.15)',
-                    color: '#00F0FF',
-                    border: '1px solid rgba(0, 240, 255, 0.3)',
-                    letterSpacing: '0.5px',
-                  }}
-                >
-                  {t.rewards.levelTrader}
-                </span>
-                <h3 style={{ margin: '8px 0 0', fontSize: '24px', fontWeight: 900, color: '#FFFFFF' }}>
-                  {t.rewards.currentTier}
-                </h3>
-              </div>
+          {(() => {
+            const userXp = isAuthenticated && typeof user?.xp === 'number' ? user.xp : (liveAuditStats?.xp ?? 0);
+            const gamification = calculateTraderGamification(userXp);
 
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '12px', color: '#848E9C' }}>{t.rewards.currentXp}</div>
-                <div style={{ fontSize: '24px', fontWeight: 900, color: '#00F0FF' }}>
-                  {(liveAuditStats?.xp ?? 13275).toLocaleString()}{' '}
-                  <span style={{ fontSize: '14px', color: '#848E9C' }}>
-                    / {(((liveAuditStats?.level ?? 14) + 1) * 1000).toLocaleString()} XP
-                  </span>
-                </div>
-              </div>
-            </div>
+            // Read claimed streak days from localStorage (cleanly starting at Day 1 for new users)
+            let claimedStreakDays: number[] = [];
+            try {
+              const saved = localStorage.getItem('traderrank_claimed_streak_days_v1');
+              if (saved) claimedStreakDays = JSON.parse(saved);
+            } catch {
+              // ignore
+            }
+            const streakDays = getStreakStatus(claimedStreakDays);
 
-            {/* Daily Streak Days Bar */}
-            <div className="landing-streak-grid">
-              {[
-                { dayNum: 1, xp: '+50 XP', claimed: true },
-                { dayNum: 2, xp: '+75 XP', claimed: true },
-                { dayNum: 3, xp: '+100 XP', claimed: true },
-                { dayNum: 4, xp: '+150 XP', claimed: true },
-                { dayNum: 5, xp: '+200 XP', current: true },
-                { dayNum: 6, xp: '+300 XP', locked: true },
-                { dayNum: 7, xp: '+500 XP', mystery: true },
-              ].map((s, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    padding: '12px 8px',
-                    borderRadius: '10px',
-                    textAlign: 'center',
-                    background: s.claimed
-                      ? 'rgba(0, 218, 198, 0.1)'
-                      : s.current
-                      ? 'linear-gradient(135deg, rgba(240, 185, 11, 0.25), rgba(15, 23, 42, 0.8))'
-                      : 'rgba(255, 255, 255, 0.02)',
-                    border: s.claimed
-                      ? '1px solid rgba(0, 218, 198, 0.3)'
-                      : s.current
-                      ? '1px solid #F0B90B'
-                      : '1px solid rgba(255, 255, 255, 0.06)',
-                  }}
-                >
-                  <div style={{ fontSize: '10px', color: '#848E9C' }}>
-                    {language === 'ja' ? `${s.dayNum}日目` : language === 'zh' ? `第 ${s.dayNum} 天` : `Day ${s.dayNum}`}
+            return (
+              <div
+                style={{
+                  background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(14, 20, 31, 0.95) 100%)',
+                  border: '1px solid rgba(0, 240, 255, 0.25)',
+                  borderRadius: '20px',
+                  padding: '32px',
+                  marginBottom: '32px',
+                  boxShadow: '0 12px 40px rgba(0, 0, 0, 0.4)',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
+                  <div>
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        padding: '3px 10px',
+                        borderRadius: '12px',
+                        background: 'rgba(0, 240, 255, 0.15)',
+                        color: gamification.color,
+                        border: `1px solid ${gamification.color}66`,
+                        letterSpacing: '0.5px',
+                      }}
+                    >
+                      {language === 'ja'
+                        ? `LEVEL ${gamification.level} トレーダー`
+                        : language === 'zh'
+                        ? `LEVEL ${gamification.level} 交易员`
+                        : `LEVEL ${gamification.level} TRADER`}
+                    </span>
+                    <h3 style={{ margin: '8px 0 0', fontSize: '24px', fontWeight: 900, color: '#FFFFFF' }}>
+                      {t.rewards[gamification.tierKey]}
+                    </h3>
                   </div>
-                  <div style={{ fontSize: '13px', fontWeight: 800, color: s.claimed ? '#00DAC6' : s.current ? '#F0B90B' : '#848E9C', margin: '4px 0' }}>
-                    {s.xp}
-                  </div>
-                  <div style={{ fontSize: '10px' }}>
-                    {s.claimed ? (
-                      <span style={{ color: '#00DAC6', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}><Check size={10} color="#00DAC6" /> {t.rewards.claimed}</span>
-                    ) : s.current ? (
-                      <span style={{ color: '#F0B90B', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><span style={{ width: 5, height: 5, borderRadius: '50%', background: '#F0B90B', display: 'inline-block' }} /> {t.rewards.active}</span>
-                    ) : (
-                      <span style={{ color: '#848E9C', display: 'inline-flex', alignItems: 'center', gap: '3px' }}><Lock size={10} color="#848E9C" /> {t.rewards.locked}</span>
-                    )}
+
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '12px', color: '#848E9C' }}>{t.rewards.currentXp}</div>
+                    <div style={{ fontSize: '24px', fontWeight: 900, color: gamification.color }}>
+                      {gamification.currentXp.toLocaleString()}{' '}
+                      <span style={{ fontSize: '14px', color: '#848E9C' }}>
+                        / {gamification.nextTierXp.toLocaleString()} XP
+                      </span>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
+
+                {/* Daily Streak Days Bar */}
+                <div className="landing-streak-grid">
+                  {streakDays.map((s, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          openAuthModal('register');
+                        } else {
+                          onEnterApp('rewards');
+                        }
+                      }}
+                      style={{
+                        padding: '12px 8px',
+                        borderRadius: '10px',
+                        textAlign: 'center',
+                        cursor: 'pointer',
+                        background: s.claimed
+                          ? 'rgba(0, 218, 198, 0.1)'
+                          : s.current
+                          ? 'linear-gradient(135deg, rgba(240, 185, 11, 0.25), rgba(15, 23, 42, 0.8))'
+                          : 'rgba(255, 255, 255, 0.02)',
+                        border: s.claimed
+                          ? '1px solid rgba(0, 218, 198, 0.3)'
+                          : s.current
+                          ? '1px solid #F0B90B'
+                          : '1px solid rgba(255, 255, 255, 0.06)',
+                        transition: 'transform 0.15s ease',
+                      }}
+                    >
+                      <div style={{ fontSize: '10px', color: '#848E9C' }}>
+                        {language === 'ja' ? `${s.dayNum}日目` : language === 'zh' ? `第 ${s.dayNum} 天` : `Day ${s.dayNum}`}
+                      </div>
+                      <div style={{ fontSize: '13px', fontWeight: 800, color: s.claimed ? '#00DAC6' : s.current ? '#F0B90B' : '#848E9C', margin: '4px 0' }}>
+                        {s.xpText}
+                      </div>
+                      <div style={{ fontSize: '10px' }}>
+                        {s.claimed ? (
+                          <span style={{ color: '#00DAC6', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}><Check size={10} color="#00DAC6" /> {t.rewards.claimed}</span>
+                        ) : s.current ? (
+                          <span style={{ color: '#F0B90B', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><span style={{ width: 5, height: 5, borderRadius: '50%', background: '#F0B90B', display: 'inline-block' }} /> {t.rewards.active}</span>
+                        ) : (
+                          <span style={{ color: '#848E9C', display: 'inline-flex', alignItems: 'center', gap: '3px' }}><Lock size={10} color="#848E9C" /> {t.rewards.locked}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Honor Badges 4-Column Showcase */}
           <div className="landing-badges-grid">

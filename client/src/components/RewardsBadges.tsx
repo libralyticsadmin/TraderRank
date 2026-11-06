@@ -14,6 +14,13 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext.tsx';
+import { useAuth } from '../context/AuthContext.tsx';
+import {
+  calculateTraderGamification,
+  getStreakStatus,
+  GAMIFICATION_TIERS,
+  XP_RULES,
+} from '../../../shared/src/gamification.ts';
 
 export interface HonorBadge {
   id: string;
@@ -30,13 +37,29 @@ export interface HonorBadge {
 
 export const RewardsBadges: React.FC = () => {
   const { t, language } = useTranslation();
+  const { user, isAuthenticated, updateProfile } = useAuth();
 
-  const [currentXp, setCurrentXp] = useState<number>(13275);
-  const [streakClaimed, setStreakClaimed] = useState<boolean>(false);
-  const [tradeCount, setTradeCount] = useState<number>(531);
-  const nextLevelXp = 15000;
-  const prevLevelXp = 10000;
-  const progressPct = Math.min(100, Math.max(0, Math.round(((currentXp - prevLevelXp) / (nextLevelXp - prevLevelXp)) * 100)));
+  // Streak state stored in localStorage per user/browser (starts clean at Day 1)
+  const [claimedStreakDays, setClaimedStreakDays] = useState<number[]>(() => {
+    try {
+      const saved = localStorage.getItem('traderrank_claimed_streak_days_v1');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // ignore
+    }
+    return [];
+  });
+
+  const [tradeCount, setTradeCount] = useState<number>(0);
+  const [currentXp, setCurrentXp] = useState<number>(() => {
+    if (isAuthenticated && typeof user?.xp === 'number') {
+      return user.xp;
+    }
+    return 0;
+  });
+
+  const streakDays = getStreakStatus(claimedStreakDays);
+  const gamification = calculateTraderGamification(currentXp);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [selectedBadge, setSelectedBadge] = useState<HonorBadge | null>(null);
@@ -54,8 +77,8 @@ export const RewardsBadges: React.FC = () => {
             const trades = await tradesRes.json();
             if (Array.isArray(trades) && trades.length > 0 && isMounted) {
               setTradeCount(trades.length);
-              const computedXp = trades.length * 25;
-              setCurrentXp(computedXp);
+              const computedXp = trades.length * XP_RULES.XP_PER_TRADE;
+              setCurrentXp(prev => Math.max(prev, computedXp));
             }
           }
         } catch (e) {
@@ -82,16 +105,6 @@ export const RewardsBadges: React.FC = () => {
     if (language === 'zh') return `第 ${dayNum} 天`;
     return `Day ${dayNum}`;
   };
-
-  const streakDays = [
-    { dayNum: 1, xp: 50, claimed: true },
-    { dayNum: 2, xp: 75, claimed: true },
-    { dayNum: 3, xp: 100, claimed: true },
-    { dayNum: 4, xp: 150, claimed: true },
-    { dayNum: 5, xp: 200, claimed: streakClaimed, current: !streakClaimed },
-    { dayNum: 6, xp: 300, claimed: false },
-    { dayNum: 7, xp: 500, claimed: false, bonus: t.rewards.mysteryBadge },
-  ];
 
   const badges: HonorBadge[] = [
     {
@@ -167,19 +180,33 @@ export const RewardsBadges: React.FC = () => {
   ];
 
   const handleClaimStreak = () => {
-    setStreakClaimed(true);
-    setCurrentXp(prev => prev + 200);
-    setToastMessage(t.rewards.toastClaimed);
+    const activeDay = streakDays.find(s => s.current);
+    if (!activeDay) return;
+
+    const nextClaimed = [...claimedStreakDays, activeDay.dayNum];
+    setClaimedStreakDays(nextClaimed);
+    try {
+      localStorage.setItem('traderrank_claimed_streak_days_v1', JSON.stringify(nextClaimed));
+    } catch {
+      // ignore
+    }
+
+    const xpEarned = activeDay.xpAmount;
+    const newXp = currentXp + xpEarned;
+    setCurrentXp(newXp);
+    if (user) {
+      updateProfile({ xp: newXp });
+    }
+
+    const msg = language === 'ja'
+      ? `${activeDay.dayNum}日目のストリークを獲得！ +${xpEarned} XP 追加`
+      : language === 'zh'
+      ? `第 ${activeDay.dayNum} 天实盘打卡成功！已领取 +${xpEarned} XP`
+      : `Day ${activeDay.dayNum} Streak Claimed! +${xpEarned} XP Added.`;
+
+    setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4000);
   };
-
-  const tiers = [
-    { level: 1, name: t.rewards.tierNovice, minXp: 0, color: '#848E9C' },
-    { level: 2, name: t.rewards.tierProSwing, minXp: 1000, color: '#00DAC6' },
-    { level: 3, name: t.rewards.tierMarketVeteran, minXp: 2500, color: '#00F0FF', active: true },
-    { level: 4, name: t.rewards.tierApexPredator, minXp: 5000, color: '#F0B90B' },
-    { level: 5, name: t.rewards.tierHallOfFame, minXp: 10000, color: '#F6465D' },
-  ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -244,27 +271,31 @@ export const RewardsBadges: React.FC = () => {
                   padding: '3px 10px',
                   borderRadius: '12px',
                   background: 'rgba(0, 240, 255, 0.2)',
-                  color: '#00F0FF',
-                  border: '1px solid rgba(0, 240, 255, 0.4)',
+                  color: gamification.color,
+                  border: `1px solid ${gamification.color}66`,
                   letterSpacing: '0.5px',
                 }}
               >
-                {t.rewards.levelTrader}
+                {language === 'ja'
+                  ? `LEVEL ${gamification.level} トレーダー`
+                  : language === 'zh'
+                  ? `LEVEL ${gamification.level} 交易员`
+                  : `LEVEL ${gamification.level} TRADER`}
               </span>
               <span style={{ fontSize: '13px', color: '#848E9C' }}>
                 TraderRank Global Rank {tradeCount > 0 && `• ${tradeCount} Verified Trades`}
               </span>
             </div>
             <h2 style={{ margin: 0, fontSize: '28px', fontWeight: 900, color: '#FFFFFF', letterSpacing: '-0.02em' }}>
-              {t.rewards.currentTier}
+              {t.rewards[gamification.tierKey]}
             </h2>
           </div>
 
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '12px', color: '#848E9C' }}>{t.rewards.currentXp}</div>
-            <div style={{ fontSize: '26px', fontWeight: 900, color: '#00F0FF' }}>
-              {currentXp.toLocaleString()}{' '}
-              <span style={{ fontSize: '14px', color: '#848E9C' }}>/ {nextLevelXp.toLocaleString()} XP</span>
+            <div style={{ fontSize: '26px', fontWeight: 900, color: gamification.color }}>
+              {gamification.currentXp.toLocaleString()}{' '}
+              <span style={{ fontSize: '14px', color: '#848E9C' }}>/ {gamification.nextTierXp.toLocaleString()} XP</span>
             </div>
           </div>
         </div>
@@ -281,10 +312,12 @@ export const RewardsBadges: React.FC = () => {
             }}
           >
             <span>
-              {t.rewards.progressTo}
+              {gamification.isMaxTier
+                ? (language === 'ja' ? '最高ランク到達: 殿堂入りマスター' : language === 'zh' ? '已达最高段位: 名人堂大师' : 'Max Tier: Hall of Fame Legend')
+                : (language === 'ja' ? `レベル ${gamification.level + 1} への進捗: ${t.rewards[gamification.nextTierKey]}` : language === 'zh' ? `升至等级 ${gamification.level + 1} 进度: ${t.rewards[gamification.nextTierKey]}` : `Progress to Level ${gamification.level + 1}: ${t.rewards[gamification.nextTierKey]}`)}
             </span>
             <span>
-              <strong style={{ color: '#00F0FF' }}>{progressPct}%</strong> ({nextLevelXp - currentXp} XP remaining)
+              <strong style={{ color: gamification.color }}>{gamification.progressPct}%</strong> {gamification.isMaxTier ? '(Master Crest)' : `(${gamification.xpRemaining.toLocaleString()} XP remaining)`}
             </span>
           </div>
           <div
@@ -298,7 +331,7 @@ export const RewardsBadges: React.FC = () => {
           >
             <div
               style={{
-                width: `${progressPct}%`,
+                width: `${gamification.progressPct}%`,
                 height: '100%',
                 background: 'linear-gradient(90deg, #00DAC6 0%, #00F0FF 100%)',
                 borderRadius: '5px',
@@ -320,28 +353,32 @@ export const RewardsBadges: React.FC = () => {
             borderTop: '1px solid rgba(255, 255, 255, 0.08)',
           }}
         >
-          {tiers.map(tItem => (
-            <div
-              key={tItem.level}
-              style={{
-                padding: '8px 12px',
-                borderRadius: '8px',
-                background: tItem.active ? 'rgba(0, 240, 255, 0.15)' : 'rgba(255, 255, 255, 0.02)',
-                border: tItem.active ? '1px solid #00F0FF' : '1px solid rgba(255, 255, 255, 0.06)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}
-            >
-              <Award size={14} color={tItem.color} />
-              <div>
-                <div style={{ fontSize: '10px', color: '#848E9C' }}>LV. {tItem.level}</div>
-                <div style={{ fontSize: '11px', fontWeight: 800, color: tItem.active ? '#00F0FF' : '#FFFFFF' }}>
-                  {tItem.name}
+          {GAMIFICATION_TIERS.map(tItem => {
+            const isActive = tItem.level === gamification.level;
+            const isUnlocked = gamification.level >= tItem.level;
+            return (
+              <div
+                key={tItem.level}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  background: isActive ? 'rgba(0, 240, 255, 0.15)' : 'rgba(255, 255, 255, 0.02)',
+                  border: isActive ? `1px solid ${tItem.color}` : '1px solid rgba(255, 255, 255, 0.06)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                <Award size={14} color={isActive || isUnlocked ? tItem.color : '#848E9C'} />
+                <div>
+                  <div style={{ fontSize: '10px', color: '#848E9C' }}>LV. {tItem.level}</div>
+                  <div style={{ fontSize: '11px', fontWeight: 800, color: isActive ? tItem.color : isUnlocked ? '#FFFFFF' : '#848E9C' }}>
+                    {t.rewards[tItem.key]}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -363,7 +400,9 @@ export const RewardsBadges: React.FC = () => {
             </h3>
           </div>
           <span style={{ fontSize: '12px', color: '#00DAC6', fontWeight: 700 }}>
-            {t.rewards.streakActive}
+            {claimedStreakDays.length === 0
+              ? (language === 'ja' ? '1日目 獲得待機中' : language === 'zh' ? '第 1 天待打卡' : 'Day 1 Ready to Claim')
+              : (language === 'ja' ? `${claimedStreakDays.length}日連続アクティブ継続中` : language === 'zh' ? `已连续打卡 ${claimedStreakDays.length} 天` : `${claimedStreakDays.length}-Day Active Streak`)}
           </span>
         </div>
 
@@ -396,7 +435,7 @@ export const RewardsBadges: React.FC = () => {
                   color: s.claimed ? '#00DAC6' : s.current ? '#F0B90B' : '#848E9C',
                 }}
               >
-                +{s.xp} XP
+                {s.xpText}
               </div>
               <div style={{ fontSize: '10px', marginTop: '8px' }}>
                 {s.claimed ? (
