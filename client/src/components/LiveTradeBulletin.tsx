@@ -197,9 +197,18 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                     pips,
                     lotSize,
                     profitUsd: profit,
-                    timeAgo: tr.closeTime ? new Date(tr.closeTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Live',
-                    tagKey: pips > 20 ? 'scalpWin' : 'takeProfit',
+                    timeAgo: tr.closeTime
+                      ? new Date(tr.closeTime).toLocaleString([], {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
+                      : 'Live',
+                    tagKey: pips >= 30 ? 'goldRush' : pips > 0 ? 'scalpWin' : undefined,
+                    tag: pips <= 0 ? 'Verified Execution' : undefined,
                     isHot: pips >= 25,
+                    rank: 1,
                   });
                 }
               }
@@ -210,8 +219,14 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
         }
 
         if (isMounted && collected.length > 0) {
-          const uniqueReal = collected.slice(0, 8);
-          setTrades([...uniqueReal, ...DEFAULT_SPOTLIGHT_TRADES]);
+          // Prioritize verified winning trades first in spotlight, followed by latest executions
+          const winningReal = collected.filter(item => item.pips > 0).slice(0, 8);
+          const recentReal = collected.slice(0, 6);
+          const mergedMap = new Map<string, BulletinTradeItem>();
+          for (const item of [...winningReal, ...recentReal]) {
+            if (!mergedMap.has(item.id)) mergedMap.set(item.id, item);
+          }
+          setTrades(Array.from(mergedMap.values()).slice(0, 10));
         }
       } catch {
         // ignore
@@ -385,7 +400,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                 >
                   <span>{item.trader.split('_')[0]}</span>
                   <span style={{ color: item.pips >= 0 ? '#10b981' : '#ef4444', fontFamily: 'monospace' }}>
-                    +{item.pips}p
+                    {item.pips >= 0 ? `+${item.pips}p` : `${item.pips}p`}
                   </span>
                 </button>
               );

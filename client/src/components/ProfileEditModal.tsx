@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { X, Check, Save, User, ShieldCheck, Camera, Upload, Instagram, Trash2 } from 'lucide-react';
 import { useAuth, UserProfile } from '../context/AuthContext.tsx';
 import { Broker } from '../../../shared/src/types.ts';
-import { TraderAvatar } from './TraderAvatar.tsx';
+import { TraderAvatar, INSTITUTIONAL_ANIMAL_PRESETS } from './TraderAvatar.tsx';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { LanguageSelector } from './LanguageSelector.tsx';
 
@@ -16,17 +16,6 @@ const AVATAR_SYMBOLS = [
   { id: 'EURUSD', label: 'EUR / USD' },
   { id: 'XAUUSD', label: 'Gold (XAU)' },
   { id: 'BTCUSD', label: 'Bitcoin (BTC)' },
-];
-
-const PRESET_PORTRAITS = [
-  { id: 'p1', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80', label: 'Alpha' },
-  { id: 'p2', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80', label: 'Gold Pro' },
-  { id: 'p3', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80', label: 'Quant' },
-  { id: 'p4', url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80', label: 'Scalper' },
-  { id: 'p5', url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&auto=format&fit=crop&q=80', label: 'Tokyo Rider' },
-  { id: 'p6', url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop&q=80', label: 'Apex' },
-  { id: 'p7', url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=200&auto=format&fit=crop&q=80', label: 'Crypto FX' },
-  { id: 'p8', url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&auto=format&fit=crop&q=80', label: 'Elite' },
 ];
 
 export const ProfileEditModal: React.FC = () => {
@@ -65,7 +54,11 @@ export const ProfileEditModal: React.FC = () => {
       setDiscordHandle(user.discordHandle || '');
       setTwitterHandle(user.twitterHandle || '');
       setInstagramHandle(user.instagramHandle || '');
-      setCustomUrlInput(user.avatarUrl || '');
+      setCustomUrlInput(
+        user.avatarUrl && !user.avatarUrl.startsWith('data:image/')
+          ? user.avatarUrl
+          : ''
+      );
       setUploadError(null);
     }
   }, [user, isProfileModalOpen]);
@@ -413,13 +406,24 @@ export const ProfileEditModal: React.FC = () => {
               </div>
             )}
 
-            {/* Quick Preset Portraits Grid */}
+            {/* Quick Preset Animal Crests Grid */}
             <div>
-              <span style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Select from Institutional Pro Presets
-              </span>
-              <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '6px' }}>
-                {PRESET_PORTRAITS.map((p) => {
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontSize: '10px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                  Select from Institutional Pro Presets (Animal Crests)
+                </span>
+                <span style={{ fontSize: '10px', color: '#0abab5', fontWeight: 700 }}>
+                  12 Unique Editions
+                </span>
+              </div>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(92px, 1fr))',
+                  gap: '8px',
+                }}
+              >
+                {INSTITUTIONAL_ANIMAL_PRESETS.map((p) => {
                   const isSelected = avatarUrl === p.url;
                   return (
                     <button
@@ -428,25 +432,86 @@ export const ProfileEditModal: React.FC = () => {
                       onClick={() => setAvatarUrl(p.url)}
                       style={{
                         position: 'relative',
-                        width: '46px',
-                        height: '46px',
-                        borderRadius: '10px',
-                        overflow: 'hidden',
-                        padding: 0,
-                        border: isSelected ? '2px solid #00F0FF' : '1px solid rgba(255, 255, 255, 0.12)',
-                        boxShadow: isSelected ? '0 0 12px rgba(0, 240, 255, 0.5)' : 'none',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '5px',
+                        padding: '8px 6px',
+                        borderRadius: '12px',
+                        background: isSelected
+                          ? `linear-gradient(160deg, ${p.accentColor}28 0%, rgba(9, 14, 24, 0.95) 100%)`
+                          : 'rgba(255, 255, 255, 0.03)',
+                        border: isSelected
+                          ? `1.5px solid ${p.accentColor}`
+                          : `1px solid ${p.accentColor}33`,
+                        boxShadow: isSelected
+                          ? `0 0 16px ${p.accentColor}4d, inset 0 0 10px ${p.accentColor}22`
+                          : 'none',
                         cursor: 'pointer',
-                        flexShrink: 0,
-                        transition: 'all 0.15s ease',
+                        transition: 'all 0.18s ease',
                       }}
-                      title={p.label}
+                      title={`${p.label} — ${p.archetype}`}
                     >
-                      <img src={p.url} alt={p.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      {isSelected && (
-                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0, 240, 255, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Check size={16} color="#ffffff" />
-                        </div>
-                      )}
+                      <div
+                        style={{
+                          position: 'relative',
+                          width: '46px',
+                          height: '46px',
+                          borderRadius: '11px',
+                          overflow: 'hidden',
+                          border: `1.5px solid ${p.accentColor}88`,
+                          boxShadow: `0 2px 10px ${p.accentColor}33`,
+                        }}
+                      >
+                        <img
+                          src={p.url}
+                          alt={p.label}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        />
+                        {isSelected && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              top: '3px',
+                              right: '3px',
+                              width: '15px',
+                              height: '15px',
+                              borderRadius: '50%',
+                              background: p.accentColor,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              boxShadow: '0 1px 4px rgba(0,0,0,0.7)',
+                            }}
+                          >
+                            <Check size={10} color="#060d11" strokeWidth={3.5} />
+                          </div>
+                        )}
+                      </div>
+                      <span
+                        style={{
+                          fontSize: '10px',
+                          fontWeight: 800,
+                          color: isSelected ? '#ffffff' : '#cbd5e1',
+                          lineHeight: 1.1,
+                          textAlign: 'center',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {p.label}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '8.5px',
+                          fontWeight: 700,
+                          color: p.accentColor,
+                          lineHeight: 1,
+                          textAlign: 'center',
+                          opacity: 0.9,
+                        }}
+                      >
+                        {p.archetype.split(' ')[0]}
+                      </span>
                     </button>
                   );
                 })}

@@ -205,7 +205,11 @@ export const App: React.FC = () => {
 
     // Setup live WebSocket stream
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    const wsHost =
+      window.location.host.includes('localhost') || window.location.host.includes('127.0.0.1')
+        ? window.location.host
+        : 'traderrank.onrender.com';
+    const wsUrl = `${protocol}//${wsHost}/ws`;
     const socket = new WebSocket(wsUrl);
 
     socket.onmessage = event => {
