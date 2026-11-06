@@ -511,7 +511,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.winningPips}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.netPips}</div>
                     <div style={{ fontSize: '16px', fontWeight: 800, color: trader.winningPips >= 0 ? 'var(--accent-green)' : '#ef4444' }}>
                       {trader.winningPips >= 0 ? `+${trader.winningPips.toFixed(1)}` : trader.winningPips.toFixed(1)}
                     </div>
