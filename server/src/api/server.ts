@@ -447,6 +447,9 @@ export function createServer() {
       return res.status(400).json({ success: false, error: 'Profile ID required' });
     }
     userProfiles.set(profile.id, profile);
+    if (profile.username) {
+      connector.updateUserAccountsName(profile.id, profile.username);
+    }
     return res.json({ success: true, user: profile });
   });
 
@@ -510,20 +513,47 @@ export function createServer() {
     }
   });
 
-  // 4. List Accounts
+  // 4. List Accounts (Multi-Tenant Isolated)
   app.get('/api/accounts', async (req: Request, res: Response) => {
     const userId = req.query.userId as string | undefined;
-    let accounts = connector.getAccounts(userId);
-    if (accounts.length === 0) {
-      accounts = await connector.syncCloudProvisionedAccounts();
+    const scope = req.query.scope as string | undefined;
+
+    // 1. Authenticated user isolation: strictly return accounts belonging to this user
+    if (userId && userId !== 'none') {
+      const accounts = connector.getAccounts(userId);
+      return res.json(accounts.map(maskAccountSecrets));
     }
-    res.json(accounts.map(maskAccountSecrets));
+
+    // 2. Anonymous public feed aggregates: mask account numbers and server balances
+    if (scope === 'public') {
+      const allAccounts = connector.getAccounts();
+      return res.json(
+        allAccounts.map(acc => ({
+          id: acc.id,
+          userId: acc.userId,
+          broker: acc.broker,
+          platform: acc.platform,
+          connectionStatus: acc.connectionStatus,
+        }))
+      );
+    }
+
+    // 3. Unauthenticated/unscoped: return empty to prevent data exposure across players
+    return res.json([]);
   });
 
   // 4a. Disconnect / Remove Account
   app.delete('/api/accounts/:id', async (req: Request, res: Response) => {
     try {
       const accountId = req.params.id;
+      const userId = req.query.userId as string | undefined;
+      const account = connector.getAccount(accountId);
+      if (!account) {
+        return res.status(404).json({ success: false, error: 'Account not found' });
+      }
+      if (userId && account.userId && account.userId !== userId && !account.userId.includes(userId)) {
+        return res.status(403).json({ success: false, error: 'Forbidden: You do not have permission to disconnect this account' });
+      }
       const purge = req.query.purge !== 'false';
       const success = await connector.disconnectAccount(accountId, purge);
       if (!success) {
@@ -723,15 +753,6 @@ export function createServer() {
       console.warn('[Cashflows API] Error fetching monthly cashflows:', req.params.id, err);
       res.json({});
     }
-  });
-
-  // 7. Disconnect Account
-  app.delete('/api/accounts/:id', async (req: Request, res: Response) => {
-    const success = await connector.disconnectAccount(req.params.id);
-    if (!success) {
-      return res.status(404).json({ success: false, error: 'Account not found' });
-    }
-    return res.json({ success: true, message: 'Account disconnected and credentials purged' });
   });
 
   // 8. Live Leaderboard

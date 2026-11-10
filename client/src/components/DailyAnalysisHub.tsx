@@ -11,6 +11,7 @@ import {
   SessionFocus,
 } from '../../../shared/src/types.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
+import { useAuth } from '../context/AuthContext.tsx';
 import {
   Calendar,
   Sparkles,
@@ -23,20 +24,29 @@ import {
   Flame,
   AlertOctagon,
   ArrowRightLeft,
+  Lock,
+  Users,
 } from 'lucide-react';
 
 interface DailyAnalysisHubProps {
   subscription: SubscriptionStatus;
   onOpenSubscriptionModal?: () => void;
+  onOpenAffiliateModal?: () => void;
 }
 
 export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
   subscription,
+  onOpenSubscriptionModal,
+  onOpenAffiliateModal,
 }) => {
   const { t } = useTranslation();
+  const { referralCount } = useAuth();
   const [report, setReport] = useState<DailyIntelReport | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedAsset, setSelectedAsset] = useState<string>('XAUUSD');
+
+  // Gamification: Custom Strategic Timeframe Generator unlocks starting from 3 referred friends (or active Pro)
+  const isCustomGeneratorUnlocked = subscription.isActive || referralCount >= 3;
 
   // Custom Strategy Generator State
   const [customSymbol, setCustomSymbol] = useState<string>('XAUUSD');
@@ -74,6 +84,15 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
   const handleGenerateCustomStrategy = async (e?: React.FormEvent, overrideSymbol?: string) => {
     if (e) e.preventDefault();
 
+    if (!isCustomGeneratorUnlocked) {
+      if (onOpenAffiliateModal) {
+        onOpenAffiliateModal();
+      } else if (onOpenSubscriptionModal) {
+        onOpenSubscriptionModal();
+      }
+      return;
+    }
+
     const targetSymbol = overrideSymbol || customSymbol;
     if (overrideSymbol) {
       setCustomSymbol(overrideSymbol);
@@ -108,12 +127,12 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
     }
   };
 
-  // Initial custom strategy generation for active subscribers
+  // Initial custom strategy generation for active subscribers or unlocked users
   useEffect(() => {
-    if (subscription.isActive && !generatedPlan) {
+    if (isCustomGeneratorUnlocked && !generatedPlan) {
       handleGenerateCustomStrategy();
     }
-  }, [subscription.isActive]);
+  }, [isCustomGeneratorUnlocked]);
 
   const activeAssetData = report?.assetAnalyses?.find(a => a.symbol === selectedAsset) || report?.assetAnalyses?.[0];
 
@@ -164,24 +183,75 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 16px',
-              borderRadius: '12px',
-              background: 'rgba(10, 186, 181, 0.15)',
-              border: '1px solid var(--accent-cyan)',
-              color: 'var(--accent-cyan)',
-              fontSize: '13px',
-              fontWeight: 700,
-            }}
-          >
-            <Crown size={16} color="#ffd700" />
-            <span>{t.intel.proUnlocked}</span>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {isCustomGeneratorUnlocked ? (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 16px',
+                borderRadius: '12px',
+                background: 'rgba(10, 186, 181, 0.15)',
+                border: '1px solid var(--accent-cyan)',
+                color: 'var(--accent-cyan)',
+                fontSize: '13px',
+                fontWeight: 700,
+              }}
+            >
+              <Crown size={16} color="#ffd700" />
+              <span>{subscription.isActive ? t.intel.proUnlocked : `SQUAD LEADER UNLOCKED (${referralCount} FRIENDS)`}</span>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {onOpenAffiliateModal && (
+                <button
+                  type="button"
+                  onClick={onOpenAffiliateModal}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 14px',
+                    borderRadius: '10px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: 'var(--accent-cyan)',
+                    border: '1px solid rgba(10, 186, 181, 0.4)',
+                    background: 'rgba(10, 186, 181, 0.12)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <Users size={14} />
+                  <span>Invite 3 Friends ({referralCount}/3)</span>
+                </button>
+              )}
+              {onOpenAffiliateModal && (
+                <button
+                  type="button"
+                  onClick={onOpenAffiliateModal}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 14px',
+                    borderRadius: '10px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    background: 'linear-gradient(90deg, #0ABAB5 0%, #81d8d0 100%)',
+                    color: '#081014',
+                    border: 'none',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 12px rgba(10, 186, 181, 0.3)',
+                  }}
+                >
+                  <Users size={14} />
+                  <span>Refer Friends to Unlock Free VIP</span>
+                </button>
+              )}
+            </div>
+          )}
 
           <button
             onClick={fetchDailyReport}
@@ -276,27 +346,76 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
             </p>
           </div>
 
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '4px 10px',
-              borderRadius: '8px',
-              background: 'rgba(10, 186, 181, 0.1)',
-              border: '1px solid rgba(10, 186, 181, 0.2)',
-              fontSize: '11px',
-              color: 'var(--accent-cyan)',
-              fontWeight: 600,
-            }}
-          >
-            <Sparkles size={13} />
-            <span>{t.intel.confluenceEngineBadge}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            {isCustomGeneratorUnlocked ? (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '4px 12px',
+                  borderRadius: '8px',
+                  background: 'rgba(16, 185, 129, 0.15)',
+                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                  fontSize: '11px',
+                  color: 'var(--accent-green)',
+                  fontWeight: 800,
+                }}
+              >
+                <CheckCircle2 size={13} color="var(--accent-green)" />
+                <span>{subscription.isActive ? 'PRO UNLOCKED' : `SQUAD LEADER UNLOCKED (${referralCount} FRIENDS)`}</span>
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '4px 12px',
+                  borderRadius: '8px',
+                  background: 'rgba(245, 158, 11, 0.12)',
+                  border: '1px solid rgba(245, 158, 11, 0.35)',
+                  fontSize: '11px',
+                  color: '#f59e0b',
+                  fontWeight: 800,
+                }}
+              >
+                <Lock size={12} color="#f59e0b" />
+                <span>REFER 3 FRIENDS TO UNLOCK ({referralCount}/3)</span>
+              </div>
+            )}
+
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '4px 10px',
+                borderRadius: '8px',
+                background: 'rgba(10, 186, 181, 0.1)',
+                border: '1px solid rgba(10, 186, 181, 0.2)',
+                fontSize: '11px',
+                color: 'var(--accent-cyan)',
+                fontWeight: 600,
+              }}
+            >
+              <Sparkles size={13} />
+              <span>{t.intel.confluenceEngineBadge}</span>
+            </div>
           </div>
         </div>
 
         {/* Form Inputs Grid */}
-        <form onSubmit={handleGenerateCustomStrategy}>
+        <form
+          onSubmit={handleGenerateCustomStrategy}
+          style={{
+            filter: !isCustomGeneratorUnlocked ? 'blur(2.5px)' : 'none',
+            opacity: !isCustomGeneratorUnlocked ? 0.35 : 1,
+            pointerEvents: !isCustomGeneratorUnlocked ? 'none' : 'auto',
+            transition: 'all 0.3s ease',
+            userSelect: !isCustomGeneratorUnlocked ? 'none' : 'auto',
+          }}
+        >
           <div
             style={{
               display: 'grid',
@@ -513,8 +632,124 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
           </div>
         </form>
 
+        {/* Gamified Referral Unlock Overlay (Requires 3 friends or Pro subscription) */}
+        {!isCustomGeneratorUnlocked && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '90px',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'linear-gradient(180deg, rgba(13, 21, 24, 0.88) 0%, rgba(9, 15, 18, 0.97) 100%)',
+              backdropFilter: 'blur(8px)',
+              borderRadius: '0 0 16px 16px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '30px 20px',
+              textAlign: 'center',
+              zIndex: 10,
+              animation: 'fadeIn 0.2s ease-out',
+            }}
+          >
+            <div
+              style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                background: 'rgba(10, 186, 181, 0.15)',
+                border: '1.5px solid var(--accent-cyan)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--accent-cyan)',
+                marginBottom: '14px',
+                boxShadow: '0 0 25px rgba(10, 186, 181, 0.35)',
+              }}
+            >
+              <Lock size={26} />
+            </div>
+
+            <h4 style={{ fontSize: '20px', fontWeight: 800, color: '#fff', margin: '0 0 8px 0' }}>
+              Unlock Custom Strategic Timeframe Generator
+            </h4>
+            <p style={{ color: '#94a3b8', fontSize: '13px', maxWidth: '520px', margin: '0 0 18px 0', lineHeight: 1.5 }}>
+              Refer <strong style={{ color: 'var(--accent-cyan)' }}>3 friends</strong> to TradeRank to unlock full AI multi-timeframe trade setup generation with exact Entry, Invalidation Stop Loss, and Take Profit targets across all timeframes (1m, 5m, 15m, 1H, 4H, 1D, 1W).
+            </p>
+
+            {/* Referral Progress Bar (Target: 3 Friends) */}
+            <div
+              style={{
+                width: '100%',
+                maxWidth: '380px',
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '12px',
+                padding: '12px 16px',
+                marginBottom: '20px',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', fontSize: '12px' }}>
+                <span style={{ color: '#cbd5e1', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Users size={14} color="#0abab5" /> Referral Progress
+                </span>
+                <span style={{ color: 'var(--accent-cyan)', fontWeight: 800 }}>
+                  {referralCount} / 3 Friends
+                </span>
+              </div>
+
+              <div style={{ width: '100%', height: '8px', background: 'rgba(0,0,0,0.5)', borderRadius: '4px', overflow: 'hidden' }}>
+                <div
+                  style={{
+                    width: `${Math.min(100, Math.round((referralCount / 3) * 100))}%`,
+                    height: '100%',
+                    background: 'linear-gradient(90deg, #0ABAB5 0%, #00F0FF 100%)',
+                    borderRadius: '4px',
+                    transition: 'width 0.4s ease',
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '11px', color: '#848E9C' }}>
+                <span>{referralCount >= 3 ? 'Target Reached!' : `${3 - referralCount} more friend${3 - referralCount === 1 ? '' : 's'} to unlock`}</span>
+                <span>Squad Leader Tier</span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+              {onOpenAffiliateModal && (
+                <button
+                  type="button"
+                  onClick={onOpenAffiliateModal}
+                  style={{
+                    padding: '12px 24px',
+                    borderRadius: '10px',
+                    background: 'linear-gradient(90deg, #0ABAB5 0%, #81d8d0 100%)',
+                    border: 'none',
+                    color: '#081014',
+                    fontSize: '14px',
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 20px rgba(10, 186, 181, 0.4)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <Users size={16} />
+                  <span>Invite Friends to Unlock ({referralCount}/3)</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Output Tactical Trade Plan Card */}
-        {generatedPlan && subscription.isActive && (
+        {generatedPlan && isCustomGeneratorUnlocked && (
           <div
             style={{
               marginTop: '24px',

@@ -33,7 +33,6 @@ import { UserNavMenu } from './components/UserNavMenu.tsx';
 import {
   Plus,
   Shield,
-  Layers,
   BarChart3,
   BarChart2,
   Radio,
@@ -46,6 +45,7 @@ import {
   Crown,
   Zap,
   Cloud,
+  LayoutDashboard,
 } from 'lucide-react';
 
 interface MarketQuote {
@@ -66,7 +66,7 @@ interface MarketStatus {
 
 export const App: React.FC = () => {
   const { t } = useTranslation();
-  const { isAuthenticated, openAuthModal } = useAuth();
+  const { user, isAuthenticated, openAuthModal } = useAuth();
   const [currentView, setCurrentView] = useState<'landing' | 'app'>('landing');
   const [activeTab, setActiveTab] = useState<
     'overview' | 'daily-analysis' | 'charts' | 'ranking' | 'tournaments' | 'rewards' | 'community' | 'positions' | 'security'
@@ -128,16 +128,24 @@ export const App: React.FC = () => {
   // Active modal trader profile
   const [selectedTrader, setSelectedTrader] = useState<TraderProfileData | null>(null);
 
-  // Initial data fetch
-  const fetchAccounts = async () => {
+  // Isolated account fetch (Privacy & Security: only load current user's accounts)
+  const fetchAccounts = async (targetUser?: typeof user | null) => {
     try {
-      const res = await fetch('/api/accounts');
+      const activeUser = targetUser !== undefined ? targetUser : user;
+      if (!activeUser || !activeUser.id) {
+        setAccounts([]);
+        return;
+      }
+      const res = await fetch(`/api/accounts?userId=${encodeURIComponent(activeUser.id)}`);
       if (res.ok) {
         const data = await res.json();
-        setAccounts(data);
+        setAccounts(Array.isArray(data) ? data : []);
+      } else {
+        setAccounts([]);
       }
     } catch (err) {
       console.error('Failed to fetch accounts', err);
+      setAccounts([]);
     }
   };
 
@@ -227,13 +235,63 @@ export const App: React.FC = () => {
     const wsUrl = `${protocol}//${wsHost}/ws`;
     const socket = new WebSocket(wsUrl);
 
+    // 1-minute (60s) reload cadence for competitive leaderboard & Top 3 rankings
+    const LEADERBOARD_INTERVAL_MS = 60000;
+    let lastLbUpdateTime = 0;
+    let pendingLeaderboard: any = null;
+    let lbThrottleTimer: any = null;
+
+    const applyThrottledLeaderboard = (data: any) => {
+      const now = Date.now();
+      if (lastLbUpdateTime === 0 || now - lastLbUpdateTime >= LEADERBOARD_INTERVAL_MS) {
+        lastLbUpdateTime = now;
+        setLeaderboard(data);
+      } else {
+        pendingLeaderboard = data;
+        if (!lbThrottleTimer) {
+          lbThrottleTimer = setTimeout(() => {
+            if (pendingLeaderboard) {
+              setLeaderboard(pendingLeaderboard);
+              pendingLeaderboard = null;
+            }
+            lastLbUpdateTime = Date.now();
+            lbThrottleTimer = null;
+          }, LEADERBOARD_INTERVAL_MS - (now - lastLbUpdateTime));
+        }
+      }
+    };
+
+    let lastDailyUpdateTime = 0;
+    let pendingDaily: any = null;
+    let dailyThrottleTimer: any = null;
+
+    const applyThrottledDaily = (data: any) => {
+      const now = Date.now();
+      if (lastDailyUpdateTime === 0 || now - lastDailyUpdateTime >= LEADERBOARD_INTERVAL_MS) {
+        lastDailyUpdateTime = now;
+        setDailyResult(data);
+      } else {
+        pendingDaily = data;
+        if (!dailyThrottleTimer) {
+          dailyThrottleTimer = setTimeout(() => {
+            if (pendingDaily) {
+              setDailyResult(pendingDaily);
+              pendingDaily = null;
+            }
+            lastDailyUpdateTime = Date.now();
+            dailyThrottleTimer = null;
+          }, LEADERBOARD_INTERVAL_MS - (now - lastDailyUpdateTime));
+        }
+      }
+    };
+
     socket.onmessage = event => {
       try {
         const msg = JSON.parse(event.data);
         if (msg.type === 'LEADERBOARD_UPDATE') {
-          setLeaderboard(msg.data);
+          applyThrottledLeaderboard(msg.data);
         } else if (msg.type === 'DAILY_LEADERBOARD_UPDATE') {
-          setDailyResult(msg.data);
+          applyThrottledDaily(msg.data);
         } else if (msg.type === 'MARKET_QUOTES') {
           setMarketStatus(msg.data);
         } else if (msg.type === 'POSITIONS_UPDATE') {
@@ -247,20 +305,32 @@ export const App: React.FC = () => {
       }
     };
 
-    const fallbackTimer = setInterval(() => {
+    const leaderboardTimer = setInterval(() => {
       fetchLeaderboard();
+    }, LEADERBOARD_INTERVAL_MS);
+
+    const marketTimer = setInterval(() => {
       fetchMarketQuotes();
-    }, 5000);
+    }, 10000);
 
     return () => {
       socket.close();
-      clearInterval(fallbackTimer);
+      clearInterval(leaderboardTimer);
+      clearInterval(marketTimer);
+      if (lbThrottleTimer) clearTimeout(lbThrottleTimer);
+      if (dailyThrottleTimer) clearTimeout(dailyThrottleTimer);
     };
   }, []);
 
+  // Multi-tenant isolated accounts sync on user profile change
+  useEffect(() => {
+    fetchAccounts(user);
+  }, [user?.id]);
+
   const handleDisconnect = async (accountId: string) => {
     try {
-      const res = await fetch(`/api/accounts/${accountId}`, { method: 'DELETE' });
+      const uidQuery = user?.id ? `?userId=${encodeURIComponent(user.id)}` : '';
+      const res = await fetch(`/api/accounts/${accountId}${uidQuery}`, { method: 'DELETE' });
       if (res.ok) {
         setAccounts(prev => prev.filter(a => a.id !== accountId));
         setPositions(prev => prev.filter(p => p.accountId !== accountId));
@@ -321,6 +391,28 @@ export const App: React.FC = () => {
     });
   };
 
+  const handleOpenMyDashboard = () => {
+    if (user) {
+      const primaryAcc = accounts[0];
+      handleSelectTrader({
+        userId: user.id || primaryAcc?.userId || primaryAcc?.id,
+        username: user.username,
+        broker: user.primaryBroker || primaryAcc?.broker || 'Exness',
+        rank: 1,
+      });
+    } else if (accounts.length > 0) {
+      const primaryAcc = accounts[0];
+      handleSelectTrader({
+        userId: primaryAcc.userId || primaryAcc.id,
+        username: `TraderRank-${primaryAcc.accountNumber || 'Pro'}`,
+        broker: primaryAcc.broker || 'Exness',
+        rank: 1,
+      });
+    } else {
+      openAuthModal('signin');
+    }
+  };
+
   // URL Deep-Linking: Synchronize ?trader= parameter with selected trader modal
   useEffect(() => {
     if (selectedTrader) {
@@ -360,6 +452,7 @@ export const App: React.FC = () => {
         <LandingPage
           leaderboard={leaderboard}
           onSelectTrader={handleSelectTrader}
+          onOpenMyDashboard={handleOpenMyDashboard}
           onEnterApp={(tab?: string) => {
             if (!isAuthenticated) {
               openAuthModal('register');
@@ -415,7 +508,7 @@ export const App: React.FC = () => {
           title="Return to Home"
         >
           <BrandLogo
-            size={44}
+            size={38}
             showWordmark={false}
             onClick={() => {
               setCurrentView('landing');
@@ -423,90 +516,135 @@ export const App: React.FC = () => {
             }}
           />
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h1 className="brand-wordmark" style={{ fontSize: '24px', cursor: 'pointer' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <h1 className="brand-wordmark" style={{ fontSize: '20px', cursor: 'pointer', letterSpacing: '-0.3px' }}>
                 Trade<span className="brand-wordmark-accent">Rank</span>
                 <span className="brand-live-domain">.live</span>
               </h1>
-              <span className="brand-badge">{t.landing.badge}</span>
+              <span className="brand-badge" style={{ fontSize: '10px', padding: '2px 7px' }}>
+                {t.landing.badge}
+              </span>
               {metaApiHealth && (
                 <span
-                  className="status-pill"
+                  className="status-pill hide-on-mobile"
                   style={{
                     background: metaApiHealth.ok ? 'rgba(10, 186, 181, 0.15)' : 'rgba(246, 70, 93, 0.15)',
                     color: metaApiHealth.ok ? '#0abab5' : 'var(--accent-red)',
                     border: `1px solid ${metaApiHealth.ok ? 'rgba(10, 186, 181, 0.35)' : 'rgba(246, 70, 93, 0.35)'}`,
-                    fontSize: '11px',
-                    cursor: 'default',
-                  }}
-                  title={metaApiHealth.hasTokenConfigured ? 'MetaApi Enterprise Cloud Token Active' : 'MetaApi Sandbox Mode'}
-                >
-                  <Zap size={12} color="#0abab5" />
-                  {metaApiHealth.ok ? `MetaApi: ${metaApiHealth.latencyMs}ms` : 'MetaApi: Offline'}
-                </span>
-              )}
-              {r2Status && (
-                <span
-                  className="status-pill"
-                  style={{
-                    background: 'rgba(244, 129, 32, 0.15)',
-                    color: '#f48120',
-                    border: '1px solid rgba(244, 129, 32, 0.35)',
-                    fontSize: '11px',
+                    fontSize: '10px',
+                    padding: '2px 7px',
+                    borderRadius: '6px',
                     cursor: 'default',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '4px',
+                    fontWeight: 700,
+                  }}
+                  title={metaApiHealth.hasTokenConfigured ? 'MetaApi Enterprise Cloud Token Active' : 'MetaApi Sandbox Mode'}
+                >
+                  <Zap size={11} color="#0abab5" />
+                  {metaApiHealth.ok ? `${metaApiHealth.latencyMs}ms` : 'Offline'}
+                </span>
+              )}
+              {r2Status && (
+                <span
+                  className="status-pill hide-on-tablet"
+                  style={{
+                    background: 'rgba(244, 129, 32, 0.15)',
+                    color: '#f48120',
+                    border: '1px solid rgba(244, 129, 32, 0.35)',
+                    fontSize: '10px',
+                    padding: '2px 7px',
+                    borderRadius: '6px',
+                    cursor: 'default',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontWeight: 700,
                   }}
                   title={`Cloudflare R2 Bucket: ${r2Status.bucket} (${r2Status.storage})`}
                 >
-                  <Cloud size={12} color="#f48120" />
+                  <Cloud size={11} color="#f48120" />
                   R2 Cloud
                 </span>
               )}
             </div>
-            <p className="hide-on-mobile" style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', whiteSpace: 'nowrap', wordBreak: 'keep-all', lineBreak: 'strict' }}>
+            <p className="hide-on-tablet" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '380px' }}>
               {t.app.heroSubheading}
             </p>
           </div>
         </div>
 
         <div className="header-actions">
-          {/* Language Selector Dropdown (Bitget Inspired) */}
+          {/* Language Selector Dropdown */}
           <LanguageSelector />
+
+          {/* User Profile & Navigation Menu */}
           <UserNavMenu
             onOpenConnectWizard={() => setIsWizardOpen(true)}
             onOpenSubscriptionModal={() => setIsSubscriptionModalOpen(true)}
             onOpenAffiliateModal={() => setIsAffiliateModalOpen(true)}
+            onOpenMyDashboard={handleOpenMyDashboard}
           />
 
+          {/* Pro / VIP Gamification Referral Trigger */}
           <button
             className="btn-secondary"
-            onClick={() => setIsSubscriptionModalOpen(true)}
-            title="TraderRank Pro Daily Intelligence ($9/mo)"
+            onClick={() => setIsAffiliateModalOpen(true)}
+            title="Refer 3 Friends to Unlock Pro Intelligence Free"
             style={{
               border: `1px solid ${subscription.isActive ? 'rgba(0, 218, 198, 0.4)' : 'rgba(240, 185, 11, 0.4)'}`,
               background: subscription.isActive ? 'rgba(0, 218, 198, 0.12)' : 'rgba(240, 185, 11, 0.08)',
               color: subscription.isActive ? 'var(--accent-cyan)' : 'var(--accent-gold)',
               fontWeight: 700,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '6px 10px',
+              fontSize: '12px',
+              whiteSpace: 'nowrap',
             }}
           >
-            <Crown size={14} color={subscription.isActive ? '#0abab5' : '#94a3b8'} />
-            <span>{subscription.isActive ? t.nav.proPlanActive : t.nav.unlockPro}</span>
+            <Crown size={13} color={subscription.isActive ? '#0abab5' : '#f59e0b'} />
+            <span>{subscription.isActive ? 'VIP Pro' : 'Free VIP'}</span>
           </button>
+
+          {/* Return to Home Landing */}
           <button
             className="btn-secondary"
             onClick={() => setCurrentView('landing')}
-            title={t.nav.landing}
-            style={{ border: '1px solid rgba(255,255,255,0.15)' }}
+            title="Return to Home Landing"
+            style={{
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '6px 10px',
+              fontSize: '12px',
+              whiteSpace: 'nowrap',
+            }}
           >
-            <Globe2 size={16} /> {t.nav.landing}
+            <Globe2 size={13} />
+            <span>Home</span>
           </button>
-          <button className="btn-secondary" onClick={() => setIsWizardOpen(true)}>
-            <Layers size={16} /> {t.connector.selectBroker}
-          </button>
-          <button className="btn-primary" onClick={() => setIsWizardOpen(true)}>
-            <Plus size={16} /> {t.nav.connectAccount}
+
+          {/* Primary CTA: Connect Broker Account */}
+          <button
+            className="btn-primary"
+            onClick={() => setIsWizardOpen(true)}
+            title="Connect MetaTrader 4/5 or Exness broker account"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '6px 12px',
+              fontSize: '12px',
+              fontWeight: 700,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <Plus size={13} />
+            <span>Connect Broker</span>
           </button>
         </div>
       </header>
@@ -575,6 +713,19 @@ export const App: React.FC = () => {
           <BarChart3 size={16} /> {t.nav.overview}
         </button>
         <button
+          className="tab-button"
+          onClick={handleOpenMyDashboard}
+          style={{
+            borderColor: 'rgba(0, 240, 255, 0.45)',
+            color: '#00F0FF',
+            background: 'rgba(0, 240, 255, 0.08)',
+            fontWeight: 800,
+          }}
+          title="Open My Verified Trading Dashboard & Analytics"
+        >
+          <LayoutDashboard size={16} /> {t.nav.myDashboard}
+        </button>
+        <button
           className={`tab-button ${activeTab === 'daily-analysis' ? 'active' : ''}`}
           onClick={() => setActiveTab('daily-analysis')}
           style={{ position: 'relative' }}
@@ -585,13 +736,13 @@ export const App: React.FC = () => {
               fontSize: '10px',
               padding: '1px 6px',
               borderRadius: '8px',
-              background: subscription.isActive ? 'rgba(0, 218, 198, 0.2)' : 'rgba(240, 185, 11, 0.2)',
-              color: subscription.isActive ? 'var(--accent-cyan)' : 'var(--accent-gold)',
+              background: subscription.isActive ? 'rgba(0, 218, 198, 0.2)' : 'rgba(0, 240, 255, 0.12)',
+              color: subscription.isActive ? 'var(--accent-cyan)' : '#00F0FF',
               fontWeight: 800,
-              border: `1px solid ${subscription.isActive ? 'rgba(0, 218, 198, 0.4)' : 'rgba(240, 185, 11, 0.4)'}`,
+              border: `1px solid ${subscription.isActive ? 'rgba(0, 218, 198, 0.4)' : 'rgba(0, 240, 255, 0.3)'}`,
             }}
           >
-            {subscription.isActive ? 'PRO' : '$9/mo'}
+            {subscription.isActive ? 'VIP PRO' : 'VIP'}
           </span>
         </button>
         <button
@@ -675,6 +826,7 @@ export const App: React.FC = () => {
         <DailyAnalysisHub
           subscription={subscription}
           onOpenSubscriptionModal={() => setIsSubscriptionModalOpen(true)}
+          onOpenAffiliateModal={() => setIsAffiliateModalOpen(true)}
         />
       )}
 
@@ -712,14 +864,17 @@ export const App: React.FC = () => {
       {/* Tab 4: Rewards & XP Progression */}
       {activeTab === 'rewards' && (
         <div style={{ maxWidth: '980px', margin: '0 auto', width: '100%' }}>
-          <RewardsBadges />
+          <RewardsBadges onOpenAffiliateModal={() => setIsAffiliateModalOpen(true)} />
         </div>
       )}
 
       {/* Tab 5: Community Live Feed & Cheers */}
       {activeTab === 'community' && (
         <div style={{ maxWidth: '980px', margin: '0 auto', width: '100%' }}>
-          <CommunityFeed onOpenConnectWizard={() => setIsWizardOpen(true)} />
+          <CommunityFeed
+            onOpenConnectWizard={() => setIsWizardOpen(true)}
+            onSelectTrader={handleSelectTrader}
+          />
         </div>
       )}
 

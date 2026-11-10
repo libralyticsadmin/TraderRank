@@ -1,4 +1,4 @@
-import { Broker } from '../types.ts';
+import { Broker } from '../types.js';
 
 export interface BrokerPartnerInfo {
   broker: Broker;
@@ -124,6 +124,50 @@ export const BROKER_PARTNERS: Record<Broker, BrokerPartnerInfo> = {
       note: 'Connect in seconds with your investor password once created.',
     },
   },
+  XMTrading: {
+    broker: 'XMTrading',
+    displayName: 'XMTrading (Japan JPY)',
+    affiliateUrl: 'https://clicks.pipaffiliates.com/c?c=traderrank_jp',
+    partnerCode: 'TRADERANK_JP',
+    badgeText: 'Japan Regulated JPY Base Accounts',
+    keyPerks: [
+      'Full JPY Base Currency Normalization with 0-Decimal Precision',
+      'Dedicated Tokyo Low-Latency Matching Servers (XMTrading-MT5 / Real)',
+      '100% Zero-Write Read-Only Verification with Investor Password',
+      'Eligible for Tokyo Session FX Sprints & Gold Tournaments',
+    ],
+    subAccountGuide: {
+      steps: [
+        'Log in to your XMTrading Japan Member Area',
+        'Click "追加口座開設" (Open Additional Account)',
+        'Select MT4 or MT5 with base currency JPY (日本円)',
+        'Link with Partner/IB code "TRADERANK_JP" to enable JPY contest ranks',
+      ],
+      note: 'XMTrading JPY accounts are automatically recognized with Japanese Yen scaling.',
+    },
+  },
+  Vanguard: {
+    broker: 'Vanguard',
+    displayName: 'Vanguard Markets',
+    affiliateUrl: 'https://vanguardmarkets.com/?ref=traderrank',
+    partnerCode: 'TRADERANK',
+    badgeText: 'Institutional Index & Multi-Asset Execution',
+    keyPerks: [
+      'Institutional Index & Forex CFD Liquidity Feeds',
+      'Direct Normalization with TradeRank Pip & PnL Engine',
+      'Zero-Write physical execution guard via Investor Password',
+      'Full participation in Global Verified Leaderboards',
+    ],
+    subAccountGuide: {
+      steps: [
+        'Log into your Vanguard Client Portal',
+        'Navigate to Accounts → Open Additional MT4/MT5 Sub-Account',
+        'Copy your Investor (Read-Only) password',
+        'Connect via TradeRank Zero-Write Connection Wizard',
+      ],
+      note: 'Read-only connection verifies historical and live trades securely.',
+    },
+  },
   OTHER: {
     broker: 'OTHER',
     displayName: 'Any MetaTrader Broker',
@@ -146,3 +190,4 @@ export const BROKER_PARTNERS: Record<Broker, BrokerPartnerInfo> = {
     },
   },
 };
+

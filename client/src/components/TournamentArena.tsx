@@ -62,10 +62,14 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
 
   const loadAccounts = async () => {
     try {
-      const res = await fetch('/api/accounts');
+      if (!user?.id) {
+        setConnectedAccounts([]);
+        return;
+      }
+      const res = await fetch(`/api/accounts?userId=${encodeURIComponent(user.id)}`);
       if (res.ok) {
         const data = await res.json();
-        setConnectedAccounts(data);
+        setConnectedAccounts(Array.isArray(data) ? data : []);
       }
     } catch {
       // ignore
@@ -92,7 +96,7 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
   useEffect(() => {
     loadTournaments();
     loadAccounts();
-  }, []);
+  }, [user?.id]);
 
   const handleJoinTournament = async () => {
     // 1. If not authenticated, open registration/signin modal
@@ -104,8 +108,9 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
     setIsJoining(true);
     setJoinSuccessMsg(null);
     try {
-      // 2. Fetch fresh accounts
-      const accRes = await fetch('/api/accounts');
+      // 2. Fetch fresh user accounts
+      const uidQuery = user?.id ? `?userId=${encodeURIComponent(user.id)}` : '';
+      const accRes = await fetch(`/api/accounts${uidQuery}`);
       const accounts = accRes.ok ? await accRes.json() : [];
       setConnectedAccounts(accounts);
       const primaryAcc = accounts[0];

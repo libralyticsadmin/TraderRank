@@ -80,4 +80,22 @@ describe('Piece 2: Multi-Broker Directory & Investor Authentication', () => {
     expect(res.valid).toBe(false);
     expect(res.errorCode).toBe('INVALID_CREDENTIALS');
   });
+
+  it('correctly resolves XMTrading and Vanguard servers and initializes JPY currency for Japan servers', async () => {
+    expect(directory.resolveBroker('XMTrading-MT5')).toBe('XMTrading');
+    expect(directory.resolveBroker('XMTrading-Real 1')).toBe('XMTrading');
+    expect(directory.resolveBroker('Vanguard-Live')).toBe('Vanguard');
+
+    const res = await directory.validateInvestorCredentials({
+      login: '9912034',
+      investorPassword: 'ValidReadOnlyPass123',
+      serverName: 'XMTrading-MT5',
+      platform: 'MT5',
+    });
+
+    expect(res.valid).toBe(true);
+    expect(res.broker).toBe('XMTrading');
+    expect(res.accountDetails?.currency).toBe('JPY');
+    expect(res.accountDetails?.balance).toBe(1500000);
+  });
 });

@@ -12,6 +12,7 @@ import {
   X,
   Award,
   Sparkles,
+  Users,
 } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
@@ -35,14 +36,22 @@ export interface HonorBadge {
   xpReward: number;
 }
 
-export const RewardsBadges: React.FC = () => {
-  const { t, language } = useTranslation();
-  const { user, isAuthenticated, updateProfile } = useAuth();
+interface RewardsBadgesProps {
+  onOpenAffiliateModal?: () => void;
+}
 
-  // Streak state stored in localStorage per user/browser (starts clean at Day 1)
+export const RewardsBadges: React.FC<RewardsBadgesProps> = ({ onOpenAffiliateModal }) => {
+  const { t, language } = useTranslation();
+  const { user, updateProfile } = useAuth();
+
+  // Streak state stored in localStorage per user/browser (starts clean at Day 1 from zero)
+  const streakStorageKey = user?.id ? `traderrank_streak_v2_${user.id}` : 'traderrank_streak_v2_guest';
+
   const [claimedStreakDays, setClaimedStreakDays] = useState<number[]>(() => {
     try {
-      const saved = localStorage.getItem('traderrank_claimed_streak_days_v1');
+      // Purge legacy dirty mock streak days
+      localStorage.removeItem('traderrank_claimed_streak_days_v1');
+      const saved = localStorage.getItem(streakStorageKey);
       if (saved) return JSON.parse(saved);
     } catch {
       // ignore
@@ -51,12 +60,10 @@ export const RewardsBadges: React.FC = () => {
   });
 
   const [tradeCount, setTradeCount] = useState<number>(0);
-  const [currentXp, setCurrentXp] = useState<number>(() => {
-    if (isAuthenticated && typeof user?.xp === 'number') {
-      return user.xp;
-    }
-    return 0;
-  });
+  const [userAccountsCount, setUserAccountsCount] = useState<number>(0);
+  const [userNetPips, setUserNetPips] = useState<number>(0);
+  const [userWinRate, setUserWinRate] = useState<number>(0);
+  const [currentXp, setCurrentXp] = useState<number>(0);
 
   const streakDays = getStreakStatus(claimedStreakDays);
   const gamification = calculateTraderGamification(currentXp);
@@ -64,31 +71,123 @@ export const RewardsBadges: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [selectedBadge, setSelectedBadge] = useState<HonorBadge | null>(null);
 
+  // Load real verified user stats starting from zero
   useEffect(() => {
     let isMounted = true;
-    fetch('/api/accounts')
-      .then(r => (r.ok ? r.json() : []))
-      .then(async accounts => {
-        if (!isMounted || !accounts || accounts.length === 0) return;
-        const primary = accounts[0];
-        try {
-          const tradesRes = await fetch(`/api/accounts/${primary.id}/trades`);
-          if (tradesRes.ok) {
-            const trades = await tradesRes.json();
-            if (Array.isArray(trades) && trades.length > 0 && isMounted) {
-              setTradeCount(trades.length);
-              const computedXp = trades.length * XP_RULES.XP_PER_TRADE;
-              setCurrentXp(prev => Math.max(prev, computedXp));
-            }
-          }
-        } catch (e) {
-          console.warn('Could not compute dynamic XP from trades', e);
+
+    async function loadRealStats() {
+      if (!user) {
+        if (isMounted) {
+          setTradeCount(0);
+          setUserAccountsCount(0);
+          setUserNetPips(0);
+          setUserWinRate(0);
+          const streakXp = claimedStreakDays.reduce((sum, day) => {
+            const item = XP_RULES.STREAK_SCHEDULE.find(s => s.dayNum === day);
+            return sum + (item ? item.xp : 0);
+          }, 0);
+          setCurrentXp(streakXp);
         }
-      });
+        return;
+      }
+
+      const uid = (user.id || '').toLowerCase();
+      const uEmail = (user.email || '').toLowerCase();
+      const uName = (user.username || '').toLowerCase();
+
+      try {
+        const accRes = await fetch('/api/accounts');
+        if (!accRes.ok) throw new Error('Failed to load accounts');
+        const allAccounts = await accRes.json();
+
+        // Strict multi-tenant isolation: only count accounts belonging to this user
+        const myAccounts = Array.isArray(allAccounts)
+          ? allAccounts.filter(acc => {
+              const accUid = (acc.userId || '').toLowerCase();
+              return (
+                accUid === uid ||
+                accUid === `u_${uid.replace(/^u_/, '')}` ||
+                `u_${accUid.replace(/^u_/, '')}` === uid ||
+                (accUid && uName && (accUid.includes(uName) || accUid.includes(uid))) ||
+                (uEmail && (accUid === uEmail || accUid === `u_${uEmail.replace(/[^a-z0-9]/g, '_')}`))
+              );
+            })
+          : [];
+
+        if (!isMounted) return;
+        setUserAccountsCount(myAccounts.length);
+
+        if (myAccounts.length === 0) {
+          // Zero connected accounts -> start from zero
+          setTradeCount(0);
+          setUserNetPips(0);
+          setUserWinRate(0);
+          const streakXp = claimedStreakDays.reduce((sum, day) => {
+            const item = XP_RULES.STREAK_SCHEDULE.find(s => s.dayNum === day);
+            return sum + (item ? item.xp : 0);
+          }, 0);
+          setCurrentXp(streakXp);
+          updateProfile({
+            xp: streakXp,
+            level: calculateTraderGamification(streakXp).level,
+          });
+          return;
+        }
+
+        // Fetch real trades for user's own connected accounts
+        let allMyTrades: any[] = [];
+        for (const acc of myAccounts) {
+          try {
+            const tradesRes = await fetch(`/api/accounts/${acc.id}/trades`);
+            if (tradesRes.ok) {
+              const trades = await tradesRes.json();
+              if (Array.isArray(trades)) {
+                allMyTrades = allMyTrades.concat(trades);
+              }
+            }
+          } catch (e) {
+            console.warn(`Could not fetch trades for user account ${acc.id}`, e);
+          }
+        }
+
+        if (!isMounted) return;
+
+        const count = allMyTrades.length;
+        setTradeCount(count);
+
+        const netPips = allMyTrades.reduce((sum, t) => sum + Number(t.pnlPips || 0), 0);
+        setUserNetPips(Number(netPips.toFixed(1)));
+
+        const winningTrades = allMyTrades.filter(
+          t => Number(t.pnlPips || 0) > 0 || Number(t.pnlCurrency || 0) > 0
+        ).length;
+        const winRate = count > 0 ? Math.round((winningTrades / count) * 100) : 0;
+        setUserWinRate(winRate);
+
+        // Real XP = real trade volume XP + legitimately claimed streak bonuses
+        const tradeXp = count * XP_RULES.XP_PER_TRADE;
+        const streakXp = claimedStreakDays.reduce((sum, day) => {
+          const item = XP_RULES.STREAK_SCHEDULE.find(s => s.dayNum === day);
+          return sum + (item ? item.xp : 0);
+        }, 0);
+        const finalXp = tradeXp + streakXp;
+        setCurrentXp(finalXp);
+
+        updateProfile({
+          xp: finalXp,
+          level: calculateTraderGamification(finalXp).level,
+        });
+      } catch (err) {
+        console.warn('Error loading real user stats in RewardsBadges', err);
+      }
+    }
+
+    loadRealStats();
+
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [user?.id, claimedStreakDays.length]);
 
   const getRarityLabel = (rarity: HonorBadge['rarity']) => {
     switch (rarity) {
@@ -106,18 +205,19 @@ export const RewardsBadges: React.FC = () => {
     return `Day ${dayNum}`;
   };
 
+  // Real Honor Badges dynamically verified against user data (all start locked at 0)
   const badges: HonorBadge[] = [
     {
-      id: 'badge_risk_guardian',
-      name: t.rewards.badgeRiskGuardianName,
-      description: t.rewards.badgeRiskGuardianDesc,
-      criteria: t.rewards.badgeRiskGuardianCriteria,
-      icon: Shield,
-      color: '#00DAC6',
-      unlocked: true,
-      unlockedAt: t.rewards.yesterday,
-      rarity: 'EPIC',
-      xpReward: 500,
+      id: 'badge_iron_discipline',
+      name: t.rewards.badgeIronDisciplineName,
+      description: t.rewards.badgeIronDisciplineDesc,
+      criteria: t.rewards.badgeIronDisciplineCriteria,
+      icon: Star,
+      color: '#8B5CF6',
+      unlocked: userAccountsCount >= 1,
+      unlockedAt: userAccountsCount >= 1 ? 'Verified (Connected)' : undefined,
+      rarity: 'COMMON',
+      xpReward: 250,
     },
     {
       id: 'badge_sniper',
@@ -126,8 +226,8 @@ export const RewardsBadges: React.FC = () => {
       criteria: t.rewards.badgePrecisionSniperCriteria,
       icon: Target,
       color: '#00F0FF',
-      unlocked: true,
-      unlockedAt: t.rewards.daysAgo,
+      unlocked: tradeCount >= 10 && userWinRate >= 70,
+      unlockedAt: tradeCount >= 10 && userWinRate >= 70 ? `Verified (${userWinRate}% Win Rate)` : undefined,
       rarity: 'RARE',
       xpReward: 350,
     },
@@ -138,10 +238,22 @@ export const RewardsBadges: React.FC = () => {
       criteria: t.rewards.badgeCenturyClubCriteria,
       icon: Zap,
       color: '#F0B90B',
-      unlocked: true,
-      unlockedAt: language === 'ja' ? '2026年9月12日' : language === 'zh' ? '2026年9月12日' : 'Sep 12, 2026',
+      unlocked: userNetPips >= 100,
+      unlockedAt: userNetPips >= 100 ? `Verified (+${userNetPips} pips)` : undefined,
       rarity: 'RARE',
       xpReward: 400,
+    },
+    {
+      id: 'badge_risk_guardian',
+      name: t.rewards.badgeRiskGuardianName,
+      description: t.rewards.badgeRiskGuardianDesc,
+      criteria: t.rewards.badgeRiskGuardianCriteria,
+      icon: Shield,
+      color: '#00DAC6',
+      unlocked: tradeCount >= 20,
+      unlockedAt: tradeCount >= 20 ? `Verified (${tradeCount} trades)` : undefined,
+      rarity: 'EPIC',
+      xpReward: 500,
     },
     {
       id: 'badge_podium_master',
@@ -150,7 +262,8 @@ export const RewardsBadges: React.FC = () => {
       criteria: t.rewards.badgePodiumMasterCriteria,
       icon: Trophy,
       color: '#F59E0B',
-      unlocked: false,
+      unlocked: Boolean(user?.rank && user.rank <= 3),
+      unlockedAt: user?.rank && user.rank <= 3 ? `Podium Rank #${user.rank}` : undefined,
       rarity: 'EPIC',
       xpReward: 750,
     },
@@ -161,21 +274,10 @@ export const RewardsBadges: React.FC = () => {
       criteria: t.rewards.badgeHallOfFameCriteria,
       icon: Flame,
       color: '#F6465D',
-      unlocked: false,
+      unlocked: currentXp >= 10000 && tradeCount >= 500,
+      unlockedAt: currentXp >= 10000 && tradeCount >= 500 ? 'Legendary Titan Verified' : undefined,
       rarity: 'LEGENDARY',
       xpReward: 2000,
-    },
-    {
-      id: 'badge_iron_discipline',
-      name: t.rewards.badgeIronDisciplineName,
-      description: t.rewards.badgeIronDisciplineDesc,
-      criteria: t.rewards.badgeIronDisciplineCriteria,
-      icon: Star,
-      color: '#8B5CF6',
-      unlocked: true,
-      unlockedAt: t.rewards.lastWeek,
-      rarity: 'COMMON',
-      xpReward: 250,
     },
   ];
 
@@ -186,7 +288,7 @@ export const RewardsBadges: React.FC = () => {
     const nextClaimed = [...claimedStreakDays, activeDay.dayNum];
     setClaimedStreakDays(nextClaimed);
     try {
-      localStorage.setItem('traderrank_claimed_streak_days_v1', JSON.stringify(nextClaimed));
+      localStorage.setItem(streakStorageKey, JSON.stringify(nextClaimed));
     } catch {
       // ignore
     }
@@ -195,7 +297,10 @@ export const RewardsBadges: React.FC = () => {
     const newXp = currentXp + xpEarned;
     setCurrentXp(newXp);
     if (user) {
-      updateProfile({ xp: newXp });
+      updateProfile({
+        xp: newXp,
+        level: calculateTraderGamification(newXp).level,
+      });
     }
 
     const msg = language === 'ja'
@@ -490,6 +595,89 @@ export const RewardsBadges: React.FC = () => {
         </div>
       </div>
 
+      {/* Community Invite & XP Boost Banner */}
+      {onOpenAffiliateModal && (
+        <div
+          style={{
+            background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.12) 0%, rgba(14, 20, 31, 0.95) 100%)',
+            border: '1px solid rgba(0, 240, 255, 0.3)',
+            borderRadius: '16px',
+            padding: '22px 26px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '16px',
+            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', maxWidth: '580px' }}>
+            <div
+              style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '14px',
+                background: 'rgba(0, 240, 255, 0.15)',
+                border: '1px solid #00F0FF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Users size={24} color="#00F0FF" />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <span style={{ fontSize: '15px', fontWeight: 900, color: '#FFFFFF' }}>
+                  Accelerate to Level 5 Hall of Fame Titan
+                </span>
+                <span
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 800,
+                    padding: '2px 8px',
+                    borderRadius: '8px',
+                    background: 'rgba(255, 215, 0, 0.2)',
+                    color: '#FFD700',
+                    border: '1px solid #FFD700',
+                  }}
+                >
+                  +500 XP / Friend
+                </span>
+              </div>
+              <p style={{ margin: 0, fontSize: '13px', color: '#848E9C', lineHeight: 1.4 }}>
+                Invite fellow traders to TradeRank. Unlock exclusive honor badges, real-time sound alerts, and the institutional AI Multi-Timeframe Confluence Engine.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={onOpenAffiliateModal}
+            style={{
+              padding: '12px 24px',
+              borderRadius: '10px',
+              background: 'linear-gradient(90deg, #00F0FF 0%, #00DAC6 100%)',
+              border: 'none',
+              color: '#080E14',
+              fontSize: '13px',
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              cursor: 'pointer',
+              boxShadow: '0 4px 16px rgba(0, 240, 255, 0.3)',
+              transition: 'transform 0.15s ease',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.03)')}
+            onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+          >
+            <Sparkles size={16} />
+            <span>Invite Friends & Earn XP</span>
+          </button>
+        </div>
+      )}
+
       {/* Honor Badges Grid */}
       <div
         className="card-panel"
@@ -519,7 +707,7 @@ export const RewardsBadges: React.FC = () => {
             </p>
           </div>
           <span style={{ fontSize: '12px', fontWeight: 700, color: '#00F0FF' }}>
-            {t.rewards.unlockedCount}
+            {t.rewards.unlockedCount} ({badges.filter(b => b.unlocked).length} / {badges.length})
           </span>
         </div>
 
@@ -597,12 +785,12 @@ export const RewardsBadges: React.FC = () => {
                       {badge.unlocked ? (
                         <>
                           <CheckCircle size={11} color="#00F0FF" />
-                          <span>{t.rewards.verified} ({badge.unlockedAt})</span>
+                          <span>{badge.unlockedAt ? badge.unlockedAt : t.rewards.verified}</span>
                         </>
                       ) : (
                         <>
                           <Lock size={11} color="#64748b" />
-                          <span>{t.rewards.clickToInspect}</span>
+                          <span>{t.rewards.locked}</span>
                         </>
                       )}
                     </span>

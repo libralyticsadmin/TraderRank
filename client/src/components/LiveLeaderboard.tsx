@@ -13,6 +13,7 @@ import {
   Search,
   ExternalLink,
   Zap,
+  Clock,
 } from 'lucide-react';
 
 interface LiveLeaderboardProps {
@@ -59,7 +60,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
     let isMounted = true;
     const loadLedger = async () => {
       try {
-        const accRes = await fetch('/api/accounts');
+        const accRes = await fetch('/api/accounts?scope=public');
         if (!accRes.ok) return;
         const accounts = await accRes.json();
         if (!Array.isArray(accounts) || accounts.length === 0) return;
@@ -141,8 +142,10 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
     };
 
     loadLedger();
+    const ledgerInterval = setInterval(loadLedger, 60000); // 1-minute ledger sync
     return () => {
       isMounted = false;
+      clearInterval(ledgerInterval);
     };
   }, [entries.length]);
 
@@ -242,6 +245,15 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
 
   const top3 = processedEntries.slice(0, 3);
 
+  const formatTraderProfit = (amount: number, broker?: Broker, currency?: string) => {
+    const isJpy = broker === 'XMTrading' || (currency || '').toUpperCase() === 'JPY';
+    const sym = isJpy ? '¥' : '$';
+    const formattedVal = isJpy
+      ? Math.round(Math.abs(amount)).toLocaleString('ja-JP')
+      : Math.abs(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return amount >= 0 ? `+${sym}${formattedVal}` : `-${sym}${formattedVal}`;
+  };
+
   return (
     <div className="card-panel" style={{ padding: '24px' }}>
       {/* Header & Controls */}
@@ -284,6 +296,25 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                   }}
                 >
                   <Zap size={12} /> {t.leaderboard.liveVerified}
+                </span>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    background: 'rgba(245, 158, 11, 0.15)',
+                    color: '#fbbf24',
+                    border: '1px solid rgba(245, 158, 11, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                  }}
+                  title="Rankings and Top 3 podium reload every 1 minute"
+                >
+                  <Clock size={12} /> {t.leaderboard.reload1m}
                 </span>
               </div>
               <p style={{ margin: '2px 0 0', fontSize: '13px', color: 'var(--text-muted)', wordBreak: 'keep-all', lineBreak: 'strict' }}>
@@ -435,8 +466,10 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               <option value="ALL">{t.leaderboard.allBrokers}</option>
               <option value="Exness">Exness</option>
               <option value="XM">XM Global</option>
+              <option value="XMTrading">XMTrading (Japan JPY)</option>
               <option value="Axiory">Axiory</option>
               <option value="Vantage">Vantage</option>
+              <option value="Vanguard">Vanguard</option>
               <option value="IC_MARKETS">IC Markets</option>
             </select>
           </div>
@@ -445,8 +478,17 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
 
       {/* Top 3 Podium Showcase */}
       {top3.length > 0 && !searchQuery && (
-        <div className="leaderboard-podium-grid">
-          {top3.map(trader => {
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 800, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Trophy size={15} /> {t.leaderboard.top3Podium}
+            </span>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Clock size={11} /> {t.leaderboard.reload1m}
+            </span>
+          </div>
+          <div className="leaderboard-podium-grid">
+            {top3.map(trader => {
             const is1 = trader.displayRank === 1;
             const is2 = trader.displayRank === 2;
             const glowColor = is1 ? '#fbbf24' : is2 ? '#94a3b8' : '#d97706';
@@ -519,13 +561,14 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                   <div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.estProfit}</div>
                     <div style={{ fontSize: '16px', fontWeight: 800, color: trader.profitAmount >= 0 ? '#fbbf24' : '#ef4444' }}>
-                      {trader.profitAmount >= 0 ? `+$${trader.profitAmount.toLocaleString()}` : `-$${Math.abs(trader.profitAmount).toLocaleString()}`}
+                      {formatTraderProfit(trader.profitAmount, trader.broker)}
                     </div>
                   </div>
                 </div>
               </div>
             );
           })}
+          </div>
         </div>
       )}
 
@@ -626,7 +669,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                   <div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.profit}</div>
                     <div style={{ fontSize: '16px', fontWeight: 800, color: trader.profitAmount >= 0 ? '#fbbf24' : '#ef4444' }}>
-                      {trader.profitAmount >= 0 ? `+$${trader.profitAmount.toLocaleString()}` : `-$${Math.abs(trader.profitAmount).toLocaleString()}`}
+                      {formatTraderProfit(trader.profitAmount, trader.broker)}
                     </div>
                   </div>
 
@@ -651,7 +694,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                   <div>
                     <div style={{ fontSize: '9.5px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{t.leaderboard.profit}</div>
                     <div style={{ fontSize: '14px', fontWeight: 800, color: trader.profitAmount >= 0 ? '#fbbf24' : '#ef4444', marginTop: '1px' }}>
-                      {trader.profitAmount >= 0 ? `+$${trader.profitAmount.toLocaleString()}` : `-$${Math.abs(trader.profitAmount).toLocaleString()}`}
+                      {formatTraderProfit(trader.profitAmount, trader.broker)}
                     </div>
                   </div>
                   <div>

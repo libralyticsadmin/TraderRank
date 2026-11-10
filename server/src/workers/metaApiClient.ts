@@ -341,18 +341,21 @@ export class MetaApiClient {
         // Fetch live account info if available, or return clean baseline
         const liveInfo = await this.getAccountInformation(id);
 
+        const sLower = server.toLowerCase();
+        const isJpyAccount = sLower.includes('xmtrading') || sLower.includes('japan') || sLower.includes('jpy');
+
         return {
           success: true,
           metaApiAccountId: id,
           accountInfo: liveInfo || {
             platform,
-            broker: server.split('-')[0] || 'XM',
-            currency: 'USD',
+            broker: server.split('-')[0] || (isJpyAccount ? 'XMTrading' : 'XM'),
+            currency: isJpyAccount ? 'JPY' : 'USD',
             server,
-            balance: 10000.00,
-            equity: 10000.00,
+            balance: isJpyAccount ? 1500000.00 : 10000.00,
+            equity: isJpyAccount ? 1500000.00 : 10000.00,
             margin: 0,
-            freeMargin: 10000.00,
+            freeMargin: isJpyAccount ? 1500000.00 : 10000.00,
             leverage: 100,
           },
         };
@@ -367,21 +370,23 @@ export class MetaApiClient {
     }
 
     // Baseline validation for offline/mock mode
-    const knownServers = ['XMGlobal', 'Axiory', 'VantageFX', 'ICMarkets', 'Exness', 'MetaQuotes'];
+    const knownServers = ['XMGlobal', 'XMTrading', 'Axiory', 'VantageFX', 'Vanguard', 'ICMarkets', 'Exness', 'MetaQuotes'];
     const matchesKnown = knownServers.some(s => server.toLowerCase().includes(s.toLowerCase()));
+    const sLower = server.toLowerCase();
+    const isJpy = sLower.includes('xmtrading') || sLower.includes('japan') || sLower.includes('jpy');
 
     return {
       success: true,
       metaApiAccountId: isMockAccount ? `mock_meta_${login}` : undefined,
       accountInfo: {
         platform,
-        broker: server.split('-')[0] || (matchesKnown ? 'XM' : 'OTHER'),
-        currency: 'USD',
+        broker: server.split('-')[0] || (isJpy ? 'XMTrading' : matchesKnown ? 'XM' : 'OTHER'),
+        currency: isJpy ? 'JPY' : 'USD',
         server,
-        balance: 10000.00,
-        equity: 10420.50,
-        margin: 240.00,
-        freeMargin: 10180.50,
+        balance: isJpy ? 1500000.00 : 10000.00,
+        equity: isJpy ? 1542050.00 : 10420.50,
+        margin: isJpy ? 36000.00 : 240.00,
+        freeMargin: isJpy ? 1506050.00 : 10180.50,
         leverage: 100,
       },
     };

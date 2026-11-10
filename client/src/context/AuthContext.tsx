@@ -47,6 +47,8 @@ interface AuthContextType {
   openProfileModal: () => void;
   closeProfileModal: () => void;
   isProfileModalOpen: boolean;
+  referralCount: number;
+  addReferral: () => void;
 }
 
 const STORAGE_KEY = 'traderank_auth_user_v1';
@@ -76,7 +78,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<UserProfile | null>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Cleanse legacy mock/test numbers so real profile starts accurately from zero
+        if (parsed.xp === 13500 || parsed.xp === 13275 || parsed.level === 3) {
+          parsed.xp = 0;
+          parsed.level = 1;
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+          } catch {
+            // ignore
+          }
+        }
+        return parsed;
+      }
     } catch {
       // ignore
     }
@@ -86,6 +101,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalTab, setAuthModalTab] = useState<'signin' | 'register'>('signin');
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [referralCount, setReferralCount] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('traderank_referral_count_v2');
+      if (saved !== null) {
+        const val = parseInt(saved, 10);
+        if (!isNaN(val)) return val;
+      }
+    } catch {
+      // ignore
+    }
+    return 0; // Correcting from the start (0): refer 3 friends to unlock
+  });
+
+  const addReferral = () => {
+    setReferralCount(prev => {
+      const next = prev + 1;
+      try {
+        localStorage.setItem('traderank_referral_count_v2', String(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
 
   // Sync with localStorage
   useEffect(() => {
@@ -249,6 +288,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         openProfileModal,
         closeProfileModal,
         isProfileModalOpen,
+        referralCount,
+        addReferral,
       }}
     >
       {children}

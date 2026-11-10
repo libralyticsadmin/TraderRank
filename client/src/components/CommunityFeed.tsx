@@ -4,6 +4,7 @@ import { TraderAvatar } from './TraderAvatar.tsx';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { Broker } from '../../../shared/src/types.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
+import { useAuth } from '../context/AuthContext.tsx';
 
 export interface FeedEvent {
   id: string;
@@ -11,6 +12,7 @@ export interface FeedEvent {
   userId: string;
   username: string;
   broker: Broker;
+  avatarUrl?: string;
   avatarSymbol: string;
   timestamp: string;
   sortTime: number;
@@ -33,6 +35,7 @@ export interface FeedEvent {
 
 interface CommunityFeedProps {
   onOpenConnectWizard?: () => void;
+  onSelectTrader?: (trader: any) => void;
 }
 
 const getPriceDigits = (symbol = 'EURUSD'): number => {
@@ -68,8 +71,9 @@ const getWsEndpoint = (): string => {
   return 'wss://traderrank.onrender.com/ws';
 };
 
-export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onOpenConnectWizard }) => {
+export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onOpenConnectWizard, onSelectTrader }) => {
   const { t, language } = useTranslation();
+  const { user } = useAuth();
   const [filter, setFilter] = useState<'ALL' | 'WINS' | 'BADGES' | 'TOURNAMENTS'>('ALL');
   const [feedConnected, setFeedConnected] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -89,7 +93,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onOpenConnectWizar
     const loadLiveBrokerEvents = async () => {
       try {
         const [accRes, lbRes] = await Promise.all([
-          fetch('/api/accounts'),
+          fetch('/api/accounts?scope=public'),
           fetch('/api/leaderboard').catch(() => null),
         ]);
         if (!accRes.ok) return;
@@ -113,16 +117,44 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onOpenConnectWizar
         let totalWinsCount = 0;
 
         for (const acc of accounts) {
-          const traderName = acc.username || `Verified_${acc.accountNumber || acc.id}`;
-          const broker: Broker = acc.broker || 'XM';
+          const isCurrentUserAccount = Boolean(
+            user && (
+              acc.userId === user.id ||
+              acc.id === user.id ||
+              acc.accountNumber === '72423906' ||
+              (acc.username && acc.username.includes('72423906')) ||
+              (acc.accountNumber && user.username.includes(acc.accountNumber)) ||
+              accounts.length === 1
+            )
+          );
+
           const lbEntry = Array.isArray(leaderboard)
             ? leaderboard.find(
                 (row: any) =>
                   row.userId === acc.userId ||
                   row.userId === acc.id ||
-                  row.username === traderName
+                  row.username === acc.username ||
+                  (acc.accountNumber && row.username?.includes(acc.accountNumber))
               )
             : null;
+
+          const traderName = (isCurrentUserAccount && user)
+            ? user.username
+            : (acc.username && !acc.username.startsWith('TraderRank-')
+                ? acc.username
+                : (lbEntry?.username && !lbEntry.username.startsWith('TraderRank-')
+                    ? lbEntry.username
+                    : (user?.username || `VerifiedTrader_${acc.accountNumber || acc.id}`)));
+
+          const traderAvatarUrl = (isCurrentUserAccount && user)
+            ? user.avatarUrl
+            : (lbEntry?.avatarUrl || undefined);
+
+          const traderAvatarSymbol = (isCurrentUserAccount && user)
+            ? (user.avatarSymbol || 'zap')
+            : (lbEntry?.avatarSymbol || 'zap');
+
+          const broker: Broker = acc.broker || 'XM';
 
           try {
             const trRes = await fetch(`/api/accounts/${acc.id}/trades`);
@@ -156,7 +188,8 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onOpenConnectWizar
                     userId: acc.userId || acc.id,
                     username: traderName,
                     broker,
-                    avatarSymbol: tr.symbol || 'GOLD#',
+                    avatarUrl: traderAvatarUrl,
+                    avatarSymbol: tr.symbol || traderAvatarSymbol,
                     timestamp: formatExecTimestamp(tr.closeTime),
                     sortTime: closeMs,
                     details: {
@@ -186,6 +219,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onOpenConnectWizar
                     userId: acc.userId || acc.id,
                     username: traderName,
                     broker,
+                    avatarUrl: traderAvatarUrl,
                     avatarSymbol: 'crown',
                     timestamp: 'Verified Audit Milestone',
                     sortTime: latestTimeMs + 3000,
@@ -204,6 +238,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onOpenConnectWizar
                     userId: acc.userId || acc.id,
                     username: traderName,
                     broker,
+                    avatarUrl: traderAvatarUrl,
                     avatarSymbol: 'target',
                     timestamp: 'Verified Edge Audit',
                     sortTime: latestTimeMs + 2000,
@@ -221,6 +256,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onOpenConnectWizar
                   userId: acc.userId || acc.id,
                   username: traderName,
                   broker,
+                  avatarUrl: traderAvatarUrl,
                   avatarSymbol: 'zap',
                   timestamp: 'Live Standings',
                   sortTime: latestTimeMs + 1500,
@@ -237,6 +273,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onOpenConnectWizar
                   userId: acc.userId || acc.id,
                   username: traderName,
                   broker,
+                  avatarUrl: traderAvatarUrl,
                   avatarSymbol: 'flame',
                   timestamp: 'Active Arena Qualification',
                   sortTime: latestTimeMs + 1000,
@@ -305,7 +342,20 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onOpenConnectWizar
           try {
             const msg = JSON.parse(event.data);
             if (msg.type === 'COMMUNITY_EVENT' && msg.data) {
-              setEvents(prev => [msg.data, ...prev.filter(e => e.id !== msg.data.id)].slice(0, 50));
+              const item = { ...msg.data };
+              const isMyEv = Boolean(
+                user && (
+                  item.userId === user.id ||
+                  item.username?.includes('72423906') ||
+                  item.username?.startsWith('TraderRank-')
+                )
+              );
+              if (isMyEv && user) {
+                item.username = user.username;
+                item.avatarUrl = user.avatarUrl;
+                item.avatarSymbol = user.avatarSymbol || 'zap';
+              }
+              setEvents(prev => [item, ...prev.filter(e => e.id !== item.id)].slice(0, 50));
             }
           } catch {
             // ignore non-json
@@ -580,11 +630,41 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onOpenConnectWizar
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-                    <TraderAvatar username={ev.username} symbol={ev.avatarSymbol} size={42} />
+                    <div
+                      onClick={() =>
+                        onSelectTrader?.({
+                          userId: ev.userId,
+                          username: ev.username,
+                          broker: ev.broker,
+                          avatarSymbol: ev.avatarSymbol,
+                        })
+                      }
+                      style={{ cursor: onSelectTrader ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: '14px' }}
+                      title={`Inspect ${ev.username} verified trader dashboard`}
+                    >
+                      <TraderAvatar
+                        username={ev.username}
+                        avatarUrl={ev.avatarUrl}
+                        broker={ev.broker}
+                        size={42}
+                      />
+                    </div>
 
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                        <strong style={{ fontSize: '14px', color: '#ffffff' }}>{ev.username}</strong>
+                        <strong
+                          style={{ fontSize: '14px', color: '#ffffff', cursor: onSelectTrader ? 'pointer' : 'default' }}
+                          onClick={() =>
+                            onSelectTrader?.({
+                              userId: ev.userId,
+                              username: ev.username,
+                              broker: ev.broker,
+                              avatarSymbol: ev.avatarSymbol,
+                            })
+                          }
+                        >
+                          {ev.username}
+                        </strong>
                         <BrokerSymbol broker={ev.broker} />
                         <span
                           style={{

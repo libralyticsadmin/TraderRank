@@ -39,6 +39,7 @@ export interface TraderProfileData {
   avgHoldingTime: string;
   verifiedSince: string;
   isFollowing?: boolean;
+  brokers?: Broker[];
   telegramHandle?: string;
   discordHandle?: string;
   twitterHandle?: string;
@@ -208,6 +209,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
   });
   const [copiedShare, setCopiedShare] = useState(false);
   const [realTrades, setRealTrades] = useState<VerifiedTrade[]>([]);
+  const [connectedBrokers, setConnectedBrokers] = useState<string[]>([]);
   const [liveAccountBalance, setLiveAccountBalance] = useState<number | null>(null);
   const [liveServerName, setLiveServerName] = useState<string | null>(null);
   const [liveParticipantsCount, setLiveParticipantsCount] = useState<number>(1);
@@ -517,11 +519,28 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
     setIsLoadingTrades(true);
 
     // Fetch live connected accounts to get real MT5 balance/equity and real participant count
-    fetch('/api/accounts')
+    fetch('/api/accounts?scope=public')
       .then(res => (res.ok ? res.json() : []))
       .then((accounts: any[]) => {
         if (!isMounted || !Array.isArray(accounts)) return;
         setLiveParticipantsCount(Math.max(1, accounts.length));
+
+        const userBrokers = new Set<string>();
+        if (trader.broker) userBrokers.add(trader.broker.toUpperCase());
+        if (Array.isArray(trader.brokers)) {
+          trader.brokers.forEach(b => userBrokers.add(b.toUpperCase()));
+        }
+        accounts.forEach(acc => {
+          if (
+            acc.id === trader.userId ||
+            acc.userId === trader.userId ||
+            (acc.accountNumber && trader.username.includes(String(acc.accountNumber)))
+          ) {
+            if (acc.broker) userBrokers.add(String(acc.broker).toUpperCase());
+          }
+        });
+        setConnectedBrokers(Array.from(userBrokers));
+
         const matched = accounts.find(
           acc =>
             acc.id === trader.userId ||
@@ -1093,19 +1112,38 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
     ? t.profile.verifiedSinceLabel.replace('{date}', stats.verifiedSince)
     : `${t.profile.verifiedSinceLabel} ${stats.verifiedSince}`;
 
+  const isJpy =
+    trader.broker === 'XMTrading' ||
+    (trader as any).currency === 'JPY' ||
+    Boolean(liveServerName && (liveServerName.toLowerCase().includes('xmtrading') || liveServerName.toLowerCase().includes('japan') || liveServerName.toLowerCase().includes('jpy')));
+  const curSymbol = isJpy ? '¥' : '$';
+
   const brokerSlots: Array<{ id: Broker; label: string }> = [
     { id: 'XM', label: 'XM Global' },
+    { id: 'XMTrading', label: 'XMTrading (Japan JPY)' },
     { id: 'Exness', label: 'Exness' },
     { id: 'IC_MARKETS', label: 'IC Markets' },
     { id: 'Axiory', label: 'Axiory' },
+    { id: 'Vantage', label: 'Vantage' },
+    { id: 'Vanguard', label: 'Vanguard' },
   ];
 
   const formatUsdSigned = (val: number) => {
     const sign = val > 0 ? '+' : val < 0 ? '-' : '';
+    if (isJpy) {
+      return `${sign}¥${Math.round(Math.abs(val)).toLocaleString('ja-JP')}`;
+    }
     return `${sign}$${Math.abs(val).toLocaleString(undefined, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })}`;
+  };
+
+  const formatCurrencyVal = (val: number) => {
+    if (isJpy) {
+      return `¥${Math.round(val).toLocaleString('ja-JP')}`;
+    }
+    return `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   return (
@@ -1116,7 +1154,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
         inset: 0,
         backgroundColor: 'rgba(3, 6, 14, 0.85)',
         backdropFilter: 'blur(10px)',
-        zIndex: 1000,
+        zIndex: 10000,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -1389,7 +1427,10 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
               {/* Connected Broker Slots */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 {brokerSlots.map(slot => {
-                  const isConnected = trader.broker.toUpperCase() === slot.id.toUpperCase();
+                  const isConnected =
+                    connectedBrokers.includes(slot.id.toUpperCase()) ||
+                    trader.broker.toUpperCase() === slot.id.toUpperCase() ||
+                    (Array.isArray(trader.brokers) && trader.brokers.some(b => b.toUpperCase() === slot.id.toUpperCase()));
                   return (
                     <div
                       key={slot.id}
@@ -2396,7 +2437,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                             {row.tradesCount > 0 ? `${row.roiPct >= 0 ? '+' : ''}${row.roiPct}%` : '0.0%'}
                           </div>
                           <div style={{ color: isProfitPos ? '#38bdf8' : '#f43f5e' }}>
-                            {row.tradesCount > 0 ? formatUsdSigned(row.netProfitUsd) : '$0.00'}
+                            {row.tradesCount > 0 ? formatUsdSigned(row.netProfitUsd) : (isJpy ? '¥0' : '$0.00')}
                           </div>
                         </td>
 
@@ -2418,10 +2459,10 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                               fontWeight: 700,
                             }}
                           >
-                            ${row.endingCapital.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            {formatCurrencyVal(row.endingCapital)}
                           </div>
                           <div style={{ color: '#94a3b8' }}>
-                            ${row.startingCapital.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            {formatCurrencyVal(row.startingCapital)}
                           </div>
                         </td>
 
@@ -2446,7 +2487,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                             {row.goldCount}
                             {copy.timesUnit}
                           </div>
-                          <div style={{ color: '#94a3b8' }}>${row.goldVolumeUsd.toLocaleString()}</div>
+                          <div style={{ color: '#94a3b8' }}>{curSymbol}{Math.round(row.goldVolumeUsd).toLocaleString()}</div>
                         </td>
 
                         {/* FX Count & Volume */}
@@ -2470,7 +2511,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                             {row.fxCount}
                             {copy.timesUnit}
                           </div>
-                          <div style={{ color: '#94a3b8' }}>${row.fxVolumeUsd.toLocaleString()}</div>
+                          <div style={{ color: '#94a3b8' }}>{curSymbol}{Math.round(row.fxVolumeUsd).toLocaleString()}</div>
                         </td>
 
                         {/* Crypto Count & Volume */}
@@ -2494,7 +2535,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                             {row.cryptoCount}
                             {copy.timesUnit}
                           </div>
-                          <div style={{ color: '#94a3b8' }}>${row.cryptoVolumeUsd.toLocaleString()}</div>
+                          <div style={{ color: '#94a3b8' }}>{curSymbol}{Math.round(row.cryptoVolumeUsd).toLocaleString()}</div>
                         </td>
 
                         {/* CFD Count & Volume */}

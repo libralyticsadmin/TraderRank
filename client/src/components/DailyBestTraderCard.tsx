@@ -96,6 +96,23 @@ export const DailyBestTraderCard: React.FC<DailyBestTraderCardProps> = ({
             >
               {t.dailyBest.window}
             </span>
+            <span
+              className="status-pill"
+              style={{
+                background: 'rgba(10, 186, 181, 0.15)',
+                color: '#81d8d0',
+                border: '1px solid rgba(10, 186, 181, 0.3)',
+                fontSize: '11px',
+                padding: '2px 8px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+              title="Daily performance reloads every 1 minute"
+            >
+              <Clock size={11} />
+              {t.dailyBest.sync1m}
+            </span>
           </div>
           <h2 style={{ fontSize: '20px', fontWeight: 800, margin: 0, color: '#fff' }}>
             {t.dailyBest.traderOfTheDay}
@@ -222,7 +239,7 @@ export const DailyBestTraderCard: React.FC<DailyBestTraderCardProps> = ({
 
       {/* Global Day Stats Footnote */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px', fontSize: '12px', color: 'var(--text-faint)' }}>
-        <span>{t.dailyBest.totalPipsGenerated} <strong className="tabular" style={{ color: '#fff' }}>+{totalDailyPips.toLocaleString()} {t.dailyBest.pips}</strong></span>
+        <span>{t.dailyBest.totalPipsGenerated} <strong className="tabular" style={{ color: '#fff' }}>{totalDailyPips > 0 ? `+${totalDailyPips.toLocaleString()}` : totalDailyPips.toLocaleString()} {t.dailyBest.pips}</strong></span>
         <span>{t.dailyBest.activeCompeting} <strong className="tabular" style={{ color: '#fff' }}>{activeTradersToday}</strong></span>
       </div>
 

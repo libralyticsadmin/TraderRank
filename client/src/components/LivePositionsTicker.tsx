@@ -113,9 +113,18 @@ export const LivePositionsTicker: React.FC<LivePositionsTickerProps> = ({ positi
                       </span>
                     </td>
                     <td className="tabular" style={{ padding: '12px 8px', textAlign: 'right', fontWeight: 600 }}>
-                      <span className={pos.profitCurrency >= 0 ? 'pip-positive' : 'pip-negative'}>
-                        ${pos.profitCurrency.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                      </span>
+                      {(() => {
+                        const isJpyPos = (pos as any).currency === 'JPY';
+                        const curSym = isJpyPos ? '¥' : '$';
+                        const formattedPosVal = isJpyPos
+                          ? Math.round(pos.profitCurrency).toLocaleString('ja-JP')
+                          : pos.profitCurrency.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        return (
+                          <span className={pos.profitCurrency >= 0 ? 'pip-positive' : 'pip-negative'}>
+                            {curSym}{formattedPosVal}
+                          </span>
+                        );
+                      })()}
                     </td>
                   </tr>
                 );

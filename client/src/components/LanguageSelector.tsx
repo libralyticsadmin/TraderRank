@@ -43,7 +43,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'h
   };
 
   return (
-    <div ref={dropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
+    <div ref={dropdownRef} style={{ position: 'relative', display: 'inline-block', zIndex: isOpen ? 5000 : 'auto' }}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -96,7 +96,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'h
             position: 'absolute',
             top: 'calc(100% + 8px)',
             right: 0,
-            zIndex: 1000,
+            zIndex: 5100,
             minWidth: '170px',
             background: '#0e141f',
             border: '1px solid rgba(0, 240, 255, 0.25)',

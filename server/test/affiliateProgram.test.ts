@@ -61,3 +61,4 @@ describe('TradeRank Gamification Affiliate & Broker Partner System', () => {
     expect(url).toBe('https://traderank.live/?ref=alex_trader');
   });
 });
+

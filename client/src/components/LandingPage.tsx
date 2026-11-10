@@ -12,6 +12,7 @@ import {
   Flame,
   Check,
   User,
+  LayoutDashboard,
 } from 'lucide-react';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { TraderAvatar } from './TraderAvatar.tsx';
@@ -29,6 +30,7 @@ interface LandingPageProps {
   onEnterApp: (tab?: string) => void;
   onOpenConnectWizard: () => void;
   onOpenSubscriptionModal?: () => void;
+  onOpenMyDashboard?: () => void;
   onSelectTrader?: (trader: { userId?: string; username: string; broker?: any; rank?: number; score?: number; winRate?: number; tradesCount?: number }) => void;
   leaderboard?: any[];
 }
@@ -37,6 +39,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onEnterApp,
   onOpenConnectWizard,
   onOpenSubscriptionModal,
+  onOpenMyDashboard,
   onSelectTrader,
   leaderboard = [],
 }) => {
@@ -56,7 +59,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   useEffect(() => {
     let isMounted = true;
-    fetch('/api/accounts')
+    fetch('/api/accounts?scope=public')
       .then(res => (res.ok ? res.json() : []))
       .then(async (accounts: any[]) => {
         if (!isMounted || !Array.isArray(accounts) || accounts.length === 0) return;
@@ -171,6 +174,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <UserNavMenu
               onOpenConnectWizard={onOpenConnectWizard}
               onOpenSubscriptionModal={onOpenSubscriptionModal}
+              onOpenMyDashboard={onOpenMyDashboard}
             />
           </div>
         </div>
@@ -280,6 +284,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   }}
                 >
                   <Trophy size={18} /> {t.landing.enterArenaBtn} <ArrowRight size={18} />
+                </button>
+
+                <button
+                  onClick={() => onOpenMyDashboard?.()}
+                  style={{
+                    background: 'rgba(0, 240, 255, 0.12)',
+                    border: '1px solid rgba(0, 240, 255, 0.4)',
+                    color: '#00F0FF',
+                    padding: '16px 28px',
+                    borderRadius: '12px',
+                    fontSize: '15px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    boxShadow: '0 4px 20px rgba(0, 240, 255, 0.15)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <LayoutDashboard size={18} color="#00F0FF" />
+                  <span>{t.nav.myDashboard}</span>
                 </button>
 
                 <button
@@ -732,13 +758,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           {/* Daily Streak & XP Progression Card */}
           {(() => {
-            const userXp = isAuthenticated && typeof user?.xp === 'number' ? user.xp : (liveAuditStats?.xp ?? 0);
+            const userXp = isAuthenticated && typeof user?.xp === 'number' ? user.xp : 0;
             const gamification = calculateTraderGamification(userXp);
 
             // Read claimed streak days from localStorage (cleanly starting at Day 1 for new users)
+            const streakStorageKey = user?.id ? `traderrank_streak_v2_${user.id}` : 'traderrank_streak_v2_guest';
             let claimedStreakDays: number[] = [];
             try {
-              const saved = localStorage.getItem('traderrank_claimed_streak_days_v1');
+              const saved = localStorage.getItem(streakStorageKey);
               if (saved) claimedStreakDays = JSON.parse(saved);
             } catch {
               // ignore

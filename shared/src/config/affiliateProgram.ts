@@ -34,6 +34,7 @@ export const GAMIFICATION_REFERRAL_TIERS: GamificationReferralTier[] = [
     badgeIcon: 'Target',
     color: '#00F0FF',
     unlockedFeatures: [
+      'Custom Strategic Timeframe Generator (1m - 1W) UNLOCKED',
       '+1,500 Additional XP Boost',
       'Real-Time Live Trade Sound & Visual Alerts',
       'Custom Strategy Presets Saver (Store up to 10 tactical setups)',
@@ -116,3 +117,6 @@ export function generateReferralUrl(referralCode: string, origin?: string): stri
   const base = origin || 'https://traderank.live';
   return `${base}/?ref=${encodeURIComponent(referralCode)}`;
 }
+
+export const CUSTOM_GENERATOR_MIN_REFERRALS = 3;
+

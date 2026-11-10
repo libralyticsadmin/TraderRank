@@ -28,7 +28,7 @@ interface AffiliateModalProps {
 }
 
 export const AffiliateModal: React.FC<AffiliateModalProps> = ({ isOpen, onClose }) => {
-  const { user } = useAuth();
+  const { user, referralCount, addReferral } = useAuth();
 
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -38,8 +38,7 @@ export const AffiliateModal: React.FC<AffiliateModalProps> = ({ isOpen, onClose 
   const referralCode = user?.username ? user.username.toLowerCase().replace(/[^a-z0-9_]/g, '') : 'trader';
   const referralUrl = generateReferralUrl(referralCode);
 
-  // Simulated verified referrals count based on user or demo state
-  const verifiedReferrals = 2; // e.g. 2 friends verified
+  const verifiedReferrals = referralCount;
   const { current, next } = getReferralTier(verifiedReferrals);
 
   const totalXpFromReferrals = verifiedReferrals * 500;
@@ -307,6 +306,28 @@ export const AffiliateModal: React.FC<AffiliateModalProps> = ({ isOpen, onClose 
             >
               <MessageCircle size={13} /> WhatsApp
             </a>
+
+            <button
+              type="button"
+              onClick={addReferral}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '8px',
+                background: 'rgba(0, 240, 255, 0.12)',
+                border: '1px solid rgba(0, 240, 255, 0.35)',
+                color: '#00F0FF',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                marginLeft: 'auto',
+              }}
+              title="Simulate a friend joining TradeRank to test tier unlocks"
+            >
+              <Sparkles size={13} /> +1 Test Friend Joined
+            </button>
           </div>
         </div>
 

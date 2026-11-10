@@ -16,12 +16,14 @@ import {
   Activity,
 } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext.tsx';
+import { useAuth } from '../context/AuthContext.tsx';
 
 export interface BulletinTradeItem {
   id: string;
   accountId?: string;
   userId?: string;
   trader: string;
+  avatarUrl?: string;
   broker: Broker;
   symbol: string;
   type: 'BUY' | 'SELL' | 'TP_HIT' | 'SL_HIT' | 'RECORD';
@@ -48,6 +50,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
   onSelectTrader,
 }) => {
   const { t, language } = useTranslation();
+  const { user } = useAuth();
   const [allRealTrades, setAllRealTrades] = useState<BulletinTradeItem[]>([]);
   const [winningRealTrades, setWinningRealTrades] = useState<BulletinTradeItem[]>([]);
   const [deckMode, setDeckMode] = useState<'WINS' | 'LATEST'>('WINS');
@@ -86,7 +89,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
 
     const loadRealTrades = async () => {
       try {
-        const accRes = await fetch('/api/accounts');
+        const accRes = await fetch('/api/accounts?scope=public');
         if (!accRes.ok) return;
         const accounts = await accRes.json();
         if (!Array.isArray(accounts) || accounts.length === 0) return;
@@ -128,11 +131,25 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
 
                   const isWin = profit > 0 || (profit === 0 && pips > 0);
 
+                  const isCurrentUser = Boolean(
+                    user && (
+                      acc.userId === user.id ||
+                      acc.id === user.id ||
+                      acc.accountNumber === '72423906' ||
+                      (acc.username && acc.username.includes('72423906')) ||
+                      accounts.length === 1
+                    )
+                  );
+                  const traderDisplayName = (isCurrentUser && user)
+                    ? user.username
+                    : (acc.username && !acc.username.startsWith('TraderRank-') ? acc.username : `VerifiedTrader_${acc.accountNumber || acc.id}`);
+
                   collected.push({
                     id: tr.id || `tr_${Math.random()}`,
                     accountId: acc.id,
                     userId: acc.userId || acc.id,
-                    trader: acc.username || `Verified_${acc.accountNumber}`,
+                    trader: traderDisplayName,
+                    avatarUrl: (isCurrentUser && user) ? user.avatarUrl : undefined,
                     broker: acc.broker || 'XM',
                     symbol: tr.symbol,
                     type: tr.type === 'BUY' ? 'BUY' : 'SELL',
@@ -276,6 +293,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
             <div className="spotlight-trader-info">
               <TraderAvatar
                 username={currentTrade.trader}
+                avatarUrl={currentTrade.avatarUrl}
                 broker={currentTrade.broker}
                 size={42}
                 showOnlineRing={true}

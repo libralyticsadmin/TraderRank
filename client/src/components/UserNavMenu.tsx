@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Settings, LogOut, ChevronDown, ShieldCheck, Crown, Users } from 'lucide-react';
+import { User, Settings, LogOut, ChevronDown, ShieldCheck, Crown, Users, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { TraderAvatar } from './TraderAvatar.tsx';
@@ -9,9 +9,15 @@ interface UserNavMenuProps {
   onOpenConnectWizard?: () => void;
   onOpenSubscriptionModal?: () => void;
   onOpenAffiliateModal?: () => void;
+  onOpenMyDashboard?: () => void;
 }
 
-export const UserNavMenu: React.FC<UserNavMenuProps> = ({ onOpenConnectWizard, onOpenSubscriptionModal, onOpenAffiliateModal }) => {
+export const UserNavMenu: React.FC<UserNavMenuProps> = ({
+  onOpenConnectWizard,
+  onOpenSubscriptionModal,
+  onOpenAffiliateModal,
+  onOpenMyDashboard,
+}) => {
   const { user, isAuthenticated, openAuthModal, openProfileModal, logout } = useAuth();
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -66,7 +72,7 @@ export const UserNavMenu: React.FC<UserNavMenuProps> = ({ onOpenConnectWizard, o
   }
 
   return (
-    <div ref={menuRef} style={{ position: 'relative' }}>
+    <div ref={menuRef} style={{ position: 'relative', zIndex: menuOpen ? 5000 : 'auto' }}>
       <button
         onClick={() => setMenuOpen(!menuOpen)}
         style={{
@@ -115,7 +121,7 @@ export const UserNavMenu: React.FC<UserNavMenuProps> = ({ onOpenConnectWizard, o
             borderRadius: '14px',
             padding: '8px',
             boxShadow: '0 15px 35px rgba(0, 0, 0, 0.8), 0 0 20px rgba(10, 186, 181, 0.2)',
-            zIndex: 1200,
+            zIndex: 5100,
             animation: 'fadeIn 0.15s ease-out',
           }}
         >
@@ -124,6 +130,34 @@ export const UserNavMenu: React.FC<UserNavMenuProps> = ({ onOpenConnectWizard, o
             <div style={{ fontSize: '13px', fontWeight: 800, color: '#ffffff' }}>{user.username}</div>
             <div style={{ fontSize: '11px', color: '#848E9C', marginTop: '2px' }}>{user.email}</div>
           </div>
+
+          {onOpenMyDashboard && (
+            <button
+              onClick={() => { setMenuOpen(false); onOpenMyDashboard(); }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '9px 12px',
+                background: 'rgba(0, 240, 255, 0.08)',
+                border: '1px solid rgba(0, 240, 255, 0.25)',
+                borderRadius: '8px',
+                color: '#00F0FF',
+                fontSize: '12px',
+                fontWeight: 800,
+                cursor: 'pointer',
+                textAlign: 'left',
+                marginBottom: '4px',
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(0, 240, 255, 0.18)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(0, 240, 255, 0.08)')}
+            >
+              <LayoutDashboard size={15} color="#00F0FF" />
+              <span>{t.nav.myDashboard}</span>
+            </button>
+          )}
 
           <button
             onClick={() => { setMenuOpen(false); openProfileModal(); }}

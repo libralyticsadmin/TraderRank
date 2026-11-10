@@ -261,5 +261,23 @@ describe('AccountConnectorService - Connection & Routing Standard', () => {
     expect(fxTrade.commission).toBe(-1.4);
     expect(fxTrade.swap).toBe(-0.5);
   });
+
+  it('should connect an XMTrading account with JPY base currency', async () => {
+    const creds: GatewayCredentials = {
+      type: 'mt_gateway',
+      broker: 'XMTrading',
+      platform: 'MT5',
+      serverName: 'XMTrading-MT5',
+      login: '33445566',
+      investorPassword: 'ReadOnlyPass123',
+    };
+
+    const result = await connector.connectAccount('u_demo_jp', 'TokyoTrader', 'XMTrading', creds);
+    expect(result.account).toBeDefined();
+    expect(result.account.broker).toBe('XMTrading');
+    expect(result.account.currency).toBe('JPY');
+    expect(result.account.balance).toBe(1500000);
+    expect(result.account.equity).toBe(1542050);
+  });
 });
 

@@ -589,7 +589,10 @@ const resolveSavedUserAvatar = (username: string, explicitUrl?: string): string 
     const saved = JSON.parse(raw);
     if (
       saved?.avatarUrl &&
-      (saved.username === username || username.startsWith('Verified_'))
+      (saved.username === username ||
+       username.startsWith('Verified_') ||
+       username.startsWith('TraderRank-') ||
+       username.includes('72423906'))
     ) {
       return saved.avatarUrl;
     }

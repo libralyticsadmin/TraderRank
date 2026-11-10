@@ -3,7 +3,7 @@
  * Compliant with PRD v1 and Infrastructure Design v1
  */
 
-export type Broker = 'XM' | 'Axiory' | 'Exness' | 'Vantage' | 'IC_MARKETS' | 'OTHER';
+export type Broker = 'XM' | 'Axiory' | 'Exness' | 'Vantage' | 'IC_MARKETS' | 'XMTrading' | 'Vanguard' | 'OTHER';
 
 export type IntegrationType = 'mt_gateway' | 'exness_native';
 
@@ -120,6 +120,7 @@ export interface CanonicalTrade {
   openTime: string; // ISO 8601 UTC
   closeTime: string; // ISO 8601 UTC
   pnlCurrency: number; // Final monetary profit/loss
+  currency?: string; // Base currency (e.g. 'JPY', 'USD', 'EUR')
   pnlPips: number; // Final pip gain/loss
   commission: number;
   swap: number;
@@ -254,7 +255,7 @@ export interface EventBusEnvelope<T> {
 /**
  * Competitive Tournaments & Sprints (PRD v2 §2 Pillar 2)
  */
-export type TournamentType = 'WEEKLY_SPRINT' | 'MONTHLY_PROP' | 'FLASH_GAUNTLET';
+export type TournamentType = 'WEEKLY_SPRINT' | 'MONTHLY_PROP' | 'FLASH_GAUNTLET' | 'DAILY_BLITZ';
 
 export interface Tournament {
   id: string;

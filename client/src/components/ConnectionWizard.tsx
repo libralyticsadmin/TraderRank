@@ -42,9 +42,11 @@ interface ConnectionWizardProps {
 const BROKERS: { id: Broker; name: string; tag: string; desc: string; url?: string }[] = [
   { id: 'IC_MARKETS', name: 'IC Markets / IC Trading', tag: 'Raw Spread ECN', desc: 'World leader in True ECN raw spread trading & MT4/MT5 accounts', url: 'https://www.ic.com/en/?camp=57406' },
   { id: 'XM', name: 'XM Global', tag: 'MT4 / MT5', desc: 'Connect via MT4/MT5 Gateway with Investor Password' },
-  { id: 'Axiory', name: 'Axiory', tag: 'MT4 / MT5', desc: 'Direct bridge via broker-agnostic Gateway' },
+  { id: 'XMTrading', name: 'XMTrading (Japan JPY)', tag: 'Tokyo JPY Server', desc: 'Japan regulated JPY base accounts (XMTrading-MT5 / Real)', url: 'https://clicks.pipaffiliates.com/c?c=traderrank_jp' },
   { id: 'Exness', name: 'Exness', tag: 'Dual Path', desc: 'Official Native REST/WS API or MT4/MT5 Gateway' },
+  { id: 'Axiory', name: 'Axiory', tag: 'MT4 / MT5', desc: 'Direct bridge via broker-agnostic Gateway' },
   { id: 'Vantage', name: 'Vantage FX', tag: 'MT4 / MT5', desc: 'Secure read-only investor feed' },
+  { id: 'Vanguard', name: 'Vanguard Markets', tag: 'Index & CFDs', desc: 'Institutional index and Forex execution bridge' },
   { id: 'OTHER', name: 'Other MT4/MT5 Broker', tag: 'Universal', desc: 'Any MetaTrader server globally' },
 ];
 
@@ -497,10 +499,12 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                 {(() => {
                   const serverPresets: Record<string, string[]> = {
                     IC_MARKETS: ['ICMarketsSC-Live01', 'ICMarketsSC-Live02', 'ICMarkets-Live 01', 'ICMarketsGlobal-Live01', 'ICTrading-Live01'],
-                    XM: ['XMGlobal-MT5 10', 'XMGlobal-Real 55', 'XMGlobal-Real 1', 'XMGlobal-MT5', 'XMGlobal-Real 30'],
+                    XM: ['XMGlobal-MT5 10', 'XMGlobal-Real 55', 'XMGlobal-Real 1', 'XMGlobal-MT5', 'XMTrading-MT5 (JPY)'],
+                    XMTrading: ['XMTrading-MT5', 'XMTrading-MT5 2', 'XMTrading-Real 1', 'XMTrading-Real 21', 'XMTrading-Real 50', 'XMTrading-Demo'],
                     Exness: ['Exness-MT5Real', 'Exness-MT5Real2', 'Exness-MT5Real3', 'Exness-MT5Real9', 'Exness-Real1', 'Exness-Real2', 'Exness-Real9', 'Exness-Real10'],
                     Axiory: ['Axiory-Live 01', 'Axiory-Live 02', 'AxioryAsia-Live'],
                     Vantage: ['VantageFX-Live 2', 'VantageFX-Live 1', 'VantageInternational-Live 1'],
+                    Vanguard: ['Vanguard-Live', 'Vanguard-MT5', 'Vanguard-Demo'],
                   };
                   const currentPresets = serverPresets[selectedBroker];
                   if (!currentPresets) return null;
@@ -658,8 +662,24 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                     <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.brokerLabel}:</span> <strong>{selectedBroker}</strong></div>
                     <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.integrationLabel}:</span> <strong>{selectedPath === 'mt_gateway' ? 'MT Gateway' : 'Exness Native'}</strong></div>
                     <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.accountLabel}:</span> <span className="tabular">{validationResult.accountDetails?.accountNumber}</span></div>
-                    <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.balanceLabel}:</span> <span className="tabular">${validationResult.accountDetails?.balance.toLocaleString()} {validationResult.accountDetails?.currency}</span></div>
-                    <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.equityLabel}:</span> <span className="tabular">${validationResult.accountDetails?.equity.toLocaleString()}</span></div>
+                    {(() => {
+                      const cur = (validationResult.accountDetails?.currency || 'USD').toUpperCase();
+                      const isJpy = cur === 'JPY';
+                      const curSym = isJpy ? '¥' : cur === 'EUR' ? '€' : cur === 'GBP' ? '£' : '$';
+                      const balStr = isJpy
+                        ? `${curSym}${Math.round(validationResult.accountDetails?.balance || 0).toLocaleString()} JPY`
+                        : `${curSym}${(validationResult.accountDetails?.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${cur}`;
+                      const eqStr = isJpy
+                        ? `${curSym}${Math.round(validationResult.accountDetails?.equity || 0).toLocaleString()}`
+                        : `${curSym}${(validationResult.accountDetails?.equity || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+                      return (
+                        <>
+                          <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.balanceLabel}:</span> <span className="tabular">{balStr}</span></div>
+                          <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.equityLabel}:</span> <span className="tabular">{eqStr}</span></div>
+                        </>
+                      );
+                    })()}
                     <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.leverageLabel}:</span> <span className="tabular">1:{validationResult.accountDetails?.leverage}</span></div>
                     {validationResult.accountDetails?.metaApiAccountId && (
                       <div style={{ gridColumn: 'span 2', marginTop: '4px' }}>

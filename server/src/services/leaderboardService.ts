@@ -243,7 +243,7 @@ export class LeaderboardService {
       });
     } else {
       const trader = this.traders.get(userId)!;
-      if (username && trader.username.startsWith('LiveTrader_')) {
+      if (username && (trader.username.startsWith('LiveTrader_') || trader.username.startsWith('TraderRank-') || trader.username.startsWith('Verified_'))) {
         trader.username = username;
       }
       trader.brokers.add(broker);
@@ -480,11 +480,35 @@ export class LeaderboardService {
     };
   }
 
-  private emitLeaderboardUpdate(): void {
-    const current = this.getLeaderboard();
-    const currentDaily = this.getDailyLeaderboard();
+  private lastEmitTime: number = 0;
+  private pendingEmitTimeout: NodeJS.Timeout | null = null;
+  private readonly BROADCAST_INTERVAL_MS: number = 60000; // 1-minute broadcast cadence for competitive stability
 
-    this.updateListeners.forEach(fn => fn(current));
-    this.dailyUpdateListeners.forEach(fn => fn(currentDaily));
+  private emitLeaderboardUpdate(forceImmediate: boolean = false): void {
+    const now = Date.now();
+    if (forceImmediate || this.lastEmitTime === 0 || now - this.lastEmitTime >= this.BROADCAST_INTERVAL_MS) {
+      if (this.pendingEmitTimeout) {
+        clearTimeout(this.pendingEmitTimeout);
+        this.pendingEmitTimeout = null;
+      }
+      this.lastEmitTime = now;
+      const current = this.getLeaderboard();
+      const currentDaily = this.getDailyLeaderboard();
+
+      this.updateListeners.forEach(fn => fn(current));
+      this.dailyUpdateListeners.forEach(fn => fn(currentDaily));
+      return;
+    }
+
+    if (!this.pendingEmitTimeout) {
+      const delay = Math.max(1000, this.BROADCAST_INTERVAL_MS - (now - this.lastEmitTime));
+      this.pendingEmitTimeout = setTimeout(() => {
+        this.pendingEmitTimeout = null;
+        this.emitLeaderboardUpdate(true);
+      }, delay);
+      if (this.pendingEmitTimeout && typeof this.pendingEmitTimeout.unref === 'function') {
+        this.pendingEmitTimeout.unref();
+      }
+    }
   }
 }

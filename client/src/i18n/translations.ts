@@ -31,6 +31,7 @@ export interface TranslationDictionary {
     refreshRates: string;
     switchView: string;
     fastConnect: string;
+    myDashboard: string;
   };
 
   // Landing Page
@@ -375,6 +376,7 @@ export interface TranslationDictionary {
     totalPipsGenerated: string;
     activeCompeting: string;
     hallOfFameTitle: string;
+    sync1m: string;
   };
 
   // Tournaments & Arena
@@ -535,6 +537,8 @@ export interface TranslationDictionary {
     netPips: string;
     profit: string;
     rate: string;
+    reload1m: string;
+    top3Podium: string;
   };
 
   // Community Feed
@@ -908,6 +912,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       refreshRates: 'Refresh Live Rates',
       switchView: 'Switch View',
       fastConnect: 'Fast Connect',
+      myDashboard: 'My Dashboard',
     },
     landing: {
       badge: 'VERIFIED MULTI-BROKER ARENA',
@@ -1224,7 +1229,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       spotlight: 'Daily Winning Pips Spotlight',
       window: '24h Cross-Platform Window',
       traderOfTheDay: 'Trader of the Day',
-      subtitle: 'Highest net pip performance across XM, Axiory, Exness, and Vantage today',
+      subtitle: 'Highest net pip performance across XM, XMTrading, IC Markets, Axiory, Exness, Vantage, and Vanguard today',
       rollover: 'Rollover:',
       hideHallOfFame: 'Hide Hall of Fame',
       dailyChampions: 'Daily Champions',
@@ -1240,6 +1245,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       totalPipsGenerated: 'Total Pips Generated Today:',
       activeCompeting: 'Active Competing Traders:',
       hallOfFameTitle: 'Hall of Fame — Previous Daily Best Traders',
+      sync1m: '1m Sync',
     },
     arena: {
       tournamentsTitle: 'Live Trading Tournament Arena',
@@ -1394,6 +1400,8 @@ export const translations: Record<Language, TranslationDictionary> = {
       netPips: 'Net Pips',
       profit: 'Profit ($)',
       rate: 'Rate',
+      reload1m: 'Reloads every 1 min',
+      top3Podium: 'Top 3 Podium',
     },
     community: {
       title: 'Live Global Community Stream',
@@ -1741,6 +1749,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       refreshRates: '最新レートに更新する',
       switchView: '表示切替',
       fastConnect: 'クイック接続',
+      myDashboard: 'マイダッシュボード',
     },
     landing: {
       badge: '認証済、複数ブローカー対応のトレーダーコミュニティ',
@@ -2057,7 +2066,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       spotlight: '本日のトップ獲得pips',
       window: '24時間ブローカー同期枠',
       traderOfTheDay: '本日の最優秀トレーダー',
-      subtitle: 'XM、Axiory、Exness、Vantage全体で本日最も高い純Pipsを獲得したトレーダー',
+      subtitle: 'XM、XMTrading (日本円)、IC Markets、Axiory、Exness、Vantage、Vanguard全体で本日最も高い純Pipsを獲得したトレーダー',
       rollover: 'ロールオーバー:',
       hideHallOfFame: '歴代記録を隠す',
       dailyChampions: '歴代チャンピオン',
@@ -2073,6 +2082,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       totalPipsGenerated: '本日全参加者が獲得した総Pips:',
       activeCompeting: '本日稼働中のトレーダー数:',
       hallOfFameTitle: '殿堂入り — 歴代のデイリー最優秀トレーダー',
+      sync1m: '1分同期',
     },
     arena: {
       tournamentsTitle: 'リアルタイム・トレードトーナメント会場',
@@ -2227,6 +2237,8 @@ export const translations: Record<Language, TranslationDictionary> = {
       netPips: '純Pips',
       profit: '利益 ($)',
       rate: '利益率',
+      reload1m: '1分ごとに更新',
+      top3Podium: 'トップ3表彰台',
     },
     community: {
       title: 'グローバルコミュニティ・ライブ配信',
@@ -2574,6 +2586,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       refreshRates: '刷新实时汇率',
       switchView: '切换视图',
       fastConnect: '快捷连接',
+      myDashboard: '我的控制台',
     },
     landing: {
       badge: '官方认证多经纪商实盘竞技场',
@@ -2890,7 +2903,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       spotlight: '每日点数之星・实盘焦点',
       window: '24小时跨经纪商实盘窗口',
       traderOfTheDay: '今日最佳交易员',
-      subtitle: '今日在 XM、Axiory、Exness 与 Vantage 全网斩获最高净点数的冠军交易员',
+      subtitle: '今日在 XM、XMTrading、IC Markets、Axiory、Exness、Vantage 与 Vanguard 全网斩获最高净点数的冠军交易员',
       rollover: '距离日结算:',
       hideHallOfFame: '收起名人堂',
       dailyChampions: '历届日冠',
@@ -2906,6 +2919,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       totalPipsGenerated: '全网交易员今日累计收获点数:',
       activeCompeting: '今日活跃参赛交易员:',
       hallOfFameTitle: '荣誉殿堂 — 历届日度最佳交易员',
+      sync1m: '1分钟同步',
     },
     arena: {
       tournamentsTitle: '实盘电子竞技锦标赛',
@@ -3060,6 +3074,8 @@ export const translations: Record<Language, TranslationDictionary> = {
       netPips: '净点数',
       profit: '收益 ($)',
       rate: '收益率',
+      reload1m: '每1分钟刷新',
+      top3Podium: '前3名领奖台',
     },
     community: {
       title: '全球实盘动态流',

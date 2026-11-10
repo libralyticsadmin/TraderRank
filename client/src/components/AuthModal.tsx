@@ -78,7 +78,7 @@ export const AuthModal: React.FC = () => {
         inset: 0,
         backgroundColor: 'rgba(0, 0, 0, 0.78)',
         backdropFilter: 'blur(10px)',
-        zIndex: 1100,
+        zIndex: 10000,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

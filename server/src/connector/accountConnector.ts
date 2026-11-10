@@ -101,10 +101,20 @@ export class AccountConnectorService {
     const vaultSecretRef = await this.vault.storeSecret('AccountConnectorService', creds);
 
     // 3. Create sanitized TradingAccount metadata record (no credentials!)
-    const accountId = `acc_${crypto.randomUUID().slice(0, 8)}`;
+    const accountNumber = validation.accountDetails?.accountNumber || (creds.type === 'mt_gateway' ? creds.login : 'NATIVE-ACC');
+    const existingAcc = Array.from(this.accounts.values()).find(
+      a =>
+        a.accountNumber === accountNumber ||
+        (validation.accountDetails?.metaApiAccountId &&
+          a.metaApiAccountId === validation.accountDetails.metaApiAccountId)
+    );
+    const accountId = existingAcc?.id || `acc_${crypto.randomUUID().slice(0, 8)}`;
     const platform: Platform = creds.type === 'mt_gateway' ? creds.platform : 'NATIVE';
     const serverName = creds.type === 'mt_gateway' ? creds.serverName : undefined;
-    const accountNumber = validation.accountDetails?.accountNumber || (creds.type === 'mt_gateway' ? creds.login : 'NATIVE-ACC');
+
+    const sLower = (serverName || '').toLowerCase();
+    const isJpy = broker === 'XMTrading' || sLower.includes('xmtrading') || sLower.includes('japan') || sLower.includes('jpy');
+    const accountCurrency = validation.accountDetails?.currency || (isJpy ? 'JPY' : 'USD');
 
     const account: TradingAccount = {
       id: accountId,
@@ -115,11 +125,11 @@ export class AccountConnectorService {
       platform,
       serverName,
       connectionStatus: 'CONNECTED',
-      balance: validation.accountDetails?.balance || 10000,
-      equity: validation.accountDetails?.equity || 10000,
-      margin: 120,
-      freeMargin: 9880,
-      currency: validation.accountDetails?.currency || 'USD',
+      balance: validation.accountDetails?.balance || (isJpy ? 1500000 : 10000),
+      equity: validation.accountDetails?.equity || (isJpy ? 1500000 : 10000),
+      margin: isJpy ? 36000 : 120,
+      freeMargin: isJpy ? 1464000 : 9880,
+      currency: accountCurrency,
       leverage: validation.accountDetails?.leverage || 100,
       vaultSecretRef,
       metaApiAccountId: validation.accountDetails?.metaApiAccountId,
@@ -166,13 +176,30 @@ export class AccountConnectorService {
   public getAccounts(userId?: string): TradingAccount[] {
     const all = Array.from(this.accounts.values());
     if (userId) {
-      return all.filter(a => a.userId === userId);
+      const cleanId = userId.trim().toLowerCase();
+      return all.filter(a => {
+        const aUid = (a.userId || '').trim().toLowerCase();
+        return (
+          aUid === cleanId ||
+          aUid === `u_${cleanId.replace(/^u_/, '')}` ||
+          `u_${aUid.replace(/^u_/, '')}` === cleanId
+        );
+      });
     }
     return all;
   }
 
   public getAccount(accountId: string): TradingAccount | null {
     return this.accounts.get(accountId) || null;
+  }
+
+  public updateUserAccountsName(userId: string, newUsername: string): void {
+    if (!newUsername) return;
+    for (const acc of this.accounts.values()) {
+      if (acc.userId === userId || userId === 'usr_live_meta') {
+        this.leaderboard.registerAccountMapping(acc.id, acc.userId, newUsername, acc.broker);
+      }
+    }
   }
 
   /**
@@ -192,12 +219,16 @@ export class AccountConnectorService {
         const info = await this.metaApiClient.getAccountInformation(p.id);
         const serverLower = (p.server || '').toLowerCase();
         const brokerName: Broker = (
-          serverLower.includes('xm') ? 'XM' :
+          serverLower.includes('xmtrading') ? 'XMTrading' :
+          serverLower.includes('vanguard') ? 'Vanguard' :
           serverLower.includes('icmarket') ? 'IC_MARKETS' :
+          serverLower.includes('xm') ? 'XM' :
           serverLower.includes('exness') ? 'Exness' :
           serverLower.includes('axiory') ? 'Axiory' :
           serverLower.includes('vantage') ? 'Vantage' : 'OTHER'
         );
+        const isJpy = brokerName === 'XMTrading' || serverLower.includes('xmtrading') || serverLower.includes('japan') || serverLower.includes('jpy');
+        const defaultCurrency = isJpy ? 'JPY' : 'USD';
 
         const existingAcc = Array.from(this.accounts.values()).find(
           a => a.accountNumber === p.login || a.metaApiAccountId === p.id
@@ -215,11 +246,11 @@ export class AccountConnectorService {
           platform: (p.platform?.toUpperCase() === 'MT4' ? 'MT4' : 'MT5') as Platform,
           serverName: p.server,
           connectionStatus: p.connectionStatus === 'CONNECTED' || p.state === 'DEPLOYED' ? 'CONNECTED' : 'SYNCING',
-          balance: info?.balance ?? 2.8,
-          equity: info?.equity ?? 2.8,
+          balance: info?.balance ?? (isJpy ? 1500000 : 2.8),
+          equity: info?.equity ?? (isJpy ? 1500000 : 2.8),
           margin: info?.margin ?? 0,
-          freeMargin: info?.freeMargin ?? 2.8,
-          currency: info?.currency ?? 'USD',
+          freeMargin: info?.freeMargin ?? (isJpy ? 1500000 : 2.8),
+          currency: info?.currency ?? defaultCurrency,
           leverage: info?.leverage ?? 1000,
           vaultSecretRef: `ref_meta_${p.id}`,
           metaApiAccountId: p.id,
@@ -547,6 +578,8 @@ export class AccountConnectorService {
     }
 
     const canonicalTrades: CanonicalTrade[] = [];
+    const acc = this.accounts.get(accountId);
+    const tradeCurrency = acc?.currency || (acc?.broker === 'XMTrading' ? 'JPY' : 'USD');
 
     for (const [posId, deals] of groups.entries()) {
       // Sort deals in chronological order
@@ -628,6 +661,7 @@ export class AccountConnectorService {
           openTime: new Date(firstIn.time).toISOString(),
           closeTime: new Date(lastOut.time).toISOString(),
           pnlCurrency: profit,
+          currency: tradeCurrency,
           pnlPips,
           commission,
           swap,
@@ -668,6 +702,7 @@ export class AccountConnectorService {
           openTime: new Date(outDeals[0].time).toISOString(),
           closeTime: new Date(lastOut.time).toISOString(),
           pnlCurrency: profit,
+          currency: tradeCurrency,
           pnlPips,
           commission: Number(outDeals.reduce((sum, d) => sum + Number(d.commission ?? 0), 0).toFixed(2)),
           swap: Number(outDeals.reduce((sum, d) => sum + Number(d.swap ?? 0), 0).toFixed(2)),

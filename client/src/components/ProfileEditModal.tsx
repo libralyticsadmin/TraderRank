@@ -150,7 +150,7 @@ export const ProfileEditModal: React.FC = () => {
         inset: 0,
         backgroundColor: 'rgba(0, 0, 0, 0.82)',
         backdropFilter: 'blur(10px)',
-        zIndex: 1150,
+        zIndex: 10000,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

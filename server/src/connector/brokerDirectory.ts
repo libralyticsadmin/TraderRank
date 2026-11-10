@@ -59,6 +59,21 @@ export class BrokerDirectory {
     { broker: 'XM', serverName: 'XMGlobal-Demo', platform: 'MT5', isDemo: true },
     { broker: 'XM', serverName: 'XMGlobal-Real 20', platform: 'MT4', isDemo: false },
 
+    // XMTrading (XM Japan Server - JPY Base)
+    { broker: 'XMTrading', serverName: 'XMTrading-MT5', platform: 'MT5', isDemo: false },
+    { broker: 'XMTrading', serverName: 'XMTrading-MT5 2', platform: 'MT5', isDemo: false },
+    { broker: 'XMTrading', serverName: 'XMTrading-MT5 3', platform: 'MT5', isDemo: false },
+    { broker: 'XMTrading', serverName: 'XMTrading-Real 1', platform: 'MT4', isDemo: false },
+    { broker: 'XMTrading', serverName: 'XMTrading-Real 21', platform: 'MT4', isDemo: false },
+    { broker: 'XMTrading', serverName: 'XMTrading-Real 50', platform: 'MT4', isDemo: false },
+    { broker: 'XMTrading', serverName: 'XMTrading-Demo', platform: 'MT5', isDemo: true },
+    { broker: 'XMTrading', serverName: 'XMTrading-Demo 2', platform: 'MT4', isDemo: true },
+
+    // Vanguard Markets MT5 / MT4
+    { broker: 'Vanguard', serverName: 'Vanguard-Live', platform: 'MT5', isDemo: false },
+    { broker: 'Vanguard', serverName: 'Vanguard-MT5', platform: 'MT5', isDemo: false },
+    { broker: 'Vanguard', serverName: 'Vanguard-Demo', platform: 'MT5', isDemo: true },
+
     // Axiory MT5 / MT4
     { broker: 'Axiory', serverName: 'Axiory-Live', platform: 'MT5', isDemo: false },
     { broker: 'Axiory', serverName: 'Axiory-Demo', platform: 'MT5', isDemo: true },
@@ -95,6 +110,8 @@ export class BrokerDirectory {
    */
   public resolveBroker(serverName: string): Broker {
     const s = serverName.toLowerCase();
+    if (s.includes('xmtrading') || s.includes('xm trading') || s.includes('xm japan')) return 'XMTrading';
+    if (s.includes('vanguard')) return 'Vanguard';
     if (s.includes('icmarket') || s.includes('ic market') || s.includes('ic.com') || s.includes('ictrading') || s.includes('ic trading')) return 'IC_MARKETS';
     if (s.includes('exness')) return 'Exness';
     if (s.includes('xm') || s.includes('xmglobal')) return 'XM';
@@ -111,10 +128,14 @@ export class BrokerDirectory {
         return 'https://www.exness.com';
       case 'XM':
         return 'https://www.xm.com';
+      case 'XMTrading':
+        return 'https://www.xmtrading.com';
       case 'Axiory':
         return 'https://www.axiory.com';
       case 'Vantage':
         return 'https://www.vantagemarkets.com';
+      case 'Vanguard':
+        return 'https://vanguardmarkets.com';
       default:
         return 'https://www.ic.com/en/?camp=57406';
     }
@@ -199,6 +220,8 @@ export class BrokerDirectory {
     }
 
     const broker = this.resolveBroker(serverName);
+    const sLower = serverName.toLowerCase();
+    const isJpyAccount = broker === 'XMTrading' || sLower.includes('xmtrading') || sLower.includes('japan') || sLower.includes('jpy');
     const matchedProfile = this.serverProfiles.find(
       p => p.serverName.toLowerCase() === serverName.toLowerCase()
     ) || {
@@ -216,9 +239,9 @@ export class BrokerDirectory {
         accountNumber: login,
         server: serverName,
         platform,
-        currency: 'USD',
-        balance: 10000.00,
-        equity: 10420.50,
+        currency: isJpyAccount ? 'JPY' : 'USD',
+        balance: isJpyAccount ? 1500000.00 : 10000.00,
+        equity: isJpyAccount ? 1542050.00 : 10420.50,
         leverage: 100,
         isReadOnly: true,
       },
