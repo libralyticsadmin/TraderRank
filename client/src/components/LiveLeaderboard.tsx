@@ -5,6 +5,7 @@ import { TraderAvatar } from './TraderAvatar.tsx';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { resolveTraderIdentity } from './avatarCatalog.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
+import { useAuth } from '../context/AuthContext.tsx';
 import {
   Trophy,
   Award,
@@ -34,6 +35,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
   onSelectTrader,
 }) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [metric, setMetric] = useState<RankingMetric>('pips');
   const [period, setPeriod] = useState<RankingPeriod>('all_time');
   const [brokerFilter, setBrokerFilter] = useState<string>('ALL');
@@ -398,7 +400,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
       ...item,
       displayRank: index + 1,
     }));
-  }, [entries, dailyStandings, period, metric, brokerFilter, searchQuery, ledgerStatsByUser, t]);
+  }, [entries, dailyStandings, period, metric, brokerFilter, searchQuery, ledgerStatsByUser, t, user?.username]);
 
   const top3 = processedEntries.slice(0, 3);
 

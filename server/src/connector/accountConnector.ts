@@ -25,6 +25,42 @@ import { MetaApiClient, MetaApiDeal } from '../workers/metaApiClient.js';
 import { RawPositionPayload } from '../workers/baseWorker.js';
 import { TournamentService } from '../services/tournamentService.js';
 import { PipCalculator } from '../core/pipCalculator.js';
+import { r2Storage } from '../services/r2StorageService.js';
+
+const DEFAULT_TRADER_USERNAMES: Record<string, string> = {
+  '72423906': 'TokyoScalper_FX',
+  '342186831': 'ApexTrader_FX',
+  '411407722': 'Vanguard_FX',
+};
+
+const TRADER_HANDLE_POOL = [
+  'AlphaTrader_FX',
+  'QuantumPips_FX',
+  'TokyoScalper_FX',
+  'ApexTrader_FX',
+  'Vanguard_FX',
+  'LondonFX_Pro',
+  'Elena_Scalps',
+  'Kenshi_Tokyo',
+  'Marcus_V',
+  'Viktor_Metals',
+  'Sofia_Quant',
+  'Liam_FX',
+];
+
+function getDefaultTraderUsername(accountNumber?: string): string {
+  const clean = String(accountNumber || '').replace(/^TraderRank-/i, '').trim();
+  if (clean && DEFAULT_TRADER_USERNAMES[clean]) {
+    return DEFAULT_TRADER_USERNAMES[clean];
+  }
+  let hash = 0;
+  const seed = clean || 'trader';
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash << 5) - hash + seed.charCodeAt(i);
+    hash |= 0;
+  }
+  return TRADER_HANDLE_POOL[Math.abs(hash) % TRADER_HANDLE_POOL.length];
+}
 
 export class AccountConnectorService {
   private static instance: AccountConnectorService;
@@ -37,6 +73,7 @@ export class AccountConnectorService {
 
   // Relational storage simulation for connected trading accounts (Postgres model)
   private accounts = new Map<string, TradingAccount>();
+  private traderUsernames = new Map<string, string>();
   private tradesStorage = new Map<string, CanonicalTrade[]>();
   private rawDealsCache = new Map<string, MetaApiDeal[]>();
   private lastDealSyncAt = new Map<string, number>();
@@ -115,12 +152,22 @@ export class AccountConnectorService {
     const sLower = (serverName || '').toLowerCase();
     const isJpy = broker === 'XMTrading' || sLower.includes('xmtrading') || sLower.includes('japan') || sLower.includes('jpy');
     const accountCurrency = validation.accountDetails?.currency || (isJpy ? 'JPY' : 'USD');
+    const resolvedProfileUsername =
+      username && !username.startsWith('TraderRank-')
+        ? username
+        : this.traderUsernames.get(accountNumber) || getDefaultTraderUsername(accountNumber);
+
+    if (username && !username.startsWith('TraderRank-')) {
+      this.traderUsernames.set(accountNumber, username);
+      this.traderUsernames.set(userId, username);
+      this.persistTraderUsernamesToR2().catch(() => {});
+    }
 
     const account: TradingAccount = {
       id: accountId,
       userId,
       accountNumber,
-      accountHolderName: username,
+      accountHolderName: resolvedProfileUsername,
       broker,
       integrationType: creds.type,
       platform,
@@ -140,7 +187,7 @@ export class AccountConnectorService {
     };
 
     this.accounts.set(accountId, account);
-    this.leaderboard.registerAccountMapping(accountId, userId, username, broker, username, accountNumber);
+    this.leaderboard.registerAccountMapping(accountId, userId, resolvedProfileUsername, broker, resolvedProfileUsername, accountNumber);
 
     // 4. Provision worker
     await this.orchestrator.provisionAccount(accountId, broker, creds, account.metaApiAccountId);
@@ -194,14 +241,83 @@ export class AccountConnectorService {
     return this.accounts.get(accountId) || null;
   }
 
-  public updateUserAccountsName(userId: string, newUsername: string): void {
-    if (!newUsername) return;
+  private async loadTraderUsernamesFromR2(): Promise<void> {
+    try {
+      const saved = await r2Storage.getJson<Record<string, string>>('profiles/account_usernames.json');
+      if (saved && typeof saved === 'object') {
+        for (const [k, v] of Object.entries(saved)) {
+          if (v && typeof v === 'string' && !v.startsWith('TraderRank-')) {
+            this.traderUsernames.set(k, v);
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  private async persistTraderUsernamesToR2(): Promise<void> {
+    try {
+      const obj: Record<string, string> = {};
+      for (const [k, v] of this.traderUsernames.entries()) {
+        obj[k] = v;
+      }
+      await r2Storage.uploadJson('profiles/account_usernames.json', obj);
+    } catch {
+      // ignore
+    }
+  }
+
+  public updateUserAccountsName(
+    userId: string,
+    newUsername: string,
+    primaryBroker?: string,
+    accountNumber?: string
+  ): void {
+    const cleanName = (newUsername || '').trim();
+    if (!cleanName || cleanName.startsWith('TraderRank-')) return;
+
+    this.traderUsernames.set(userId, cleanName);
+    if (accountNumber) {
+      this.traderUsernames.set(String(accountNumber).replace(/^TraderRank-/i, '').trim(), cleanName);
+    }
+
+    let matchedAny = false;
     for (const acc of this.accounts.values()) {
-      if (acc.userId === userId || userId === 'usr_live_meta') {
-        acc.accountHolderName = newUsername;
-        this.leaderboard.registerAccountMapping(acc.id, acc.userId, newUsername, acc.broker, newUsername, acc.accountNumber);
+      const isDirectMatch =
+        acc.userId === userId ||
+        userId === 'usr_live_meta' ||
+        (accountNumber && acc.accountNumber === String(accountNumber).replace(/^TraderRank-/i, '').trim());
+      if (isDirectMatch) {
+        acc.accountHolderName = cleanName;
+        this.traderUsernames.set(acc.accountNumber, cleanName);
+        this.leaderboard.registerAccountMapping(acc.id, acc.userId, cleanName, acc.broker, cleanName, acc.accountNumber);
+        matchedAny = true;
       }
     }
+
+    // If user updated their profile username and hasn't explicitly bound userId yet, bind to their primary account (e.g. 72423906 or matching broker)
+    if (!matchedAny) {
+      const allAccs = Array.from(this.accounts.values());
+      const targetAcc =
+        allAccs.find(a => a.accountNumber === '72423906') ||
+        (primaryBroker ? allAccs.find(a => a.broker.toLowerCase() === primaryBroker.toLowerCase()) : undefined) ||
+        allAccs[0];
+      if (targetAcc) {
+        targetAcc.accountHolderName = cleanName;
+        this.traderUsernames.set(targetAcc.accountNumber, cleanName);
+        this.leaderboard.registerAccountMapping(
+          targetAcc.id,
+          targetAcc.userId,
+          cleanName,
+          targetAcc.broker,
+          cleanName,
+          targetAcc.accountNumber
+        );
+      }
+    }
+
+    this.persistTraderUsernamesToR2().catch(() => {});
   }
 
   /**
@@ -212,6 +328,8 @@ export class AccountConnectorService {
     if (!this.metaApiClient.hasToken()) {
       return this.getAccounts();
     }
+
+    await this.loadTraderUsernamesFromR2();
 
     try {
       const provisionedList = await this.metaApiClient.listProvisionedAccounts();
@@ -237,17 +355,22 @@ export class AccountConnectorService {
         );
         const accountId = existingAcc?.id || `acc_meta_${p.login}`;
         const userId = existingAcc?.userId || (provisionedList.length === 1 ? 'usr_live_meta' : `usr_meta_${p.login}`);
-        const rawHolderName =
-          existingAcc?.accountHolderName ||
-          (info?.name && !info.name.startsWith('TraderRank-') ? info.name : undefined) ||
-          (p.name && !p.name.startsWith('TraderRank-') ? p.name : undefined);
-        const username = rawHolderName || p.name || `TraderRank-${p.login}`;
+        // Strictly use Trader Profile Username (NEVER use broker legal name info.name)
+        const profileUsername =
+          this.traderUsernames.get(p.login) ||
+          this.traderUsernames.get(userId) ||
+          (existingAcc?.accountHolderName && !existingAcc.accountHolderName.startsWith('TraderRank-')
+            ? existingAcc.accountHolderName
+            : undefined) ||
+          (p.name && !p.name.startsWith('TraderRank-') ? p.name : undefined) ||
+          getDefaultTraderUsername(p.login);
+        const username = profileUsername;
 
         const tradingAccount: TradingAccount = {
           id: accountId,
           userId,
           accountNumber: p.login,
-          accountHolderName: rawHolderName,
+          accountHolderName: profileUsername,
           broker: brokerName,
           integrationType: 'mt_gateway',
           platform: (p.platform?.toUpperCase() === 'MT4' ? 'MT4' : 'MT5') as Platform,
@@ -267,7 +390,7 @@ export class AccountConnectorService {
         };
 
         this.accounts.set(accountId, tradingAccount);
-        this.leaderboard.registerAccountMapping(accountId, userId, username, brokerName, rawHolderName, p.login);
+        this.leaderboard.registerAccountMapping(accountId, userId, username, brokerName, profileUsername, p.login);
 
         // Fetch real historical deals directly from MetaApi
         const rawDeals = await this.metaApiClient.getHistoricalDeals(p.id);

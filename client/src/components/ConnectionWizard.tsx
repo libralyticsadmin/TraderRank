@@ -186,6 +186,18 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
         throw new Error(data.error || 'Failed to connect account');
       }
 
+      try {
+        if (user?.username && data.account.accountNumber) {
+          const rawMap = localStorage.getItem('traderank_account_usernames_v1');
+          const parsedMap = rawMap ? JSON.parse(rawMap) : {};
+          parsedMap[String(data.account.accountNumber)] = user.username;
+          if (data.account.id) parsedMap[String(data.account.id)] = user.username;
+          localStorage.setItem('traderank_account_usernames_v1', JSON.stringify(parsedMap));
+        }
+      } catch {
+        // ignore
+      }
+
       onSuccess(data.account);
       onClose();
     } catch (err: unknown) {

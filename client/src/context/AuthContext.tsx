@@ -127,11 +127,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  // Sync with localStorage
+  // Sync with localStorage and push active trader profile username to server
   useEffect(() => {
     try {
       if (user) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+        fetch('/api/auth/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(user),
+        }).catch(() => {});
       } else {
         localStorage.removeItem(STORAGE_KEY);
       }

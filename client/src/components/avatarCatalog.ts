@@ -1208,9 +1208,77 @@ const isRawAccountTag = (val?: string | null): boolean => {
   return false;
 };
 
+const DEFAULT_TRADER_USERNAMES: Record<string, string> = {
+  '72423906': 'TokyoScalper_FX',
+  '342186831': 'ApexTrader_FX',
+  '411407722': 'Vanguard_FX',
+};
+
+const TRADER_HANDLE_POOL = [
+  'AlphaTrader_FX',
+  'QuantumPips_FX',
+  'TokyoScalper_FX',
+  'ApexTrader_FX',
+  'Vanguard_FX',
+  'LondonFX_Pro',
+  'Elena_Scalps',
+  'Kenshi_Tokyo',
+  'Marcus_V',
+  'Viktor_Metals',
+  'Sofia_Quant',
+  'Liam_FX',
+];
+
+const getDefaultTraderHandle = (accountNumber?: string | null, seed?: string): string => {
+  const clean = String(accountNumber || '').replace(/^TraderRank-/i, '').trim();
+  if (clean && DEFAULT_TRADER_USERNAMES[clean]) {
+    return DEFAULT_TRADER_USERNAMES[clean];
+  }
+  const str = clean || seed || 'trader';
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return TRADER_HANDLE_POOL[Math.abs(hash) % TRADER_HANDLE_POOL.length];
+};
+
+const getLocalTraderUsername = (accountNumber?: string | null, userId?: string | null): string | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const cleanAcc = accountNumber ? String(accountNumber).replace(/^TraderRank-/i, '').trim() : '';
+    const mapRaw = localStorage.getItem('traderank_account_usernames_v1');
+    if (mapRaw) {
+      const map = JSON.parse(mapRaw);
+      if (cleanAcc && map[cleanAcc] && !isRawAccountTag(map[cleanAcc])) {
+        return String(map[cleanAcc]).trim();
+      }
+      if (userId && map[userId] && !isRawAccountTag(map[userId])) {
+        return String(map[userId]).trim();
+      }
+    }
+
+    const userRaw = localStorage.getItem('traderank_auth_user_v1');
+    if (userRaw) {
+      const savedUser = JSON.parse(userRaw);
+      if (savedUser?.username && !isRawAccountTag(savedUser.username)) {
+        if (
+          (userId && (savedUser.id === userId || userId === 'usr_live_meta')) ||
+          cleanAcc === '72423906'
+        ) {
+          return String(savedUser.username).trim();
+        }
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+};
+
 /**
- * Resolves both a prominent human-readable Profile Name AND a smaller TradeRank-<accountNumber> tag
- * so leaderboard cards, podiums, and modals always show the trader's profile name + smaller account ID.
+ * Resolves both a prominent Trader Profile Username AND a smaller TradeRank-<accountNumber> tag
+ * so leaderboard cards, podiums, and modals always show the trader profile username + smaller account ID.
  */
 export const resolveTraderIdentity = (params: {
   username?: string | null;
@@ -1246,15 +1314,17 @@ export const resolveTraderIdentity = (params: {
   // Keep avatarSeed tied to the canonical account tag / username so avatars stay deterministic
   const avatarSeed = accountTag || rawUser || rawUid || 'trader';
 
-  // 2. Resolve Profile Name (Priority: explicit profileName/accountHolderName -> non-tag username -> deterministic persona label)
+  // 2. Resolve Trader Profile Username (Priority: local user profile username -> server trader username -> default trader handle)
   let profileName = '';
-  if (!isRawAccountTag(rawProfile)) {
+  const localUsername = getLocalTraderUsername(accountNumber, rawUid);
+  if (localUsername) {
+    profileName = localUsername;
+  } else if (!isRawAccountTag(rawProfile)) {
     profileName = rawProfile;
   } else if (!isRawAccountTag(rawUser)) {
     profileName = rawUser;
   } else {
-    const preset = getRandomTraderAvatar(avatarSeed);
-    profileName = preset.label;
+    profileName = getDefaultTraderHandle(accountNumber, avatarSeed);
   }
 
   return {
