@@ -22,6 +22,7 @@ export interface TradingAccount {
   id: string;
   userId: string;
   accountNumber: string;
+  accountHolderName?: string;
   broker: Broker;
   integrationType: IntegrationType;
   platform: Platform;
@@ -135,6 +136,8 @@ export interface LeaderboardEntry {
   rank: number;
   userId: string;
   username: string;
+  profileName?: string;
+  accountNumber?: string;
   avatarUrl?: string;
   avatarSymbol?: string; // Symbolic identifier instead of emoji
   accountCount: number;
@@ -163,6 +166,8 @@ export interface DailyTraderStats {
   rank: number;
   userId: string;
   username: string;
+  profileName?: string;
+  accountNumber?: string;
   avatarSymbol: string;
   brokers: Broker[];
   accountCount: number;

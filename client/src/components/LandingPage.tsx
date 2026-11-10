@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { TraderAvatar } from './TraderAvatar.tsx';
+import { resolveTraderIdentity } from './avatarCatalog.ts';
 import { BrandLogo, BrandMark } from './BrandLogo.tsx';
 import { LiveTradeBulletin } from './LiveTradeBulletin.tsx';
 import { MarketLivePricesTicker } from './MarketLivePricesTicker.tsx';
@@ -61,6 +62,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         level: number;
         currency?: string;
         broker?: string;
+        accountNumber?: string;
+        accountHolderName?: string;
         liveOrders: Array<{
           id: string;
           ticket: string;
@@ -182,6 +185,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               level: Math.max(1, Math.floor(valid.length / 40) + 1),
               currency: acc.currency,
               broker: acc.broker,
+              accountNumber: acc.accountNumber,
+              accountHolderName: acc.accountHolderName,
               liveOrders: openOrders.length > 0 ? openOrders : recentClosedOrders,
             };
 
@@ -284,10 +289,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       const gamification = calculateTraderGamification(xp);
       const broker = (real?.broker || trader.brokers?.[0] || 'XM') as any;
       const currency = real?.currency || (broker === 'XMTrading' ? 'JPY' : 'USD');
+      const identity = resolveTraderIdentity({
+        username: trader.username,
+        profileName: trader.profileName,
+        accountHolderName: real?.accountHolderName,
+        accountNumber: trader.accountNumber || real?.accountNumber,
+        userId: trader.userId,
+      });
 
       return {
         userId: trader.userId,
         username: trader.username,
+        profileName: identity.profileName,
+        accountTag: identity.accountTag,
+        avatarSeed: identity.avatarSeed,
         broker,
         currency,
         avatarSymbol: trader.avatarSymbol || 'zap',
@@ -749,9 +764,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
-                    <TraderAvatar username={trader.username} symbol={trader.avatarSymbol} size={56} />
-                    <div>
-                      <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#FFFFFF' }}>{trader.username}</h3>
+                    <TraderAvatar username={trader.avatarSeed} symbol={trader.avatarSymbol} size={56} />
+                    <div style={{ minWidth: 0 }}>
+                      <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {trader.profileName}
+                      </h3>
+                      {trader.accountTag && (
+                        <div
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            color: '#00F0FF',
+                            fontFamily: 'var(--font-mono)',
+                            marginTop: '2px',
+                            letterSpacing: '0.2px',
+                          }}
+                        >
+                          {trader.accountTag}
+                        </div>
+                      )}
                       <div style={{ fontSize: '12px', color: '#848E9C', marginTop: '2px' }}>
                         {trader.tier} • {trader.trades} {t.dailyBest.trades}
                       </div>

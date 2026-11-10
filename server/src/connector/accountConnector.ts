@@ -120,6 +120,7 @@ export class AccountConnectorService {
       id: accountId,
       userId,
       accountNumber,
+      accountHolderName: username,
       broker,
       integrationType: creds.type,
       platform,
@@ -139,7 +140,7 @@ export class AccountConnectorService {
     };
 
     this.accounts.set(accountId, account);
-    this.leaderboard.registerAccountMapping(accountId, userId, username, broker);
+    this.leaderboard.registerAccountMapping(accountId, userId, username, broker, username, accountNumber);
 
     // 4. Provision worker
     await this.orchestrator.provisionAccount(accountId, broker, creds, account.metaApiAccountId);
@@ -197,7 +198,8 @@ export class AccountConnectorService {
     if (!newUsername) return;
     for (const acc of this.accounts.values()) {
       if (acc.userId === userId || userId === 'usr_live_meta') {
-        this.leaderboard.registerAccountMapping(acc.id, acc.userId, newUsername, acc.broker);
+        acc.accountHolderName = newUsername;
+        this.leaderboard.registerAccountMapping(acc.id, acc.userId, newUsername, acc.broker, newUsername, acc.accountNumber);
       }
     }
   }
@@ -235,12 +237,17 @@ export class AccountConnectorService {
         );
         const accountId = existingAcc?.id || `acc_meta_${p.login}`;
         const userId = existingAcc?.userId || (provisionedList.length === 1 ? 'usr_live_meta' : `usr_meta_${p.login}`);
-        const username = p.name || `LiveTrader_${p.login}`;
+        const rawHolderName =
+          existingAcc?.accountHolderName ||
+          (info?.name && !info.name.startsWith('TraderRank-') ? info.name : undefined) ||
+          (p.name && !p.name.startsWith('TraderRank-') ? p.name : undefined);
+        const username = rawHolderName || p.name || `TraderRank-${p.login}`;
 
         const tradingAccount: TradingAccount = {
           id: accountId,
           userId,
           accountNumber: p.login,
+          accountHolderName: rawHolderName,
           broker: brokerName,
           integrationType: 'mt_gateway',
           platform: (p.platform?.toUpperCase() === 'MT4' ? 'MT4' : 'MT5') as Platform,
@@ -260,7 +267,7 @@ export class AccountConnectorService {
         };
 
         this.accounts.set(accountId, tradingAccount);
-        this.leaderboard.registerAccountMapping(accountId, userId, username, brokerName);
+        this.leaderboard.registerAccountMapping(accountId, userId, username, brokerName, rawHolderName, p.login);
 
         // Fetch real historical deals directly from MetaApi
         const rawDeals = await this.metaApiClient.getHistoricalDeals(p.id);

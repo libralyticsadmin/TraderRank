@@ -1174,7 +1174,7 @@ export const shuffleAvatarPresets = (count = 24, category?: string): AnimalAvata
 };
 
 /**
- * Filter presets by search term and optional category
+ *Filter presets by search term and optional category
  */
 export const filterAvatarPresets = (query: string, category?: string): AnimalAvatarPreset[] => {
   const cleanQ = query.trim().toLowerCase();
@@ -1190,3 +1190,78 @@ export const filterAvatarPresets = (query: string, category?: string): AnimalAva
     );
   });
 };
+
+export interface ResolvedTraderIdentity {
+  profileName: string;
+  accountTag: string | null;
+  accountNumber: string | null;
+  avatarSeed: string;
+}
+
+const isRawAccountTag = (val?: string | null): boolean => {
+  if (!val) return true;
+  const trimmed = val.trim();
+  if (!trimmed) return true;
+  if (/^traderrank-\d+/i.test(trimmed)) return true;
+  if (/^(acc_meta_|usr_meta_)/i.test(trimmed)) return true;
+  if (/^\d+$/.test(trimmed)) return true;
+  return false;
+};
+
+/**
+ * Resolves both a prominent human-readable Profile Name AND a smaller TradeRank-<accountNumber> tag
+ * so leaderboard cards, podiums, and modals always show the trader's profile name + smaller account ID.
+ */
+export const resolveTraderIdentity = (params: {
+  username?: string | null;
+  profileName?: string | null;
+  accountHolderName?: string | null;
+  accountNumber?: string | null;
+  userId?: string | null;
+}): ResolvedTraderIdentity => {
+  const rawUser = (params.username || '').trim();
+  const rawProfile = (params.profileName || params.accountHolderName || '').trim();
+  const rawUid = (params.userId || '').trim();
+
+  // 1. Extract account number
+  let accountNumber: string | null = null;
+  if (params.accountNumber && String(params.accountNumber).trim()) {
+    accountNumber = String(params.accountNumber).replace(/^TraderRank-/i, '').trim();
+  } else {
+    const matchFromUser = rawUser.match(/^TraderRank-(\d+)/i) || rawUser.match(/(\d{6,})/);
+    const matchFromUid = rawUid.match(/(?:usr_meta_|acc_meta_)(\d+)/i);
+    if (matchFromUser) {
+      accountNumber = matchFromUser[1];
+    } else if (matchFromUid) {
+      accountNumber = matchFromUid[1];
+    }
+  }
+
+  const accountTag = accountNumber
+    ? `TraderRank-${accountNumber}`
+    : /^TraderRank-/i.test(rawUser)
+    ? rawUser
+    : null;
+
+  // Keep avatarSeed tied to the canonical account tag / username so avatars stay deterministic
+  const avatarSeed = accountTag || rawUser || rawUid || 'trader';
+
+  // 2. Resolve Profile Name (Priority: explicit profileName/accountHolderName -> non-tag username -> deterministic persona label)
+  let profileName = '';
+  if (!isRawAccountTag(rawProfile)) {
+    profileName = rawProfile;
+  } else if (!isRawAccountTag(rawUser)) {
+    profileName = rawUser;
+  } else {
+    const preset = getRandomTraderAvatar(avatarSeed);
+    profileName = preset.label;
+  }
+
+  return {
+    profileName,
+    accountTag,
+    accountNumber,
+    avatarSeed,
+  };
+};
+

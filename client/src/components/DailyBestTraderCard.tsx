@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DailyTraderStats, DailyChampionRecord } from '../../../shared/src/types.ts';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
+import { resolveTraderIdentity } from './avatarCatalog.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { Trophy, Award, Clock, History } from 'lucide-react';
 
@@ -152,46 +153,70 @@ export const DailyBestTraderCard: React.FC<DailyBestTraderCardProps> = ({
       </div>
 
       {champion ? (
-        <div className="daily-best-champion-grid">
-          <div style={{ position: 'relative' }}>
-            <TraderAvatar username={champion.username} symbol={champion.avatarSymbol} size={54} />
-            <div
-              style={{
-                position: 'absolute',
-                top: '-8px',
-                right: '-8px',
-                background: '#f59e0b',
-                borderRadius: '50%',
-                width: '20px',
-                height: '20px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 0 10px rgba(245, 158, 11, 0.6)',
-              }}
-              title="Daily Best Trader (Rank 1)"
-            >
-              <Award size={12} color="#000" />
-            </div>
-          </div>
+        (() => {
+          const champIdentity = resolveTraderIdentity({
+            username: champion.username,
+            profileName: champion.profileName,
+            accountNumber: champion.accountNumber,
+            userId: champion.userId,
+          });
+          return (
+            <div className="daily-best-champion-grid">
+              <div style={{ position: 'relative' }}>
+                <TraderAvatar username={champIdentity.avatarSeed} symbol={champion.avatarSymbol} size={54} />
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '-8px',
+                    right: '-8px',
+                    background: '#f59e0b',
+                    borderRadius: '50%',
+                    width: '20px',
+                    height: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 0 10px rgba(245, 158, 11, 0.6)',
+                  }}
+                  title="Daily Best Trader (Rank 1)"
+                >
+                  <Award size={12} color="#000" />
+                </div>
+              </div>
 
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <strong style={{ fontSize: '17px', color: '#fff' }}>{champion.username}</strong>
-              <span
-                style={{
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  padding: '2px 6px',
-                  background: 'rgba(245, 158, 11, 0.2)',
-                  color: '#fbbf24',
-                  borderRadius: '4px',
-                  border: '1px solid rgba(245, 158, 11, 0.3)',
-                }}
-              >
-                {t.dailyBest.dailyCrown}
-              </span>
-            </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                  <strong style={{ fontSize: '17px', color: '#fff' }}>{champIdentity.profileName}</strong>
+                  {champIdentity.accountTag && (
+                    <span
+                      style={{
+                        fontSize: '10px',
+                        fontWeight: 600,
+                        fontFamily: 'var(--font-mono)',
+                        padding: '1px 6px',
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        color: '#94a3b8',
+                        borderRadius: '4px',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                      }}
+                    >
+                      {champIdentity.accountTag}
+                    </span>
+                  )}
+                  <span
+                    style={{
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      padding: '2px 6px',
+                      background: 'rgba(245, 158, 11, 0.2)',
+                      color: '#fbbf24',
+                      borderRadius: '4px',
+                      border: '1px solid rgba(245, 158, 11, 0.3)',
+                    }}
+                  >
+                    {t.dailyBest.dailyCrown}
+                  </span>
+                </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', color: 'var(--text-muted)' }}>
               <span>{t.dailyBest.platformsTraded}</span>
@@ -231,6 +256,8 @@ export const DailyBestTraderCard: React.FC<DailyBestTraderCardProps> = ({
             </div>
           </div>
         </div>
+          );
+        })()
       ) : (
         <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
           <p style={{ fontSize: '14px' }}>{t.dailyBest.noTrades}</p>

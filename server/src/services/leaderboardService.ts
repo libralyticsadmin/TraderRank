@@ -19,6 +19,8 @@ import { RedisStreamsBus } from '../eventbus/redisStreamsBus.js';
 interface TraderAggregate {
   userId: string;
   username: string;
+  profileName?: string;
+  accountNumber?: string;
   avatarSymbol: string; // Symbolic representation (no emojis)
   brokers: Set<Broker>;
   accounts: Set<string>;
@@ -212,14 +214,35 @@ export class LeaderboardService {
     });
   }
 
-  public registerAccountMapping(accountId: string, userId: string, username: string, broker: Broker): void {
+  public registerAccountMapping(
+    accountId: string,
+    userId: string,
+    username: string,
+    broker: Broker,
+    profileName?: string,
+    accountNumber?: string
+  ): void {
     const today = this.getTodayUTC();
     this.accountToUser.set(accountId, userId);
+
+    const extractedNumber =
+      accountNumber ||
+      (username?.startsWith('TraderRank-') ? username.replace('TraderRank-', '') : undefined) ||
+      (accountId.startsWith('acc_meta_') ? accountId.replace('acc_meta_', '') : undefined);
+
+    const cleanProfileName =
+      profileName && !profileName.startsWith('TraderRank-') && !profileName.startsWith('LiveTrader_')
+        ? profileName
+        : username && !username.startsWith('TraderRank-') && !username.startsWith('LiveTrader_')
+        ? username
+        : undefined;
 
     if (!this.traders.has(userId)) {
       this.traders.set(userId, {
         userId,
         username,
+        profileName: cleanProfileName,
+        accountNumber: extractedNumber,
         avatarSymbol: 'user',
         brokers: new Set([broker]),
         accounts: new Set([accountId]),
@@ -243,8 +266,14 @@ export class LeaderboardService {
       });
     } else {
       const trader = this.traders.get(userId)!;
-      if (username && (trader.username.startsWith('LiveTrader_') || trader.username.startsWith('TraderRank-') || trader.username.startsWith('Verified_'))) {
+      if (cleanProfileName) {
+        trader.profileName = cleanProfileName;
+        trader.username = cleanProfileName;
+      } else if (username && (trader.username.startsWith('LiveTrader_') || trader.username.startsWith('TraderRank-') || trader.username.startsWith('Verified_'))) {
         trader.username = username;
+      }
+      if (extractedNumber && !trader.accountNumber) {
+        trader.accountNumber = extractedNumber;
       }
       trader.brokers.add(broker);
       trader.accounts.add(accountId);
@@ -374,7 +403,9 @@ export class LeaderboardService {
       return {
         rank: 0,
         userId: t.userId,
-        username: t.username,
+        username: t.profileName || t.username,
+        profileName: t.profileName || t.username,
+        accountNumber: t.accountNumber,
         avatarSymbol: t.avatarSymbol,
         accountCount: t.accounts.size,
         brokers: Array.from(t.brokers),
@@ -426,7 +457,9 @@ export class LeaderboardService {
       return {
         rank: 0,
         userId: t.userId,
-        username: t.username,
+        username: t.profileName || t.username,
+        profileName: t.profileName || t.username,
+        accountNumber: t.accountNumber,
         avatarSymbol: t.avatarSymbol,
         brokers: Array.from(t.brokers),
         accountCount: t.accounts.size,

@@ -19,6 +19,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { TraderAvatar } from './TraderAvatar.tsx';
+import { resolveTraderIdentity } from './avatarCatalog.ts';
 import { Broker } from '../../../shared/src/types.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
@@ -232,6 +233,8 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
   const [connectedBrokers, setConnectedBrokers] = useState<string[]>([]);
   const [liveAccountBalance, setLiveAccountBalance] = useState<number | null>(null);
   const [liveServerName, setLiveServerName] = useState<string | null>(null);
+  const [liveHolderName, setLiveHolderName] = useState<string | null>(null);
+  const [liveAccountNumber, setLiveAccountNumber] = useState<string | null>(null);
   const [liveParticipantsCount, setLiveParticipantsCount] = useState<number>(1);
   const [liveMonthlyCashflows, setLiveMonthlyCashflows] = useState<
     Record<
@@ -574,6 +577,12 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
           }
           if (matched.serverName) {
             setLiveServerName(String(matched.serverName));
+          }
+          if (matched.accountHolderName) {
+            setLiveHolderName(String(matched.accountHolderName));
+          }
+          if (matched.accountNumber) {
+            setLiveAccountNumber(String(matched.accountNumber));
           }
         }
       })
@@ -1310,77 +1319,104 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
               marginBottom: '22px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-              <TraderAvatar
-                username={trader.username}
-                symbol={trader.avatarSymbol}
-                avatarUrl={trader.avatarUrl}
-                size={72}
-              />
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '6px' }}>
-                  <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff' }}>
-                    {trader.username}
-                  </h2>
-                  <span
-                    style={{
-                      fontSize: '10.5px',
-                      fontWeight: 800,
-                      padding: '3px 9px',
-                      borderRadius: '999px',
-                      background: 'rgba(16, 185, 129, 0.16)',
-                      color: '#34d399',
-                      border: '1px solid rgba(16, 185, 129, 0.4)',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                    }}
-                  >
-                    <ShieldCheck size={12} /> {trader.broker} {copy.mt5VerifiedBadge}
-                    {liveServerName ? ` (${liveServerName})` : ''}
-                  </span>
-                  {trader.instagramHandle && (
-                    <a
-                      href={`https://instagram.com/${trader.instagramHandle.replace(/^@/, '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        fontSize: '10.5px',
-                        fontWeight: 800,
-                        color: '#e1306c',
-                        background: 'rgba(225, 48, 108, 0.12)',
-                        border: '1px solid rgba(225, 48, 108, 0.35)',
-                        padding: '2px 8px',
-                        borderRadius: '8px',
-                        textDecoration: 'none',
-                      }}
-                    >
-                      <Instagram size={11} color="#e1306c" />
-                      <span>{trader.instagramHandle.startsWith('@') ? trader.instagramHandle : `@${trader.instagramHandle}`}</span>
-                    </a>
-                  )}
-                </div>
+            {(() => {
+              const modalIdentity = resolveTraderIdentity({
+                username: trader.username,
+                accountHolderName: liveHolderName,
+                accountNumber: liveAccountNumber,
+                userId: trader.userId,
+              });
+              return (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
+                  <TraderAvatar
+                    username={modalIdentity.avatarSeed}
+                    symbol={trader.avatarSymbol}
+                    avatarUrl={trader.avatarUrl}
+                    size={72}
+                  />
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '6px' }}>
+                      <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff' }}>
+                        {modalIdentity.profileName}
+                      </h2>
+                      {modalIdentity.accountTag && (
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            fontFamily: 'var(--font-mono)',
+                            padding: '2px 8px',
+                            borderRadius: '6px',
+                            background: 'rgba(255, 255, 255, 0.06)',
+                            color: '#94a3b8',
+                            border: '1px solid rgba(255, 255, 255, 0.12)',
+                            letterSpacing: '0.2px',
+                          }}
+                        >
+                          {modalIdentity.accountTag}
+                        </span>
+                      )}
+                      <span
+                        style={{
+                          fontSize: '10.5px',
+                          fontWeight: 800,
+                          padding: '3px 9px',
+                          borderRadius: '999px',
+                          background: 'rgba(16, 185, 129, 0.16)',
+                          color: '#34d399',
+                          border: '1px solid rgba(16, 185, 129, 0.4)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                        }}
+                      >
+                        <ShieldCheck size={12} /> {trader.broker} {copy.mt5VerifiedBadge}
+                        {liveServerName ? ` (${liveServerName})` : ''}
+                      </span>
+                      {trader.instagramHandle && (
+                        <a
+                          href={`https://instagram.com/${trader.instagramHandle.replace(/^@/, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '10.5px',
+                            fontWeight: 800,
+                            color: '#e1306c',
+                            background: 'rgba(225, 48, 108, 0.12)',
+                            border: '1px solid rgba(225, 48, 108, 0.35)',
+                            padding: '2px 8px',
+                            borderRadius: '8px',
+                            textDecoration: 'none',
+                          }}
+                        >
+                          <Instagram size={11} color="#e1306c" />
+                          <span>{trader.instagramHandle.startsWith('@') ? trader.instagramHandle : `@${trader.instagramHandle}`}</span>
+                        </a>
+                      )}
+                    </div>
 
-                {/* Following / Followers Counter Row (Ref 1) */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '13px', color: '#94a3b8', marginBottom: '4px' }}>
-                  <span>
-                    <strong style={{ color: '#ffffff', fontSize: '15px', fontWeight: 800 }}>0</strong>{' '}
-                    <span style={{ fontSize: '12px' }}>{copy.following}</span>
-                  </span>
-                  <span>
-                    <strong style={{ color: '#ffffff', fontSize: '15px', fontWeight: 800 }}>{followerCount}</strong>{' '}
-                    <span style={{ fontSize: '12px' }}>{copy.followers}</span>
-                  </span>
-                  <span style={{ color: '#475569' }}>•</span>
-                  <span style={{ fontSize: '12px', color: '#64748b' }}>
-                    {formattedLevelText} ({stats.xp.toLocaleString()} XP) • {formattedVerifiedSince}
-                  </span>
+                    {/* Following / Followers Counter Row (Ref 1) */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '13px', color: '#94a3b8', marginBottom: '4px' }}>
+                      <span>
+                        <strong style={{ color: '#ffffff', fontSize: '15px', fontWeight: 800 }}>0</strong>{' '}
+                        <span style={{ fontSize: '12px' }}>{copy.following}</span>
+                      </span>
+                      <span>
+                        <strong style={{ color: '#ffffff', fontSize: '15px', fontWeight: 800 }}>{followerCount}</strong>{' '}
+                        <span style={{ fontSize: '12px' }}>{copy.followers}</span>
+                      </span>
+                      <span style={{ color: '#475569' }}>•</span>
+                      <span style={{ fontSize: '12px', color: '#64748b' }}>
+                        {formattedLevelText} ({stats.xp.toLocaleString()} XP) • {formattedVerifiedSince}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* Right Controls: Follow Button + Share Button + Language + Close */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>

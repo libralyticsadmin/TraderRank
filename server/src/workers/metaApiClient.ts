@@ -14,6 +14,7 @@ export interface MetaApiAccountInfo {
   margin: number;
   freeMargin: number;
   leverage: number;
+  name?: string;
 }
 
 export interface MetaApiPosition {
@@ -286,6 +287,7 @@ export class MetaApiClient {
         margin: Number(info.margin ?? 0),
         freeMargin: Number(info.freeMargin ?? info.balance ?? 0),
         leverage: Number(info.leverage ?? 100),
+        name: info.name ? String(info.name).trim() : undefined,
       };
     } catch {
       return null;

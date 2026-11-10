@@ -3,6 +3,7 @@ import { LeaderboardEntry, DailyLeaderboardResult, Broker } from '../../../share
 import { calculateTraderGamification } from '../../../shared/src/gamification.ts';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
+import { resolveTraderIdentity } from './avatarCatalog.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import {
   Trophy,
@@ -54,6 +55,8 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
         dailyTradesCount: number;
         dailyWinRate: number;
         currency?: string;
+        accountNumber?: string;
+        accountHolderName?: string;
         liveOrders: Array<{
           id: string;
           ticket: string;
@@ -186,6 +189,8 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             dailyTradesCount,
             dailyWinRate: dailyTradesCount > 0 ? Math.round((dailyWins / dailyTradesCount) * 100) : 0,
             currency: acc.currency,
+            accountNumber: acc.accountNumber,
+            accountHolderName: acc.accountHolderName,
             liveOrders: openOrders.length > 0 ? openOrders : recentClosedOrders,
           };
 
@@ -284,10 +289,20 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                 ? real.dailyWinRate
                 : real.winRate
               : d.dailyWinRate || 0;
+            const identity = resolveTraderIdentity({
+              username: d.username,
+              profileName: d.profileName,
+              accountHolderName: real?.accountHolderName,
+              accountNumber: d.accountNumber || real?.accountNumber,
+              userId: d.userId,
+            });
 
             return {
               userId: d.userId,
               username: d.username,
+              profileName: identity.profileName,
+              accountTag: identity.accountTag,
+              avatarSeed: identity.avatarSeed,
               broker: primaryBroker,
               currency: real?.currency,
               avatarSymbol: d.avatarSymbol,
@@ -316,10 +331,20 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             const xp = real ? real.xp : tradesCount > 0 ? tradesCount * 25 : e.xp || 0;
             const profitRate = real ? real.roiPct : winRate;
             const gamification = calculateTraderGamification(xp);
+            const identity = resolveTraderIdentity({
+              username: e.username,
+              profileName: e.profileName,
+              accountHolderName: real?.accountHolderName,
+              accountNumber: e.accountNumber || real?.accountNumber,
+              userId: e.userId,
+            });
 
             return {
               userId: e.userId,
               username: e.username,
+              profileName: identity.profileName,
+              accountTag: identity.accountTag,
+              avatarSeed: identity.avatarSeed,
               broker: primaryBroker,
               currency: real?.currency,
               avatarSymbol: e.avatarSymbol,
@@ -344,7 +369,12 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
     // Filter by Search
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      filtered = filtered.filter(item => item.username.toLowerCase().includes(q));
+      filtered = filtered.filter(
+        item =>
+          item.username.toLowerCase().includes(q) ||
+          item.profileName.toLowerCase().includes(q) ||
+          (item.accountTag && item.accountTag.toLowerCase().includes(q))
+      );
     }
 
     // Sort by selected metric (active traders with trades > 0 always rank above 0-trade accounts)
@@ -660,9 +690,25 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
-                  <TraderAvatar username={trader.username} symbol={trader.avatarSymbol} size={50} />
-                  <div>
-                    <h4 style={{ margin: 0, fontSize: '17px', fontWeight: 800 }}>{trader.username}</h4>
+                  <TraderAvatar username={trader.avatarSeed} symbol={trader.avatarSymbol} size={50} />
+                  <div style={{ minWidth: 0 }}>
+                    <h4 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#ffffff', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {trader.profileName}
+                    </h4>
+                    {trader.accountTag && (
+                      <div
+                        style={{
+                          fontSize: '10.5px',
+                          fontWeight: 600,
+                          color: 'var(--accent-cyan)',
+                          fontFamily: 'var(--font-mono)',
+                          marginTop: '2px',
+                          letterSpacing: '0.2px',
+                        }}
+                      >
+                        {trader.accountTag}
+                      </div>
+                    )}
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
                       {trader.tier} • {trader.tradesCount} {t.leaderboard.trades}
                     </div>
@@ -852,15 +898,35 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                       #{trader.displayRank}
                     </div>
 
-                    <TraderAvatar username={trader.username} symbol={trader.avatarSymbol} size={36} />
+                    <TraderAvatar username={trader.avatarSeed} symbol={trader.avatarSymbol} size={36} />
 
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                        <strong style={{ fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{trader.username}</strong>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '7px', flexWrap: 'wrap' }}>
+                        <strong style={{ fontSize: '15px', color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {trader.profileName}
+                        </strong>
+                        {trader.accountTag && (
+                          <span
+                            style={{
+                              fontSize: '10px',
+                              fontWeight: 600,
+                              fontFamily: 'var(--font-mono)',
+                              color: '#94a3b8',
+                              background: 'rgba(255, 255, 255, 0.05)',
+                              border: '1px solid rgba(255, 255, 255, 0.09)',
+                              padding: '1px 6px',
+                              borderRadius: '4px',
+                              whiteSpace: 'nowrap',
+                              letterSpacing: '0.2px',
+                            }}
+                          >
+                            {trader.accountTag}
+                          </span>
+                        )}
                         <BrokerSymbol broker={trader.broker} />
-                        <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>• {trader.tier}</span>
+                        <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>• {trader.tier}</span>
                       </div>
-                      <div style={{ display: 'flex', gap: '10px', fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      <div style={{ display: 'flex', gap: '10px', fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px' }}>
                         <span>{t.leaderboard.winRate} <strong style={{ color: 'var(--text-main)' }}>{trader.winRate}%</strong></span>
                         <span>{t.leaderboard.xp} <strong style={{ color: 'var(--accent-cyan)' }}>{trader.xp}</strong></span>
                       </div>
@@ -874,23 +940,23 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
 
                 {/* Desktop Multi-Column Metrics */}
                 <div className="leaderboard-row-desktop-stats">
-                  <div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.netPips}</div>
-                    <div style={{ fontSize: '16px', fontWeight: 800, color: trader.winningPips >= 0 ? 'var(--accent-green)' : '#ef4444' }}>
+                  <div style={{ whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t.leaderboard.netPips}</div>
+                    <div className="tabular" style={{ fontSize: '16px', fontWeight: 800, color: trader.winningPips >= 0 ? 'var(--accent-green)' : '#ef4444', whiteSpace: 'nowrap' }}>
                       {trader.winningPips >= 0 ? `+${trader.winningPips.toFixed(1)}` : trader.winningPips.toFixed(1)}
                     </div>
                   </div>
 
-                  <div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.profit}</div>
-                    <div style={{ fontSize: '16px', fontWeight: 800, color: trader.profitAmount >= 0 ? '#fbbf24' : '#ef4444' }}>
-                      {formatTraderProfit(trader.profitAmount, trader.broker)}
+                  <div style={{ whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t.leaderboard.profit}</div>
+                    <div className="tabular" style={{ fontSize: '16px', fontWeight: 800, color: trader.profitAmount >= 0 ? '#fbbf24' : '#ef4444', whiteSpace: 'nowrap' }}>
+                      {formatTraderProfit(trader.profitAmount, trader.broker, trader.currency)}
                     </div>
                   </div>
 
-                  <div style={{ minWidth: '70px' }}>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.leaderboard.rate}</div>
-                    <div style={{ fontSize: '14px', fontWeight: 700, color: trader.profitRate >= 0 ? 'var(--accent-cyan)' : '#ef4444' }}>
+                  <div style={{ minWidth: '70px', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t.leaderboard.rate}</div>
+                    <div className="tabular" style={{ fontSize: '14px', fontWeight: 700, color: trader.profitRate >= 0 ? 'var(--accent-cyan)' : '#ef4444', whiteSpace: 'nowrap' }}>
                       {trader.profitRate >= 0 ? `+${trader.profitRate}%` : `${trader.profitRate}%`}
                     </div>
                   </div>
@@ -901,20 +967,20 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                 {/* Mobile Responsive 3-Col Chip Grid */}
                 <div className="leaderboard-row-mobile-stats">
                   <div>
-                    <div style={{ fontSize: '9.5px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{t.leaderboard.netPips}</div>
-                    <div style={{ fontSize: '14px', fontWeight: 800, color: trader.winningPips >= 0 ? 'var(--accent-green)' : '#ef4444', marginTop: '1px' }}>
+                    <div style={{ fontSize: '9.5px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>{t.leaderboard.netPips}</div>
+                    <div className="tabular" style={{ fontSize: '14px', fontWeight: 800, color: trader.winningPips >= 0 ? 'var(--accent-green)' : '#ef4444', marginTop: '1px', whiteSpace: 'nowrap' }}>
                       {trader.winningPips >= 0 ? `+${trader.winningPips.toFixed(1)}` : trader.winningPips.toFixed(1)}
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '9.5px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{t.leaderboard.profit}</div>
-                    <div style={{ fontSize: '14px', fontWeight: 800, color: trader.profitAmount >= 0 ? '#fbbf24' : '#ef4444', marginTop: '1px' }}>
-                      {formatTraderProfit(trader.profitAmount, trader.broker)}
+                    <div style={{ fontSize: '9.5px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>{t.leaderboard.profit}</div>
+                    <div className="tabular" style={{ fontSize: '14px', fontWeight: 800, color: trader.profitAmount >= 0 ? '#fbbf24' : '#ef4444', marginTop: '1px', whiteSpace: 'nowrap' }}>
+                      {formatTraderProfit(trader.profitAmount, trader.broker, trader.currency)}
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '9.5px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{t.leaderboard.rate}</div>
-                    <div style={{ fontSize: '14px', fontWeight: 800, color: trader.profitRate >= 0 ? 'var(--accent-cyan)' : '#ef4444', marginTop: '1px' }}>
+                    <div style={{ fontSize: '9.5px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>{t.leaderboard.rate}</div>
+                    <div className="tabular" style={{ fontSize: '14px', fontWeight: 800, color: trader.profitRate >= 0 ? 'var(--accent-cyan)' : '#ef4444', marginTop: '1px', whiteSpace: 'nowrap' }}>
                       {trader.profitRate >= 0 ? `+${trader.profitRate}%` : `${trader.profitRate}%`}
                     </div>
                   </div>
