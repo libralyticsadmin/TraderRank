@@ -1,8 +1,16 @@
 import React, { useState, useRef } from 'react';
-import { X, Check, Save, User, ShieldCheck, Camera, Upload, Instagram, Trash2 } from 'lucide-react';
+import { X, Check, Save, User, ShieldCheck, Camera, Upload, Instagram, Trash2, Shuffle, Dice5, Search } from 'lucide-react';
 import { useAuth, UserProfile } from '../context/AuthContext.tsx';
 import { Broker } from '../../../shared/src/types.ts';
-import { TraderAvatar, INSTITUTIONAL_ANIMAL_PRESETS } from './TraderAvatar.tsx';
+import {
+  TraderAvatar,
+  INSTITUTIONAL_ANIMAL_PRESETS,
+  getRandomTraderAvatar,
+  shuffleAvatarPresets,
+  filterAvatarPresets,
+  AVATAR_CATEGORIES,
+  AnimalAvatarPreset,
+} from './TraderAvatar.tsx';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { LanguageSelector } from './LanguageSelector.tsx';
 import { useTranslation } from '../context/LanguageContext.tsx';
@@ -58,6 +66,40 @@ export const ProfileEditModal: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [avatarSearch, setAvatarSearch] = useState('');
+  const [avatarCategory, setAvatarCategory] = useState<string>('All (124+)');
+  const [showAllAvatars, setShowAllAvatars] = useState(false);
+  const [displayedChoices, setDisplayedChoices] = useState<AnimalAvatarPreset[]>(() => shuffleAvatarPresets(18));
+
+  const handleRollRandomAvatar = () => {
+    let pick = getRandomTraderAvatar();
+    // Ensure we never roll the exact same avatar twice in a row
+    let attempts = 0;
+    while (pick.url === avatarUrl && attempts < 10) {
+      pick = getRandomTraderAvatar();
+      attempts++;
+    }
+    setAvatarUrl(pick.url);
+    setSavedSuccess(false);
+    // Put the newly rolled avatar at the front of the displayed choices
+    setDisplayedChoices(prev => {
+      const rest = prev.filter(p => p.id !== pick.id);
+      return [pick, ...rest.slice(0, 17)];
+    });
+  };
+
+  const handleShuffleChoices = (categoryOverride?: string) => {
+    const cat = categoryOverride !== undefined ? categoryOverride : avatarCategory;
+    const fresh = shuffleAvatarPresets(18, cat);
+    // Keep currently selected avatar visible if it matches category
+    const currentPreset = INSTITUTIONAL_ANIMAL_PRESETS.find(p => p.url === avatarUrl);
+    if (currentPreset && (cat === 'All (124+)' || currentPreset.category === cat)) {
+      const withoutCurrent = fresh.filter(p => p.id !== currentPreset.id);
+      setDisplayedChoices([currentPreset, ...withoutCurrent.slice(0, 17)]);
+    } else {
+      setDisplayedChoices(fresh);
+    }
+  };
 
   // Sync state whenever modal opens or user updates
   React.useEffect(() => {
@@ -83,6 +125,14 @@ export const ProfileEditModal: React.FC = () => {
           : ''
       );
       setUploadError(null);
+      // Freshly shuffle the 18 option choices every time modal opens so options never remain static
+      const fresh = shuffleAvatarPresets(18, 'All (124+)');
+      const currentPreset = INSTITUTIONAL_ANIMAL_PRESETS.find(p => p.url === user.avatarUrl);
+      if (currentPreset) {
+        setDisplayedChoices([currentPreset, ...fresh.filter(p => p.id !== currentPreset.id).slice(0, 17)]);
+      } else {
+        setDisplayedChoices(fresh);
+      }
     }
   }, [user, isProfileModalOpen]);
 
@@ -497,28 +547,206 @@ export const ProfileEditModal: React.FC = () => {
               </div>
             )}
 
-            {/* Quick Preset Animal Crests Grid */}
+            {/* Dynamic 124+ Preset Animal Crests & Random Avatar Engine */}
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span style={{ fontSize: '10px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                  {language === 'ja'
-                    ? 'プロ仕様アニマル・クレスト（動物エンブレム）を選択'
-                    : language === 'zh'
-                    ? '选择机构级交易员动物图腾 (Animal Crests)'
-                    : 'Select from Institutional Pro Presets (Animal Crests)'}
-                </span>
-                <span style={{ fontSize: '10px', color: '#0abab5', fontWeight: 700 }}>
-                  {language === 'ja' ? '全12種類' : language === 'zh' ? '12 款限定图腾' : '12 Unique Editions'}
-                </span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                    {language === 'ja'
+                      ? 'プロ仕様アニマル・クレスト（124種類以上）'
+                      : language === 'zh'
+                      ? '机构级交易员动物图腾 (124+ 款独立设计)'
+                      : 'Institutional Avatar Generator (124+ Unique Crests)'}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '10px',
+                      color: '#00f0ff',
+                      fontWeight: 800,
+                      background: 'rgba(0, 240, 255, 0.12)',
+                      border: '1px solid rgba(0, 240, 255, 0.3)',
+                      padding: '2px 7px',
+                      borderRadius: '6px',
+                    }}
+                  >
+                    {language === 'ja'
+                      ? `全${INSTITUTIONAL_ANIMAL_PRESETS.length}種類`
+                      : language === 'zh'
+                      ? `共 ${INSTITUTIONAL_ANIMAL_PRESETS.length} 款`
+                      : `${INSTITUTIONAL_ANIMAL_PRESETS.length} Unique Editions`}
+                  </span>
+                </div>
+
+                {/* Randomize & Shuffle Action Buttons */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={handleRollRandomAvatar}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      padding: '6px 11px',
+                      borderRadius: '8px',
+                      background: 'linear-gradient(135deg, #0abab5 0%, #00f0ff 100%)',
+                      color: '#060d11',
+                      border: 'none',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 10px rgba(0, 240, 255, 0.3)',
+                    }}
+                    title="Pick a random avatar from 124+ unique designs"
+                  >
+                    <Dice5 size={13} />
+                    <span>
+                      {language === 'ja'
+                        ? 'ランダム生成'
+                        : language === 'zh'
+                        ? '随机生成头像'
+                        : 'Random Avatar'}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleShuffleChoices()}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      padding: '6px 11px',
+                      borderRadius: '8px',
+                      background: 'rgba(255, 255, 255, 0.06)',
+                      color: '#e2e8f0',
+                      border: '1px solid rgba(255, 255, 255, 0.16)',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                    title="Refresh the displayed avatar choices with a new random batch"
+                  >
+                    <Shuffle size={12} color="#00f0ff" />
+                    <span>
+                      {language === 'ja'
+                        ? '選択肢を入れ替え'
+                        : language === 'zh'
+                        ? '换一批选项'
+                        : 'Shuffle Choices'}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowAllAvatars(!showAllAvatars)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '6px 10px',
+                      borderRadius: '8px',
+                      background: showAllAvatars ? 'rgba(10, 186, 181, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                      color: showAllAvatars ? '#00f0ff' : '#94a3b8',
+                      border: `1px solid ${showAllAvatars ? 'rgba(0, 240, 255, 0.4)' : 'rgba(255, 255, 255, 0.1)'}`,
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <span>
+                      {showAllAvatars
+                        ? language === 'ja'
+                          ? '18件表示に戻す'
+                          : language === 'zh'
+                          ? '收起全部'
+                          : 'Compact View (18)'
+                        : language === 'ja'
+                        ? `全${INSTITUTIONAL_ANIMAL_PRESETS.length}件を表示`
+                        : language === 'zh'
+                        ? `展开全部 (${INSTITUTIONAL_ANIMAL_PRESETS.length})`
+                        : `View All (${INSTITUTIONAL_ANIMAL_PRESETS.length})`}
+                    </span>
+                  </button>
+                </div>
               </div>
+
+              {/* Search & Category Filter Row */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  {AVATAR_CATEGORIES.map(cat => {
+                    const active = avatarCategory === cat;
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => {
+                          setAvatarCategory(cat);
+                          handleShuffleChoices(cat);
+                        }}
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: '999px',
+                          fontSize: '10.5px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          background: active ? 'rgba(10, 186, 181, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                          color: active ? '#00f0ff' : '#94a3b8',
+                          border: active ? '1px solid rgba(0, 240, 255, 0.45)' : '1px solid rgba(255, 255, 255, 0.08)',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        {cat}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div style={{ position: 'relative' }}>
+                  <Search
+                    size={13}
+                    color="#64748b"
+                    style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }}
+                  />
+                  <input
+                    type="text"
+                    value={avatarSearch}
+                    onChange={e => setAvatarSearch(e.target.value)}
+                    placeholder={
+                      language === 'ja'
+                        ? 'ドラゴン、ウルフ、サイバー、ゴールド等で検索...'
+                        : language === 'zh'
+                        ? '搜索神龙、苍狼、猛虎、赛博、黄金...'
+                        : 'Search 124+ avatars (e.g. Dragon, Wolf, Shark, Cyber, Gold, Obsidian)...'
+                    }
+                    style={{
+                      width: '100%',
+                      background: 'rgba(6, 10, 18, 0.75)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '8px',
+                      padding: '7px 10px 7px 30px',
+                      color: '#ffffff',
+                      fontSize: '11.5px',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+              </div>
+
               <div
                 style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fill, minmax(92px, 1fr))',
                   gap: '8px',
+                  maxHeight: showAllAvatars || avatarSearch.trim() ? '320px' : 'none',
+                  overflowY: showAllAvatars || avatarSearch.trim() ? 'auto' : 'visible',
+                  paddingRight: showAllAvatars || avatarSearch.trim() ? '4px' : 0,
                 }}
               >
-                {INSTITUTIONAL_ANIMAL_PRESETS.map((p) => {
+                {(avatarSearch.trim() || showAllAvatars
+                  ? filterAvatarPresets(avatarSearch, avatarCategory)
+                  : displayedChoices
+                ).map((p) => {
                   const isSelected = avatarUrl === p.url;
                   const crestI18n = ANIMAL_CREST_I18N[p.id];
                   const displayLabel =

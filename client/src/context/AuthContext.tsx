@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Broker } from '../../../shared/src/types.ts';
+import { getRandomTraderAvatar } from '../components/avatarCatalog.ts';
 
 export interface UserProfile {
   id: string;
@@ -173,6 +174,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (res.ok) {
         const data = await res.json();
         if (data.user) {
+          if (!data.user.avatarUrl) {
+            data.user.avatarUrl = getRandomTraderAvatar().url;
+          }
           setUser(data.user);
           return { success: true };
         }
@@ -187,6 +191,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       id: `u_${trimmed.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
       username: trimmed.includes('@') ? trimmed.split('@')[0] : trimmed,
       email: trimmed.includes('@') ? trimmed : `${trimmed.toLowerCase()}@traderank.live`,
+      avatarUrl: getRandomTraderAvatar().url,
     };
 
     setUser(newUser);
@@ -210,6 +215,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: false, error: 'Please enter a valid email address' };
     }
 
+    const randomInitialAvatar = getRandomTraderAvatar().url;
+
     // Try server endpoint
     try {
       const res = await fetch('/api/auth/register', {
@@ -220,11 +227,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: cleanEmail,
           primaryBroker: data.primaryBroker || 'Exness',
           tradingStyle: data.tradingStyle || 'SCALPER',
+          avatarUrl: randomInitialAvatar,
         }),
       });
       if (res.ok) {
         const body = await res.json();
         if (body.user) {
+          if (!body.user.avatarUrl) {
+            body.user.avatarUrl = randomInitialAvatar;
+          }
           setUser(body.user);
           return { success: true };
         }
@@ -240,10 +251,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       email: cleanEmail,
       primaryBroker: data.primaryBroker || 'Exness',
       tradingStyle: data.tradingStyle || 'SCALPER',
+      avatarUrl: randomInitialAvatar,
     };
 
     setUser(newUser);
-    return { success: true };
     return { success: true };
   };
 
