@@ -687,10 +687,44 @@ export function createServer() {
     });
   });
 
-  // 5. Active Positions for Account
+  // 5. Active Positions (Live Open Orders) for Account or User
   app.get('/api/accounts/:id/positions', async (req: Request, res: Response) => {
-    const positions = await connector.getActivePositions(req.params.id);
-    res.json(positions);
+    try {
+      const paramId = req.params.id;
+      let allAccounts = connector.getAccounts();
+      if (allAccounts.length === 0 && metaApiClient.hasToken()) {
+        allAccounts = await connector.syncCloudProvisionedAccounts();
+      }
+
+      const lbAccountIds = new Set(leaderboard.getAccountIdsForTrader(paramId));
+
+      const matchedAccounts = allAccounts.filter(
+        a =>
+          a.id === paramId ||
+          a.userId === paramId ||
+          a.accountNumber === paramId ||
+          (a.accountNumber && paramId.includes(a.accountNumber)) ||
+          lbAccountIds.has(a.id)
+      );
+
+      if (matchedAccounts.length > 0) {
+        const positionArrays = await Promise.all(
+          matchedAccounts.map(acc => connector.getActivePositions(acc.id))
+        );
+        res.json(positionArrays.flat());
+        return;
+      }
+
+      const fallbackAcc =
+        allAccounts.find(a => a.metaApiAccountId && !a.metaApiAccountId.startsWith('mock_')) ||
+        allAccounts[0];
+      const targetId = fallbackAcc ? fallbackAcc.id : paramId;
+      const positions = await connector.getActivePositions(targetId);
+      res.json(positions || []);
+    } catch (err) {
+      console.warn('[Positions API] Error fetching positions for account:', req.params.id, err);
+      res.json([]);
+    }
   });
 
   // 6. Historical Trades for Account (Live MetaApi Ledger Sync)

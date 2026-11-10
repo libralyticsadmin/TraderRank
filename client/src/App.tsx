@@ -395,9 +395,9 @@ export const App: React.FC = () => {
     if (user) {
       const primaryAcc = accounts[0];
       handleSelectTrader({
-        userId: user.id || primaryAcc?.userId || primaryAcc?.id,
+        userId: primaryAcc?.id || primaryAcc?.userId || user.id,
         username: user.username,
-        broker: user.primaryBroker || primaryAcc?.broker || 'Exness',
+        broker: primaryAcc?.broker || user.primaryBroker || 'Exness',
         rank: 1,
       });
     } else if (accounts.length > 0) {

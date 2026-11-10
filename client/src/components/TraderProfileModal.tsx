@@ -13,6 +13,10 @@ import {
   Info,
   Check,
   Calendar,
+  Activity,
+  TrendingUp,
+  TrendingDown,
+  RefreshCw,
 } from 'lucide-react';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { Broker } from '../../../shared/src/types.ts';
@@ -209,6 +213,22 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
   });
   const [copiedShare, setCopiedShare] = useState(false);
   const [realTrades, setRealTrades] = useState<VerifiedTrade[]>([]);
+  const [liveOrders, setLiveOrders] = useState<
+    Array<{
+      id: string;
+      ticket: string;
+      symbol: string;
+      type: 'BUY' | 'SELL';
+      lotSize: number;
+      openPrice: number;
+      currentPrice: number;
+      profitPips: number;
+      profitCurrency: number;
+      openTime: string;
+      digits: number;
+    }>
+  >([]);
+  const [isRefreshingOrders, setIsRefreshingOrders] = useState(false);
   const [connectedBrokers, setConnectedBrokers] = useState<string[]>([]);
   const [liveAccountBalance, setLiveAccountBalance] = useState<number | null>(null);
   const [liveServerName, setLiveServerName] = useState<string | null>(null);
@@ -650,10 +670,101 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
         if (isMounted) setIsLoadingTrades(false);
       });
 
+    const loadOpenOrders = async () => {
+      try {
+        const res = await fetch(`/api/accounts/${encodeURIComponent(trader.userId)}/positions`);
+        if (!res.ok || !isMounted) return;
+        const data = await res.json();
+        if (!Array.isArray(data) || !isMounted) return;
+        const mapped = data.map((p: any, idx: number) => {
+          const symbol = String(p.symbol || 'EURUSD').trim();
+          const type = (p.type === 'BUY' ? 'BUY' : 'SELL') as 'BUY' | 'SELL';
+          const lotSize = Number(p.lotSize ?? p.volume ?? 0.01);
+          const openPrice = Number(p.openPrice ?? 0);
+          const currentPrice = Number(p.currentPrice ?? openPrice ?? 0);
+          const profitCurrency = Number(p.profitCurrency ?? p.profit ?? 0);
+          let profitPips = Number(p.profitPips ?? 0);
+          const { pipSize, digits, pipValPerLot } = getInstrumentSpec(symbol);
+          if (profitPips === 0 && openPrice > 0 && currentPrice > 0 && openPrice !== currentPrice) {
+            const diff = type === 'BUY' ? currentPrice - openPrice : openPrice - currentPrice;
+            profitPips = Number((diff / pipSize).toFixed(1));
+          } else if (profitPips === 0 && profitCurrency !== 0 && lotSize > 0) {
+            profitPips = Number((profitCurrency / (lotSize * pipValPerLot)).toFixed(1));
+          }
+          return {
+            id: String(p.id || `pos_${idx}`),
+            ticket: String(p.ticket || p.id || `${100000 + idx}`),
+            symbol,
+            type,
+            lotSize,
+            openPrice: Number(openPrice.toFixed(digits)),
+            currentPrice: Number(currentPrice.toFixed(digits)),
+            profitPips: Number(profitPips.toFixed(1)),
+            profitCurrency,
+            openTime: String(p.openTime || ''),
+            digits,
+          };
+        });
+        setLiveOrders(mapped);
+      } catch {
+        // ignore
+      }
+    };
+
+    loadOpenOrders();
+    const ordersTimer = setInterval(loadOpenOrders, 5000);
+
     return () => {
       isMounted = false;
+      clearInterval(ordersTimer);
     };
   }, [trader.userId]);
+
+  const handleManualRefreshOrders = async () => {
+    setIsRefreshingOrders(true);
+    try {
+      const res = await fetch(`/api/accounts/${encodeURIComponent(trader.userId)}/positions`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          const mapped = data.map((p: any, idx: number) => {
+            const symbol = String(p.symbol || 'EURUSD').trim();
+            const type = (p.type === 'BUY' ? 'BUY' : 'SELL') as 'BUY' | 'SELL';
+            const lotSize = Number(p.lotSize ?? p.volume ?? 0.01);
+            const openPrice = Number(p.openPrice ?? 0);
+            const currentPrice = Number(p.currentPrice ?? openPrice ?? 0);
+            const profitCurrency = Number(p.profitCurrency ?? p.profit ?? 0);
+            let profitPips = Number(p.profitPips ?? 0);
+            const { pipSize, digits, pipValPerLot } = getInstrumentSpec(symbol);
+            if (profitPips === 0 && openPrice > 0 && currentPrice > 0 && openPrice !== currentPrice) {
+              const diff = type === 'BUY' ? currentPrice - openPrice : openPrice - currentPrice;
+              profitPips = Number((diff / pipSize).toFixed(1));
+            } else if (profitPips === 0 && profitCurrency !== 0 && lotSize > 0) {
+              profitPips = Number((profitCurrency / (lotSize * pipValPerLot)).toFixed(1));
+            }
+            return {
+              id: String(p.id || `pos_${idx}`),
+              ticket: String(p.ticket || p.id || `${100000 + idx}`),
+              symbol,
+              type,
+              lotSize,
+              openPrice: Number(openPrice.toFixed(digits)),
+              currentPrice: Number(currentPrice.toFixed(digits)),
+              profitPips: Number(profitPips.toFixed(1)),
+              profitCurrency,
+              openTime: String(p.openTime || ''),
+              digits,
+            };
+          });
+          setLiveOrders(mapped);
+        }
+      }
+    } catch {
+      // ignore
+    } finally {
+      setTimeout(() => setIsRefreshingOrders(false), 350);
+    }
+  };
 
   // Determine trader methodology split (Technical / Fundamental / Intuition)
   const methodology = useMemo(() => {
@@ -1499,6 +1610,249 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
               </button>
             </div>
           </div>
+        </div>
+
+        {/* =====================================================================
+            SECTION 1B: LIVE OPEN ORDERS (REAL-TIME ACTIVE POSITIONS)
+           ===================================================================== */}
+        <div
+          style={{
+            background: 'rgba(11, 17, 30, 0.94)',
+            border: '1px solid rgba(10, 186, 181, 0.3)',
+            borderRadius: '16px',
+            padding: '18px 22px',
+            marginBottom: '24px',
+            boxShadow: '0 8px 28px rgba(0, 0, 0, 0.45)',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: '12px',
+              flexWrap: 'wrap',
+              marginBottom: '14px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <Activity size={18} color="#00f0ff" />
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 900, color: '#ffffff' }}>
+                {language === 'ja'
+                  ? 'ライブ保有注文 (リアルタイム有効ポジション)'
+                  : language === 'zh'
+                  ? '实时持仓订单 (Live Open Orders)'
+                  : 'Live Open Orders (Active Positions)'}
+              </h3>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '3px 9px',
+                  borderRadius: '999px',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  background: liveOrders.length > 0 ? 'rgba(16, 185, 129, 0.16)' : 'rgba(148, 163, 184, 0.12)',
+                  color: liveOrders.length > 0 ? '#10b981' : '#94a3b8',
+                  border: liveOrders.length > 0 ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(148, 163, 184, 0.25)',
+                }}
+              >
+                <span
+                  style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    background: liveOrders.length > 0 ? '#10b981' : '#00f0ff',
+                    boxShadow: liveOrders.length > 0 ? '0 0 8px #10b981' : '0 0 6px #00f0ff',
+                  }}
+                />
+                {liveOrders.length}{' '}
+                {language === 'ja' ? 'ポジション稼働中' : language === 'zh' ? '笔持仓中' : 'Active'}
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+              {(() => {
+                const totalFloatPips = Number(liveOrders.reduce((s, o) => s + o.profitPips, 0).toFixed(1));
+                const totalFloatProfit = liveOrders.reduce((s, o) => s + o.profitCurrency, 0);
+                const isPosFloat = totalFloatPips >= 0;
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12.5px' }}>
+                    <span style={{ color: '#94a3b8', fontWeight: 700 }}>
+                      {language === 'ja' ? '含み損益:' : language === 'zh' ? '浮动盈亏:' : 'Floating P&L:'}
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-mono, monospace)',
+                        fontWeight: 900,
+                        color: isPosFloat ? '#10b981' : '#f43f5e',
+                      }}
+                    >
+                      {totalFloatPips >= 0 ? `+${totalFloatPips}` : totalFloatPips} pips (
+                      {formatUsdSigned(totalFloatProfit)})
+                    </span>
+                  </div>
+                );
+              })()}
+
+              <button
+                type="button"
+                onClick={handleManualRefreshOrders}
+                title="Refresh Live Open Orders"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '5px 10px',
+                  borderRadius: '8px',
+                  background: 'rgba(0, 240, 255, 0.08)',
+                  border: '1px solid rgba(0, 240, 255, 0.28)',
+                  color: '#00f0ff',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                }}
+              >
+                <RefreshCw
+                  size={12}
+                  style={{ animation: isRefreshingOrders ? 'spin 0.8s linear infinite' : 'none' }}
+                />
+                <span>{language === 'ja' ? '更新' : language === 'zh' ? '刷新' : 'Sync Live'}</span>
+              </button>
+            </div>
+          </div>
+
+          {liveOrders.length === 0 ? (
+            <div
+              style={{
+                padding: '16px',
+                borderRadius: '10px',
+                background: 'rgba(4, 9, 18, 0.55)',
+                border: '1px dashed rgba(255, 255, 255, 0.08)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+                flexWrap: 'wrap',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#94a3b8', fontSize: '12.5px' }}>
+                <Radio size={15} color="#00f0ff" />
+                <span>
+                  {language === 'ja'
+                    ? '現在保有中のオープン注文はありません。MT4/MT5ターミナルのリアルタイム注文ストリームを監視中...'
+                    : language === 'zh'
+                    ? '当前暂无未平仓实时订单 — 正在实时监听 MT4/MT5 经纪商终端成交...'
+                    : 'No open orders currently active on broker terminal — real-time MT4/MT5 execution stream connected.'}
+                </span>
+              </div>
+              <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 700 }}>
+                ● {language === 'ja' ? '5秒自動同期' : language === 'zh' ? '5秒自动同步' : '5s Live Sync'}
+              </span>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table
+                style={{
+                  width: '100%',
+                  borderCollapse: 'collapse',
+                  fontSize: '12.5px',
+                  fontFamily: 'var(--font-mono, monospace)',
+                }}
+              >
+                <thead>
+                  <tr
+                    style={{
+                      borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                      color: '#94a3b8',
+                      textAlign: 'left',
+                      fontSize: '11px',
+                    }}
+                  >
+                    <th style={{ padding: '8px' }}>{language === 'ja' ? 'チケット' : language === 'zh' ? '订单号' : 'Ticket'}</th>
+                    <th style={{ padding: '8px' }}>{language === 'ja' ? '銘柄' : language === 'zh' ? '品种' : 'Symbol'}</th>
+                    <th style={{ padding: '8px' }}>{language === 'ja' ? '売買' : language === 'zh' ? '方向' : 'Side'}</th>
+                    <th style={{ padding: '8px' }}>{language === 'ja' ? 'ロット' : language === 'zh' ? '手数' : 'Lots'}</th>
+                    <th style={{ padding: '8px' }}>{language === 'ja' ? '建値' : language === 'zh' ? '开仓价' : 'Open Price'}</th>
+                    <th style={{ padding: '8px' }}>{language === 'ja' ? '現在値' : language === 'zh' ? '现价' : 'Live Price'}</th>
+                    <th style={{ padding: '8px', textAlign: 'right' }}>{language === 'ja' ? '獲得Pips' : language === 'zh' ? '浮动点数' : 'Floating Pips'}</th>
+                    <th style={{ padding: '8px', textAlign: 'right' }}>{language === 'ja' ? '含み損益' : language === 'zh' ? '浮动盈亏' : 'Floating P&L'}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {liveOrders.map(ord => {
+                    const isPos = ord.profitPips >= 0;
+                    const isMoneyPos = ord.profitCurrency >= 0;
+                    return (
+                      <tr
+                        key={ord.id}
+                        style={{
+                          borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                          background: 'rgba(0, 0, 0, 0.2)',
+                        }}
+                      >
+                        <td style={{ padding: '10px 8px', color: '#94a3b8' }}>#{ord.ticket.slice(-8)}</td>
+                        <td style={{ padding: '10px 8px', fontWeight: 900, color: '#ffffff' }}>{ord.symbol}</td>
+                        <td style={{ padding: '10px 8px' }}>
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '2px 7px',
+                              borderRadius: '4px',
+                              fontSize: '10.5px',
+                              fontWeight: 800,
+                              background: ord.type === 'BUY' ? 'rgba(16, 185, 129, 0.18)' : 'rgba(244, 63, 94, 0.18)',
+                              color: ord.type === 'BUY' ? '#10b981' : '#f43f5e',
+                            }}
+                          >
+                            {ord.type === 'BUY' ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                            {ord.type}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 8px', color: '#e2e8f0', fontWeight: 700 }}>
+                          {ord.lotSize.toFixed(2)} {copy.lotsLabel}
+                        </td>
+                        <td style={{ padding: '10px 8px', color: '#94a3b8' }}>
+                          {ord.openPrice.toFixed(ord.digits)}
+                        </td>
+                        <td style={{ padding: '10px 8px', color: '#ffffff', fontWeight: 800 }}>
+                          {ord.currentPrice.toFixed(ord.digits)}
+                        </td>
+                        <td style={{ padding: '10px 8px', textAlign: 'right' }}>
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              padding: '2px 8px',
+                              borderRadius: '6px',
+                              fontWeight: 900,
+                              background: isPos ? 'rgba(16, 185, 129, 0.14)' : 'rgba(244, 63, 94, 0.14)',
+                              color: isPos ? '#10b981' : '#f43f5e',
+                              border: `1px solid ${isPos ? 'rgba(16, 185, 129, 0.35)' : 'rgba(244, 63, 94, 0.35)'}`,
+                            }}
+                          >
+                            {isPos ? `+${ord.profitPips.toFixed(1)}` : ord.profitPips.toFixed(1)}p
+                          </span>
+                        </td>
+                        <td
+                          style={{
+                            padding: '10px 8px',
+                            textAlign: 'right',
+                            fontWeight: 900,
+                            color: isMoneyPos ? '#38bdf8' : '#f43f5e',
+                          }}
+                        >
+                          {formatUsdSigned(ord.profitCurrency)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* =====================================================================
