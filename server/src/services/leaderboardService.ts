@@ -441,8 +441,15 @@ export class LeaderboardService {
       };
     });
 
-    // Sort by daily total winning pips descending
-    standings.sort((a, b) => b.dailyTotalPips - a.dailyTotalPips);
+    // Sort active daily traders first, then by daily total pips descending
+    standings.sort((a, b) => {
+      const aActive = a.dailyTradesCount > 0 || a.dailyFloatingPips !== 0 ? 1 : 0;
+      const bActive = b.dailyTradesCount > 0 || b.dailyFloatingPips !== 0 ? 1 : 0;
+      if (aActive !== bActive) {
+        return bActive - aActive;
+      }
+      return b.dailyTotalPips - a.dailyTotalPips;
+    });
 
     let totalDailyPips = 0;
     standings.forEach((s, idx) => {
@@ -450,11 +457,12 @@ export class LeaderboardService {
       totalDailyPips = Number((totalDailyPips + s.dailyTotalPips).toFixed(1));
     });
 
-    // Determine Daily Best Trader (Rank 1 with positive pips)
+    // Determine Daily Best Trader (Rank 1 among active daily traders)
     let dailyBestTrader: DailyTraderStats | null = null;
-    if (standings.length > 0 && standings[0].dailyTotalPips > 0) {
-      standings[0].isDailyChampion = true;
-      dailyBestTrader = standings[0];
+    const topActive = standings.find(s => s.dailyTradesCount > 0 || s.dailyFloatingPips !== 0);
+    if (topActive) {
+      topActive.isDailyChampion = true;
+      dailyBestTrader = topActive;
     }
 
     return {

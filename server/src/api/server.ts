@@ -715,11 +715,7 @@ export function createServer() {
         return;
       }
 
-      const fallbackAcc =
-        allAccounts.find(a => a.metaApiAccountId && !a.metaApiAccountId.startsWith('mock_')) ||
-        allAccounts[0];
-      const targetId = fallbackAcc ? fallbackAcc.id : paramId;
-      const positions = await connector.getActivePositions(targetId);
+      const positions = await connector.getActivePositions(paramId);
       res.json(positions || []);
     } catch (err) {
       console.warn('[Positions API] Error fetching positions for account:', req.params.id, err);
@@ -738,19 +734,22 @@ export function createServer() {
 
       const lbAccountIds = new Set(leaderboard.getAccountIdsForTrader(paramId));
 
-      const matched =
-        allAccounts.find(
-          a =>
-            a.id === paramId ||
-            a.userId === paramId ||
-            a.accountNumber === paramId ||
-            (a.accountNumber && paramId.includes(a.accountNumber)) ||
-            lbAccountIds.has(a.id)
-        ) ||
-        allAccounts.find(a => a.metaApiAccountId && !a.metaApiAccountId.startsWith('mock_'));
+      const matched = allAccounts.find(
+        a =>
+          a.id === paramId ||
+          a.userId === paramId ||
+          a.accountNumber === paramId ||
+          (a.accountNumber && paramId.includes(a.accountNumber)) ||
+          lbAccountIds.has(a.id)
+      );
 
-      const targetId = matched ? matched.id : (allAccounts.length > 0 ? allAccounts[0].id : paramId);
-      const trades = await connector.syncAndGetAccountTrades(targetId);
+      if (!matched) {
+        const directTrades = await connector.syncAndGetAccountTrades(paramId);
+        res.json(directTrades || []);
+        return;
+      }
+
+      const trades = await connector.syncAndGetAccountTrades(matched.id);
       res.json(trades || []);
     } catch (err) {
       console.warn('[Trades API] Error fetching trades for account:', req.params.id, err);

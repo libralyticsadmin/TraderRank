@@ -697,6 +697,7 @@ export const App: React.FC = () => {
             onClick={handleRefreshMarketRates}
             disabled={isRefreshingMarket}
             title={t.nav.refreshRates}
+            style={{ minWidth: '142px', justifyContent: 'center' }}
           >
             <RefreshCw size={13} className={isRefreshingMarket ? 'animate-spin' : ''} style={{ animation: isRefreshingMarket ? 'spin 1s linear infinite' : 'none' }} />
             {isRefreshingMarket ? t.app.syncing : t.nav.refreshRates}

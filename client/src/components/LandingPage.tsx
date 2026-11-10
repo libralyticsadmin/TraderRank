@@ -13,6 +13,7 @@ import {
   Check,
   User,
   LayoutDashboard,
+  Activity,
 } from 'lucide-react';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { TraderAvatar } from './TraderAvatar.tsx';
@@ -60,6 +61,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         level: number;
         currency?: string;
         broker?: string;
+        liveOrders: Array<{
+          id: string;
+          ticket: string;
+          symbol: string;
+          type: 'BUY' | 'SELL';
+          lotSize: number;
+          openPrice: number;
+          currentPrice: number;
+          profitPips: number;
+          profitCurrency: number;
+          isLivePosition: boolean;
+          timeLabel: string;
+        }>;
       }
     >
   >({});
@@ -70,9 +84,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   useEffect(() => {
     let isMounted = true;
-    fetch('/api/accounts?scope=public')
-      .then(res => (res.ok ? res.json() : []))
-      .then(async (accounts: any[]) => {
+    const loadLandingLedger = async () => {
+      try {
+        const res = await fetch('/api/accounts?scope=public');
+        if (!res.ok) return;
+        const accounts = await res.json();
         if (!isMounted || !Array.isArray(accounts) || accounts.length === 0) return;
 
         const map: typeof ledgerStatsByUser = {};
@@ -81,15 +97,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
         for (const acc of accounts) {
           try {
-            const trRes = await fetch(`/api/accounts/${acc.id}/trades`);
-            if (!trRes.ok) continue;
-            const trades = await trRes.json();
-            if (!Array.isArray(trades)) continue;
+            const [trRes, posRes] = await Promise.all([
+              fetch(`/api/accounts/${acc.id}/trades`).catch(() => null),
+              fetch(`/api/accounts/${acc.id}/positions`).catch(() => null),
+            ]);
+            const trades = trRes && trRes.ok ? await trRes.json() : [];
+            const rawPositions = posRes && posRes.ok ? await posRes.json() : [];
 
-            const valid = trades.filter((d: any) => {
-              const sym = String(d.symbol || '').toUpperCase();
-              return sym && sym !== 'UNKNOWN' && sym !== 'BALANCE' && Number(d.lotSize ?? d.volume ?? 0) > 0;
-            });
+            const valid = Array.isArray(trades)
+              ? trades.filter((d: any) => {
+                  const sym = String(d.symbol || '').toUpperCase();
+                  return sym && sym !== 'UNKNOWN' && sym !== 'BALANCE' && Number(d.lotSize ?? d.volume ?? 0) > 0;
+                })
+              : [];
 
             let winningPips = 0;
             let netPips = 0;
@@ -113,6 +133,44 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             totalPlatformTrades += valid.length;
             totalPlatformWinningPips += winningPips;
 
+            const openOrders = Array.isArray(rawPositions)
+              ? rawPositions.slice(0, 2).map((pos: any) => ({
+                  id: String(pos.id || pos.ticket || Math.random()),
+                  ticket: String(pos.ticket || pos.id || '').slice(-6),
+                  symbol: String(pos.symbol || 'XAUUSD'),
+                  type: (String(pos.type || 'BUY').toUpperCase().includes('SELL') ? 'SELL' : 'BUY') as 'BUY' | 'SELL',
+                  lotSize: Number(pos.lotSize ?? pos.volume ?? 0.01),
+                  openPrice: Number(pos.openPrice || 0),
+                  currentPrice: Number(pos.currentPrice || pos.openPrice || 0),
+                  profitPips: Number((pos.profitPips ?? 0).toFixed(1)),
+                  profitCurrency: Number((pos.profitCurrency ?? pos.profit ?? 0).toFixed(2)),
+                  isLivePosition: true,
+                  timeLabel: 'LIVE OPEN',
+                }))
+              : [];
+
+            const recentClosedOrders =
+              openOrders.length === 0 && valid.length > 0
+                ? [...valid]
+                    .sort((a: any, b: any) => new Date(b.closeTime || 0).getTime() - new Date(a.closeTime || 0).getTime())
+                    .slice(0, 2)
+                    .map((tr: any) => ({
+                      id: String(tr.id || tr.ticket || Math.random()),
+                      ticket: String(tr.ticket || tr.id || '').slice(-6),
+                      symbol: String(tr.symbol || 'XAUUSD'),
+                      type: (String(tr.type || 'BUY').toUpperCase().includes('SELL') ? 'SELL' : 'BUY') as 'BUY' | 'SELL',
+                      lotSize: Number(tr.lotSize ?? tr.volume ?? 0.01),
+                      openPrice: Number(tr.openPrice || 0),
+                      currentPrice: Number(tr.closePrice || tr.openPrice || 0),
+                      profitPips: Number((tr.pnlPips ?? tr.profitPips ?? 0).toFixed(1)),
+                      profitCurrency: Number((tr.pnlCurrency ?? tr.profitCurrency ?? tr.profit ?? 0).toFixed(2)),
+                      isLivePosition: false,
+                      timeLabel: tr.closeTime
+                        ? new Date(tr.closeTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : 'FILLED',
+                    }))
+                : [];
+
             const statsObj = {
               tradesCount: valid.length,
               winningPips: Number(winningPips.toFixed(1)),
@@ -124,6 +182,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               level: Math.max(1, Math.floor(valid.length / 40) + 1),
               currency: acc.currency,
               broker: acc.broker,
+              liveOrders: openOrders.length > 0 ? openOrders : recentClosedOrders,
             };
 
             if (acc.userId) map[acc.userId] = statsObj;
@@ -135,7 +194,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         }
 
         if (isMounted) {
-          setLedgerStatsByUser(map);
+          setLedgerStatsByUser(prev => ({ ...prev, ...map }));
           if (totalPlatformTrades > 0) {
             setPlatformTotals({
               totalTrades: totalPlatformTrades,
@@ -143,10 +202,69 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             });
           }
         }
-      })
-      .catch(() => {});
+      } catch {
+        // ignore
+      }
+    };
+
+    const pollLandingTop3Positions = async () => {
+      try {
+        const res = await fetch('/api/accounts?scope=public');
+        if (!res.ok) return;
+        const accounts = await res.json();
+        if (!isMounted || !Array.isArray(accounts) || accounts.length === 0) return;
+
+        const updates: Record<string, any[]> = {};
+        await Promise.all(
+          accounts.map(async (acc: any) => {
+            try {
+              const posRes = await fetch(`/api/accounts/${acc.id}/positions`);
+              if (!posRes.ok) return;
+              const rawPositions = await posRes.json();
+              if (!Array.isArray(rawPositions) || rawPositions.length === 0) return;
+              const openOrders = rawPositions.slice(0, 2).map((pos: any) => ({
+                id: String(pos.id || pos.ticket || Math.random()),
+                ticket: String(pos.ticket || pos.id || '').slice(-6),
+                symbol: String(pos.symbol || 'XAUUSD'),
+                type: (String(pos.type || 'BUY').toUpperCase().includes('SELL') ? 'SELL' : 'BUY') as 'BUY' | 'SELL',
+                lotSize: Number(pos.lotSize ?? pos.volume ?? 0.01),
+                openPrice: Number(pos.openPrice || 0),
+                currentPrice: Number(pos.currentPrice || pos.openPrice || 0),
+                profitPips: Number((pos.profitPips ?? 0).toFixed(1)),
+                profitCurrency: Number((pos.profitCurrency ?? pos.profit ?? 0).toFixed(2)),
+                isLivePosition: true,
+                timeLabel: 'LIVE OPEN',
+              }));
+              if (acc.userId) updates[acc.userId] = openOrders;
+              if (acc.id) updates[acc.id] = openOrders;
+              if (acc.accountNumber) updates[`TraderRank-${acc.accountNumber}`] = openOrders;
+            } catch {
+              // ignore
+            }
+          })
+        );
+
+        if (isMounted && Object.keys(updates).length > 0) {
+          setLedgerStatsByUser(prev => {
+            const next = { ...prev };
+            for (const [k, orders] of Object.entries(updates)) {
+              if (next[k]) {
+                next[k] = { ...next[k], liveOrders: orders };
+              }
+            }
+            return next;
+          });
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    loadLandingLedger();
+    const posTimer = setInterval(pollLandingTop3Positions, 6000);
     return () => {
       isMounted = false;
+      clearInterval(posTimer);
     };
   }, []);
 
@@ -179,6 +297,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         trades: tradesCount,
         winRate,
         tier: t.rewards[gamification.tierKey] || gamification.tierName,
+        liveOrders: real?.liveOrders || [],
       };
     })
     .sort((a, b) => {
@@ -645,6 +764,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         {activeTabRanking === 'profit' ? t.landing.tabProfit : t.landing.gainCol}
                       </div>
                       <div
+                        className="tabular"
                         style={{
                           fontSize: '20px',
                           fontWeight: 900,
@@ -667,10 +787,98 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     </div>
                     <div>
                       <div style={{ fontSize: '11px', color: '#848E9C' }}>{t.landing.winRateCol}</div>
-                      <div style={{ fontSize: '20px', fontWeight: 900, color: '#F0B90B' }}>
+                      <div className="tabular" style={{ fontSize: '20px', fontWeight: 900, color: '#F0B90B' }}>
                         {trader.winRate}%
                       </div>
                     </div>
+                  </div>
+
+                  {/* Real-Time Trading Orders Strip (Fixed-Height to Prevent Screen Shaking on Refresh) */}
+                  <div
+                    style={{
+                      marginTop: '12px',
+                      padding: '10px 12px',
+                      borderRadius: '10px',
+                      background: 'rgba(8, 11, 17, 0.78)',
+                      border: '1px solid rgba(0, 240, 255, 0.14)',
+                      minHeight: '88px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 800, color: '#00F0FF', display: 'inline-flex', alignItems: 'center', gap: '5px', letterSpacing: '0.4px', textTransform: 'uppercase' }}>
+                        <Activity size={11} color="#00F0FF" />
+                        {trader.liveOrders && trader.liveOrders.some((o: any) => o.isLivePosition)
+                          ? 'Real-Time Open Orders'
+                          : 'Real-Time Order Feed'}
+                      </span>
+                      <span style={{ fontSize: '9.5px', color: '#848E9C', display: 'inline-flex', alignItems: 'center', gap: '4px', fontFamily: 'var(--font-mono)' }}>
+                        <span
+                          style={{
+                            width: '6px',
+                            height: '6px',
+                            borderRadius: '50%',
+                            background: trader.liveOrders && trader.liveOrders.some((o: any) => o.isLivePosition) ? '#10b981' : '#0abab5',
+                            display: 'inline-block',
+                          }}
+                        />
+                        LIVE
+                      </span>
+                    </div>
+
+                    {trader.liveOrders && trader.liveOrders.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                        {trader.liveOrders.slice(0, 2).map((ord: any) => {
+                          const isPos = ord.profitPips >= 0;
+                          return (
+                            <div
+                              key={ord.id}
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                fontSize: '11px',
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                background: 'rgba(255, 255, 255, 0.03)',
+                                border: '1px solid rgba(255, 255, 255, 0.05)',
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                                <span
+                                  style={{
+                                    fontSize: '9.5px',
+                                    fontWeight: 900,
+                                    padding: '1px 5px',
+                                    borderRadius: '4px',
+                                    background: ord.type === 'BUY' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                                    color: ord.type === 'BUY' ? '#34d399' : '#f87171',
+                                  }}
+                                >
+                                  {ord.type}
+                                </span>
+                                <strong className="tabular" style={{ color: '#fff', fontSize: '11px' }}>{ord.symbol}</strong>
+                                <span className="tabular" style={{ color: '#848E9C', fontSize: '10px' }}>{ord.lotSize.toFixed(2)}L</span>
+                              </div>
+                              <div className="tabular" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                                <span style={{ fontWeight: 800, color: isPos ? '#10b981' : '#ef4444' }}>
+                                  {isPos ? `+${ord.profitPips}` : ord.profitPips}p
+                                </span>
+                                <span style={{ fontSize: '9.5px', color: '#4E586E' }}>
+                                  {ord.timeLabel}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '11px', color: '#848E9C', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '48px' }}>
+                        No active market orders open right now
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

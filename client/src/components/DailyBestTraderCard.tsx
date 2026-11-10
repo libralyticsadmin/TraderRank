@@ -223,11 +223,11 @@ export const DailyBestTraderCard: React.FC<DailyBestTraderCardProps> = ({
             <span style={{ fontSize: '11px', color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               {t.dailyBest.todayNetGain}
             </span>
-            <div className="tabular pip-positive" style={{ fontSize: '24px', fontWeight: 900 }}>
-              +{champion.dailyTotalPips.toLocaleString()} <span style={{ fontSize: '14px' }}>{t.dailyBest.pips}</span>
+            <div className={`tabular ${champion.dailyTotalPips >= 0 ? 'pip-positive' : 'pip-negative'}`} style={{ fontSize: '24px', fontWeight: 900 }}>
+              {champion.dailyTotalPips >= 0 ? `+${champion.dailyTotalPips.toLocaleString()}` : champion.dailyTotalPips.toLocaleString()} <span style={{ fontSize: '14px' }}>{t.dailyBest.pips}</span>
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-              {t.dailyBest.closed} +{champion.dailyClosedPips} | {t.dailyBest.float} {champion.dailyFloatingPips >= 0 ? `+${champion.dailyFloatingPips}` : champion.dailyFloatingPips}
+            <div className="tabular" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+              {t.dailyBest.closed} {champion.dailyClosedPips >= 0 ? `+${champion.dailyClosedPips}` : champion.dailyClosedPips} | {t.dailyBest.float} {champion.dailyFloatingPips >= 0 ? `+${champion.dailyFloatingPips}` : champion.dailyFloatingPips}
             </div>
           </div>
         </div>

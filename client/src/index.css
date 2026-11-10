@@ -368,6 +368,7 @@ body {
 /* Monospace Numeral Values */
 .tabular {
   font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   letter-spacing: -0.5px;
 }
 
@@ -861,8 +862,8 @@ body {
   cursor: pointer;
   padding: 6px 12px;
   border-radius: 12px;
-  transition: all 0.2s ease;
-  animation: spotlight-pop 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background 0.2s ease, opacity 0.2s ease;
+  min-height: 54px;
 }
 
 .bulletin-spotlight-card:hover {

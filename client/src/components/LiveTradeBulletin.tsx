@@ -276,7 +276,6 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
       <div className="bulletin-spotlight-stage">
         {currentTrade ? (
           <div
-            key={currentTrade.id}
             className="bulletin-spotlight-card"
             onClick={() =>
               onSelectTrader &&
