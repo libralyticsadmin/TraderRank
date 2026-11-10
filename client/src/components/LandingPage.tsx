@@ -46,15 +46,26 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const { t, language } = useTranslation();
   const { user, isAuthenticated, openAuthModal } = useAuth();
   const [activeTabRanking, setActiveTabRanking] = useState<'pips' | 'profit' | 'rate'>('pips');
-  const [liveAuditStats, setLiveAuditStats] = useState<{
-    tradesCount: number;
-    winningPips: number;
-    netPips: number;
-    netProfitUsd: number;
-    grossProfitUsd: number;
-    winRate: number;
-    xp: number;
-    level: number;
+  const [ledgerStatsByUser, setLedgerStatsByUser] = useState<
+    Record<
+      string,
+      {
+        tradesCount: number;
+        winningPips: number;
+        netPips: number;
+        netProfitUsd: number;
+        grossProfitUsd: number;
+        winRate: number;
+        xp: number;
+        level: number;
+        currency?: string;
+        broker?: string;
+      }
+    >
+  >({});
+  const [platformTotals, setPlatformTotals] = useState<{
+    totalTrades: number;
+    totalWinningPips: number;
   } | null>(null);
 
   useEffect(() => {
@@ -63,47 +74,74 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       .then(res => (res.ok ? res.json() : []))
       .then(async (accounts: any[]) => {
         if (!isMounted || !Array.isArray(accounts) || accounts.length === 0) return;
-        const acc = accounts[0];
-        const trRes = await fetch(`/api/accounts/${acc.id}/trades`);
-        if (!trRes.ok) return;
-        const trades = await trRes.json();
-        if (!Array.isArray(trades)) return;
 
-        const valid = trades.filter((d: any) => {
-          const sym = String(d.symbol || '').toUpperCase();
-          return sym && sym !== 'UNKNOWN' && sym !== 'BALANCE' && Number(d.lotSize ?? d.volume ?? 0) > 0;
-        });
+        const map: typeof ledgerStatsByUser = {};
+        let totalPlatformTrades = 0;
+        let totalPlatformWinningPips = 0;
 
-        let winningPips = 0;
-        let netPips = 0;
-        let netProfitUsd = 0;
-        let grossProfitUsd = 0;
-        let wins = 0;
+        for (const acc of accounts) {
+          try {
+            const trRes = await fetch(`/api/accounts/${acc.id}/trades`);
+            if (!trRes.ok) continue;
+            const trades = await trRes.json();
+            if (!Array.isArray(trades)) continue;
 
-        for (const tr of valid) {
-          const usd = Number(tr.pnlCurrency ?? tr.profitCurrency ?? tr.profit ?? 0);
-          const pips = Number(tr.pnlPips ?? tr.profitPips ?? 0);
-          const isWin = usd > 0 || (usd === 0 && pips > 0);
-          netPips += pips;
-          netProfitUsd += usd;
-          if (isWin) {
-            wins++;
-            winningPips += Math.max(0, pips);
-            grossProfitUsd += Math.max(0, usd);
+            const valid = trades.filter((d: any) => {
+              const sym = String(d.symbol || '').toUpperCase();
+              return sym && sym !== 'UNKNOWN' && sym !== 'BALANCE' && Number(d.lotSize ?? d.volume ?? 0) > 0;
+            });
+
+            let winningPips = 0;
+            let netPips = 0;
+            let netProfitUsd = 0;
+            let grossProfitUsd = 0;
+            let wins = 0;
+
+            for (const tr of valid) {
+              const usd = Number(tr.pnlCurrency ?? tr.profitCurrency ?? tr.profit ?? 0);
+              const pips = Number(tr.pnlPips ?? tr.profitPips ?? 0);
+              const isWin = usd > 0 || (usd === 0 && pips > 0);
+              netPips += pips;
+              netProfitUsd += usd;
+              if (isWin) {
+                wins++;
+                winningPips += Math.max(0, pips);
+                grossProfitUsd += Math.max(0, usd);
+              }
+            }
+
+            totalPlatformTrades += valid.length;
+            totalPlatformWinningPips += winningPips;
+
+            const statsObj = {
+              tradesCount: valid.length,
+              winningPips: Number(winningPips.toFixed(1)),
+              netPips: Number(netPips.toFixed(1)),
+              netProfitUsd: Number(netProfitUsd.toFixed(2)),
+              grossProfitUsd: Number(grossProfitUsd.toFixed(2)),
+              winRate: valid.length > 0 ? Math.round((wins / valid.length) * 100) : 0,
+              xp: valid.length * 25,
+              level: Math.max(1, Math.floor(valid.length / 40) + 1),
+              currency: acc.currency,
+              broker: acc.broker,
+            };
+
+            if (acc.userId) map[acc.userId] = statsObj;
+            if (acc.id) map[acc.id] = statsObj;
+            if (acc.accountNumber) map[`TraderRank-${acc.accountNumber}`] = statsObj;
+          } catch {
+            // ignore single account fetch error
           }
         }
 
         if (isMounted) {
-          setLiveAuditStats({
-            tradesCount: valid.length,
-            winningPips: Number(winningPips.toFixed(1)),
-            netPips: Number(netPips.toFixed(1)),
-            netProfitUsd: Number(netProfitUsd.toFixed(2)),
-            grossProfitUsd: Number(grossProfitUsd.toFixed(2)),
-            winRate: valid.length > 0 ? Math.round((wins / valid.length) * 100) : 0,
-            xp: valid.length * 25,
-            level: Math.max(1, Math.floor(valid.length / 40) + 1),
-          });
+          setLedgerStatsByUser(map);
+          if (totalPlatformTrades > 0) {
+            setPlatformTotals({
+              totalTrades: totalPlatformTrades,
+              totalWinningPips: Number(totalPlatformWinningPips.toFixed(1)),
+            });
+          }
         }
       })
       .catch(() => {});
@@ -112,32 +150,68 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     };
   }, []);
 
-  // Derive top 3 exclusively from verified real leaderboard entries + live MetaApi ledger
-  const topPodiumTraders = leaderboard.slice(0, 3).map((trader, idx) => {
-    const tradesCount = liveAuditStats?.tradesCount ?? trader.tradesCount ?? 0;
-    const level = liveAuditStats?.level ?? (tradesCount > 0 ? Math.max(1, Math.floor(tradesCount / 40) + 1) : trader.level || 1);
-    const pips = liveAuditStats?.netPips ?? trader.totalPips ?? 0;
-    const netProfitUsd =
-      liveAuditStats?.netProfitUsd ??
-      (typeof trader.closedProfitUsd === 'number' ? trader.closedProfitUsd : 0);
-    const winRate = liveAuditStats?.winRate ?? trader.winRate ?? 0;
+  // Derive top 3 exclusively from each trader's own verified real leaderboard entry + per-account ledger
+  const topPodiumTraders = leaderboard
+    .map(trader => {
+      const real = ledgerStatsByUser[trader.userId] || ledgerStatsByUser[trader.username];
+      const tradesCount = real ? real.tradesCount : trader.tradesCount ?? 0;
+      const pips = real ? real.netPips : trader.totalPips ?? 0;
+      const netProfitUsd = real
+        ? real.netProfitUsd
+        : typeof trader.closedProfitUsd === 'number'
+        ? trader.closedProfitUsd
+        : 0;
+      const winRate = real ? real.winRate : trader.winRate ?? 0;
+      const xp = real ? real.xp : tradesCount > 0 ? tradesCount * 25 : trader.xp || 0;
+      const gamification = calculateTraderGamification(xp);
+      const broker = (real?.broker || trader.brokers?.[0] || 'XM') as any;
+      const currency = real?.currency || (broker === 'XMTrading' ? 'JPY' : 'USD');
 
-    return {
+      return {
+        userId: trader.userId,
+        username: trader.username,
+        broker,
+        currency,
+        avatarSymbol: trader.avatarSymbol || 'zap',
+        pips,
+        profit: netProfitUsd,
+        rate: winRate,
+        trades: tradesCount,
+        winRate,
+        tier: t.rewards[gamification.tierKey] || gamification.tierName,
+      };
+    })
+    .sort((a, b) => {
+      // Active verified traders with real closed trades always rank above 0-trade accounts
+      const aActive = a.trades > 0 ? 1 : 0;
+      const bActive = b.trades > 0 ? 1 : 0;
+      if (aActive !== bActive) {
+        return bActive - aActive;
+      }
+      if (activeTabRanking === 'profit') {
+        return b.profit - a.profit;
+      }
+      if (activeTabRanking === 'rate') {
+        return b.winRate - a.winRate;
+      }
+      return b.pips - a.pips;
+    })
+    .slice(0, 3)
+    .map((trader, idx) => ({
+      ...trader,
       rank: idx + 1,
-      userId: trader.userId,
-      username: trader.username,
-      broker: (trader.brokers?.[0] || 'XM') as any,
-      avatarSymbol: trader.avatarSymbol || 'zap',
-      pips,
-      profit: netProfitUsd,
-      rate: winRate,
-      trades: tradesCount,
-      winRate,
-      tier: level > 10 ? t.rewards.tierApexPredator : t.rewards.tierMarketVeteran,
       badge: idx === 0 ? t.leaderboard.goldChampion : idx === 1 ? t.leaderboard.silverContender : t.leaderboard.bronzeMaster,
       glow: idx === 0 ? '#fbbf24' : idx === 1 ? '#94a3b8' : '#d97706',
-    };
-  });
+    }));
+
+  const formatPodiumProfit = (amount: number, broker?: string, currency?: string) => {
+    const isJpy = broker === 'XMTrading' || (currency || '').toUpperCase() === 'JPY';
+    const sym = isJpy ? '¥' : '$';
+    const formattedVal = isJpy
+      ? Math.round(Math.abs(amount)).toLocaleString('ja-JP')
+      : Math.abs(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return amount >= 0 ? `+${sym}${formattedVal}` : `-${sym}${formattedVal}`;
+  };
 
   return (
     <div style={{ backgroundColor: '#080b11', color: '#ffffff', minHeight: '100vh', overflowX: 'hidden' }}>
@@ -382,9 +456,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div>
               <div style={{ fontSize: '11px', color: '#848E9C', marginBottom: '4px', fontWeight: 600 }}>{t.landing.verifiedPnlBadge}</div>
               <div style={{ fontSize: '22px', fontWeight: 900, color: '#00F0FF' }}>
-                {liveAuditStats
-                  ? `+${liveAuditStats.winningPips.toLocaleString()}p (${liveAuditStats.tradesCount})`
-                  : '531 Fills'}
+                {platformTotals
+                  ? `+${platformTotals.totalWinningPips.toLocaleString()}p (${platformTotals.totalTrades})`
+                  : '576 Fills'}
               </div>
             </div>
             <div>
@@ -585,9 +659,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         }}
                       >
                         {activeTabRanking === 'profit'
-                          ? trader.profit >= 0
-                            ? `+$${trader.profit.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-                            : `-$${Math.abs(trader.profit).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                          ? formatPodiumProfit(trader.profit, trader.broker, trader.currency)
                           : trader.pips >= 0
                           ? `+${trader.pips.toFixed(1)}`
                           : trader.pips.toFixed(1)}

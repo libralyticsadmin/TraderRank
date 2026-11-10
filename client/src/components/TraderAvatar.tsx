@@ -64,13 +64,7 @@ const resolveSavedUserAvatar = (username: string, explicitUrl?: string): string 
     const raw = typeof window !== 'undefined' ? localStorage.getItem('traderank_auth_user_v1') : null;
     if (!raw) return undefined;
     const saved = JSON.parse(raw);
-    if (
-      saved?.avatarUrl &&
-      (saved.username === username ||
-       username.startsWith('Verified_') ||
-       username.startsWith('TraderRank-') ||
-       username.includes('72423906'))
-    ) {
+    if (saved?.avatarUrl && saved.username === username) {
       return saved.avatarUrl;
     }
   } catch {

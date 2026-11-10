@@ -395,7 +395,14 @@ export class LeaderboardService {
       };
     });
 
-    list.sort((a, b) => b.totalPips - a.totalPips);
+    list.sort((a, b) => {
+      const aActive = a.tradesCount > 0 || a.floatingPips !== 0 ? 1 : 0;
+      const bActive = b.tradesCount > 0 || b.floatingPips !== 0 ? 1 : 0;
+      if (aActive !== bActive) {
+        return bActive - aActive;
+      }
+      return b.totalPips - a.totalPips;
+    });
 
     return list.slice(0, limit).map((entry, idx) => ({
       ...entry,

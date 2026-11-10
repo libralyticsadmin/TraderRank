@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { LeaderboardEntry, DailyLeaderboardResult, Broker } from '../../../shared/src/types.ts';
+import { calculateTraderGamification } from '../../../shared/src/gamification.ts';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { useTranslation } from '../context/LanguageContext.tsx';
@@ -196,6 +197,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             const winRate = real ? real.winRate : e.winRate || 0;
             const xp = real ? real.xp : tradesCount > 0 ? tradesCount * 25 : e.xp || 0;
             const profitRate = real ? real.roiPct : winRate;
+            const gamification = calculateTraderGamification(xp);
 
             return {
               userId: e.userId,
@@ -209,7 +211,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               tradesCount,
               winRate,
               xp,
-              tier: t.rewards.tierMarketVeteran,
+              tier: t.rewards[gamification.tierKey] || gamification.tierName,
             };
           });
 
@@ -225,8 +227,13 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
       filtered = filtered.filter(item => item.username.toLowerCase().includes(q));
     }
 
-    // Sort by selected metric
+    // Sort by selected metric (active traders with trades > 0 always rank above 0-trade accounts)
     const sorted = [...filtered].sort((a, b) => {
+      const aActive = a.tradesCount > 0 ? 1 : 0;
+      const bActive = b.tradesCount > 0 ? 1 : 0;
+      if (aActive !== bActive) {
+        return bActive - aActive;
+      }
       if (metric === 'profit') {
         return b.profitAmount - a.profitAmount;
       }
