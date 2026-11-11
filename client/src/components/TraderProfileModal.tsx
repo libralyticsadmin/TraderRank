@@ -578,8 +578,8 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
           if (matched.serverName) {
             setLiveServerName(String(matched.serverName));
           }
-          if (matched.accountHolderName) {
-            setLiveHolderName(String(matched.accountHolderName));
+          if (matched.profileUsername) {
+            setLiveHolderName(String(matched.profileUsername));
           }
           if (matched.accountNumber) {
             setLiveAccountNumber(String(matched.accountNumber));

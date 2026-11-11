@@ -167,7 +167,8 @@ export class AccountConnectorService {
       id: accountId,
       userId,
       accountNumber,
-      accountHolderName: resolvedProfileUsername,
+      profileUsername: resolvedProfileUsername,
+      accountHolderName: existingAcc?.accountHolderName,
       broker,
       integrationType: creds.type,
       platform,
@@ -225,12 +226,16 @@ export class AccountConnectorService {
     const all = Array.from(this.accounts.values());
     if (userId) {
       const cleanId = userId.trim().toLowerCase();
+      const cleanHandle = cleanId.replace(/^u_/, '');
+      const mappedUsername = (this.traderUsernames.get(userId) || this.traderUsernames.get(cleanId) || '').toLowerCase();
       return all.filter(a => {
         const aUid = (a.userId || '').trim().toLowerCase();
+        const aProfile = (a.profileUsername || '').trim().toLowerCase();
         return (
           aUid === cleanId ||
-          aUid === `u_${cleanId.replace(/^u_/, '')}` ||
-          `u_${aUid.replace(/^u_/, '')}` === cleanId
+          aUid === `u_${cleanHandle}` ||
+          `u_${aUid.replace(/^u_/, '')}` === cleanId ||
+          (aProfile && (aProfile === cleanHandle || aProfile === mappedUsername || `u_${aProfile.replace(/[^a-z0-9]/g, '_')}` === cleanId))
         );
       });
     }
@@ -289,7 +294,7 @@ export class AccountConnectorService {
         userId === 'usr_live_meta' ||
         (accountNumber && acc.accountNumber === String(accountNumber).replace(/^TraderRank-/i, '').trim());
       if (isDirectMatch) {
-        acc.accountHolderName = cleanName;
+        acc.profileUsername = cleanName;
         this.traderUsernames.set(acc.accountNumber, cleanName);
         this.leaderboard.registerAccountMapping(acc.id, acc.userId, cleanName, acc.broker, cleanName, acc.accountNumber);
         matchedAny = true;
@@ -304,7 +309,7 @@ export class AccountConnectorService {
         (primaryBroker ? allAccs.find(a => a.broker.toLowerCase() === primaryBroker.toLowerCase()) : undefined) ||
         allAccs[0];
       if (targetAcc) {
-        targetAcc.accountHolderName = cleanName;
+        targetAcc.profileUsername = cleanName;
         this.traderUsernames.set(targetAcc.accountNumber, cleanName);
         this.leaderboard.registerAccountMapping(
           targetAcc.id,
@@ -355,22 +360,28 @@ export class AccountConnectorService {
         );
         const accountId = existingAcc?.id || `acc_meta_${p.login}`;
         const userId = existingAcc?.userId || (provisionedList.length === 1 ? 'usr_live_meta' : `usr_meta_${p.login}`);
-        // Strictly use Trader Profile Username (NEVER use broker legal name info.name)
+        // Public Trader Profile Username (shown on Leaderboard & Podium)
         const profileUsername =
           this.traderUsernames.get(p.login) ||
           this.traderUsernames.get(userId) ||
-          (existingAcc?.accountHolderName && !existingAcc.accountHolderName.startsWith('TraderRank-')
-            ? existingAcc.accountHolderName
+          (existingAcc?.profileUsername && !existingAcc.profileUsername.startsWith('TraderRank-')
+            ? existingAcc.profileUsername
             : undefined) ||
           (p.name && !p.name.startsWith('TraderRank-') ? p.name : undefined) ||
           getDefaultTraderUsername(p.login);
         const username = profileUsername;
 
+        // Private Broker Legal Name (strictly kept in private for the account owner only, never exposed on public endpoints)
+        const privateLegalName =
+          (info?.name && !info.name.startsWith('TraderRank-') ? info.name : undefined) ||
+          existingAcc?.accountHolderName;
+
         const tradingAccount: TradingAccount = {
           id: accountId,
           userId,
           accountNumber: p.login,
-          accountHolderName: profileUsername,
+          profileUsername,
+          accountHolderName: privateLegalName,
           broker: brokerName,
           integrationType: 'mt_gateway',
           platform: (p.platform?.toUpperCase() === 'MT4' ? 'MT4' : 'MT5') as Platform,

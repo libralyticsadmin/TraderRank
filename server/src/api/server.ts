@@ -524,7 +524,7 @@ export function createServer() {
       return res.json(accounts.map(maskAccountSecrets));
     }
 
-    // 2. Anonymous public feed aggregates: mask server balances while providing trader profile name & account number
+    // 2. Anonymous public feed aggregates: strictly strip private accountHolderName & balances; only expose public profileUsername & accountNumber
     if (scope === 'public') {
       const allAccounts = connector.getAccounts();
       return res.json(
@@ -532,7 +532,7 @@ export function createServer() {
           id: acc.id,
           userId: acc.userId,
           accountNumber: acc.accountNumber,
-          accountHolderName: acc.accountHolderName,
+          profileUsername: acc.profileUsername,
           currency: acc.currency,
           broker: acc.broker,
           platform: acc.platform,

@@ -22,7 +22,8 @@ export interface TradingAccount {
   id: string;
   userId: string;
   accountNumber: string;
-  accountHolderName?: string;
+  profileUsername?: string; // Public Trader Profile Username (shown on Leaderboard)
+  accountHolderName?: string; // Private MT4/MT5 legal name (strictly isolated to private owner view)
   broker: Broker;
   integrationType: IntegrationType;
   platform: Platform;

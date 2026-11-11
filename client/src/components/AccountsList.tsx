@@ -26,10 +26,12 @@ export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconne
     const accUid = (acc.userId || '').toLowerCase();
     const uEmail = (user.email || '').toLowerCase();
     const uName = (user.username || '').toLowerCase();
+    const accProfile = (acc.profileUsername || '').toLowerCase();
     return (
       accUid === uid ||
       accUid === `u_${uid.replace(/^u_/, '')}` ||
       `u_${accUid.replace(/^u_/, '')}` === uid ||
+      (accProfile && uName && accProfile === uName) ||
       (accUid && uName && (accUid.includes(uName) || accUid.includes(uid))) ||
       (uEmail && (accUid === uEmail || accUid === `u_${uEmail.replace(/[^a-z0-9]/g, '_')}`))
     );
@@ -139,8 +141,28 @@ export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconne
                       <span className="status-dot"></span> {t.accounts.activeFeed}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', gap: '14px', fontSize: '12px', color: 'var(--text-muted)' }}>
-                    <span>{t.accounts.accountLabel}: <strong className="tabular" style={{ color: '#fff' }}>{acc.accountNumber}</strong></span>
+                  <div style={{ display: 'flex', gap: '14px', fontSize: '12px', color: 'var(--text-muted)', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <span>{t.accounts.accountLabel}: <strong className="tabular" style={{ color: '#fff' }}>TraderRank-{acc.accountNumber}</strong></span>
+                    <span>Public Username: <strong style={{ color: '#00f0ff' }}>{acc.profileUsername || user?.username}</strong></span>
+                    {acc.accountHolderName && (
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '1px 7px',
+                          borderRadius: '5px',
+                          background: 'rgba(245, 158, 11, 0.12)',
+                          border: '1px solid rgba(245, 158, 11, 0.3)',
+                          color: '#fbbf24',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                        }}
+                        title="Strictly private to your account — never shown on public leaderboards"
+                      >
+                        <Lock size={10} /> Private Holder: {acc.accountHolderName}
+                      </span>
+                    )}
                     {acc.serverName && <span>{t.accounts.serverLabel}: <strong style={{ color: '#fff' }}>{acc.serverName}</strong></span>}
                     <span>{t.accounts.leverageLabel}: <strong className="tabular" style={{ color: '#fff' }}>1:{acc.leverage}</strong></span>
                   </div>

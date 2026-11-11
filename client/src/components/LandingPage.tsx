@@ -186,7 +186,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               currency: acc.currency,
               broker: acc.broker,
               accountNumber: acc.accountNumber,
-              accountHolderName: acc.accountHolderName,
+              accountHolderName: acc.profileUsername,
               liveOrders: openOrders.length > 0 ? openOrders : recentClosedOrders,
             };
 

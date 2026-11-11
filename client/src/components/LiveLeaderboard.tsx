@@ -192,7 +192,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             dailyWinRate: dailyTradesCount > 0 ? Math.round((dailyWins / dailyTradesCount) * 100) : 0,
             currency: acc.currency,
             accountNumber: acc.accountNumber,
-            accountHolderName: acc.accountHolderName,
+            accountHolderName: acc.profileUsername,
             liveOrders: openOrders.length > 0 ? openOrders : recentClosedOrders,
           };
 
