@@ -21,6 +21,7 @@ interface TraderAggregate {
   username: string;
   profileName?: string;
   accountNumber?: string;
+  avatarUrl?: string;
   avatarSymbol: string; // Symbolic representation (no emojis)
   brokers: Set<Broker>;
   accounts: Set<string>;
@@ -220,7 +221,8 @@ export class LeaderboardService {
     username: string,
     broker: Broker,
     profileName?: string,
-    accountNumber?: string
+    accountNumber?: string,
+    avatarUrl?: string
   ): void {
     const today = this.getTodayUTC();
     this.accountToUser.set(accountId, userId);
@@ -243,6 +245,7 @@ export class LeaderboardService {
         username,
         profileName: cleanProfileName,
         accountNumber: extractedNumber,
+        avatarUrl,
         avatarSymbol: 'user',
         brokers: new Set([broker]),
         accounts: new Set([accountId]),
@@ -274,6 +277,9 @@ export class LeaderboardService {
       }
       if (extractedNumber && !trader.accountNumber) {
         trader.accountNumber = extractedNumber;
+      }
+      if (avatarUrl) {
+        trader.avatarUrl = avatarUrl;
       }
       trader.brokers.add(broker);
       trader.accounts.add(accountId);
@@ -406,6 +412,7 @@ export class LeaderboardService {
         username: t.profileName || t.username,
         profileName: t.profileName || t.username,
         accountNumber: t.accountNumber,
+        avatarUrl: t.avatarUrl,
         avatarSymbol: t.avatarSymbol,
         accountCount: t.accounts.size,
         brokers: Array.from(t.brokers),
@@ -460,6 +467,7 @@ export class LeaderboardService {
         username: t.profileName || t.username,
         profileName: t.profileName || t.username,
         accountNumber: t.accountNumber,
+        avatarUrl: t.avatarUrl,
         avatarSymbol: t.avatarSymbol,
         brokers: Array.from(t.brokers),
         accountCount: t.accounts.size,

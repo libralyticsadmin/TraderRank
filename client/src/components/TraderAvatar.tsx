@@ -60,12 +60,35 @@ const TRADER_PRESET_MAP: Record<string, string> = {
 
 const resolveSavedUserAvatar = (username: string, explicitUrl?: string): string | undefined => {
   if (explicitUrl) return explicitUrl;
+  if (typeof window === 'undefined') return undefined;
   try {
-    const raw = typeof window !== 'undefined' ? localStorage.getItem('traderank_auth_user_v1') : null;
-    if (!raw) return undefined;
-    const saved = JSON.parse(raw);
-    if (saved?.avatarUrl && saved.username === username) {
-      return saved.avatarUrl;
+    const uNorm = (username || '').trim().toLowerCase();
+
+    // Check account avatars map first
+    const avatarMapRaw = localStorage.getItem('traderank_account_avatars_v1');
+    if (avatarMapRaw) {
+      const map = JSON.parse(avatarMapRaw);
+      if (uNorm && map[uNorm]) return map[uNorm];
+      const match = uNorm.match(/(\d{6,})/);
+      if (match && map[match[1]]) return map[match[1]];
+      if (uNorm.includes('72423906') && map['72423906']) return map['72423906'];
+    }
+
+    // Check saved logged in user
+    const raw = localStorage.getItem('traderank_auth_user_v1');
+    if (raw) {
+      const saved = JSON.parse(raw);
+      if (saved?.avatarUrl) {
+        const savedNorm = (saved.username || '').trim().toLowerCase();
+        if (
+          savedNorm === uNorm ||
+          uNorm.includes('72423906') ||
+          (saved.accountNumber && uNorm.includes(String(saved.accountNumber))) ||
+          saved.id === username
+        ) {
+          return saved.avatarUrl;
+        }
+      }
     }
   } catch {
     // ignore storage read errors
@@ -82,15 +105,18 @@ export const getTraderAnimalPreset = (username: string, customUrl?: string): Ani
     if (matched) return matched;
   }
 
-  if (TRADER_PRESET_MAP[username]) {
-    const matched = INSTITUTIONAL_ANIMAL_PRESETS.find((p) => p.url === TRADER_PRESET_MAP[username]);
+  const uNorm = (username || '').trim().toLowerCase();
+  if (TRADER_PRESET_MAP[username] || TRADER_PRESET_MAP[uNorm]) {
+    const matchedUrl = TRADER_PRESET_MAP[username] || TRADER_PRESET_MAP[uNorm];
+    const matched = INSTITUTIONAL_ANIMAL_PRESETS.find((p) => p.url === matchedUrl);
     if (matched) return matched;
   }
 
-  // Deterministic hash across all 124+ unique avatars
+  // Deterministic hash across all 124+ unique avatars using normalized string
   let hash = 2166136261;
-  for (let i = 0; i < username.length; i++) {
-    hash ^= username.charCodeAt(i);
+  const hashSeed = uNorm || 'trader';
+  for (let i = 0; i < hashSeed.length; i++) {
+    hash ^= hashSeed.charCodeAt(i);
     hash = Math.imul(hash, 16777619);
   }
   const index = Math.abs(hash) % INSTITUTIONAL_ANIMAL_PRESETS.length;

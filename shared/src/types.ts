@@ -23,6 +23,7 @@ export interface TradingAccount {
   userId: string;
   accountNumber: string;
   profileUsername?: string; // Public Trader Profile Username (shown on Leaderboard)
+  avatarUrl?: string;
   accountHolderName?: string; // Private MT4/MT5 legal name (strictly isolated to private owner view)
   broker: Broker;
   integrationType: IntegrationType;
@@ -169,6 +170,7 @@ export interface DailyTraderStats {
   username: string;
   profileName?: string;
   accountNumber?: string;
+  avatarUrl?: string;
   avatarSymbol: string;
   brokers: Broker[];
   accountCount: number;

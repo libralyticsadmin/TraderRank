@@ -196,9 +196,14 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             liveOrders: openOrders.length > 0 ? openOrders : recentClosedOrders,
           };
 
-          if (acc.userId) map[acc.userId] = statsObj;
+          if (acc.accountNumber) {
+            const cleanNum = String(acc.accountNumber).replace(/^TraderRank-/i, '').trim();
+            map[cleanNum] = statsObj;
+            map[`TraderRank-${cleanNum}`] = statsObj;
+          }
           if (acc.id) map[acc.id] = statsObj;
-          if (acc.accountNumber) map[`TraderRank-${acc.accountNumber}`] = statsObj;
+          if (acc.userId && acc.userId !== 'usr_live_meta') map[acc.userId] = statsObj;
+          if (acc.profileUsername) map[acc.profileUsername] = statsObj;
         }
 
         if (isMounted) {
@@ -282,7 +287,13 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
       period === 'daily' && dailyStandings.length > 0
         ? dailyStandings.map(d => {
             const primaryBroker: Broker = d.brokers && d.brokers.length > 0 ? d.brokers[0] : 'XM';
-            const real = ledgerStatsByUser[d.userId] || ledgerStatsByUser[d.username];
+            const cleanAcc = d.accountNumber
+              ? String(d.accountNumber).replace(/^TraderRank-/i, '').trim()
+              : (d.username.match(/(\d{6,})/)?.[1] || '');
+            const real =
+              (cleanAcc && (ledgerStatsByUser[cleanAcc] || ledgerStatsByUser[`TraderRank-${cleanAcc}`])) ||
+              (d.userId && d.userId !== 'usr_live_meta' ? ledgerStatsByUser[d.userId] : undefined) ||
+              ledgerStatsByUser[d.username];
             const pips = real ? real.dailyNetPips : d.dailyTotalPips || 0;
             const trades = real ? real.dailyTradesCount : d.dailyTradesCount || 0;
             const profitUsd = real ? real.dailyProfitUsd : 0;
@@ -295,8 +306,9 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               username: d.username,
               profileName: d.profileName,
               accountHolderName: real?.accountHolderName,
-              accountNumber: d.accountNumber || real?.accountNumber,
+              accountNumber: d.accountNumber || real?.accountNumber || cleanAcc,
               userId: d.userId,
+              avatarUrl: d.avatarUrl,
             });
 
             return {
@@ -305,6 +317,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               profileName: identity.profileName,
               accountTag: identity.accountTag,
               avatarSeed: identity.avatarSeed,
+              avatarUrl: identity.avatarUrl || d.avatarUrl,
               broker: primaryBroker,
               currency: real?.currency,
               avatarSymbol: d.avatarSymbol,
@@ -321,7 +334,13 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
           })
         : entries.map((e, idx) => {
             const primaryBroker: Broker = e.brokers && e.brokers.length > 0 ? e.brokers[0] : 'XM';
-            const real = ledgerStatsByUser[e.userId] || ledgerStatsByUser[e.username];
+            const cleanAcc = e.accountNumber
+              ? String(e.accountNumber).replace(/^TraderRank-/i, '').trim()
+              : (e.username.match(/(\d{6,})/)?.[1] || '');
+            const real =
+              (cleanAcc && (ledgerStatsByUser[cleanAcc] || ledgerStatsByUser[`TraderRank-${cleanAcc}`])) ||
+              (e.userId && e.userId !== 'usr_live_meta' ? ledgerStatsByUser[e.userId] : undefined) ||
+              ledgerStatsByUser[e.username];
             const netPips = real ? real.netPips : e.totalPips || 0;
             const netProfitUsd = real
               ? real.netProfitUsd
@@ -337,8 +356,9 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               username: e.username,
               profileName: e.profileName,
               accountHolderName: real?.accountHolderName,
-              accountNumber: e.accountNumber || real?.accountNumber,
+              accountNumber: e.accountNumber || real?.accountNumber || cleanAcc,
               userId: e.userId,
+              avatarUrl: e.avatarUrl,
             });
 
             return {
@@ -347,6 +367,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               profileName: identity.profileName,
               accountTag: identity.accountTag,
               avatarSeed: identity.avatarSeed,
+              avatarUrl: identity.avatarUrl || e.avatarUrl,
               broker: primaryBroker,
               currency: real?.currency,
               avatarSymbol: e.avatarSymbol,
@@ -692,7 +713,12 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
-                  <TraderAvatar username={trader.avatarSeed} symbol={trader.avatarSymbol} size={50} />
+                  <TraderAvatar
+                    username={trader.profileName || trader.username}
+                    symbol={trader.avatarSymbol}
+                    avatarUrl={trader.avatarUrl}
+                    size={50}
+                  />
                   <div style={{ minWidth: 0 }}>
                     <h4 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#ffffff', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {trader.profileName}
@@ -900,7 +926,12 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                       #{trader.displayRank}
                     </div>
 
-                    <TraderAvatar username={trader.avatarSeed} symbol={trader.avatarSymbol} size={36} />
+                    <TraderAvatar
+                      username={trader.profileName || trader.username}
+                      symbol={trader.avatarSymbol}
+                      avatarUrl={trader.avatarUrl}
+                      size={36}
+                    />
 
                     <div style={{ minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '7px', flexWrap: 'wrap' }}>

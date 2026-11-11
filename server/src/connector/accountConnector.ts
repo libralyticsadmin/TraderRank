@@ -277,7 +277,8 @@ export class AccountConnectorService {
     userId: string,
     newUsername: string,
     primaryBroker?: string,
-    accountNumber?: string
+    accountNumber?: string,
+    avatarUrl?: string
   ): void {
     const cleanName = (newUsername || '').trim();
     if (!cleanName || cleanName.startsWith('TraderRank-')) return;
@@ -291,12 +292,12 @@ export class AccountConnectorService {
     for (const acc of this.accounts.values()) {
       const isDirectMatch =
         acc.userId === userId ||
-        userId === 'usr_live_meta' ||
         (accountNumber && acc.accountNumber === String(accountNumber).replace(/^TraderRank-/i, '').trim());
       if (isDirectMatch) {
         acc.profileUsername = cleanName;
+        if (avatarUrl) acc.avatarUrl = avatarUrl;
         this.traderUsernames.set(acc.accountNumber, cleanName);
-        this.leaderboard.registerAccountMapping(acc.id, acc.userId, cleanName, acc.broker, cleanName, acc.accountNumber);
+        this.leaderboard.registerAccountMapping(acc.id, acc.userId, cleanName, acc.broker, cleanName, acc.accountNumber, avatarUrl);
         matchedAny = true;
       }
     }
@@ -306,10 +307,11 @@ export class AccountConnectorService {
       const allAccs = Array.from(this.accounts.values());
       const targetAcc =
         allAccs.find(a => a.accountNumber === '72423906') ||
-        (primaryBroker ? allAccs.find(a => a.broker.toLowerCase() === primaryBroker.toLowerCase()) : undefined) ||
-        allAccs[0];
+        (accountNumber ? allAccs.find(a => a.accountNumber === String(accountNumber).replace(/^TraderRank-/i, '').trim()) : undefined) ||
+        (primaryBroker ? allAccs.find(a => a.broker.toLowerCase() === primaryBroker.toLowerCase()) : undefined);
       if (targetAcc) {
         targetAcc.profileUsername = cleanName;
+        if (avatarUrl) targetAcc.avatarUrl = avatarUrl;
         this.traderUsernames.set(targetAcc.accountNumber, cleanName);
         this.leaderboard.registerAccountMapping(
           targetAcc.id,
@@ -317,7 +319,8 @@ export class AccountConnectorService {
           cleanName,
           targetAcc.broker,
           cleanName,
-          targetAcc.accountNumber
+          targetAcc.accountNumber,
+          avatarUrl
         );
       }
     }
@@ -359,7 +362,7 @@ export class AccountConnectorService {
           a => a.accountNumber === p.login || a.metaApiAccountId === p.id
         );
         const accountId = existingAcc?.id || `acc_meta_${p.login}`;
-        const userId = existingAcc?.userId || (provisionedList.length === 1 ? 'usr_live_meta' : `usr_meta_${p.login}`);
+        const userId = existingAcc?.userId && existingAcc.userId !== 'usr_live_meta' ? existingAcc.userId : `usr_meta_${p.login}`;
         // Public Trader Profile Username (shown on Leaderboard & Podium)
         const profileUsername =
           this.traderUsernames.get(p.login) ||

@@ -8,6 +8,7 @@ export interface UserProfile {
   email: string;
   avatarSymbol: string;
   avatarUrl?: string;
+  accountNumber?: string;
   traderTitle: string;
   bio: string;
   tradingStyle: 'SCALPER' | 'DAY_TRADER' | 'SWING_TRADER' | 'ALGORITHMIC';

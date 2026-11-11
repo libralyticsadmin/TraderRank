@@ -1196,7 +1196,23 @@ export interface ResolvedTraderIdentity {
   accountTag: string | null;
   accountNumber: string | null;
   avatarSeed: string;
+  avatarUrl?: string;
 }
+
+export const CURATED_12_AVATARS: AnimalAvatarPreset[] = [
+  INSTITUTIONAL_ANIMAL_PRESETS[0],   // Cyber Apex Wolf
+  INSTITUTIONAL_ANIMAL_PRESETS[1],   // Golden Bull
+  INSTITUTIONAL_ANIMAL_PRESETS[2],   // Emerald Bear
+  INSTITUTIONAL_ANIMAL_PRESETS[3],   // Solar Falcon
+  INSTITUTIONAL_ANIMAL_PRESETS[4],   // Abyssal Shark
+  INSTITUTIONAL_ANIMAL_PRESETS[5],   // Shadow Panther
+  INSTITUTIONAL_ANIMAL_PRESETS[6],   // Imperial Lion
+  INSTITUTIONAL_ANIMAL_PRESETS[7],   // Neon Tiger
+  INSTITUTIONAL_ANIMAL_PRESETS[8],   // Crimson Dragon
+  INSTITUTIONAL_ANIMAL_PRESETS[9],   // Mystic Kitsune
+  INSTITUTIONAL_ANIMAL_PRESETS[10],  // Iron Rhino
+  INSTITUTIONAL_ANIMAL_PRESETS[11],  // Royal Stag
+];
 
 const isRawAccountTag = (val?: string | null): boolean => {
   if (!val) return true;
@@ -1276,9 +1292,48 @@ const getLocalTraderUsername = (accountNumber?: string | null, userId?: string |
   return null;
 };
 
+export const getLocalTraderAvatar = (
+  accountNumber?: string | null,
+  userId?: string | null,
+  profileName?: string | null
+): string | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const cleanAcc = accountNumber ? String(accountNumber).replace(/^TraderRank-/i, '').trim() : '';
+    const cleanUser = profileName ? profileName.trim().toLowerCase() : '';
+
+    const avatarMapRaw = localStorage.getItem('traderank_account_avatars_v1');
+    if (avatarMapRaw) {
+      const map = JSON.parse(avatarMapRaw);
+      if (cleanAcc && map[cleanAcc]) return map[cleanAcc];
+      if (cleanUser && map[cleanUser]) return map[cleanUser];
+      if (userId && map[userId]) return map[userId];
+    }
+
+    const userRaw = localStorage.getItem('traderank_auth_user_v1');
+    if (userRaw) {
+      const savedUser = JSON.parse(userRaw);
+      if (savedUser?.avatarUrl) {
+        const savedName = (savedUser.username || '').trim().toLowerCase();
+        if (
+          (cleanUser && savedName === cleanUser) ||
+          (cleanAcc && (cleanAcc === '72423906' || savedUser.accountNumber === cleanAcc)) ||
+          (userId && (savedUser.id === userId || userId === 'usr_live_meta'))
+        ) {
+          return savedUser.avatarUrl;
+        }
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+};
+
 /**
  * Resolves both a prominent Trader Profile Username AND a smaller TradeRank-<accountNumber> tag
  * so leaderboard cards, podiums, and modals always show the trader profile username + smaller account ID.
+ * Also deterministically resolves matching avatarSeed & avatarUrl so avatars NEVER differ across views.
  */
 export const resolveTraderIdentity = (params: {
   username?: string | null;
@@ -1286,6 +1341,7 @@ export const resolveTraderIdentity = (params: {
   accountHolderName?: string | null;
   accountNumber?: string | null;
   userId?: string | null;
+  avatarUrl?: string | null;
 }): ResolvedTraderIdentity => {
   const rawUser = (params.username || '').trim();
   const rawProfile = (params.profileName || params.accountHolderName || '').trim();
@@ -1311,9 +1367,6 @@ export const resolveTraderIdentity = (params: {
     ? rawUser
     : null;
 
-  // Keep avatarSeed tied to the canonical account tag / username so avatars stay deterministic
-  const avatarSeed = accountTag || rawUser || rawUid || 'trader';
-
   // 2. Resolve Trader Profile Username (Priority: local user profile username -> server trader username -> default trader handle)
   let profileName = '';
   const localUsername = getLocalTraderUsername(accountNumber, rawUid);
@@ -1324,14 +1377,24 @@ export const resolveTraderIdentity = (params: {
   } else if (!isRawAccountTag(rawUser)) {
     profileName = rawUser;
   } else {
-    profileName = getDefaultTraderHandle(accountNumber, avatarSeed);
+    profileName = getDefaultTraderHandle(accountNumber, accountTag || rawUser || rawUid);
   }
+
+  // 3. Resolve avatar (explicit parameter -> local saved avatar)
+  const localAvatar = getLocalTraderAvatar(accountNumber, rawUid, profileName);
+  const avatarUrl = params.avatarUrl || localAvatar || undefined;
+
+  // 4. Guaranteed deterministic avatar seed:
+  // Using profileName.toLowerCase() ensures that "HomiesPlant" will NEVER hash to different animals
+  // across the navbar, podium cards, leaderboard rows, daily champion, or profile modal!
+  const avatarSeed = (profileName || accountTag || rawUser || rawUid || 'trader').trim().toLowerCase();
 
   return {
     profileName,
     accountTag,
     accountNumber,
     avatarSeed,
+    avatarUrl,
   };
 };
 

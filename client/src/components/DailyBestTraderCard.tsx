@@ -159,11 +159,17 @@ export const DailyBestTraderCard: React.FC<DailyBestTraderCardProps> = ({
             profileName: champion.profileName,
             accountNumber: champion.accountNumber,
             userId: champion.userId,
+            avatarUrl: champion.avatarUrl,
           });
           return (
             <div className="daily-best-champion-grid">
               <div style={{ position: 'relative' }}>
-                <TraderAvatar username={champIdentity.avatarSeed} symbol={champion.avatarSymbol} size={54} />
+                <TraderAvatar
+                  username={champIdentity.profileName || champion.username}
+                  symbol={champion.avatarSymbol}
+                  avatarUrl={champIdentity.avatarUrl || champion.avatarUrl}
+                  size={54}
+                />
                 <div
                   style={{
                     position: 'absolute',

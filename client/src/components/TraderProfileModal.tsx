@@ -1325,13 +1325,14 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                 accountHolderName: liveHolderName,
                 accountNumber: liveAccountNumber,
                 userId: trader.userId,
+                avatarUrl: trader.avatarUrl,
               });
               return (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
                   <TraderAvatar
-                    username={modalIdentity.avatarSeed}
+                    username={modalIdentity.profileName || trader.username}
                     symbol={trader.avatarSymbol}
-                    avatarUrl={trader.avatarUrl}
+                    avatarUrl={modalIdentity.avatarUrl || trader.avatarUrl}
                     size={72}
                   />
                   <div>

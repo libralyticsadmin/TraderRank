@@ -186,9 +186,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               liveOrders: openOrders.length > 0 ? openOrders : recentClosedOrders,
             };
 
-            if (acc.userId) map[acc.userId] = statsObj;
+            if (acc.accountNumber) {
+              const cleanNum = String(acc.accountNumber).replace(/^TraderRank-/i, '').trim();
+              map[cleanNum] = statsObj;
+              map[`TraderRank-${cleanNum}`] = statsObj;
+            }
             if (acc.id) map[acc.id] = statsObj;
-            if (acc.accountNumber) map[`TraderRank-${acc.accountNumber}`] = statsObj;
+            if (acc.userId && acc.userId !== 'usr_live_meta') map[acc.userId] = statsObj;
+            if (acc.profileUsername) map[acc.profileUsername] = statsObj;
           } catch {
             // ignore single account fetch error
           }
@@ -272,7 +277,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   // Derive top 3 exclusively from each trader's own verified real leaderboard entry + per-account ledger
   const topPodiumTraders = leaderboard
     .map(trader => {
-      const real = ledgerStatsByUser[trader.userId] || ledgerStatsByUser[trader.username];
+      const cleanAcc = trader.accountNumber
+        ? String(trader.accountNumber).replace(/^TraderRank-/i, '').trim()
+        : (trader.username.match(/(\d{6,})/)?.[1] || '');
+
+      const real =
+        (cleanAcc && (ledgerStatsByUser[cleanAcc] || ledgerStatsByUser[`TraderRank-${cleanAcc}`])) ||
+        (trader.userId && trader.userId !== 'usr_live_meta' ? ledgerStatsByUser[trader.userId] : undefined) ||
+        ledgerStatsByUser[trader.username];
+
       const tradesCount = real ? real.tradesCount : trader.tradesCount ?? 0;
       const pips = real ? real.netPips : trader.totalPips ?? 0;
       const netProfitUsd = real
@@ -289,8 +302,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         username: trader.username,
         profileName: trader.profileName,
         accountHolderName: real?.accountHolderName,
-        accountNumber: trader.accountNumber || real?.accountNumber,
+        accountNumber: trader.accountNumber || real?.accountNumber || cleanAcc,
         userId: trader.userId,
+        avatarUrl: trader.avatarUrl,
       });
 
       return {
@@ -299,6 +313,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         profileName: identity.profileName,
         accountTag: identity.accountTag,
         avatarSeed: identity.avatarSeed,
+        avatarUrl: identity.avatarUrl || trader.avatarUrl,
         broker,
         currency,
         avatarSymbol: trader.avatarSymbol || 'zap',
@@ -695,7 +710,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
-                    <TraderAvatar username={trader.avatarSeed} symbol={trader.avatarSymbol} size={56} />
+                    <TraderAvatar
+                      username={trader.profileName || trader.username}
+                      symbol={trader.avatarSymbol}
+                      avatarUrl={trader.avatarUrl}
+                      size={56}
+                    />
                     <div style={{ minWidth: 0 }}>
                       <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {trader.profileName}

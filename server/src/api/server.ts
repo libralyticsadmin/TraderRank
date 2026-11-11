@@ -448,7 +448,7 @@ export function createServer() {
     }
     userProfiles.set(profile.id, profile);
     if (profile.username) {
-      connector.updateUserAccountsName(profile.id, profile.username, profile.primaryBroker, profile.accountNumber);
+      connector.updateUserAccountsName(profile.id, profile.username, profile.primaryBroker, profile.accountNumber, profile.avatarUrl);
     }
     return res.json({ success: true, user: profile });
   });
