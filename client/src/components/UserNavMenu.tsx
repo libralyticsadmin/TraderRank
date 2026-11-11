@@ -3,7 +3,6 @@ import { User, Settings, LogOut, ChevronDown, ShieldCheck, Crown, Users, LayoutD
 import { useAuth } from '../context/AuthContext.tsx';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { TraderAvatar } from './TraderAvatar.tsx';
-import { LanguageSelector } from './LanguageSelector.tsx';
 
 interface UserNavMenuProps {
   onOpenConnectWizard?: () => void;
@@ -264,13 +263,6 @@ export const UserNavMenu: React.FC<UserNavMenuProps> = ({
               <span>{(user as any)?.isPro || (user as any)?.subscriptionTier ? 'Membership & Tier Plans' : 'Register / Upgrade Tier'}</span>
             </button>
           )}
-
-          <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.08)', margin: '4px 0' }}></div>
-
-          <div style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '12px', color: '#848E9C', fontWeight: 600 }}>{t.auth.languageNav}</span>
-            <LanguageSelector variant="compact" />
-          </div>
 
           <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.08)', margin: '4px 0' }}></div>
 
