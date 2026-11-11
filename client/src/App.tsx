@@ -568,6 +568,28 @@ export const App: React.FC = () => {
             onOpenMyDashboard={handleOpenMyDashboard}
           />
 
+          {/* Return to Home Landing */}
+          <button
+            className="btn-secondary"
+            onClick={() => {
+              setCurrentView('landing');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            title="Return to Home Landing"
+            style={{
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '6px 10px',
+              fontSize: '12px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <Globe2 size={13} />
+            <span>Home</span>
+          </button>
+
           {/* Primary CTA: Connect Broker Account */}
           <button
             className="btn-primary"
