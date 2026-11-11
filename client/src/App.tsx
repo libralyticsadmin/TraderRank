@@ -30,22 +30,13 @@ import { useAuth } from './context/AuthContext.tsx';
 import { AuthModal } from './components/AuthModal.tsx';
 import { ProfileEditModal } from './components/ProfileEditModal.tsx';
 import { UserNavMenu } from './components/UserNavMenu.tsx';
+import { FeatureSymbol, FeatureSymbolType } from './components/FeatureSymbol.tsx';
 import {
   Plus,
-  Shield,
-  BarChart3,
-  BarChart2,
-  Radio,
   RefreshCw,
   Globe2,
-  Trophy,
-  Swords,
-  Award,
-  Users,
-  Crown,
   Zap,
   Cloud,
-  LayoutDashboard,
 } from 'lucide-react';
 
 interface MarketQuote {
@@ -87,13 +78,6 @@ export const App: React.FC = () => {
       // ignore
     }
   }, []);
-
-  // Guarantee everyone registers before accessing the arena view
-  useEffect(() => {
-    if (!isAuthenticated && currentView === 'app') {
-      setCurrentView('landing');
-    }
-  }, [isAuthenticated, currentView]);
 
   // Pro Subscription State persisted in localStorage
   const [subscription, setSubscription] = useState<SubscriptionStatus>(() => {
@@ -454,15 +438,12 @@ export const App: React.FC = () => {
           onSelectTrader={handleSelectTrader}
           onOpenMyDashboard={handleOpenMyDashboard}
           onEnterApp={(tab?: string) => {
-            if (!isAuthenticated) {
-              openAuthModal('register');
-              return;
-            }
             if (tab === 'leaderboard') tab = 'ranking';
             if (tab) {
               setActiveTab(tab as any);
             }
             setCurrentView('app');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
           onOpenConnectWizard={() => {
             if (!isAuthenticated) {
@@ -587,51 +568,16 @@ export const App: React.FC = () => {
             onOpenMyDashboard={handleOpenMyDashboard}
           />
 
-          {/* Pro / VIP Gamification Referral Trigger */}
-          <button
-            className="btn-secondary"
-            onClick={() => setIsAffiliateModalOpen(true)}
-            title="Refer 3 Friends to Unlock Pro Intelligence Free"
-            style={{
-              border: `1px solid ${subscription.isActive ? 'rgba(0, 218, 198, 0.4)' : 'rgba(240, 185, 11, 0.4)'}`,
-              background: subscription.isActive ? 'rgba(0, 218, 198, 0.12)' : 'rgba(240, 185, 11, 0.08)',
-              color: subscription.isActive ? 'var(--accent-cyan)' : 'var(--accent-gold)',
-              fontWeight: 700,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '5px',
-              padding: '6px 10px',
-              fontSize: '12px',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <Crown size={13} color={subscription.isActive ? '#0abab5' : '#f59e0b'} />
-            <span>{subscription.isActive ? 'VIP Pro' : 'Free VIP'}</span>
-          </button>
-
-          {/* Return to Home Landing */}
-          <button
-            className="btn-secondary"
-            onClick={() => setCurrentView('landing')}
-            title="Return to Home Landing"
-            style={{
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '5px',
-              padding: '6px 10px',
-              fontSize: '12px',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <Globe2 size={13} />
-            <span>Home</span>
-          </button>
-
           {/* Primary CTA: Connect Broker Account */}
           <button
             className="btn-primary"
-            onClick={() => setIsWizardOpen(true)}
+            onClick={() => {
+              if (!isAuthenticated) {
+                openAuthModal('register');
+                return;
+              }
+              setIsWizardOpen(true);
+            }}
             title="Connect MetaTrader 4/5 or Exness broker account"
             style={{
               display: 'inline-flex',
@@ -705,89 +651,156 @@ export const App: React.FC = () => {
         </div>
       </div>
 
-      {/* Modern Multi-Tab Navigation */}
-      <nav className="tabs-nav">
-        <button
-          className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
-          onClick={() => setActiveTab('overview')}
-        >
-          <BarChart3 size={16} /> {t.nav.overview}
-        </button>
-        <button
-          className="tab-button"
-          onClick={handleOpenMyDashboard}
-          style={{
-            borderColor: 'rgba(0, 240, 255, 0.45)',
-            color: '#00F0FF',
-            background: 'rgba(0, 240, 255, 0.08)',
-            fontWeight: 800,
-          }}
-          title="Open My Verified Trading Dashboard & Analytics"
-        >
-          <LayoutDashboard size={16} /> {t.nav.myDashboard}
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'daily-analysis' ? 'active' : ''}`}
-          onClick={() => setActiveTab('daily-analysis')}
-          style={{ position: 'relative' }}
-        >
-          <Crown size={16} color={activeTab === 'daily-analysis' ? 'var(--accent-cyan)' : 'var(--accent-gold)'} /> {t.nav.dailyIntel}
-          <span
+      {/* Streamlined Feature Menu Links with Custom Emblems */}
+      <nav
+        aria-label="Arena Features Menu"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(175px, 1fr))',
+          gap: '10px',
+          marginBottom: '24px',
+        }}
+      >
+        {(
+          [
+            {
+              id: 'overview',
+              symbol: 'overview' as FeatureSymbolType,
+              label: t.nav.overview,
+              sub: 'Live Hub & Feed',
+              accent: '#00F0FF',
+              onClick: () => setActiveTab('overview'),
+              isActive: activeTab === 'overview',
+            },
+            {
+              id: 'ranking',
+              symbol: 'ranking' as FeatureSymbolType,
+              label: t.nav.rankings,
+              sub: 'Verified Rankings',
+              accent: '#F0B90B',
+              onClick: () => setActiveTab('ranking'),
+              isActive: activeTab === 'ranking',
+            },
+            {
+              id: 'tournaments',
+              symbol: 'tournaments' as FeatureSymbolType,
+              label: t.nav.tournaments,
+              sub: 'Prize Battles',
+              accent: '#00DAC6',
+              onClick: () => setActiveTab('tournaments'),
+              isActive: activeTab === 'tournaments',
+            },
+            {
+              id: 'daily-analysis',
+              symbol: 'daily-analysis' as FeatureSymbolType,
+              label: t.nav.dailyIntel,
+              sub: subscription.isActive ? 'VIP PRO Active' : 'SMC & Signals',
+              accent: '#A78BFA',
+              onClick: () => setActiveTab('daily-analysis'),
+              isActive: activeTab === 'daily-analysis',
+            },
+            {
+              id: 'rewards',
+              symbol: 'rewards' as FeatureSymbolType,
+              label: t.nav.rewards,
+              sub: 'XP & Badges',
+              accent: '#F6465D',
+              onClick: () => setActiveTab('rewards'),
+              isActive: activeTab === 'rewards',
+            },
+            {
+              id: 'dashboard',
+              symbol: 'dashboard' as FeatureSymbolType,
+              label: t.nav.myDashboard,
+              sub: 'My Live Orders',
+              accent: '#00F0FF',
+              onClick: handleOpenMyDashboard,
+              isActive: false,
+            },
+          ] as const
+        ).map(item => (
+          <button
+            key={item.id}
+            onClick={item.onClick}
             style={{
-              fontSize: '10px',
-              padding: '1px 6px',
-              borderRadius: '8px',
-              background: subscription.isActive ? 'rgba(0, 218, 198, 0.2)' : 'rgba(0, 240, 255, 0.12)',
-              color: subscription.isActive ? 'var(--accent-cyan)' : '#00F0FF',
-              fontWeight: 800,
-              border: `1px solid ${subscription.isActive ? 'rgba(0, 218, 198, 0.4)' : 'rgba(0, 240, 255, 0.3)'}`,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '12px 14px',
+              borderRadius: '14px',
+              background: item.isActive
+                ? 'linear-gradient(135deg, rgba(0, 240, 255, 0.14) 0%, rgba(14, 20, 31, 0.95) 100%)'
+                : 'rgba(14, 20, 31, 0.78)',
+              border: item.isActive
+                ? `1px solid ${item.accent}`
+                : '1px solid rgba(255, 255, 255, 0.08)',
+              boxShadow: item.isActive
+                ? `0 8px 24px -6px ${item.accent}40`
+                : '0 4px 14px rgba(0, 0, 0, 0.2)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              transition: 'all 0.2s ease',
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              if (!item.isActive) {
+                e.currentTarget.style.borderColor = 'rgba(0, 240, 255, 0.35)';
+              }
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              if (!item.isActive) {
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+              }
             }}
           >
-            {subscription.isActive ? 'VIP PRO' : 'VIP'}
-          </span>
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'charts' ? 'active' : ''}`}
-          onClick={() => setActiveTab('charts')}
-        >
-          <BarChart2 size={16} /> {t.nav.liveCharts}
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'ranking' ? 'active' : ''}`}
-          onClick={() => setActiveTab('ranking')}
-        >
-          <Trophy size={16} /> {t.nav.rankings}
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'tournaments' ? 'active' : ''}`}
-          onClick={() => setActiveTab('tournaments')}
-        >
-          <Swords size={16} /> {t.nav.tournaments}
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'rewards' ? 'active' : ''}`}
-          onClick={() => setActiveTab('rewards')}
-        >
-          <Award size={16} /> {t.nav.rewards}
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'community' ? 'active' : ''}`}
-          onClick={() => setActiveTab('community')}
-        >
-          <Users size={16} /> {t.nav.community}
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'positions' ? 'active' : ''}`}
-          onClick={() => setActiveTab('positions')}
-        >
-          <Radio size={16} /> {t.nav.positions} ({positions.length})
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'security' ? 'active' : ''}`}
-          onClick={() => setActiveTab('security')}
-        >
-          <Shield size={16} /> {t.nav.securityVault}
-        </button>
+            <FeatureSymbol type={item.symbol} active={item.isActive} size={38} />
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div
+                style={{
+                  fontSize: '13.5px',
+                  fontWeight: 800,
+                  color: item.isActive ? '#FFFFFF' : '#F1F5F9',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  lineHeight: 1.2,
+                }}
+              >
+                {item.label}
+              </div>
+              <div
+                style={{
+                  fontSize: '10.5px',
+                  fontWeight: 600,
+                  color: item.isActive ? item.accent : 'var(--text-muted)',
+                  marginTop: '3px',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {item.sub}
+              </div>
+            </div>
+            {item.isActive && (
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: '14px',
+                  right: '14px',
+                  height: '2px',
+                  borderRadius: '2px',
+                  background: item.accent,
+                  boxShadow: `0 0 8px ${item.accent}`,
+                }}
+              />
+            )}
+          </button>
+        ))}
       </nav>
 
       {/* Tab 1: Overview */}

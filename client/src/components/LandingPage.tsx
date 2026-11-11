@@ -8,11 +8,7 @@ import {
   Lock,
   ArrowRight,
   ChevronRight,
-  Target,
-  Flame,
   Check,
-  User,
-  LayoutDashboard,
   Activity,
 } from 'lucide-react';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
@@ -26,7 +22,7 @@ import { useTranslation } from '../context/LanguageContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
 import { LanguageSelector } from './LanguageSelector.tsx';
 import { UserNavMenu } from './UserNavMenu.tsx';
-import { calculateTraderGamification, getStreakStatus } from '../../../shared/src/gamification.ts';
+import { calculateTraderGamification } from '../../../shared/src/gamification.ts';
 
 interface LandingPageProps {
   onEnterApp: (tab?: string) => void;
@@ -46,7 +42,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   leaderboard = [],
 }) => {
   const { t, language } = useTranslation();
-  const { user, isAuthenticated, openAuthModal } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [activeTabRanking, setActiveTabRanking] = useState<'pips' | 'profit' | 'rate'>('pips');
   const [ledgerStatsByUser, setLedgerStatsByUser] = useState<
     Record<
@@ -379,11 +375,35 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <LanguageSelector />
-            <UserNavMenu
-              onOpenConnectWizard={onOpenConnectWizard}
-              onOpenSubscriptionModal={onOpenSubscriptionModal}
-              onOpenMyDashboard={onOpenMyDashboard}
-            />
+            {isAuthenticated ? (
+              <UserNavMenu
+                onOpenConnectWizard={onOpenConnectWizard}
+                onOpenSubscriptionModal={onOpenSubscriptionModal}
+                onOpenMyDashboard={onOpenMyDashboard}
+              />
+            ) : (
+              <button
+                onClick={() => onEnterApp()}
+                style={{
+                  background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 100%)',
+                  border: 'none',
+                  color: '#080b11',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  fontWeight: 900,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 4px 16px rgba(0, 240, 255, 0.3)',
+                }}
+              >
+                <Trophy size={13} />
+                <span>{t.landing.enterArenaBtn}</span>
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -471,118 +491,29 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </p>
 
           <div className="landing-hero-buttons">
-            {isAuthenticated ? (
-              <>
-                <button
-                  onClick={() => onEnterApp()}
-                  style={{
-                    background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 100%)',
-                    border: 'none',
-                    color: '#080b11',
-                    padding: '16px 36px',
-                    borderRadius: '12px',
-                    fontSize: '15px',
-                    fontWeight: 900,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    boxShadow: '0 8px 30px rgba(0, 240, 255, 0.4)',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  <Trophy size={18} /> {t.landing.enterArenaBtn} <ArrowRight size={18} />
-                </button>
-
-                <button
-                  onClick={() => onOpenMyDashboard?.()}
-                  style={{
-                    background: 'rgba(0, 240, 255, 0.12)',
-                    border: '1px solid rgba(0, 240, 255, 0.4)',
-                    color: '#00F0FF',
-                    padding: '16px 28px',
-                    borderRadius: '12px',
-                    fontSize: '15px',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    boxShadow: '0 4px 20px rgba(0, 240, 255, 0.15)',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  <LayoutDashboard size={18} color="#00F0FF" />
-                  <span>{t.nav.myDashboard}</span>
-                </button>
-
-                <button
-                  onClick={onOpenConnectWizard}
-                  style={{
-                    background: 'rgba(14, 20, 31, 0.9)',
-                    border: '1px solid rgba(0, 240, 255, 0.3)',
-                    color: '#FFFFFF',
-                    padding: '16px 30px',
-                    borderRadius: '12px',
-                    fontSize: '15px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    backdropFilter: 'blur(10px)',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  <Shield size={18} style={{ color: '#00F0FF' }} /> {t.landing.connectBrokerBtn}
-                </button>
-              </>
-            ) : (
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                <button
-                  onClick={() => openAuthModal('register')}
-                  style={{
-                    background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 100%)',
-                    border: 'none',
-                    color: '#080b11',
-                    padding: '16px 36px',
-                    borderRadius: '12px',
-                    fontSize: '15px',
-                    fontWeight: 900,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    whiteSpace: 'nowrap',
-                    boxShadow: '0 8px 30px rgba(0, 240, 255, 0.4)',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  <Zap size={18} fill="#080b11" /> {t.auth.registerToEnterHero} <ArrowRight size={18} />
-                </button>
-                <button
-                  onClick={() => openAuthModal('signin')}
-                  style={{
-                    background: 'rgba(14, 20, 31, 0.9)',
-                    border: '1px solid rgba(0, 240, 255, 0.3)',
-                    color: '#FFFFFF',
-                    padding: '16px 30px',
-                    borderRadius: '12px',
-                    fontSize: '15px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    whiteSpace: 'nowrap',
-                    backdropFilter: 'blur(10px)',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  <User size={18} style={{ color: '#00F0FF' }} /> {t.auth.signInHero}
-                </button>
-              </div>
-            )}
+            <button
+              onClick={() => onEnterApp()}
+              style={{
+                background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 100%)',
+                border: 'none',
+                color: '#080b11',
+                padding: '16px 42px',
+                borderRadius: '12px',
+                fontSize: '16px',
+                fontWeight: 900,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px',
+                whiteSpace: 'nowrap',
+                boxShadow: '0 8px 30px rgba(0, 240, 255, 0.4)',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)')}
+              onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
+            >
+              <Trophy size={18} /> {t.landing.enterArenaBtn} <ArrowRight size={18} />
+            </button>
           </div>
 
           {/* Social Proof Stats Bar */}
@@ -1052,264 +983,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
-      {/* Section 3b: Trader Rewards, Honor Badges & Daily Streaks */}
-      <section id="rewards" style={{ padding: '80px 24px', backgroundColor: '#080b11', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 800, color: '#00F0FF', marginBottom: '8px' }}>
-              <Award size={16} /> {t.nav.rewards}
-            </div>
-            <h2 style={{ fontSize: '36px', fontWeight: 900, margin: '0 0 12px', color: '#FFFFFF' }}>
-              {t.rewards.honorBadgesTitle}
-            </h2>
-            <p style={{ fontSize: '15px', color: '#848E9C', maxWidth: '640px', margin: '0 auto' }}>
-              {t.rewards.honorBadgesSubtitle}
-            </p>
-          </div>
-
-          {/* Daily Streak & XP Progression Card */}
-          {(() => {
-            const userXp = isAuthenticated && typeof user?.xp === 'number' ? user.xp : 0;
-            const gamification = calculateTraderGamification(userXp);
-
-            // Read claimed streak days from localStorage (cleanly starting at Day 1 for new users)
-            const streakStorageKey = user?.id ? `traderrank_streak_v2_${user.id}` : 'traderrank_streak_v2_guest';
-            let claimedStreakDays: number[] = [];
-            try {
-              const saved = localStorage.getItem(streakStorageKey);
-              if (saved) claimedStreakDays = JSON.parse(saved);
-            } catch {
-              // ignore
-            }
-            const streakDays = getStreakStatus(claimedStreakDays);
-
-            return (
-              <div
-                style={{
-                  background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(14, 20, 31, 0.95) 100%)',
-                  border: '1px solid rgba(0, 240, 255, 0.25)',
-                  borderRadius: '20px',
-                  padding: '32px',
-                  marginBottom: '32px',
-                  boxShadow: '0 12px 40px rgba(0, 0, 0, 0.4)',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
-                  <div>
-                    <span
-                      style={{
-                        fontSize: '11px',
-                        fontWeight: 800,
-                        padding: '3px 10px',
-                        borderRadius: '12px',
-                        background: 'rgba(0, 240, 255, 0.15)',
-                        color: gamification.color,
-                        border: `1px solid ${gamification.color}66`,
-                        letterSpacing: '0.5px',
-                      }}
-                    >
-                      {language === 'ja'
-                        ? `LEVEL ${gamification.level} トレーダー`
-                        : language === 'zh'
-                        ? `LEVEL ${gamification.level} 交易员`
-                        : `LEVEL ${gamification.level} TRADER`}
-                    </span>
-                    <h3 style={{ margin: '8px 0 0', fontSize: '24px', fontWeight: 900, color: '#FFFFFF' }}>
-                      {t.rewards[gamification.tierKey]}
-                    </h3>
-                  </div>
-
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '12px', color: '#848E9C' }}>{t.rewards.currentXp}</div>
-                    <div style={{ fontSize: '24px', fontWeight: 900, color: gamification.color }}>
-                      {gamification.currentXp.toLocaleString()}{' '}
-                      <span style={{ fontSize: '14px', color: '#848E9C' }}>
-                        / {gamification.nextTierXp.toLocaleString()} XP
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Daily Streak Days Bar */}
-                <div className="landing-streak-grid">
-                  {streakDays.map((s, idx) => (
-                    <div
-                      key={idx}
-                      onClick={() => {
-                        if (!isAuthenticated) {
-                          openAuthModal('register');
-                        } else {
-                          onEnterApp('rewards');
-                        }
-                      }}
-                      style={{
-                        padding: '12px 8px',
-                        borderRadius: '10px',
-                        textAlign: 'center',
-                        cursor: 'pointer',
-                        background: s.claimed
-                          ? 'rgba(0, 218, 198, 0.1)'
-                          : s.current
-                          ? 'linear-gradient(135deg, rgba(240, 185, 11, 0.25), rgba(15, 23, 42, 0.8))'
-                          : 'rgba(255, 255, 255, 0.02)',
-                        border: s.claimed
-                          ? '1px solid rgba(0, 218, 198, 0.3)'
-                          : s.current
-                          ? '1px solid #F0B90B'
-                          : '1px solid rgba(255, 255, 255, 0.06)',
-                        transition: 'transform 0.15s ease',
-                      }}
-                    >
-                      <div style={{ fontSize: '10px', color: '#848E9C' }}>
-                        {language === 'ja' ? `${s.dayNum}日目` : language === 'zh' ? `第 ${s.dayNum} 天` : `Day ${s.dayNum}`}
-                      </div>
-                      <div style={{ fontSize: '13px', fontWeight: 800, color: s.claimed ? '#00DAC6' : s.current ? '#F0B90B' : '#848E9C', margin: '4px 0' }}>
-                        {s.xpText}
-                      </div>
-                      <div style={{ fontSize: '10px' }}>
-                        {s.claimed ? (
-                          <span style={{ color: '#00DAC6', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}><Check size={10} color="#00DAC6" /> {t.rewards.claimed}</span>
-                        ) : s.current ? (
-                          <span style={{ color: '#F0B90B', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><span style={{ width: 5, height: 5, borderRadius: '50%', background: '#F0B90B', display: 'inline-block' }} /> {t.rewards.active}</span>
-                        ) : (
-                          <span style={{ color: '#848E9C', display: 'inline-flex', alignItems: 'center', gap: '3px' }}><Lock size={10} color="#848E9C" /> {t.rewards.locked}</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* Honor Badges 4-Column Showcase */}
-          <div className="landing-badges-grid">
-            <div
-              style={{
-                background: 'rgba(14, 20, 31, 0.85)',
-                border: '1px solid rgba(0, 218, 198, 0.3)',
-                borderRadius: '16px',
-                padding: '24px',
-                display: 'flex',
-                gap: '14px',
-              }}
-            >
-              <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(0, 218, 198, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Shield size={22} color="#00DAC6" />
-              </div>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#FFFFFF' }}>{t.rewards.badgeRiskGuardianName}</h4>
-                  <span style={{ fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: 'rgba(0, 218, 198, 0.2)', color: '#00DAC6' }}>{t.rewards.rarityEpic}</span>
-                </div>
-                <p style={{ fontSize: '12px', color: '#848E9C', margin: '0 0 10px', lineHeight: 1.4 }}>
-                  {t.rewards.badgeRiskGuardianDesc}
-                </p>
-                <span style={{ fontSize: '11px', color: '#00F0FF', fontWeight: 700 }}>+500 XP • {t.rewards.verified}</span>
-              </div>
-            </div>
-
-            <div
-              style={{
-                background: 'rgba(14, 20, 31, 0.85)',
-                border: '1px solid rgba(0, 240, 255, 0.3)',
-                borderRadius: '16px',
-                padding: '24px',
-                display: 'flex',
-                gap: '14px',
-              }}
-            >
-              <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(0, 240, 255, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Target size={22} color="#00F0FF" />
-              </div>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#FFFFFF' }}>{t.rewards.badgePrecisionSniperName}</h4>
-                  <span style={{ fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: 'rgba(0, 240, 255, 0.2)', color: '#00F0FF' }}>{t.rewards.rarityRare}</span>
-                </div>
-                <p style={{ fontSize: '12px', color: '#848E9C', margin: '0 0 10px', lineHeight: 1.4 }}>
-                  {t.rewards.badgePrecisionSniperDesc}
-                </p>
-                <span style={{ fontSize: '11px', color: '#00F0FF', fontWeight: 700 }}>+350 XP • {t.rewards.verified}</span>
-              </div>
-            </div>
-
-            <div
-              style={{
-                background: 'rgba(14, 20, 31, 0.85)',
-                border: '1px solid rgba(240, 185, 11, 0.3)',
-                borderRadius: '16px',
-                padding: '24px',
-                display: 'flex',
-                gap: '14px',
-              }}
-            >
-              <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(240, 185, 11, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Zap size={22} color="#F0B90B" />
-              </div>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#FFFFFF' }}>{t.rewards.badgeCenturyClubName}</h4>
-                  <span style={{ fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: 'rgba(240, 185, 11, 0.2)', color: '#F0B90B' }}>{t.rewards.rarityRare}</span>
-                </div>
-                <p style={{ fontSize: '12px', color: '#848E9C', margin: '0 0 10px', lineHeight: 1.4 }}>
-                  {t.rewards.badgeCenturyClubDesc}
-                </p>
-                <span style={{ fontSize: '11px', color: '#00F0FF', fontWeight: 700 }}>+400 XP • {t.rewards.verified}</span>
-              </div>
-            </div>
-
-            <div
-              style={{
-                background: 'rgba(14, 20, 31, 0.85)',
-                border: '1px solid rgba(246, 70, 93, 0.3)',
-                borderRadius: '16px',
-                padding: '24px',
-                display: 'flex',
-                gap: '14px',
-              }}
-            >
-              <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(246, 70, 93, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Flame size={22} color="#F6465D" />
-              </div>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#FFFFFF' }}>{t.rewards.badgeHallOfFameName}</h4>
-                  <span style={{ fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: 'rgba(246, 70, 93, 0.2)', color: '#F6465D' }}>{t.rewards.rarityLegendary}</span>
-                </div>
-                <p style={{ fontSize: '12px', color: '#848E9C', margin: '0 0 10px', lineHeight: 1.4 }}>
-                  {t.rewards.badgeHallOfFameDesc}
-                </p>
-                <span style={{ fontSize: '11px', color: '#00F0FF', fontWeight: 700 }}>+2,000 XP • {t.rewards.seasonal}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Button */}
-          <div style={{ textAlign: 'center' }}>
-            <button
-              onClick={() => onEnterApp('rewards')}
-              style={{
-                background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 100%)',
-                border: 'none',
-                color: '#080b11',
-                padding: '14px 32px',
-                borderRadius: '12px',
-                fontSize: '15px',
-                fontWeight: 900,
-                cursor: 'pointer',
-                boxShadow: '0 6px 24px rgba(0, 240, 255, 0.35)',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)')}
-              onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
-            >
-              {t.rewards.exploreRewardsBtn}
-            </button>
-          </div>
-        </div>
-      </section>
-
       {/* Section 4: Zero-Write Security & Trust Architecture */}
       <section id="security" style={{ padding: '80px 24px' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
@@ -1370,28 +1043,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </p>
 
           <button
-            onClick={() => {
-              if (isAuthenticated) {
-                onEnterApp();
-              } else {
-                openAuthModal('register');
-              }
-            }}
+            onClick={() => onEnterApp()}
             style={{
               background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 100%)',
               border: 'none',
               color: '#080b11',
-              padding: '16px 40px',
+              padding: '16px 42px',
               borderRadius: '12px',
               fontSize: '16px',
               fontWeight: 900,
               cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '10px',
               whiteSpace: 'nowrap',
               boxShadow: '0 8px 32px rgba(0, 240, 255, 0.4)',
               transition: 'all 0.2s',
             }}
           >
-            {isAuthenticated ? t.landing.ctaButton : t.auth.registerToEnterCta}
+            <Trophy size={18} /> {t.landing.enterArenaBtn} <ArrowRight size={18} />
           </button>
         </div>
       </section>
