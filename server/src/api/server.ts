@@ -383,7 +383,7 @@ export function createServer() {
 
   // Auth: Register
   app.post('/api/auth/register', (req: Request, res: Response) => {
-    const { username, email, primaryBroker, tradingStyle } = req.body || {};
+    const { username, email, primaryBroker, tradingStyle, avatarUrl } = req.body || {};
     if (!username || !email) {
       return res.status(400).json({ success: false, error: 'Username and email are required' });
     }
@@ -393,6 +393,7 @@ export function createServer() {
       username: String(username).trim(),
       email: String(email).trim(),
       avatarSymbol: 'zap',
+      avatarUrl,
       traderTitle: 'Verified Market Trader',
       bio: '',
       tradingStyle: tradingStyle || 'SCALPER',
@@ -404,6 +405,15 @@ export function createServer() {
       rank: 99,
     };
     userProfiles.set(cleanId, newUser);
+    leaderboard.registerAccountMapping(
+      `acc_${cleanId}`,
+      cleanId,
+      newUser.username,
+      newUser.primaryBroker as Broker,
+      newUser.username,
+      undefined,
+      avatarUrl
+    );
     return res.status(201).json({ success: true, user: newUser });
   });
 
