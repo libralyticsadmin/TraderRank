@@ -970,8 +970,8 @@ export class AccountConnectorService {
         const swap = Number((rawSwap / conversionRate).toFixed(2));
 
         let pnlPips = PipCalculator.calculatePips(cleanSymbol, tradeType, openPrice, closePrice);
-        if (pnlPips === 0 && rawProfit !== 0 && openPrice === closePrice) {
-          pnlPips = PipCalculator.calculatePipsFromPnl(cleanSymbol, lotSize, rawProfit);
+        if (pnlPips === 0 && profit !== 0 && openPrice === closePrice) {
+          pnlPips = PipCalculator.calculatePipsFromPnl(cleanSymbol, lotSize, profit);
         }
 
         canonicalTrades.push({
@@ -1025,8 +1025,8 @@ export class AccountConnectorService {
         const commission = Number((rawComm / conversionRate).toFixed(2));
         const swap = Number((rawSwap / conversionRate).toFixed(2));
 
-        const pnlPips = PipCalculator.calculatePipsFromPnl(cleanSymbol, lotSize, rawProfit);
-        const openPrice = PipCalculator.reconstructOpenPrice(cleanSymbol, tradeType, closePrice, lotSize, rawProfit);
+        const pnlPips = PipCalculator.calculatePipsFromPnl(cleanSymbol, lotSize, profit);
+        const openPrice = PipCalculator.reconstructOpenPrice(cleanSymbol, tradeType, closePrice, lotSize, profit);
 
         canonicalTrades.push({
           id: `trade_${accountId}_${posId}`,

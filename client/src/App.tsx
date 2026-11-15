@@ -31,6 +31,7 @@ import { AuthModal } from './components/AuthModal.tsx';
 import { ProfileEditModal } from './components/ProfileEditModal.tsx';
 import { UserNavMenu } from './components/UserNavMenu.tsx';
 import { FeatureSymbol, FeatureSymbolType } from './components/FeatureSymbol.tsx';
+import { DEFAULT_TRADER_AVATARS } from './components/avatarCatalog.ts';
 import {
   Plus,
   RefreshCw,
@@ -342,33 +343,51 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleSelectTrader = (t: { userId?: string; username: string; broker?: Broker; rank?: number; score?: number; winRate?: number; tradesCount?: number }) => {
-    const safeBroker: Broker = t.broker || 'Exness';
+  const handleSelectTrader = (t: { userId?: string; username: string; broker?: Broker; rank?: number; score?: number; winRate?: number; tradesCount?: number; avatarUrl?: string }) => {
+    const isHomies =
+      t.username === 'HomiesPlant' ||
+      t.username.toLowerCase().includes('homies') ||
+      t.username.toLowerCase().includes('emanuel') ||
+      (t.userId && (t.userId === 'u_homiesplant' || t.userId.includes('72423906')));
+
+    const cleanUsername = isHomies ? 'HomiesPlant' : t.username;
+    const safeBroker: Broker = isHomies ? 'XMTrading' : (t.broker || 'Exness');
+
     const matchedLb = leaderboard.find(
-      e => (t.userId && e.userId === t.userId) || e.username.toLowerCase() === t.username.toLowerCase()
+      e => (t.userId && e.userId === t.userId) || e.username.toLowerCase() === cleanUsername.toLowerCase()
     );
     const matchedAcc = accounts.find(
       a =>
         (t.userId && (a.id === t.userId || a.userId === t.userId)) ||
-        (a.accountNumber && t.username.includes(a.accountNumber))
+        (a.accountNumber && (cleanUsername.includes(a.accountNumber) || (isHomies && a.accountNumber === '72423906')))
     );
-    const resolvedId = t.userId || matchedAcc?.id || matchedLb?.userId || `u_${t.username.toLowerCase()}`;
+    const resolvedId = isHomies ? 'u_homiesplant' : (t.userId || matchedAcc?.id || matchedLb?.userId || `u_${cleanUsername.toLowerCase()}`);
+
+    const avatarUrl = t.avatarUrl || matchedLb?.avatarUrl || (isHomies ? DEFAULT_TRADER_AVATARS['72423906'] : undefined);
+    const avatarSymbol = isHomies ? 'bear_emerald' : (matchedLb?.avatarSymbol || 'zap');
+
+    const tradesCount = t.tradesCount ?? matchedLb?.tradesCount ?? (isHomies ? 23 : 0);
+    const netPips = t.score ?? matchedLb?.totalPips ?? (isHomies ? -676.1 : 0);
+    const winRate = t.winRate ?? matchedLb?.winRate ?? (isHomies ? 22 : 0);
+    const xp = matchedLb?.xp ?? (tradesCount > 0 ? tradesCount * 25 : (isHomies ? 575 : 100));
+    const level = matchedLb?.level ?? Math.max(1, Math.floor(tradesCount / 40) + 1);
 
     setSelectedTrader({
       userId: resolvedId,
-      username: t.username,
+      username: cleanUsername,
       broker: safeBroker,
-      avatarSymbol: matchedLb?.avatarSymbol || 'GOLD#',
-      tier: 'Market Veteran',
-      level: matchedLb?.level || 14,
-      xp: matchedLb?.xp || 13275,
+      avatarSymbol,
+      avatarUrl,
+      tier: level >= 10 ? 'Market Veteran' : level >= 5 ? 'Pro Scalper' : 'Novice Trader',
+      level,
+      xp,
       rank: t.rank || matchedLb?.rank || 1,
-      netPips: t.score ?? matchedLb?.totalPips ?? -2500.4,
-      winRate: t.winRate ?? matchedLb?.winRate ?? 55,
-      profitFactor: 0.9,
+      netPips,
+      winRate,
+      profitFactor: winRate >= 50 ? 1.4 : 0.8,
       maxDrawdown: 0,
-      totalTrades: t.tradesCount ?? matchedLb?.tradesCount ?? 531,
-      bestTradePips: 1933.0,
+      totalTrades: tradesCount,
+      bestTradePips: isHomies ? 97.7 : 1933.0,
       avgHoldingTime: '1h 12m',
       verifiedSince: 'May 2026',
       isFollowing: false,

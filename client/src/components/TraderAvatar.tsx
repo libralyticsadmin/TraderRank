@@ -76,11 +76,11 @@ const TRADER_PRESET_MAP: Record<string, string> = {
 };
 
 const resolveSavedUserAvatar = (username: string, explicitUrl?: string): string | undefined => {
+  if (explicitUrl && explicitUrl.trim()) return explicitUrl.trim();
   const uNorm = (username || '').trim().toLowerCase();
   if (uNorm === 'homiesplant' || uNorm === 'emanuel007' || uNorm.includes('72423906') || uNorm.includes('emanuel') || uNorm.includes('homies')) {
     return EMERALD_BEAR_URL;
   }
-  if (explicitUrl) return explicitUrl;
   if (typeof window === 'undefined') return undefined;
   try {
 

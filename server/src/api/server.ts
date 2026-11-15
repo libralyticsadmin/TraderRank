@@ -422,12 +422,20 @@ export function createServer() {
       const saved = await r2Storage.getJson<Record<string, any>>(USER_PROFILES_R2_KEY);
       if (saved && typeof saved === 'object') {
         for (const [k, v] of Object.entries(saved)) {
-          if (v && v.id && v.id !== 'u_emanuel007') {
+          if (
+            v &&
+            v.id &&
+            k !== 'u_emanuel007' &&
+            v.id !== 'u_emanuel007' &&
+            String(v.username || '').toLowerCase() !== 'emanuel007' &&
+            (v.accountNumber !== '72423906' || k === 'u_homiesplant')
+          ) {
             userProfiles.set(k, v);
           }
         }
       }
       userProfiles.delete('u_emanuel007');
+      userProfiles.delete('emanuel007');
       const hp = userProfiles.get('u_homiesplant') || {};
       userProfiles.set('u_homiesplant', {
         ...hp,
@@ -441,7 +449,7 @@ export function createServer() {
         xp: 575,
         rank: 1,
       });
-      persistUserProfilesToR2().catch(() => {});
+      await persistUserProfilesToR2();
     } catch (err) {
       console.warn('[server] Warning: Could not load user profiles from R2:', err);
     }

@@ -1,0 +1,16 @@
+{
+  "tournamentId": "tourn_weekly_fx_blitz_01",
+  "snapshotTimestamp": "2026-11-15T17:38:37.904Z",
+  "standings": [
+    {
+      "rank": 1,
+      "userId": "usr_01",
+      "netPips": 88.4
+    },
+    {
+      "rank": 2,
+      "userId": "usr_02",
+      "netPips": 62.1
+    }
+  ]
+}

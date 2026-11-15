@@ -1,0 +1,19 @@
+{
+  "accountId": "acc_demo_01",
+  "archiveTimestamp": "2026-11-15T17:38:37.907Z",
+  "dealCount": 2,
+  "deals": [
+    {
+      "dealId": "deal_01",
+      "symbol": "EURUSD",
+      "profitPips": 15.2,
+      "type": "BUY"
+    },
+    {
+      "dealId": "deal_02",
+      "symbol": "XAUUSD",
+      "profitPips": -4.5,
+      "type": "SELL"
+    }
+  ]
+}

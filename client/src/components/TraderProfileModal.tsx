@@ -1243,8 +1243,11 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
   // Account currency is strictly resolved from verified broker connection
   const isHomiesTrader =
     liveAccountNumber === '72423906' ||
+    trader.username === 'HomiesPlant' ||
     trader.username.includes('72423906') ||
     trader.userId?.includes('72423906') ||
+    trader.userId === 'u_homiesplant' ||
+    trader.userId?.toLowerCase().includes('homies') ||
     trader.username.toLowerCase().includes('homies') ||
     trader.username.toLowerCase().includes('emanuel');
   const rawCurrency = (isHomiesTrader ? 'USD' : (liveCurrency || (trader as any).currency || '')).toUpperCase().trim();

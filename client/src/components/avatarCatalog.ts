@@ -1446,7 +1446,7 @@ export const resolveTraderIdentity = (params: {
     (profileName && DEFAULT_TRADER_AVATARS[profileName]) ||
     (profileName && DEFAULT_TRADER_AVATARS[profileName.toLowerCase()]);
   const avatarUrl = isHomies
-    ? DEFAULT_TRADER_AVATARS['72423906']
+    ? (params.avatarUrl || localAvatar || DEFAULT_TRADER_AVATARS['72423906'])
     : (params.avatarUrl || localAvatar || defaultMappedAvatar || undefined);
 
   // 4. Guaranteed deterministic avatar seed:

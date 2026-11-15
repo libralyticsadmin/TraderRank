@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Broker } from '../../../shared/src/types.ts';
-import { getRandomTraderAvatar } from '../components/avatarCatalog.ts';
+import { getRandomTraderAvatar, DEFAULT_TRADER_AVATARS } from '../components/avatarCatalog.ts';
 
 export interface UserProfile {
   id: string;
@@ -99,6 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           parsed.id = 'u_homiesplant';
           parsed.username = 'HomiesPlant';
           parsed.avatarSymbol = 'bear_emerald';
+          parsed.avatarUrl = parsed.avatarUrl || DEFAULT_TRADER_AVATARS['72423906'];
           parsed.primaryBroker = 'XMTrading';
           parsed.accountNumber = '72423906';
         }
@@ -197,7 +198,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const data = await res.json();
         if (data.user) {
           if (!data.user.avatarUrl) {
-            data.user.avatarUrl = getRandomTraderAvatar().url;
+            const isHomies = data.user.id === 'u_homiesplant' || data.user.accountNumber === '72423906' || data.user.username === 'HomiesPlant';
+            data.user.avatarUrl = isHomies ? DEFAULT_TRADER_AVATARS['72423906'] : getRandomTraderAvatar().url;
           }
           setUser(data.user);
           return { success: true };
