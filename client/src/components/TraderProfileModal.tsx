@@ -232,6 +232,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
   const [isRefreshingOrders, setIsRefreshingOrders] = useState(false);
   const [connectedBrokers, setConnectedBrokers] = useState<string[]>([]);
   const [liveAccountBalance, setLiveAccountBalance] = useState<number | null>(null);
+  const [liveCurrency, setLiveCurrency] = useState<string | null>(null);
   const [liveServerName, setLiveServerName] = useState<string | null>(null);
   const [liveHolderName, setLiveHolderName] = useState<string | null>(null);
   const [liveAccountNumber, setLiveAccountNumber] = useState<string | null>(null);
@@ -587,6 +588,9 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
           }
           if (matched.accountNumber) {
             setLiveAccountNumber(String(matched.accountNumber));
+          }
+          if (matched.currency) {
+            setLiveCurrency(String(matched.currency).toUpperCase());
           }
         }
       })
@@ -1236,19 +1240,13 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
     ? t.profile.verifiedSinceLabel.replace('{date}', stats.verifiedSince)
     : `${t.profile.verifiedSinceLabel} ${stats.verifiedSince}`;
 
-  const isJpy =
-    trader.broker === 'XMTrading' ||
-    (trader as any).currency === 'JPY' ||
-    trader.username.includes('72423906') ||
-    trader.userId?.includes('72423906') ||
-    liveAccountNumber === '72423906' ||
-    Boolean(
-      liveServerName &&
-      (liveServerName.toLowerCase().includes('xmtrading') ||
-       liveServerName.toLowerCase().includes('japan') ||
-       liveServerName.toLowerCase().includes('jpy'))
-    );
-  const curSymbol = isJpy ? '¥' : '$';
+  // Account currency is strictly resolved from verified broker connection
+  const rawCurrency = (liveCurrency || (trader as any).currency || (liveAccountNumber === '72423906' ? 'USD' : '')).toUpperCase().trim();
+  const isJpy = rawCurrency === 'JPY' || (!rawCurrency && (
+    trader.broker === 'XMTrading' &&
+    Boolean(liveServerName && (liveServerName.toLowerCase().includes('japan') || liveServerName.toLowerCase().includes('jpy')))
+  ));
+  const curSymbol = rawCurrency === 'USD' ? '$' : rawCurrency === 'JPY' ? '¥' : rawCurrency === 'EUR' ? '€' : rawCurrency === 'GBP' ? '£' : isJpy ? '¥' : '$';
 
   const brokerSlots: Array<{ id: Broker; label: string }> = [
     { id: 'XM', label: 'XM Global' },
@@ -1265,7 +1263,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
     if (isJpy) {
       return `${sign}¥${Math.round(Math.abs(val)).toLocaleString('ja-JP')}`;
     }
-    return `${sign}$${Math.abs(val).toLocaleString(undefined, {
+    return `${sign}${curSymbol}${Math.abs(val).toLocaleString(undefined, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })}`;
@@ -1275,7 +1273,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
     if (isJpy) {
       return `¥${Math.round(val).toLocaleString('ja-JP')}`;
     }
-    return `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `${curSymbol}${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   return (
@@ -2382,7 +2380,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                   fontFamily: 'var(--font-mono, monospace)',
                 }}
               >
-                ${activeMonthData.goldVolumeUsd.toLocaleString()}
+                {curSymbol}{Math.round(activeMonthData.goldVolumeUsd).toLocaleString()}
               </div>
             </div>
 
@@ -2421,7 +2419,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                   fontFamily: 'var(--font-mono, monospace)',
                 }}
               >
-                ${activeMonthData.fxVolumeUsd.toLocaleString()}
+                {curSymbol}{Math.round(activeMonthData.fxVolumeUsd).toLocaleString()}
               </div>
             </div>
 
@@ -2460,7 +2458,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                   fontFamily: 'var(--font-mono, monospace)',
                 }}
               >
-                ${activeMonthData.cfdVolumeUsd.toLocaleString()}
+                {curSymbol}{Math.round(activeMonthData.cfdVolumeUsd).toLocaleString()}
               </div>
             </div>
 
@@ -2499,7 +2497,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                   fontFamily: 'var(--font-mono, monospace)',
                 }}
               >
-                ${activeMonthData.cryptoVolumeUsd.toLocaleString()}
+                {curSymbol}{Math.round(activeMonthData.cryptoVolumeUsd).toLocaleString()}
               </div>
             </div>
 

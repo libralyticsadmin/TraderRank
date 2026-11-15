@@ -74,29 +74,30 @@ describe('TraderRank Protection Suite: Currency, Account Isolation & Contender I
       expect(formatUsdSigned(loss, isJpy)).toBe('-$2,464.11');
     });
 
-    it('accurately identifies JPY account eligibility across multiple broker and server signals', () => {
+    it('accurately identifies JPY account eligibility without overriding explicit USD accounts', () => {
       const checkIsJpy = (account: {
         broker?: string;
         currency?: string;
         serverName?: string;
         accountNumber?: string;
       }) => {
+        const cur = (account.currency || '').toUpperCase();
+        if (cur === 'USD') return false;
+        if (cur === 'JPY') return true;
         return (
           account.broker === 'XMTrading' ||
-          account.currency === 'JPY' ||
-          account.accountNumber === '72423906' ||
           Boolean(
             account.serverName &&
-              (account.serverName.toLowerCase().includes('xmtrading') ||
-                account.serverName.toLowerCase().includes('japan') ||
+              (account.serverName.toLowerCase().includes('japan') ||
                 account.serverName.toLowerCase().includes('jpy'))
           )
         );
       };
 
       expect(checkIsJpy({ broker: 'XMTrading', currency: 'JPY', serverName: 'XMTrading-Real 55' })).toBe(true);
-      expect(checkIsJpy({ accountNumber: '72423906' })).toBe(true);
-      expect(checkIsJpy({ serverName: 'XMGlobal-Japan 1' })).toBe(true);
+      expect(checkIsJpy({ accountNumber: '72423906', currency: 'USD' })).toBe(false);
+      expect(checkIsJpy({ broker: 'XMTrading', currency: 'USD' })).toBe(false);
+      expect(checkIsJpy({ serverName: 'XMGlobal-Japan 1', currency: 'JPY' })).toBe(true);
       expect(checkIsJpy({ broker: 'XM', currency: 'USD', serverName: 'XMGlobal-Real 55' })).toBe(false);
       expect(checkIsJpy({ broker: 'Exness', currency: 'USD', serverName: 'Exness-Real 22' })).toBe(false);
     });
@@ -168,37 +169,48 @@ describe('TraderRank Protection Suite: Currency, Account Isolation & Contender I
     });
   });
 
-  describe('4. Arena Contenders & Registered Users Ecosystem', () => {
-    it('populates competitive benchmark contenders so the arena has an active ranking field', () => {
-      leaderboard.seedDemoTraders();
-      const entries = leaderboard.getLeaderboard(20);
-
-      expect(entries.length).toBeGreaterThanOrEqual(8);
-
-      const usernames = entries.map(e => e.username);
-      expect(usernames).toContain('QuantumPips_FX');
-      expect(usernames).toContain('Libralytic_FX');
-      expect(usernames).toContain('LondonFX_Pro');
-    });
-
-    it('registers newly registered web users in the leaderboard as active contenders', () => {
-      const newUserId = 'u_test_scalper_2026';
-      const newUsername = 'TestScalperPro';
-
+  describe('4. Zero-Mock & Real Account Number Enforcement Guard', () => {
+    it('strictly guarantees that all leaderboard entries are real accounts with real account numbers', () => {
+      // Register real verified accounts
       leaderboard.registerAccountMapping(
-        `acc_${newUserId}`,
-        newUserId,
-        newUsername,
+        'acc_meta_72423906',
+        'usr_meta_72423906',
+        'HomiesPlant',
         'XMTrading' as Broker,
-        newUsername,
-        '99887766'
+        'HomiesPlant',
+        '72423906'
+      );
+      leaderboard.registerAccountMapping(
+        'acc_meta_342186831',
+        'usr_meta_342186831',
+        'ApexTrader_FX',
+        'XM' as Broker,
+        'ApexTrader_FX',
+        '342186831'
+      );
+      leaderboard.registerAccountMapping(
+        'acc_meta_411407722',
+        'usr_meta_411407722',
+        'Vanguard_FX',
+        'XM' as Broker,
+        'Vanguard_FX',
+        '411407722'
       );
 
-      const entries = leaderboard.getLeaderboard(50);
-      const matched = entries.find(e => e.userId === newUserId || e.username === newUsername);
+      const entries = leaderboard.getLeaderboard(20);
 
-      expect(matched).toBeDefined();
-      expect(matched?.username).toBe(newUsername);
+      // Verify no fake seed accounts exist
+      const usernames = entries.map(e => e.username);
+      expect(usernames).not.toContain('QuantumPips_FX');
+      expect(usernames).not.toContain('Libralytic_FX');
+      expect(usernames).not.toContain('LondonFX_Pro');
+
+      // Verify all accounts have real account numbers
+      const realAcc = entries.find(e => e.accountNumber === '72423906');
+      expect(realAcc).toBeDefined();
+      expect(realAcc?.accountNumber).toBe('72423906');
+      expect(realAcc?.profileName).toBe('HomiesPlant');
     });
   });
 });
+

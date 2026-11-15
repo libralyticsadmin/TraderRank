@@ -31,13 +31,30 @@ interface TraderAvatarProps {
 }
 
 // Deterministic mapping for featured leaderboard & community traders across unique indices
+const EMERALD_BEAR_URL =
+  INSTITUTIONAL_ANIMAL_PRESETS.find(p => p.id === 'bear_emerald')?.url ||
+  INSTITUTIONAL_ANIMAL_PRESETS[2].url;
+
 const TRADER_PRESET_MAP: Record<string, string> = {
+  'HomiesPlant': EMERALD_BEAR_URL,                        // Emerald Quant Bear (Green Bear)
+  'homiesplant': EMERALD_BEAR_URL,
+  '72423906': EMERALD_BEAR_URL,
+  'TraderRank-72423906': EMERALD_BEAR_URL,
+  'Emanuel007': EMERALD_BEAR_URL,
+  'emanuel007': EMERALD_BEAR_URL,
+  'ApexTrader_FX': INSTITUTIONAL_ANIMAL_PRESETS[3].url,   // Imperial Violet Lion
+  'apextrader_fx': INSTITUTIONAL_ANIMAL_PRESETS[3].url,
+  '342186831': INSTITUTIONAL_ANIMAL_PRESETS[3].url,
+  'TraderRank-342186831': INSTITUTIONAL_ANIMAL_PRESETS[3].url,
+  'Vanguard_FX': INSTITUTIONAL_ANIMAL_PRESETS[0].url,     // Cyber Tiffany Wolf
+  'vanguard_fx': INSTITUTIONAL_ANIMAL_PRESETS[0].url,
+  '411407722': INSTITUTIONAL_ANIMAL_PRESETS[0].url,
+  'TraderRank-411407722': INSTITUTIONAL_ANIMAL_PRESETS[0].url,
   'FX_Sniper': INSTITUTIONAL_ANIMAL_PRESETS[0].url,       // Golden Bull
   'GoldBug_JP': INSTITUTIONAL_ANIMAL_PRESETS[10].url,     // Emerald Quant Dragon
   'AlphaWave': INSTITUTIONAL_ANIMAL_PRESETS[1].url,       // Cyber Tiffany Wolf
   'ZenScalper': INSTITUTIONAL_ANIMAL_PRESETS[4].url,      // Emerald Quant Viper
   'TokyoRider': INSTITUTIONAL_ANIMAL_PRESETS[8].url,      // Neon Acid Kitsune Fox
-  'ApexTrader_FX': INSTITUTIONAL_ANIMAL_PRESETS[3].url,   // Imperial Violet Lion
   'CryptoKing_99': INSTITUTIONAL_ANIMAL_PRESETS[6].url,   // Obsidian Shadow Panther
   'ApexPredator': INSTITUTIONAL_ANIMAL_PRESETS[7].url,    // Glacial Arctic Shark
   'OsakaTrader': INSTITUTIONAL_ANIMAL_PRESETS[11].url,    // Solar Flare Tiger

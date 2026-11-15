@@ -319,7 +319,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               avatarSeed: identity.avatarSeed,
               avatarUrl: identity.avatarUrl || d.avatarUrl,
               broker: primaryBroker,
-              currency: real?.currency,
+              currency: real?.currency || (cleanAcc === '72423906' ? 'USD' : (d as any).currency || (primaryBroker === 'XMTrading' ? 'JPY' : 'USD')),
               avatarSymbol: d.avatarSymbol,
               winningPips: pips,
               profitAmount: profitUsd,
@@ -369,7 +369,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               avatarSeed: identity.avatarSeed,
               avatarUrl: identity.avatarUrl || e.avatarUrl,
               broker: primaryBroker,
-              currency: real?.currency,
+              currency: real?.currency || (cleanAcc === '72423906' ? 'USD' : (e as any).currency || (primaryBroker === 'XMTrading' ? 'JPY' : 'USD')),
               avatarSymbol: e.avatarSymbol,
               winningPips: netPips,
               profitAmount: netProfitUsd,
@@ -426,8 +426,9 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
   const top3 = processedEntries.slice(0, 3);
 
   const formatTraderProfit = (amount: number, broker?: Broker, currency?: string) => {
-    const isJpy = broker === 'XMTrading' || (currency || '').toUpperCase() === 'JPY';
-    const sym = isJpy ? '¥' : '$';
+    const cur = (currency || '').toUpperCase().trim();
+    const isJpy = cur === 'JPY' || (!cur && broker === 'XMTrading');
+    const sym = cur === 'USD' ? '$' : cur === 'JPY' ? '¥' : cur === 'EUR' ? '€' : cur === 'GBP' ? '£' : isJpy ? '¥' : '$';
     const formattedVal = isJpy
       ? Math.round(Math.abs(amount)).toLocaleString('ja-JP')
       : Math.abs(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });

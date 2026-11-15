@@ -1202,7 +1202,7 @@ export interface ResolvedTraderIdentity {
 export const CURATED_12_AVATARS: AnimalAvatarPreset[] = [
   INSTITUTIONAL_ANIMAL_PRESETS[0],   // Cyber Apex Wolf
   INSTITUTIONAL_ANIMAL_PRESETS[1],   // Golden Bull
-  INSTITUTIONAL_ANIMAL_PRESETS[2],   // Emerald Bear
+  INSTITUTIONAL_ANIMAL_PRESETS.find(p => p.id === 'bear_emerald') || INSTITUTIONAL_ANIMAL_PRESETS[2], // Emerald Quant Bear
   INSTITUTIONAL_ANIMAL_PRESETS[3],   // Solar Falcon
   INSTITUTIONAL_ANIMAL_PRESETS[4],   // Abyssal Shark
   INSTITUTIONAL_ANIMAL_PRESETS[5],   // Shadow Panther
@@ -1213,6 +1213,32 @@ export const CURATED_12_AVATARS: AnimalAvatarPreset[] = [
   INSTITUTIONAL_ANIMAL_PRESETS[10],  // Iron Rhino
   INSTITUTIONAL_ANIMAL_PRESETS[11],  // Royal Stag
 ];
+
+const EMERALD_BEAR_URL =
+  INSTITUTIONAL_ANIMAL_PRESETS.find(p => p.id === 'bear_emerald')?.url ||
+  INSTITUTIONAL_ANIMAL_PRESETS[2].url;
+
+const VIOLET_LION_URL =
+  INSTITUTIONAL_ANIMAL_PRESETS.find(p => p.id === 'lion')?.url ||
+  INSTITUTIONAL_ANIMAL_PRESETS[3].url;
+
+const TIFFANY_WOLF_URL =
+  INSTITUTIONAL_ANIMAL_PRESETS.find(p => p.id === 'wolf_cyber')?.url ||
+  INSTITUTIONAL_ANIMAL_PRESETS[0].url;
+
+export const DEFAULT_TRADER_AVATARS: Record<string, string> = {
+  '72423906': EMERALD_BEAR_URL,
+  'homiesplant': EMERALD_BEAR_URL,
+  'HomiesPlant': EMERALD_BEAR_URL,
+  'emanuel007': EMERALD_BEAR_URL,
+  'Emanuel007': EMERALD_BEAR_URL,
+  '342186831': VIOLET_LION_URL,
+  'apextrader_fx': VIOLET_LION_URL,
+  'ApexTrader_FX': VIOLET_LION_URL,
+  '411407722': TIFFANY_WOLF_URL,
+  'vanguard_fx': TIFFANY_WOLF_URL,
+  'Vanguard_FX': TIFFANY_WOLF_URL,
+};
 
 const isRawAccountTag = (val?: string | null): boolean => {
   if (!val) return true;
@@ -1225,7 +1251,7 @@ const isRawAccountTag = (val?: string | null): boolean => {
 };
 
 const DEFAULT_TRADER_USERNAMES: Record<string, string> = {
-  '72423906': 'TokyoScalper_FX',
+  '72423906': 'HomiesPlant',
   '342186831': 'ApexTrader_FX',
   '411407722': 'Vanguard_FX',
 };
@@ -1380,9 +1406,14 @@ export const resolveTraderIdentity = (params: {
     profileName = getDefaultTraderHandle(accountNumber, accountTag || rawUser || rawUid);
   }
 
-  // 3. Resolve avatar (explicit parameter -> local saved avatar)
-  const localAvatar = getLocalTraderAvatar(accountNumber, rawUid, profileName);
-  const avatarUrl = params.avatarUrl || localAvatar || undefined;
+  // 3. Resolve avatar (explicit parameter -> local saved avatar -> default mapped avatar)
+  const cleanAcc = accountNumber ? String(accountNumber).replace(/^TraderRank-/i, '').trim() : '';
+  const localAvatar = getLocalTraderAvatar(cleanAcc, rawUid, profileName);
+  const defaultMappedAvatar =
+    (cleanAcc && DEFAULT_TRADER_AVATARS[cleanAcc]) ||
+    (profileName && DEFAULT_TRADER_AVATARS[profileName]) ||
+    (profileName && DEFAULT_TRADER_AVATARS[profileName.toLowerCase()]);
+  const avatarUrl = params.avatarUrl || localAvatar || defaultMappedAvatar || undefined;
 
   // 4. Guaranteed deterministic avatar seed:
   // Using profileName.toLowerCase() ensures that "HomiesPlant" will NEVER hash to different animals
