@@ -177,6 +177,8 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
           const currentBal = Number(acc.equity ?? acc.balance ?? 2.8);
           const impliedStartCap = Math.max(100, currentBal - netProfitUsd);
           const roiPct = Number(((netProfitUsd / impliedStartCap) * 100).toFixed(1));
+          const cleanAccNum = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
+          const isHomiesAcc = cleanAccNum === '72423906' || acc.userId === 'u_homiesplant' || String(acc.id || '').includes('72423906');
           const statsObj = {
             netPips: Number(netPips.toFixed(1)),
             winningPips: Number(winningPips.toFixed(1)),
@@ -190,9 +192,9 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             dailyProfitUsd: Number(dailyProfitUsd.toFixed(2)),
             dailyTradesCount,
             dailyWinRate: dailyTradesCount > 0 ? Math.round((dailyWins / dailyTradesCount) * 100) : 0,
-            currency: acc.currency,
-            accountNumber: acc.accountNumber,
-            accountHolderName: acc.profileUsername,
+            currency: isHomiesAcc ? 'USD' : (acc.currency || 'USD'),
+            accountNumber: isHomiesAcc ? '72423906' : acc.accountNumber,
+            accountHolderName: isHomiesAcc ? 'HomiesPlant' : acc.profileUsername,
             liveOrders: openOrders.length > 0 ? openOrders : recentClosedOrders,
           };
 
@@ -315,7 +317,9 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               cleanAcc === '72423906' ||
               identity.profileName === 'HomiesPlant' ||
               d.username === 'HomiesPlant' ||
-              d.userId === 'u_homiesplant';
+              d.userId === 'u_homiesplant' ||
+              String(d.accountNumber || '').includes('72423906') ||
+              String(d.username || '').toLowerCase().includes('emanuel');
             const accCurrency = isHomiesAcc ? 'USD' : (real?.currency || (d as any).currency || 'USD');
 
             return {
@@ -372,7 +376,9 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               cleanAcc === '72423906' ||
               identity.profileName === 'HomiesPlant' ||
               e.username === 'HomiesPlant' ||
-              e.userId === 'u_homiesplant';
+              e.userId === 'u_homiesplant' ||
+              String(e.accountNumber || '').includes('72423906') ||
+              String(e.username || '').toLowerCase().includes('emanuel');
             const accCurrency = isHomiesAcc ? 'USD' : (real?.currency || (e as any).currency || 'USD');
 
             return {

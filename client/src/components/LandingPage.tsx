@@ -309,7 +309,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         cleanAcc === '72423906' ||
         identity.profileName === 'HomiesPlant' ||
         trader.username === 'HomiesPlant' ||
-        trader.userId === 'u_homiesplant';
+        trader.userId === 'u_homiesplant' ||
+        String(trader.accountNumber || '').includes('72423906') ||
+        String(trader.username || '').toLowerCase().includes('emanuel');
       const currency = isHomiesAcc ? 'USD' : (real?.currency || (trader as any).currency || 'USD');
 
       return {

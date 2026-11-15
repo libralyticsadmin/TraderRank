@@ -1289,14 +1289,18 @@ const getLocalTraderUsername = (accountNumber?: string | null, userId?: string |
   if (typeof window === 'undefined') return null;
   try {
     const cleanAcc = accountNumber ? String(accountNumber).replace(/^TraderRank-/i, '').trim() : '';
+    if (cleanAcc === '72423906') return 'HomiesPlant';
+
     const mapRaw = localStorage.getItem('traderank_account_usernames_v1');
     if (mapRaw) {
       const map = JSON.parse(mapRaw);
       if (cleanAcc && map[cleanAcc] && !isRawAccountTag(map[cleanAcc])) {
-        return String(map[cleanAcc]).trim();
+        const val = String(map[cleanAcc]).trim();
+        if (!val.toLowerCase().includes('emanuel')) return val;
       }
       if (userId && map[userId] && !isRawAccountTag(map[userId])) {
-        return String(map[userId]).trim();
+        const val = String(map[userId]).trim();
+        if (!val.toLowerCase().includes('emanuel')) return val;
       }
     }
 
@@ -1304,11 +1308,13 @@ const getLocalTraderUsername = (accountNumber?: string | null, userId?: string |
     if (userRaw) {
       const savedUser = JSON.parse(userRaw);
       if (savedUser?.username && !isRawAccountTag(savedUser.username)) {
+        const sName = String(savedUser.username).trim();
+        if (sName.toLowerCase().includes('emanuel')) return 'HomiesPlant';
         if (
           (userId && (savedUser.id === userId || userId === 'usr_live_meta')) ||
           cleanAcc === '72423906'
         ) {
-          return String(savedUser.username).trim();
+          return sName;
         }
       }
     }
@@ -1394,13 +1400,27 @@ export const resolveTraderIdentity = (params: {
     : null;
 
   // 2. Resolve Trader Profile Username (Priority: local user profile username -> default mapped username for verified real accounts -> server profile -> default handle)
+  const cleanAcc = accountNumber ? String(accountNumber).replace(/^TraderRank-/i, '').trim() : '';
+  const isHomies =
+    cleanAcc === '72423906' ||
+    rawUid.includes('72423906') ||
+    rawProfile === 'Emanuel007' ||
+    rawUser === 'Emanuel007' ||
+    rawProfile.toLowerCase().includes('emanuel') ||
+    rawUser.toLowerCase().includes('emanuel') ||
+    rawUid.toLowerCase().includes('homies') ||
+    rawUser.toLowerCase().includes('homies') ||
+    rawProfile.toLowerCase().includes('homies');
+
   let profileName = '';
   const localUsername = getLocalTraderUsername(accountNumber, rawUid);
   const defaultMappedUser =
-    (accountNumber && DEFAULT_TRADER_USERNAMES[accountNumber]) ||
-    (rawUid && (rawUid.includes('72423906') || rawUid.includes('homies') || rawUid.includes('emanuel')) ? 'HomiesPlant' : null);
+    (cleanAcc && DEFAULT_TRADER_USERNAMES[cleanAcc]) ||
+    (isHomies ? 'HomiesPlant' : null);
 
-  if (localUsername) {
+  if (isHomies) {
+    profileName = 'HomiesPlant';
+  } else if (localUsername && !localUsername.toLowerCase().includes('emanuel')) {
     profileName = localUsername;
   } else if (
     defaultMappedUser &&
@@ -1420,13 +1440,14 @@ export const resolveTraderIdentity = (params: {
   }
 
   // 3. Resolve avatar (explicit parameter -> local saved avatar -> default mapped avatar)
-  const cleanAcc = accountNumber ? String(accountNumber).replace(/^TraderRank-/i, '').trim() : '';
   const localAvatar = getLocalTraderAvatar(cleanAcc, rawUid, profileName);
   const defaultMappedAvatar =
     (cleanAcc && DEFAULT_TRADER_AVATARS[cleanAcc]) ||
     (profileName && DEFAULT_TRADER_AVATARS[profileName]) ||
     (profileName && DEFAULT_TRADER_AVATARS[profileName.toLowerCase()]);
-  const avatarUrl = params.avatarUrl || localAvatar || defaultMappedAvatar || undefined;
+  const avatarUrl = isHomies
+    ? DEFAULT_TRADER_AVATARS['72423906']
+    : (params.avatarUrl || localAvatar || defaultMappedAvatar || undefined);
 
   // 4. Guaranteed deterministic avatar seed:
   // Using profileName.toLowerCase() ensures that "HomiesPlant" will NEVER hash to different animals

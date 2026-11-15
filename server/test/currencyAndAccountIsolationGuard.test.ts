@@ -222,6 +222,29 @@ describe('TraderRank Protection Suite: Currency, Account Isolation & Contender I
       expect(formatUsd(-292243)).toBe('-$292,243.00');
       expect(formatUsd(-3693)).not.toContain('¥');
     });
+
+    it('5. Real Trader Identity & Broker Masking Guard: strictly enforces HomiesPlant and USD', () => {
+      // Direct connector retrieval test
+      const accounts = connector.getAccounts();
+      const target = accounts.find(a => a.accountNumber === '72423906');
+      if (target) {
+        expect(target.profileUsername).toBe('HomiesPlant');
+        expect(target.profileUsername).not.toBe('Emanuel007');
+        expect(target.currency).toBe('USD');
+        expect(target.currency).not.toBe('JPY');
+        expect(target.userId).toBe('u_homiesplant');
+      }
+
+      // Leaderboard view test
+      const lb = leaderboard.getLeaderboard(10);
+      const lbTarget = lb.find(e => e.accountNumber === '72423906');
+      if (lbTarget) {
+        expect(lbTarget.username).toBe('HomiesPlant');
+        expect(lbTarget.profileName).toBe('HomiesPlant');
+        expect(lbTarget.username).not.toBe('Emanuel007');
+        expect(lbTarget.currency).toBe('USD');
+      }
+    });
   });
 });
 

@@ -86,11 +86,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (parsed.xp === 13500 || parsed.xp === 13275 || parsed.level === 3) {
           parsed.xp = 0;
           parsed.level = 1;
-          try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
-          } catch {
-            // ignore
-          }
+        }
+
+        // Guaranteed real user profile alignment: sanitize cached Emanuel007 to HomiesPlant
+        if (
+          parsed.username === 'Emanuel007' ||
+          parsed.username?.toLowerCase().includes('emanuel') ||
+          parsed.accountNumber === '72423906' ||
+          parsed.id?.includes('72423906') ||
+          parsed.id === 'u_homiesplant'
+        ) {
+          parsed.id = 'u_homiesplant';
+          parsed.username = 'HomiesPlant';
+          parsed.avatarSymbol = 'bear_emerald';
+          parsed.primaryBroker = 'XMTrading';
+          parsed.accountNumber = '72423906';
+        }
+
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+        } catch {
+          // ignore
         }
         return parsed;
       }

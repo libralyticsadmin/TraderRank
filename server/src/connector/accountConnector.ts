@@ -33,6 +33,9 @@ const DEFAULT_TRADER_USERNAMES: Record<string, string> = {
   '411407722': 'Vanguard_FX',
 };
 
+export const EMERALD_BEAR_AVATAR_URL =
+  'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%20fill%3D%22none%22%3E%20%3Cdefs%3E%20%3CradialGradient%20id%3D%22bg-bear_emerald%22%20cx%3D%2250%25%22%20cy%3D%2235%25%22%20r%3D%2275%25%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23064e3b%22%2F%3E%20%3Cstop%20offset%3D%2260%25%22%20stop-color%3D%22%23022c22%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%2301130e%22%2F%3E%20%3C%2FradialGradient%3E%20%3ClinearGradient%20id%3D%22main-bear_emerald%22%20x1%3D%2220%22%20y1%3D%2215%22%20x2%3D%22100%22%20y2%3D%22105%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23d1fae5%22%2F%3E%20%3Cstop%20offset%3D%2245%25%22%20stop-color%3D%22%2310b981%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23047857%22%2F%3E%20%3C%2FlinearGradient%3E%20%3ClinearGradient%20id%3D%22dark-bear_emerald%22%20x1%3D%2260%22%20y1%3D%2230%22%20x2%3D%2260%22%20y2%3D%22105%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23059669%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23064e3b%22%2F%3E%20%3C%2FlinearGradient%3E%20%3C%2Fdefs%3E%20%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2226%22%20fill%3D%22url(%23bg-bear_emerald)%22%2F%3E%20%3Ccircle%20cx%3D%2260%22%20cy%3D%2260%22%20r%3D%2250%22%20stroke%3D%22%2310b981%22%20stroke-opacity%3D%220.22%22%20stroke-width%3D%221.5%22%20stroke-dasharray%3D%226%204%22%2F%3E%20%3Cpolygon%20points%3D%2260%2C10%20104%2C35%20104%2C85%2060%2C110%2016%2C85%2016%2C35%22%20stroke%3D%22%2334d399%22%20stroke-opacity%3D%220.3%22%20stroke-width%3D%221.5%22%20fill%3D%22%2310b981%22%20fill-opacity%3D%220.04%22%2F%3E%20%3Ccircle%20cx%3D%2228%22%20cy%3D%2230%22%20r%3D%2213%22%20fill%3D%22url(%23main-bear_emerald)%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Ccircle%20cx%3D%2292%22%20cy%3D%2230%22%20r%3D%2213%22%20fill%3D%22url(%23main-bear_emerald)%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Ccircle%20cx%3D%2228%22%20cy%3D%2230%22%20r%3D%226%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Ccircle%20cx%3D%2292%22%20cy%3D%2230%22%20r%3D%226%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Cpolygon%20points%3D%2224%2C42%2060%2C24%2096%2C42%20104%2C72%2084%2C102%2060%2C108%2036%2C102%2016%2C72%22%20fill%3D%22url(%23dark-bear_emerald)%22%20stroke%3D%22%2334d399%22%20stroke-width%3D%221.5%22%2F%3E%20%3Cpolygon%20points%3D%2232%2C38%2060%2C28%2088%2C38%2094%2C68%2076%2C94%2044%2C94%2026%2C68%22%20fill%3D%22url(%23main-bear_emerald)%22%2F%3E%20%3Cpolygon%20points%3D%2240%2C46%2060%2C54%2080%2C46%2076%2C38%2060%2C44%2044%2C38%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Cpolygon%20points%3D%2234%2C54%2049%2C59%2038%2C63%22%20fill%3D%22%23f43f5e%22%2F%3E%20%3Cpolygon%20points%3D%2286%2C54%2071%2C59%2082%2C63%22%20fill%3D%22%23f43f5e%22%2F%3E%20%3Cpolygon%20points%3D%2242%2C66%2060%2C60%2078%2C66%2082%2C92%2060%2C102%2038%2C92%22%20fill%3D%22%2301130e%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Cpolygon%20points%3D%2251%2C70%2069%2C70%2060%2C81%22%20fill%3D%22%2310b981%22%2F%3E%20%3Cpolygon%20points%3D%2245%2C92%2050%2C83%2054%2C93%22%20fill%3D%22%23ffffff%22%2F%3E%20%3Cpolygon%20points%3D%2275%2C92%2070%2C83%2066%2C93%22%20fill%3D%22%23ffffff%22%2F%3E%20%3Cpath%20d%3D%22M46%2092%20H74%22%20stroke%3D%22%2310b981%22%20stroke-width%3D%222%22%2F%3E%20%3C%2Fsvg%3E';
+
 const TRADER_HANDLE_POOL = [
   'AlphaTrader_FX',
   'QuantumPips_FX',
@@ -231,7 +234,21 @@ export class AccountConnectorService {
   }
 
   public getAccounts(userId?: string): TradingAccount[] {
-    const all = Array.from(this.accounts.values());
+    const all = Array.from(this.accounts.values()).map(acc => {
+      const cleanAcc = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
+      const isHomies = cleanAcc === '72423906' || acc.userId === 'u_homiesplant';
+      if (isHomies) {
+        return {
+          ...acc,
+          userId: 'u_homiesplant',
+          profileUsername: 'HomiesPlant',
+          currency: 'USD',
+          avatarUrl: EMERALD_BEAR_AVATAR_URL,
+        };
+      }
+      return acc;
+    });
+
     if (userId) {
       const cleanId = userId.trim().toLowerCase();
       const cleanHandle = cleanId.replace(/^u_/, '');
@@ -281,7 +298,20 @@ export class AccountConnectorService {
   }
 
   public getAccount(accountId: string): TradingAccount | null {
-    return this.accounts.get(accountId) || null;
+    const acc = this.accounts.get(accountId) || null;
+    if (acc) {
+      const cleanAcc = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
+      if (cleanAcc === '72423906' || acc.userId === 'u_homiesplant') {
+        return {
+          ...acc,
+          userId: 'u_homiesplant',
+          profileUsername: 'HomiesPlant',
+          currency: 'USD',
+          avatarUrl: EMERALD_BEAR_AVATAR_URL,
+        };
+      }
+    }
+    return acc;
   }
 
   private async loadTraderUsernamesFromR2(): Promise<void> {
@@ -290,14 +320,15 @@ export class AccountConnectorService {
       if (saved && typeof saved === 'object') {
         for (const [k, v] of Object.entries(saved)) {
           if (v && typeof v === 'string' && !v.startsWith('TraderRank-')) {
-            this.traderUsernames.set(k, v);
+            const finalVal = v.toLowerCase().includes('emanuel') ? 'HomiesPlant' : v;
+            this.traderUsernames.set(k, finalVal);
           }
         }
       }
-      if (!this.traderUsernames.has('72423906')) {
-        this.traderUsernames.set('72423906', 'HomiesPlant');
-        this.persistTraderUsernamesToR2().catch(() => {});
-      }
+      this.traderUsernames.set('72423906', 'HomiesPlant');
+      this.traderUsernames.set('u_homiesplant', 'HomiesPlant');
+      this.traderUsernames.set('u_emanuel007', 'HomiesPlant');
+      this.persistTraderUsernamesToR2().catch(() => {});
     } catch {
       // ignore
     }
@@ -360,8 +391,11 @@ export class AccountConnectorService {
     accountNumber?: string,
     avatarUrl?: string
   ): void {
-    const cleanName = (newUsername || '').trim();
+    let cleanName = (newUsername || '').trim();
     if (!cleanName || cleanName.startsWith('TraderRank-')) return;
+    if (cleanName.toLowerCase().includes('emanuel')) {
+      cleanName = 'HomiesPlant';
+    }
 
     this.traderUsernames.set(userId, cleanName);
     if (accountNumber) {
@@ -444,46 +478,58 @@ export class AccountConnectorService {
           serverLower.includes('axiory') ? 'Axiory' :
           serverLower.includes('vantage') ? 'Vantage' : 'OTHER'
         );
-        const isHomiesAccount = p.login === '72423906';
+        const cleanLogin = String(p.login || '').trim();
+        const isHomiesAccount =
+          cleanLogin === '72423906' ||
+          String(p.name || '').includes('72423906') ||
+          String(p.name || '') === 'Emanuel007' ||
+          String(p.name || '').toLowerCase().includes('homies') ||
+          String(p.name || '').toLowerCase().includes('emanuel');
+
         const isJpy = isHomiesAccount
           ? false
           : (info?.currency === 'JPY' || serverLower.includes('japan') || serverLower.includes('jpy'));
         const defaultCurrency = isJpy ? 'JPY' : 'USD';
 
         const existingAcc = Array.from(this.accounts.values()).find(
-          a => a.accountNumber === p.login || a.metaApiAccountId === p.id
+          a => String(a.accountNumber).trim() === cleanLogin || a.metaApiAccountId === p.id
         );
-        const accountId = existingAcc?.id || `acc_meta_${p.login}`;
+        const accountId = existingAcc?.id || `acc_meta_${cleanLogin}`;
         const userId = isHomiesAccount
           ? 'u_homiesplant'
-          : (existingAcc?.userId && existingAcc.userId !== 'usr_live_meta' ? existingAcc.userId : `usr_meta_${p.login}`);
-        const avatarUrl =
-          this.traderAvatars.get(p.login) ||
-          this.traderAvatars.get(userId) ||
-          existingAcc?.avatarUrl;
+          : (existingAcc?.userId && existingAcc.userId !== 'usr_live_meta' ? existingAcc.userId : `usr_meta_${cleanLogin}`);
+        const avatarUrl = isHomiesAccount
+          ? EMERALD_BEAR_AVATAR_URL
+          : (this.traderAvatars.get(cleanLogin) ||
+             this.traderAvatars.get(userId) ||
+             existingAcc?.avatarUrl);
 
         // Public Trader Profile Username (shown on Leaderboard & Podium)
-        const profileUsername =
-          (isHomiesAccount ? 'HomiesPlant' : undefined) ||
-          this.traderUsernames.get(p.login) ||
-          this.traderUsernames.get(userId) ||
-          DEFAULT_TRADER_USERNAMES[p.login] ||
-          (existingAcc?.profileUsername && !existingAcc.profileUsername.startsWith('TraderRank-')
-            ? existingAcc.profileUsername
-            : undefined) ||
-          (p.name && !p.name.startsWith('TraderRank-') ? p.name : undefined) ||
-          getDefaultTraderUsername(p.login);
+        // Strictly force HomiesPlant for account 72423906 and never expose Emanuel007
+        const profileUsername = isHomiesAccount
+          ? 'HomiesPlant'
+          : (
+              (this.traderUsernames.get(cleanLogin) && !this.traderUsernames.get(cleanLogin)!.toLowerCase().includes('emanuel') ? this.traderUsernames.get(cleanLogin) : undefined) ||
+              (this.traderUsernames.get(userId) && !this.traderUsernames.get(userId)!.toLowerCase().includes('emanuel') ? this.traderUsernames.get(userId) : undefined) ||
+              DEFAULT_TRADER_USERNAMES[cleanLogin] ||
+              (existingAcc?.profileUsername && !existingAcc.profileUsername.startsWith('TraderRank-') && !existingAcc.profileUsername.toLowerCase().includes('emanuel')
+                ? existingAcc.profileUsername
+                : undefined) ||
+              (p.name && !p.name.startsWith('TraderRank-') && !p.name.toLowerCase().includes('emanuel') ? p.name : undefined) ||
+              getDefaultTraderUsername(cleanLogin)
+            );
         const username = profileUsername;
 
         // Private Broker Legal Name (strictly kept in private for the account owner only, never exposed on public endpoints)
         const privateLegalName =
           (info?.name && !info.name.startsWith('TraderRank-') ? info.name : undefined) ||
+          (p.name && !p.name.startsWith('TraderRank-') ? p.name : undefined) ||
           existingAcc?.accountHolderName;
 
         const tradingAccount: TradingAccount = {
           id: accountId,
           userId,
-          accountNumber: p.login,
+          accountNumber: cleanLogin,
           profileUsername,
           avatarUrl,
           accountHolderName: privateLegalName,
@@ -512,7 +558,7 @@ export class AccountConnectorService {
           username,
           brokerName,
           profileUsername,
-          p.login,
+          cleanLogin,
           avatarUrl,
           tradingAccount.currency
         );

@@ -76,10 +76,13 @@ const TRADER_PRESET_MAP: Record<string, string> = {
 };
 
 const resolveSavedUserAvatar = (username: string, explicitUrl?: string): string | undefined => {
+  const uNorm = (username || '').trim().toLowerCase();
+  if (uNorm === 'homiesplant' || uNorm === 'emanuel007' || uNorm.includes('72423906') || uNorm.includes('emanuel') || uNorm.includes('homies')) {
+    return EMERALD_BEAR_URL;
+  }
   if (explicitUrl) return explicitUrl;
   if (typeof window === 'undefined') return undefined;
   try {
-    const uNorm = (username || '').trim().toLowerCase();
 
     // Check account avatars map first
     const avatarMapRaw = localStorage.getItem('traderank_account_avatars_v1');

@@ -693,10 +693,13 @@ export function createServer() {
       const accounts = connector.getAccounts(userId);
       return res.json(
         accounts.map(acc => {
+          const isHomies = String(acc.accountNumber).trim() === '72423906' || acc.userId === 'u_homiesplant' || String(acc.id).includes('72423906');
           const masked = maskAccountSecrets(acc);
           return {
             ...masked,
-            currency: acc.currency || (acc.accountNumber === '72423906' ? 'USD' : 'USD'),
+            userId: isHomies ? 'u_homiesplant' : acc.userId,
+            profileUsername: isHomies ? 'HomiesPlant' : acc.profileUsername,
+            currency: isHomies ? 'USD' : (acc.currency || 'USD'),
           };
         })
       );
@@ -705,16 +708,19 @@ export function createServer() {
     // 2. Anonymous public feed aggregates / unscoped: strictly strip private accountHolderName & balances; only expose public profileUsername, accountNumber, and currency
     const allAccounts = connector.getAccounts();
     return res.json(
-      allAccounts.map(acc => ({
-        id: acc.id,
-        userId: acc.userId,
-        accountNumber: acc.accountNumber,
-        profileUsername: acc.profileUsername,
-        currency: acc.currency || (acc.accountNumber === '72423906' ? 'USD' : 'USD'),
-        broker: acc.broker,
-        platform: acc.platform,
-        connectionStatus: acc.connectionStatus,
-      }))
+      allAccounts.map(acc => {
+        const isHomies = String(acc.accountNumber).trim() === '72423906' || acc.userId === 'u_homiesplant' || String(acc.id).includes('72423906');
+        return {
+          id: acc.id,
+          userId: isHomies ? 'u_homiesplant' : acc.userId,
+          accountNumber: acc.accountNumber,
+          profileUsername: isHomies ? 'HomiesPlant' : acc.profileUsername,
+          currency: isHomies ? 'USD' : (acc.currency || 'USD'),
+          broker: acc.broker,
+          platform: acc.platform,
+          connectionStatus: acc.connectionStatus,
+        };
+      })
     );
   });
 
