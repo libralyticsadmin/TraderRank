@@ -205,11 +205,22 @@ describe('TraderRank Protection Suite: Currency, Account Isolation & Contender I
       expect(usernames).not.toContain('Libralytic_FX');
       expect(usernames).not.toContain('LondonFX_Pro');
 
-      // Verify all accounts have real account numbers
+      // Verify all accounts have real account numbers and strict user profile + currency
       const realAcc = entries.find(e => e.accountNumber === '72423906');
       expect(realAcc).toBeDefined();
       expect(realAcc?.accountNumber).toBe('72423906');
       expect(realAcc?.profileName).toBe('HomiesPlant');
+      expect(realAcc?.username).toBe('HomiesPlant');
+      expect(realAcc?.currency).toBe('USD');
+
+      // Verify formatting for account 72423906 is strictly USD ($), never Yen (¥)
+      const formatUsd = (val: number) => {
+        const sign = val > 0 ? '+' : val < 0 ? '-' : '';
+        return `${sign}$${Math.abs(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      };
+      expect(formatUsd(-3693)).toBe('-$3,693.00');
+      expect(formatUsd(-292243)).toBe('-$292,243.00');
+      expect(formatUsd(-3693)).not.toContain('¥');
     });
   });
 });

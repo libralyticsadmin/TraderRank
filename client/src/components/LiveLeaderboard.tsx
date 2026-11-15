@@ -311,15 +311,22 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               avatarUrl: d.avatarUrl,
             });
 
+            const isHomiesAcc =
+              cleanAcc === '72423906' ||
+              identity.profileName === 'HomiesPlant' ||
+              d.username === 'HomiesPlant' ||
+              d.userId === 'u_homiesplant';
+            const accCurrency = isHomiesAcc ? 'USD' : (real?.currency || (d as any).currency || 'USD');
+
             return {
               userId: d.userId,
-              username: d.username,
+              username: identity.profileName || d.username,
               profileName: identity.profileName,
               accountTag: identity.accountTag,
               avatarSeed: identity.avatarSeed,
               avatarUrl: identity.avatarUrl || d.avatarUrl,
               broker: primaryBroker,
-              currency: real?.currency || (cleanAcc === '72423906' ? 'USD' : (d as any).currency || (primaryBroker === 'XMTrading' ? 'JPY' : 'USD')),
+              currency: accCurrency,
               avatarSymbol: d.avatarSymbol,
               winningPips: pips,
               profitAmount: profitUsd,
@@ -361,15 +368,22 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               avatarUrl: e.avatarUrl,
             });
 
+            const isHomiesAcc =
+              cleanAcc === '72423906' ||
+              identity.profileName === 'HomiesPlant' ||
+              e.username === 'HomiesPlant' ||
+              e.userId === 'u_homiesplant';
+            const accCurrency = isHomiesAcc ? 'USD' : (real?.currency || (e as any).currency || 'USD');
+
             return {
               userId: e.userId,
-              username: e.username,
+              username: identity.profileName || e.username,
               profileName: identity.profileName,
               accountTag: identity.accountTag,
               avatarSeed: identity.avatarSeed,
               avatarUrl: identity.avatarUrl || e.avatarUrl,
               broker: primaryBroker,
-              currency: real?.currency || (cleanAcc === '72423906' ? 'USD' : (e as any).currency || (primaryBroker === 'XMTrading' ? 'JPY' : 'USD')),
+              currency: accCurrency,
               avatarSymbol: e.avatarSymbol,
               winningPips: netPips,
               profitAmount: netProfitUsd,
@@ -425,9 +439,9 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
 
   const top3 = processedEntries.slice(0, 3);
 
-  const formatTraderProfit = (amount: number, broker?: Broker, currency?: string) => {
+  const formatTraderProfit = (amount: number, _broker?: Broker, currency?: string) => {
     const cur = (currency || '').toUpperCase().trim();
-    const isJpy = cur === 'JPY' || (!cur && broker === 'XMTrading');
+    const isJpy = cur === 'JPY';
     const sym = cur === 'USD' ? '$' : cur === 'JPY' ? '¥' : cur === 'EUR' ? '€' : cur === 'GBP' ? '£' : isJpy ? '¥' : '$';
     const formattedVal = isJpy
       ? Math.round(Math.abs(amount)).toLocaleString('ja-JP')

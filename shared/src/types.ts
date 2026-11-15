@@ -142,6 +142,7 @@ export interface LeaderboardEntry {
   accountNumber?: string;
   avatarUrl?: string;
   avatarSymbol?: string; // Symbolic identifier instead of emoji
+  currency?: string; // Account currency (e.g. 'USD', 'JPY')
   accountCount: number;
   brokers: Broker[];
   closedPips: number; // Pips from settled trades
@@ -172,6 +173,7 @@ export interface DailyTraderStats {
   accountNumber?: string;
   avatarUrl?: string;
   avatarSymbol: string;
+  currency?: string;
   brokers: Broker[];
   accountCount: number;
   dailyClosedPips: number;
@@ -288,6 +290,7 @@ export interface TournamentStanding {
   userId: string;
   username: string;
   avatarSymbol: string;
+  currency?: string;
   brokers: Broker[];
   netPips: number;
   closedPips: number;

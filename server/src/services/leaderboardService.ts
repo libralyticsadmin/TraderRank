@@ -23,6 +23,7 @@ interface TraderAggregate {
   accountNumber?: string;
   avatarUrl?: string;
   avatarSymbol: string; // Symbolic representation (no emojis)
+  currency?: string; // Account currency ('USD', 'JPY')
   brokers: Set<Broker>;
   accounts: Set<string>;
   processedTradeIds: Set<string>;
@@ -81,7 +82,8 @@ export class LeaderboardService {
     broker: Broker,
     profileName?: string,
     accountNumber?: string,
-    avatarUrl?: string
+    avatarUrl?: string,
+    currency?: string
   ): void {
     const today = this.getTodayUTC();
     this.accountToUser.set(accountId, userId);
@@ -91,21 +93,29 @@ export class LeaderboardService {
       (username?.startsWith('TraderRank-') ? username.replace('TraderRank-', '') : undefined) ||
       (accountId.startsWith('acc_meta_') ? accountId.replace('acc_meta_', '') : undefined);
 
-    const cleanProfileName =
+    let cleanProfileName =
       profileName && !profileName.startsWith('TraderRank-') && !profileName.startsWith('LiveTrader_')
         ? profileName
         : username && !username.startsWith('TraderRank-') && !username.startsWith('LiveTrader_')
         ? username
         : undefined;
 
+    // Guaranteed real user profile name alignment
+    if (extractedNumber === '72423906' || userId === 'u_homiesplant' || userId === 'usr_meta_72423906') {
+      cleanProfileName = 'HomiesPlant';
+    }
+
+    const resolvedCurrency = currency || (extractedNumber === '72423906' ? 'USD' : 'USD');
+
     if (!this.traders.has(userId)) {
       this.traders.set(userId, {
         userId,
-        username,
+        username: cleanProfileName || username,
         profileName: cleanProfileName,
         accountNumber: extractedNumber,
         avatarUrl,
         avatarSymbol: 'user',
+        currency: resolvedCurrency,
         brokers: new Set([broker]),
         accounts: new Set([accountId]),
         processedTradeIds: new Set(),
@@ -139,6 +149,9 @@ export class LeaderboardService {
       }
       if (avatarUrl) {
         trader.avatarUrl = avatarUrl;
+      }
+      if (resolvedCurrency) {
+        trader.currency = resolvedCurrency;
       }
       trader.brokers.add(broker);
       trader.accounts.add(accountId);
@@ -273,6 +286,7 @@ export class LeaderboardService {
         accountNumber: t.accountNumber,
         avatarUrl: t.avatarUrl,
         avatarSymbol: t.avatarSymbol,
+        currency: t.currency || (t.accountNumber === '72423906' ? 'USD' : 'USD'),
         accountCount: t.accounts.size,
         brokers: Array.from(t.brokers),
         closedPips: t.closedPips,
@@ -328,6 +342,7 @@ export class LeaderboardService {
         accountNumber: t.accountNumber,
         avatarUrl: t.avatarUrl,
         avatarSymbol: t.avatarSymbol,
+        currency: t.currency || (t.accountNumber === '72423906' ? 'USD' : 'USD'),
         brokers: Array.from(t.brokers),
         accountCount: t.accounts.size,
         dailyClosedPips: t.dailyClosedPips,

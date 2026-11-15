@@ -239,12 +239,42 @@ export class AccountConnectorService {
       return all.filter(a => {
         const aUid = (a.userId || '').trim().toLowerCase();
         const aProfile = (a.profileUsername || '').trim().toLowerCase();
-        return (
+        const aAccNum = String(a.accountNumber || '').trim();
+        const defaultNameForAcc = (DEFAULT_TRADER_USERNAMES[aAccNum] || '').toLowerCase();
+
+        // Exact ID or handle match
+        if (
           aUid === cleanId ||
           aUid === `u_${cleanHandle}` ||
-          `u_${aUid.replace(/^u_/, '')}` === cleanId ||
-          (aProfile && (aProfile === cleanHandle || aProfile === mappedUsername || `u_${aProfile.replace(/[^a-z0-9]/g, '_')}` === cleanId))
-        );
+          `u_${aUid.replace(/^u_/, '')}` === cleanId
+        ) {
+          return true;
+        }
+
+        // Profile handle match
+        if (
+          aProfile &&
+          (aProfile === cleanHandle ||
+           aProfile === mappedUsername ||
+           `u_${aProfile.replace(/[^a-z0-9]/g, '_')}` === cleanId)
+        ) {
+          return true;
+        }
+
+        // Default trader mapping match (e.g. 72423906 mapped to HomiesPlant)
+        if (defaultNameForAcc && (defaultNameForAcc === cleanHandle || `u_${defaultNameForAcc}` === cleanId)) {
+          return true;
+        }
+
+        // Special verified account alias matching
+        if (
+          (cleanHandle === 'homiesplant' || cleanHandle === 'emanuel007' || cleanId.includes('72423906')) &&
+          aAccNum === '72423906'
+        ) {
+          return true;
+        }
+
+        return false;
       });
     }
     return all;
@@ -399,24 +429,30 @@ export class AccountConnectorService {
           serverLower.includes('axiory') ? 'Axiory' :
           serverLower.includes('vantage') ? 'Vantage' : 'OTHER'
         );
-        const isJpy = p.login === '72423906'
+        const isHomiesAccount = p.login === '72423906';
+        const isJpy = isHomiesAccount
           ? false
-          : brokerName === 'XMTrading' || serverLower.includes('xmtrading') || serverLower.includes('japan') || serverLower.includes('jpy');
+          : (info?.currency === 'JPY' || serverLower.includes('japan') || serverLower.includes('jpy'));
         const defaultCurrency = isJpy ? 'JPY' : 'USD';
 
         const existingAcc = Array.from(this.accounts.values()).find(
           a => a.accountNumber === p.login || a.metaApiAccountId === p.id
         );
         const accountId = existingAcc?.id || `acc_meta_${p.login}`;
-        const userId = existingAcc?.userId && existingAcc.userId !== 'usr_live_meta' ? existingAcc.userId : `usr_meta_${p.login}`;
+        const userId = isHomiesAccount
+          ? 'u_homiesplant'
+          : (existingAcc?.userId && existingAcc.userId !== 'usr_live_meta' ? existingAcc.userId : `usr_meta_${p.login}`);
         const avatarUrl =
           this.traderAvatars.get(p.login) ||
           this.traderAvatars.get(userId) ||
           existingAcc?.avatarUrl;
+
         // Public Trader Profile Username (shown on Leaderboard & Podium)
         const profileUsername =
+          (isHomiesAccount ? 'HomiesPlant' : undefined) ||
           this.traderUsernames.get(p.login) ||
           this.traderUsernames.get(userId) ||
+          DEFAULT_TRADER_USERNAMES[p.login] ||
           (existingAcc?.profileUsername && !existingAcc.profileUsername.startsWith('TraderRank-')
             ? existingAcc.profileUsername
             : undefined) ||
@@ -445,7 +481,7 @@ export class AccountConnectorService {
           equity: info?.equity ?? (isJpy ? 1500000 : 2.8),
           margin: info?.margin ?? 0,
           freeMargin: info?.freeMargin ?? (isJpy ? 1500000 : 2.8),
-          currency: info?.currency ?? defaultCurrency,
+          currency: isHomiesAccount ? 'USD' : (info?.currency ?? defaultCurrency),
           leverage: info?.leverage ?? 1000,
           vaultSecretRef: `ref_meta_${p.id}`,
           metaApiAccountId: p.id,
@@ -455,7 +491,16 @@ export class AccountConnectorService {
         };
 
         this.accounts.set(accountId, tradingAccount);
-        this.leaderboard.registerAccountMapping(accountId, userId, username, brokerName, profileUsername, p.login, avatarUrl);
+        this.leaderboard.registerAccountMapping(
+          accountId,
+          userId,
+          username,
+          brokerName,
+          profileUsername,
+          p.login,
+          avatarUrl,
+          tradingAccount.currency
+        );
 
         // Fetch real historical deals directly from MetaApi
         const rawDeals = await this.metaApiClient.getHistoricalDeals(p.id);
@@ -774,7 +819,7 @@ export class AccountConnectorService {
 
     const canonicalTrades: CanonicalTrade[] = [];
     const acc = this.accounts.get(accountId);
-    const tradeCurrency = acc?.currency || (acc?.broker === 'XMTrading' ? 'JPY' : 'USD');
+    const tradeCurrency = acc?.currency || (accountId.includes('72423906') ? 'USD' : 'USD');
 
     for (const [posId, deals] of groups.entries()) {
       // Sort deals in chronological order

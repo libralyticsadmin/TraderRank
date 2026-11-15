@@ -356,8 +356,52 @@ export function createServer() {
     };
   };
 
-  // User Profiles In-Memory Store
+  // User Profiles Persistent Store (Backed by Cloudflare R2 and in-memory cache)
+  const USER_PROFILES_R2_KEY = 'profiles/user_profiles.json';
+  const EMERALD_BEAR_URL =
+    'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%20fill%3D%22none%22%3E%20%3Cdefs%3E%20%3CradialGradient%20id%3D%22bg-bear_emerald%22%20cx%3D%2250%25%22%20cy%3D%2235%25%22%20r%3D%2275%25%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23064e3b%22%2F%3E%20%3Cstop%20offset%3D%2260%25%22%20stop-color%3D%22%23022c22%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%2301130e%22%2F%3E%20%3C%2FradialGradient%3E%20%3ClinearGradient%20id%3D%22main-bear_emerald%22%20x1%3D%2220%22%20y1%3D%2215%22%20x2%3D%22100%22%20y2%3D%22105%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23d1fae5%22%2F%3E%20%3Cstop%20offset%3D%2245%25%22%20stop-color%3D%22%2310b981%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23047857%22%2F%3E%20%3C%2FlinearGradient%3E%20%3ClinearGradient%20id%3D%22dark-bear_emerald%22%20x1%3D%2260%22%20y1%3D%2230%22%20x2%3D%2260%22%20y2%3D%22105%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23059669%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23064e3b%22%2F%3E%20%3C%2FlinearGradient%3E%20%3C%2Fdefs%3E%20%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2226%22%20fill%3D%22url(%23bg-bear_emerald)%22%2F%3E%20%3Ccircle%20cx%3D%2260%22%20cy%3D%2260%22%20r%3D%2250%22%20stroke%3D%22%2310b981%22%20stroke-opacity%3D%220.22%22%20stroke-width%3D%221.5%22%20stroke-dasharray%3D%226%204%22%2F%3E%20%3Cpolygon%20points%3D%2260%2C10%20104%2C35%20104%2C85%2060%2C110%2016%2C85%2016%2C35%22%20stroke%3D%22%2334d399%22%20stroke-opacity%3D%220.3%22%20stroke-width%3D%221.5%22%20fill%3D%22%2310b981%22%20fill-opacity%3D%220.04%22%2F%3E%20%3Ccircle%20cx%3D%2228%22%20cy%3D%2230%22%20r%3D%2213%22%20fill%3D%22url(%23main-bear_emerald)%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Ccircle%20cx%3D%2292%22%20cy%3D%2230%22%20r%3D%2213%22%20fill%3D%22url(%23main-bear_emerald)%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Ccircle%20cx%3D%2228%22%20cy%3D%2230%22%20r%3D%226%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Ccircle%20cx%3D%2292%22%20cy%3D%2230%22%20r%3D%226%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Cpolygon%20points%3D%2224%2C42%2060%2C24%2096%2C42%20104%2C72%2084%2C102%2060%2C108%2036%2C102%2016%2C72%22%20fill%3D%22url(%23dark-bear_emerald)%22%20stroke%3D%22%2334d399%22%20stroke-width%3D%221.5%22%2F%3E%20%3Cpolygon%20points%3D%2232%2C38%2060%2C28%2088%2C38%2094%2C68%2076%2C94%2044%2C94%2026%2C68%22%20fill%3D%22url(%23main-bear_emerald)%22%2F%3E%20%3Cpolygon%20points%3D%2240%2C46%2060%2C54%2080%2C46%2076%2C38%2060%2C44%2044%2C38%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Cpolygon%20points%3D%2234%2C54%2049%2C59%2038%2C63%22%20fill%3D%22%23f43f5e%22%2F%3E%20%3Cpolygon%20points%3D%2286%2C54%2071%2C59%2082%2C63%22%20fill%3D%22%23f43f5e%22%2F%3E%20%3Cpolygon%20points%3D%2242%2C66%2060%2C60%2078%2C66%2082%2C92%2060%2C102%2038%2C92%22%20fill%3D%22%2301130e%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Cpolygon%20points%3D%2251%2C70%2069%2C70%2060%2C81%22%20fill%3D%22%2310b981%22%2F%3E%20%3Cpolygon%20points%3D%2245%2C92%2050%2C83%2054%2C93%22%20fill%3D%22%23ffffff%22%2F%3E%20%3Cpolygon%20points%3D%2275%2C92%2070%2C83%2066%2C93%22%20fill%3D%22%23ffffff%22%2F%3E%20%3Cpath%20d%3D%22M46%2092%20H74%22%20stroke%3D%22%2310b981%22%20stroke-width%3D%222%22%2F%3E%20%3C%2Fsvg%3E';
+
   const userProfiles = new Map<string, any>([
+    [
+      'u_homiesplant',
+      {
+        id: 'u_homiesplant',
+        username: 'HomiesPlant',
+        email: 'homiesplant@traderank.live',
+        avatarSymbol: 'bear_emerald',
+        avatarUrl: EMERALD_BEAR_URL,
+        traderTitle: 'Verified Gold & FX Master',
+        bio: 'Disciplined price action & high R:R execution. 100% MetaApi verified read-only MT5 account.',
+        tradingStyle: 'SCALPER',
+        primaryBroker: 'XMTrading',
+        accountNumber: '72423906',
+        country: 'Global',
+        joinedAt: 'November 2026',
+        level: 1,
+        xp: 575,
+        rank: 1,
+      },
+    ],
+    [
+      'u_emanuel007',
+      {
+        id: 'u_emanuel007',
+        username: 'HomiesPlant',
+        email: 'emanuel007@traderank.live',
+        avatarSymbol: 'bear_emerald',
+        avatarUrl: EMERALD_BEAR_URL,
+        traderTitle: 'Verified Gold & FX Master',
+        bio: 'Disciplined price action & high R:R execution. 100% MetaApi verified read-only MT5 account.',
+        tradingStyle: 'SCALPER',
+        primaryBroker: 'XMTrading',
+        accountNumber: '72423906',
+        country: 'Global',
+        joinedAt: 'November 2026',
+        level: 1,
+        xp: 575,
+        rank: 1,
+      },
+    ],
     [
       'u_alex_vanguard',
       {
@@ -381,6 +425,35 @@ export function createServer() {
     ],
   ]);
 
+  const persistUserProfilesToR2 = async () => {
+    try {
+      const records: Record<string, any> = {};
+      for (const [k, v] of userProfiles.entries()) {
+        records[k] = v;
+      }
+      await r2Storage.uploadJson(USER_PROFILES_R2_KEY, records, { 'x-traderrank-type': 'user_profiles' });
+    } catch (err) {
+      console.warn('[server] Warning: Could not persist user profiles to R2:', err);
+    }
+  };
+
+  const loadUserProfilesFromR2 = async () => {
+    try {
+      const saved = await r2Storage.getJson<Record<string, any>>(USER_PROFILES_R2_KEY);
+      if (saved && typeof saved === 'object') {
+        for (const [k, v] of Object.entries(saved)) {
+          if (v && v.id) {
+            userProfiles.set(k, v);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[server] Warning: Could not load user profiles from R2:', err);
+    }
+  };
+
+  loadUserProfilesFromR2().catch(() => {});
+
   // Auth: Register
   app.post('/api/auth/register', (req: Request, res: Response) => {
     const { username, email, primaryBroker, tradingStyle, avatarUrl } = req.body || {};
@@ -388,16 +461,20 @@ export function createServer() {
       return res.status(400).json({ success: false, error: 'Username and email are required' });
     }
     const cleanId = `u_${String(username).toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+    const isHomies = String(username).toLowerCase() === 'homiesplant' || String(username).toLowerCase() === 'emanuel007';
+    const finalAvatar = isHomies ? (avatarUrl || EMERALD_BEAR_URL) : avatarUrl;
+
     const newUser = {
       id: cleanId,
       username: String(username).trim(),
       email: String(email).trim(),
-      avatarSymbol: 'zap',
-      avatarUrl,
+      avatarSymbol: isHomies ? 'bear_emerald' : 'zap',
+      avatarUrl: finalAvatar,
       traderTitle: 'Verified Market Trader',
       bio: '',
       tradingStyle: tradingStyle || 'SCALPER',
-      primaryBroker: primaryBroker || 'Exness',
+      primaryBroker: isHomies ? 'XMTrading' : (primaryBroker || 'Exness'),
+      accountNumber: isHomies ? '72423906' : undefined,
       country: 'Global',
       joinedAt: 'Today',
       level: 1,
@@ -405,14 +482,17 @@ export function createServer() {
       rank: 99,
     };
     userProfiles.set(cleanId, newUser);
+    persistUserProfilesToR2().catch(() => {});
+
     leaderboard.registerAccountMapping(
-      `acc_${cleanId}`,
+      isHomies ? 'acc_meta_72423906' : `acc_${cleanId}`,
       cleanId,
       newUser.username,
       newUser.primaryBroker as Broker,
       newUser.username,
-      undefined,
-      avatarUrl
+      isHomies ? '72423906' : undefined,
+      finalAvatar,
+      'USD'
     );
     return res.status(201).json({ success: true, user: newUser });
   });
@@ -424,8 +504,17 @@ export function createServer() {
       return res.status(400).json({ success: false, error: 'Username or email required' });
     }
     const needle = String(emailOrUser).trim().toLowerCase();
+
+    // Check alias matching for HomiesPlant & 72423906
+    if (needle === 'homiesplant' || needle === 'emanuel007' || needle.includes('72423906') || needle.includes('homies')) {
+      const hp = userProfiles.get('u_homiesplant');
+      if (hp) {
+        return res.json({ success: true, user: hp });
+      }
+    }
+
     const found = Array.from(userProfiles.values()).find(
-      (u: any) => u.username.toLowerCase() === needle || u.email.toLowerCase() === needle
+      (u: any) => u.username.toLowerCase() === needle || u.email.toLowerCase() === needle || u.id === `u_${needle}`
     );
     if (found) {
       return res.json({ success: true, user: found });
@@ -447,6 +536,7 @@ export function createServer() {
       rank: 99,
     };
     userProfiles.set(autoUser.id, autoUser);
+    persistUserProfilesToR2().catch(() => {});
     return res.json({ success: true, user: autoUser });
   });
 
@@ -456,11 +546,15 @@ export function createServer() {
     if (!profile.id) {
       return res.status(400).json({ success: false, error: 'Profile ID required' });
     }
-    userProfiles.set(profile.id, profile);
+    const existing = userProfiles.get(profile.id) || {};
+    const updated = { ...existing, ...profile };
+    userProfiles.set(profile.id, updated);
+    persistUserProfilesToR2().catch(() => {});
+
     if (profile.username) {
       connector.updateUserAccountsName(profile.id, profile.username, profile.primaryBroker, profile.accountNumber, profile.avatarUrl);
     }
-    return res.json({ success: true, user: profile });
+    return res.json({ success: true, user: updated });
   });
 
   // 1. Health & Telemetry
@@ -531,28 +625,31 @@ export function createServer() {
     // 1. Authenticated user isolation: strictly return accounts belonging to this user
     if (userId && userId !== 'none') {
       const accounts = connector.getAccounts(userId);
-      return res.json(accounts.map(maskAccountSecrets));
-    }
-
-    // 2. Anonymous public feed aggregates: strictly strip private accountHolderName & balances; only expose public profileUsername & accountNumber
-    if (scope === 'public') {
-      const allAccounts = connector.getAccounts();
       return res.json(
-        allAccounts.map(acc => ({
-          id: acc.id,
-          userId: acc.userId,
-          accountNumber: acc.accountNumber,
-          profileUsername: acc.profileUsername,
-          currency: acc.currency,
-          broker: acc.broker,
-          platform: acc.platform,
-          connectionStatus: acc.connectionStatus,
-        }))
+        accounts.map(acc => {
+          const masked = maskAccountSecrets(acc);
+          return {
+            ...masked,
+            currency: acc.currency || (acc.accountNumber === '72423906' ? 'USD' : 'USD'),
+          };
+        })
       );
     }
 
-    // 3. Unauthenticated/unscoped: return empty to prevent data exposure across players
-    return res.json([]);
+    // 2. Anonymous public feed aggregates / unscoped: strictly strip private accountHolderName & balances; only expose public profileUsername, accountNumber, and currency
+    const allAccounts = connector.getAccounts();
+    return res.json(
+      allAccounts.map(acc => ({
+        id: acc.id,
+        userId: acc.userId,
+        accountNumber: acc.accountNumber,
+        profileUsername: acc.profileUsername,
+        currency: acc.currency || (acc.accountNumber === '72423906' ? 'USD' : 'USD'),
+        broker: acc.broker,
+        platform: acc.platform,
+        connectionStatus: acc.connectionStatus,
+      }))
+    );
   });
 
   // 4a. Disconnect / Remove Account

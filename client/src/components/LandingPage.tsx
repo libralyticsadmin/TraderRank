@@ -297,7 +297,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       const xp = real ? real.xp : tradesCount > 0 ? tradesCount * 25 : trader.xp || 0;
       const gamification = calculateTraderGamification(xp);
       const broker = (real?.broker || trader.brokers?.[0] || 'XM') as any;
-      const currency = real?.currency || (cleanAcc === '72423906' ? 'USD' : (trader as any).currency || (broker === 'XMTrading' ? 'JPY' : 'USD'));
       const identity = resolveTraderIdentity({
         username: trader.username,
         profileName: trader.profileName,
@@ -306,10 +305,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         userId: trader.userId,
         avatarUrl: trader.avatarUrl,
       });
+      const isHomiesAcc =
+        cleanAcc === '72423906' ||
+        identity.profileName === 'HomiesPlant' ||
+        trader.username === 'HomiesPlant' ||
+        trader.userId === 'u_homiesplant';
+      const currency = isHomiesAcc ? 'USD' : (real?.currency || (trader as any).currency || 'USD');
 
       return {
         userId: trader.userId,
-        username: trader.username,
+        username: identity.profileName || trader.username,
         profileName: identity.profileName,
         accountTag: identity.accountTag,
         avatarSeed: identity.avatarSeed,
@@ -349,9 +354,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       glow: idx === 0 ? '#fbbf24' : idx === 1 ? '#94a3b8' : '#d97706',
     }));
 
-  const formatPodiumProfit = (amount: number, broker?: string, currency?: string) => {
+  const formatPodiumProfit = (amount: number, _broker?: string, currency?: string) => {
     const cur = (currency || '').toUpperCase().trim();
-    const isJpy = cur === 'JPY' || (!cur && broker === 'XMTrading');
+    const isJpy = cur === 'JPY';
     const sym = cur === 'USD' ? '$' : cur === 'JPY' ? '¥' : cur === 'EUR' ? '€' : cur === 'GBP' ? '£' : isJpy ? '¥' : '$';
     const formattedVal = isJpy
       ? Math.round(Math.abs(amount)).toLocaleString('ja-JP')

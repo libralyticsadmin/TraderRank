@@ -1241,12 +1241,18 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
     : `${t.profile.verifiedSinceLabel} ${stats.verifiedSince}`;
 
   // Account currency is strictly resolved from verified broker connection
-  const rawCurrency = (liveCurrency || (trader as any).currency || (liveAccountNumber === '72423906' ? 'USD' : '')).toUpperCase().trim();
-  const isJpy = rawCurrency === 'JPY' || (!rawCurrency && (
+  const isHomiesTrader =
+    liveAccountNumber === '72423906' ||
+    trader.username.includes('72423906') ||
+    trader.userId?.includes('72423906') ||
+    trader.username.toLowerCase().includes('homies') ||
+    trader.username.toLowerCase().includes('emanuel');
+  const rawCurrency = (isHomiesTrader ? 'USD' : (liveCurrency || (trader as any).currency || '')).toUpperCase().trim();
+  const isJpy = !isHomiesTrader && (rawCurrency === 'JPY' || (!rawCurrency && (
     trader.broker === 'XMTrading' &&
     Boolean(liveServerName && (liveServerName.toLowerCase().includes('japan') || liveServerName.toLowerCase().includes('jpy')))
-  ));
-  const curSymbol = rawCurrency === 'USD' ? '$' : rawCurrency === 'JPY' ? '¥' : rawCurrency === 'EUR' ? '€' : rawCurrency === 'GBP' ? '£' : isJpy ? '¥' : '$';
+  )));
+  const curSymbol = isJpy ? '¥' : '$';
 
   const brokerSlots: Array<{ id: Broker; label: string }> = [
     { id: 'XM', label: 'XM Global' },

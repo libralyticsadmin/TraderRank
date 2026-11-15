@@ -1393,17 +1393,30 @@ export const resolveTraderIdentity = (params: {
     ? rawUser
     : null;
 
-  // 2. Resolve Trader Profile Username (Priority: local user profile username -> server trader username -> default trader handle)
+  // 2. Resolve Trader Profile Username (Priority: local user profile username -> default mapped username for verified real accounts -> server profile -> default handle)
   let profileName = '';
   const localUsername = getLocalTraderUsername(accountNumber, rawUid);
+  const defaultMappedUser =
+    (accountNumber && DEFAULT_TRADER_USERNAMES[accountNumber]) ||
+    (rawUid && (rawUid.includes('72423906') || rawUid.includes('homies') || rawUid.includes('emanuel')) ? 'HomiesPlant' : null);
+
   if (localUsername) {
     profileName = localUsername;
+  } else if (
+    defaultMappedUser &&
+    (rawProfile === 'Emanuel007' ||
+      rawUser === 'Emanuel007' ||
+      rawUser.toLowerCase().includes('emanuel') ||
+      isRawAccountTag(rawProfile) ||
+      isRawAccountTag(rawUser))
+  ) {
+    profileName = defaultMappedUser;
   } else if (!isRawAccountTag(rawProfile)) {
     profileName = rawProfile;
   } else if (!isRawAccountTag(rawUser)) {
     profileName = rawUser;
   } else {
-    profileName = getDefaultTraderHandle(accountNumber, accountTag || rawUser || rawUid);
+    profileName = defaultMappedUser || getDefaultTraderHandle(accountNumber, accountTag || rawUser || rawUid);
   }
 
   // 3. Resolve avatar (explicit parameter -> local saved avatar -> default mapped avatar)
