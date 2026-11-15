@@ -367,27 +367,7 @@ export function createServer() {
       {
         id: 'u_homiesplant',
         username: 'HomiesPlant',
-        email: 'homiesplant@traderank.live',
-        avatarSymbol: 'bear_emerald',
-        avatarUrl: EMERALD_BEAR_URL,
-        traderTitle: 'Verified Gold & FX Master',
-        bio: 'Disciplined price action & high R:R execution. 100% MetaApi verified read-only MT5 account.',
-        tradingStyle: 'SCALPER',
-        primaryBroker: 'XMTrading',
-        accountNumber: '72423906',
-        country: 'Global',
-        joinedAt: 'November 2026',
-        level: 1,
-        xp: 575,
-        rank: 1,
-      },
-    ],
-    [
-      'u_emanuel007',
-      {
-        id: 'u_emanuel007',
-        username: 'HomiesPlant',
-        email: 'emanuel007@traderank.live',
+        email: 'libralytics.data@gmail.com',
         avatarSymbol: 'bear_emerald',
         avatarUrl: EMERALD_BEAR_URL,
         traderTitle: 'Verified Gold & FX Master',
@@ -442,11 +422,26 @@ export function createServer() {
       const saved = await r2Storage.getJson<Record<string, any>>(USER_PROFILES_R2_KEY);
       if (saved && typeof saved === 'object') {
         for (const [k, v] of Object.entries(saved)) {
-          if (v && v.id) {
+          if (v && v.id && v.id !== 'u_emanuel007') {
             userProfiles.set(k, v);
           }
         }
       }
+      userProfiles.delete('u_emanuel007');
+      const hp = userProfiles.get('u_homiesplant') || {};
+      userProfiles.set('u_homiesplant', {
+        ...hp,
+        id: 'u_homiesplant',
+        username: 'HomiesPlant',
+        email: hp.email || 'libralytics.data@gmail.com',
+        accountNumber: '72423906',
+        avatarSymbol: 'bear_emerald',
+        avatarUrl: EMERALD_BEAR_URL,
+        primaryBroker: 'XMTrading',
+        xp: 575,
+        rank: 1,
+      });
+      persistUserProfilesToR2().catch(() => {});
     } catch (err) {
       console.warn('[server] Warning: Could not load user profiles from R2:', err);
     }
@@ -506,7 +501,15 @@ export function createServer() {
     const needle = String(emailOrUser).trim().toLowerCase();
 
     // Check alias matching for HomiesPlant & 72423906
-    if (needle === 'homiesplant' || needle === 'emanuel007' || needle.includes('72423906') || needle.includes('homies')) {
+    if (
+      needle === 'homiesplant' ||
+      needle === 'emanuel007' ||
+      needle.includes('72423906') ||
+      needle.includes('homies') ||
+      needle === 'libralytics.data@gmail.com' ||
+      needle === 'homiesplant@traderank.live' ||
+      needle === 'emanuel007@traderank.live'
+    ) {
       const hp = userProfiles.get('u_homiesplant');
       if (hp) {
         return res.json({ success: true, user: hp });

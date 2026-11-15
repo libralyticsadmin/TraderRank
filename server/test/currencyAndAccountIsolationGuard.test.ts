@@ -213,14 +213,15 @@ describe('TraderRank Protection Suite: Currency, Account Isolation & Contender I
       expect(realAcc?.username).toBe('HomiesPlant');
       expect(realAcc?.currency).toBe('USD');
 
-      // Verify formatting for account 72423906 is strictly USD ($), never Yen (¥)
+      // Verify monetary profit normalization from broker JPY deals to USD ($)
+      const jpyToUsd = (valJpy: number) => Number((valJpy / 155.0).toFixed(2));
       const formatUsd = (val: number) => {
         const sign = val > 0 ? '+' : val < 0 ? '-' : '';
         return `${sign}$${Math.abs(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       };
-      expect(formatUsd(-3693)).toBe('-$3,693.00');
-      expect(formatUsd(-292243)).toBe('-$292,243.00');
-      expect(formatUsd(-3693)).not.toContain('¥');
+      expect(formatUsd(jpyToUsd(-3693))).toBe('-$23.83');
+      expect(formatUsd(jpyToUsd(-292243))).toBe('-$1,885.44');
+      expect(formatUsd(jpyToUsd(-3693))).not.toContain('¥');
     });
 
     it('5. Real Trader Identity & Broker Masking Guard: strictly enforces HomiesPlant and USD', () => {

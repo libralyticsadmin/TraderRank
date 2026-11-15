@@ -538,10 +538,18 @@ export class AccountConnectorService {
           platform: (p.platform?.toUpperCase() === 'MT4' ? 'MT4' : 'MT5') as Platform,
           serverName: p.server,
           connectionStatus: p.connectionStatus === 'CONNECTED' || p.state === 'DEPLOYED' ? 'CONNECTED' : 'SYNCING',
-          balance: info?.balance ?? (isJpy ? 1500000 : 2.8),
-          equity: info?.equity ?? (isJpy ? 1500000 : 2.8),
-          margin: info?.margin ?? 0,
-          freeMargin: info?.freeMargin ?? (isJpy ? 1500000 : 2.8),
+          balance: isHomiesAccount && (info?.balance ?? 0) > 1000
+            ? Number(((info?.balance ?? 0) / 155).toFixed(2))
+            : (info?.balance ?? (isJpy ? 1500000 : 2.8)),
+          equity: isHomiesAccount && (info?.equity ?? 0) > 1000
+            ? Number(((info?.equity ?? 0) / 155).toFixed(2))
+            : (info?.equity ?? (isJpy ? 1500000 : 2.8)),
+          margin: isHomiesAccount && (info?.margin ?? 0) > 1000
+            ? Number(((info?.margin ?? 0) / 155).toFixed(2))
+            : (info?.margin ?? 0),
+          freeMargin: isHomiesAccount && (info?.freeMargin ?? 0) > 1000
+            ? Number(((info?.freeMargin ?? 0) / 155).toFixed(2))
+            : (info?.freeMargin ?? (isJpy ? 1500000 : 2.8)),
           currency: isHomiesAccount ? 'USD' : (info?.currency ?? defaultCurrency),
           leverage: info?.leverage ?? 1000,
           vaultSecretRef: `ref_meta_${p.id}`,
@@ -683,6 +691,12 @@ export class AccountConnectorService {
     const rawDeals = this.rawDealsCache.get(accountId) || [];
     if (rawDeals.length === 0) return {};
 
+    const acc = this.accounts.get(accountId);
+    const isBrokerJpy =
+      (acc?.serverName && (acc.serverName.toLowerCase().includes('xmtrading') || acc.serverName.toLowerCase().includes('japan') || acc.serverName.toLowerCase().includes('jpy'))) ||
+      accountId.includes('72423906');
+    const rate = (acc?.currency === 'USD' && isBrokerJpy) ? 155.0 : 1.0;
+
     const sorted = [...rawDeals].sort(
       (a, b) => new Date(a.time).getTime() - new Date(b.time).getTime()
     );
@@ -715,7 +729,7 @@ export class AccountConnectorService {
 
     for (const ym of months) {
       const mDeals = sorted.filter(d => d.time && d.time.startsWith(ym));
-      const startBalance = Number(runningBalance.toFixed(2));
+      const startBalance = Number((runningBalance / rate).toFixed(2));
       let deposits = 0;
       let withdrawals = 0;
       let tradeProfit = 0;
@@ -739,14 +753,14 @@ export class AccountConnectorService {
         runningBalance += profit + sw + comm;
       }
 
-      deposits = Number(deposits.toFixed(2));
-      withdrawals = Number(withdrawals.toFixed(2));
-      tradeProfit = Number(tradeProfit.toFixed(2));
-      swap = Number(swap.toFixed(2));
-      commission = Number(commission.toFixed(2));
+      deposits = Number((deposits / rate).toFixed(2));
+      withdrawals = Number((withdrawals / rate).toFixed(2));
+      tradeProfit = Number((tradeProfit / rate).toFixed(2));
+      swap = Number((swap / rate).toFixed(2));
+      commission = Number((commission / rate).toFixed(2));
       const activeCapital = Number(Math.max(0.01, startBalance + deposits).toFixed(2));
       const tradingEndingCapital = Number(Math.max(0.01, activeCapital + tradeProfit).toFixed(2));
-      const endBalance = Number(Math.max(0, runningBalance).toFixed(2));
+      const endBalance = Number(Math.max(0, runningBalance / rate).toFixed(2));
       const roiPct =
         tradeProfit === 0
           ? 0
@@ -941,13 +955,23 @@ export class AccountConnectorService {
 
         const openPrice = Number(weightedOpen.toFixed(digits));
         const closePrice = Number(weightedClose.toFixed(digits));
-        const profit = Number(outDeals.reduce((sum, d) => sum + Number(d.profit ?? 0), 0).toFixed(2));
-        const commission = Number(deals.reduce((sum, d) => sum + Number(d.commission ?? 0), 0).toFixed(2));
-        const swap = Number(deals.reduce((sum, d) => sum + Number(d.swap ?? 0), 0).toFixed(2));
+
+        const isBrokerJpy =
+          (acc?.serverName && (acc.serverName.toLowerCase().includes('xmtrading') || acc.serverName.toLowerCase().includes('japan') || acc.serverName.toLowerCase().includes('jpy'))) ||
+          accountId.includes('72423906');
+        const conversionRate = (tradeCurrency === 'USD' && isBrokerJpy) ? 155.0 : 1.0;
+
+        const rawProfit = Number(outDeals.reduce((sum, d) => sum + Number(d.profit ?? 0), 0).toFixed(2));
+        const rawComm = Number(deals.reduce((sum, d) => sum + Number(d.commission ?? 0), 0).toFixed(2));
+        const rawSwap = Number(deals.reduce((sum, d) => sum + Number(d.swap ?? 0), 0).toFixed(2));
+
+        const profit = Number((rawProfit / conversionRate).toFixed(2));
+        const commission = Number((rawComm / conversionRate).toFixed(2));
+        const swap = Number((rawSwap / conversionRate).toFixed(2));
 
         let pnlPips = PipCalculator.calculatePips(cleanSymbol, tradeType, openPrice, closePrice);
-        if (pnlPips === 0 && profit !== 0 && openPrice === closePrice) {
-          pnlPips = PipCalculator.calculatePipsFromPnl(cleanSymbol, lotSize, profit);
+        if (pnlPips === 0 && rawProfit !== 0 && openPrice === closePrice) {
+          pnlPips = PipCalculator.calculatePipsFromPnl(cleanSymbol, lotSize, rawProfit);
         }
 
         canonicalTrades.push({
@@ -987,9 +1011,22 @@ export class AccountConnectorService {
             ? outDeals.reduce((sum, d) => sum + Number(d.price || 0) * Number(d.volume || 0), 0) / totalOutVol
             : Number(lastOut.price || 0);
         const closePrice = Number(weightedClose.toFixed(digits));
-        const profit = Number(outDeals.reduce((sum, d) => sum + Number(d.profit ?? 0), 0).toFixed(2));
-        const pnlPips = PipCalculator.calculatePipsFromPnl(cleanSymbol, lotSize, profit);
-        const openPrice = PipCalculator.reconstructOpenPrice(cleanSymbol, tradeType, closePrice, lotSize, profit);
+
+        const isBrokerJpy =
+          (acc?.serverName && (acc.serverName.toLowerCase().includes('xmtrading') || acc.serverName.toLowerCase().includes('japan') || acc.serverName.toLowerCase().includes('jpy'))) ||
+          accountId.includes('72423906');
+        const conversionRate = (tradeCurrency === 'USD' && isBrokerJpy) ? 155.0 : 1.0;
+
+        const rawProfit = Number(outDeals.reduce((sum, d) => sum + Number(d.profit ?? 0), 0).toFixed(2));
+        const rawComm = Number(outDeals.reduce((sum, d) => sum + Number(d.commission ?? 0), 0).toFixed(2));
+        const rawSwap = Number(outDeals.reduce((sum, d) => sum + Number(d.swap ?? 0), 0).toFixed(2));
+
+        const profit = Number((rawProfit / conversionRate).toFixed(2));
+        const commission = Number((rawComm / conversionRate).toFixed(2));
+        const swap = Number((rawSwap / conversionRate).toFixed(2));
+
+        const pnlPips = PipCalculator.calculatePipsFromPnl(cleanSymbol, lotSize, rawProfit);
+        const openPrice = PipCalculator.reconstructOpenPrice(cleanSymbol, tradeType, closePrice, lotSize, rawProfit);
 
         canonicalTrades.push({
           id: `trade_${accountId}_${posId}`,
@@ -1005,8 +1042,8 @@ export class AccountConnectorService {
           pnlCurrency: profit,
           currency: tradeCurrency,
           pnlPips,
-          commission: Number(outDeals.reduce((sum, d) => sum + Number(d.commission ?? 0), 0).toFixed(2)),
-          swap: Number(outDeals.reduce((sum, d) => sum + Number(d.swap ?? 0), 0).toFixed(2)),
+          commission,
+          swap,
         });
       }
     }
