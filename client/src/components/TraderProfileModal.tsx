@@ -568,8 +568,12 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
           acc =>
             acc.id === trader.userId ||
             acc.userId === trader.userId ||
-            (acc.accountNumber && trader.username.includes(String(acc.accountNumber)))
-        ) || accounts[0];
+            (acc.accountNumber && (
+              trader.username.includes(String(acc.accountNumber)) ||
+              trader.userId.includes(String(acc.accountNumber))
+            )) ||
+            (acc.profileUsername && trader.username.toLowerCase() === acc.profileUsername.toLowerCase())
+        );
         if (matched) {
           const bal = Number(matched.equity ?? matched.balance);
           if (!Number.isNaN(bal) && bal >= 0) {
@@ -1235,7 +1239,15 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
   const isJpy =
     trader.broker === 'XMTrading' ||
     (trader as any).currency === 'JPY' ||
-    Boolean(liveServerName && (liveServerName.toLowerCase().includes('xmtrading') || liveServerName.toLowerCase().includes('japan') || liveServerName.toLowerCase().includes('jpy')));
+    trader.username.includes('72423906') ||
+    trader.userId?.includes('72423906') ||
+    liveAccountNumber === '72423906' ||
+    Boolean(
+      liveServerName &&
+      (liveServerName.toLowerCase().includes('xmtrading') ||
+       liveServerName.toLowerCase().includes('japan') ||
+       liveServerName.toLowerCase().includes('jpy'))
+    );
   const curSymbol = isJpy ? '¥' : '$';
 
   const brokerSlots: Array<{ id: Broker; label: string }> = [
@@ -1993,7 +2005,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                     : `Rank #${trader.rank} / ${activeMonthData.totalParticipants.toLocaleString()} ${copy.peopleUnit}`}
                 </span>
                 <span style={{ color: '#34d399', fontFamily: 'var(--font-mono, monospace)' }}>
-                  ({stats.netPips >= 0 ? `+${stats.netPips}` : stats.netPips}p)
+                  ({activeMonthData.netPips >= 0 ? `+${activeMonthData.netPips}` : activeMonthData.netPips}p)
                 </span>
               </div>
             </div>
@@ -2318,7 +2330,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                   fontFamily: 'var(--font-mono, monospace)',
                 }}
               >
-                ${activeMonthData.endingCapital.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                {formatCurrencyVal(activeMonthData.endingCapital)}
               </div>
               <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700 }}>{copy.initialAssetsLabel}</div>
               <div
@@ -2331,7 +2343,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                   fontFamily: 'var(--font-mono, monospace)',
                 }}
               >
-                ${activeMonthData.startingCapital.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                {formatCurrencyVal(activeMonthData.startingCapital)}
               </div>
             </div>
 
@@ -2526,7 +2538,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                   fontFamily: 'var(--font-mono, monospace)',
                 }}
               >
-                +${activeMonthData.grossProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                {formatUsdSigned(activeMonthData.grossProfit)}
               </div>
             </div>
 
@@ -2565,7 +2577,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                   fontFamily: 'var(--font-mono, monospace)',
                 }}
               >
-                -${activeMonthData.grossLoss.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                {formatUsdSigned(-activeMonthData.grossLoss)}
               </div>
             </div>
 
@@ -2950,7 +2962,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                             {row.cfdCount}
                             {copy.timesUnit}
                           </div>
-                          <div style={{ color: '#94a3b8' }}>${row.cfdVolumeUsd.toLocaleString()}</div>
+                          <div style={{ color: '#94a3b8' }}>{curSymbol}{Math.round(row.cfdVolumeUsd).toLocaleString()}</div>
                         </td>
 
                         {/* Net Pips / Win Rate */}
@@ -3154,7 +3166,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                         {trade.pnlPips > 0 ? `+${trade.pnlPips.toFixed(1)}` : trade.pnlPips.toFixed(1)} pips
                       </div>
                       <div style={{ fontSize: '12px', fontWeight: 700, color: isProfit ? '#38bdf8' : '#f43f5e' }}>
-                        {isProfit ? `+$${trade.pnlCurrency.toFixed(2)}` : `-$${Math.abs(trade.pnlCurrency).toFixed(2)}`}
+                        {formatUsdSigned(trade.pnlCurrency)}
                       </div>
                     </div>
                   </div>

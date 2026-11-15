@@ -74,6 +74,7 @@ export class AccountConnectorService {
   // Relational storage simulation for connected trading accounts (Postgres model)
   private accounts = new Map<string, TradingAccount>();
   private traderUsernames = new Map<string, string>();
+  private traderAvatars = new Map<string, string>();
   private tradesStorage = new Map<string, CanonicalTrade[]>();
   private rawDealsCache = new Map<string, MetaApiDeal[]>();
   private lastDealSyncAt = new Map<string, number>();
@@ -273,6 +274,33 @@ export class AccountConnectorService {
     }
   }
 
+  private async loadTraderAvatarsFromR2(): Promise<void> {
+    try {
+      const saved = await r2Storage.getJson<Record<string, string>>('profiles/account_avatars.json');
+      if (saved && typeof saved === 'object') {
+        for (const [k, v] of Object.entries(saved)) {
+          if (v && typeof v === 'string') {
+            this.traderAvatars.set(k, v);
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  private async persistTraderAvatarsToR2(): Promise<void> {
+    try {
+      const obj: Record<string, string> = {};
+      for (const [k, v] of this.traderAvatars.entries()) {
+        obj[k] = v;
+      }
+      await r2Storage.uploadJson('profiles/account_avatars.json', obj);
+    } catch {
+      // ignore
+    }
+  }
+
   public updateUserAccountsName(
     userId: string,
     newUsername: string,
@@ -325,6 +353,14 @@ export class AccountConnectorService {
       }
     }
 
+    if (avatarUrl) {
+      this.traderAvatars.set(userId, avatarUrl);
+      if (accountNumber) {
+        this.traderAvatars.set(String(accountNumber).replace(/^TraderRank-/i, '').trim(), avatarUrl);
+      }
+      this.persistTraderAvatarsToR2().catch(() => {});
+    }
+
     this.persistTraderUsernamesToR2().catch(() => {});
   }
 
@@ -338,6 +374,7 @@ export class AccountConnectorService {
     }
 
     await this.loadTraderUsernamesFromR2();
+    await this.loadTraderAvatarsFromR2();
 
     try {
       const provisionedList = await this.metaApiClient.listProvisionedAccounts();
@@ -363,6 +400,10 @@ export class AccountConnectorService {
         );
         const accountId = existingAcc?.id || `acc_meta_${p.login}`;
         const userId = existingAcc?.userId && existingAcc.userId !== 'usr_live_meta' ? existingAcc.userId : `usr_meta_${p.login}`;
+        const avatarUrl =
+          this.traderAvatars.get(p.login) ||
+          this.traderAvatars.get(userId) ||
+          existingAcc?.avatarUrl;
         // Public Trader Profile Username (shown on Leaderboard & Podium)
         const profileUsername =
           this.traderUsernames.get(p.login) ||
@@ -384,6 +425,7 @@ export class AccountConnectorService {
           userId,
           accountNumber: p.login,
           profileUsername,
+          avatarUrl,
           accountHolderName: privateLegalName,
           broker: brokerName,
           integrationType: 'mt_gateway',
@@ -404,7 +446,7 @@ export class AccountConnectorService {
         };
 
         this.accounts.set(accountId, tradingAccount);
-        this.leaderboard.registerAccountMapping(accountId, userId, username, brokerName, profileUsername, p.login);
+        this.leaderboard.registerAccountMapping(accountId, userId, username, brokerName, profileUsername, p.login, avatarUrl);
 
         // Fetch real historical deals directly from MetaApi
         const rawDeals = await this.metaApiClient.getHistoricalDeals(p.id);

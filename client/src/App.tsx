@@ -377,11 +377,14 @@ export const App: React.FC = () => {
 
   const handleOpenMyDashboard = () => {
     if (user) {
-      const primaryAcc = accounts[0];
+      const primaryAcc =
+        accounts.find(a => user.accountNumber && a.accountNumber === user.accountNumber) ||
+        accounts.find(a => a.userId === user.id) ||
+        accounts[0];
       handleSelectTrader({
-        userId: primaryAcc?.id || primaryAcc?.userId || user.id,
+        userId: primaryAcc?.id || primaryAcc?.userId || (user.accountNumber ? `acc_meta_${user.accountNumber}` : user.id),
         username: user.username,
-        broker: primaryAcc?.broker || user.primaryBroker || 'Exness',
+        broker: primaryAcc?.broker || user.primaryBroker || 'XMTrading',
         rank: 1,
       });
     } else if (accounts.length > 0) {
@@ -389,7 +392,7 @@ export const App: React.FC = () => {
       handleSelectTrader({
         userId: primaryAcc.userId || primaryAcc.id,
         username: `TraderRank-${primaryAcc.accountNumber || 'Pro'}`,
-        broker: primaryAcc.broker || 'Exness',
+        broker: primaryAcc.broker || 'XMTrading',
         rank: 1,
       });
     } else {

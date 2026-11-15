@@ -736,13 +736,17 @@ export function createServer() {
       }
 
       const lbAccountIds = new Set(leaderboard.getAccountIdsForTrader(paramId));
+      const cleanParam = paramId.replace(/^(u_|usr_meta_|acc_meta_|TraderRank-)/i, '').trim();
 
       const matched = allAccounts.find(
         a =>
           a.id === paramId ||
           a.userId === paramId ||
           a.accountNumber === paramId ||
+          a.accountNumber === cleanParam ||
           (a.accountNumber && paramId.includes(a.accountNumber)) ||
+          (a.profileUsername && a.profileUsername.toLowerCase() === paramId.toLowerCase()) ||
+          (a.profileUsername && a.profileUsername.toLowerCase() === cleanParam.toLowerCase()) ||
           lbAccountIds.has(a.id)
       );
 
@@ -770,18 +774,22 @@ export function createServer() {
         allAccounts = await connector.syncCloudProvisionedAccounts();
       }
       const lbAccountIds = new Set(leaderboard.getAccountIdsForTrader(paramId));
+      const cleanParam = paramId.replace(/^(u_|usr_meta_|acc_meta_|TraderRank-)/i, '').trim();
+
       const matched =
         allAccounts.find(
           a =>
             a.id === paramId ||
             a.userId === paramId ||
             a.accountNumber === paramId ||
+            a.accountNumber === cleanParam ||
             (a.accountNumber && paramId.includes(a.accountNumber)) ||
+            (a.profileUsername && a.profileUsername.toLowerCase() === paramId.toLowerCase()) ||
+            (a.profileUsername && a.profileUsername.toLowerCase() === cleanParam.toLowerCase()) ||
             lbAccountIds.has(a.id)
-        ) ||
-        allAccounts.find(a => a.metaApiAccountId && !a.metaApiAccountId.startsWith('mock_'));
+        );
 
-      const targetId = matched ? matched.id : (allAccounts.length > 0 ? allAccounts[0].id : paramId);
+      const targetId = matched ? matched.id : paramId;
       await connector.syncAndGetAccountTrades(targetId);
       const cashflows = connector.getAccountMonthlyCashflows(targetId);
       res.json(cashflows || {});
