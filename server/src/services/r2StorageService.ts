@@ -1,4 +1,6 @@
-import { S3Client, PutObjectCommand, GetObjectCommand, ListObjectsV2Command, HeadBucketCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
+import fs from 'fs';
+import path from 'path';
 
 export interface R2Config {
   endpoint: string;
@@ -19,6 +21,7 @@ export class R2StorageService {
   private client: S3Client | null = null;
   private config: R2Config;
   private inMemoryFallback = new Map<string, string>();
+  private localBaseDir: string;
 
   constructor(customConfig?: Partial<R2Config>) {
     const endpoint = customConfig?.endpoint || process.env.R2_ENDPOINT || 'https://dc95c232d76cc4df23a5ca452a4046ab.r2.cloudflarestorage.com';
@@ -32,6 +35,16 @@ export class R2StorageService {
       secretAccessKey,
       bucketName,
     };
+
+    // Initialize local persistent disk storage directory (survives restarts)
+    this.localBaseDir = process.env.DATA_DIR || path.resolve(process.cwd(), 'data/storage');
+    try {
+      if (!fs.existsSync(this.localBaseDir)) {
+        fs.mkdirSync(this.localBaseDir, { recursive: true });
+      }
+    } catch {
+      // ignore
+    }
 
     if (this.config.accessKeyId && this.config.secretAccessKey && this.config.endpoint) {
       this.client = new S3Client({
@@ -54,19 +67,55 @@ export class R2StorageService {
     return this.config.bucketName;
   }
 
-  public async testConnection(): Promise<{ ok: boolean; message: string; latencyMs: number; storage: string }> {
+  public getLocalDatabasePath(): string {
+    return this.localBaseDir;
+  }
+
+  private getLocalFilePath(key: string): string {
+    const safeKey = key.replace(/\.\./g, '').replace(/^\/+/, '');
+    return path.join(this.localBaseDir, safeKey);
+  }
+
+  private saveToLocalDisk(key: string, dataStr: string): void {
+    try {
+      const filePath = this.getLocalFilePath(key);
+      const dir = path.dirname(filePath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      fs.writeFileSync(filePath, dataStr, 'utf-8');
+    } catch (err) {
+      console.warn(`[R2StorageService] Local disk write warning for ${key}:`, err);
+    }
+  }
+
+  private readFromLocalDisk(key: string): string | null {
+    try {
+      const filePath = this.getLocalFilePath(key);
+      if (fs.existsSync(filePath)) {
+        return fs.readFileSync(filePath, 'utf-8');
+      }
+    } catch (err) {
+      console.warn(`[R2StorageService] Local disk read warning for ${key}:`, err);
+    }
+    return null;
+  }
+
+  public async testConnection(): Promise<{ ok: boolean; message: string; latencyMs: number; storage: string; localDatabaseDir: string }> {
     const start = Date.now();
+    const localDatabaseDir = this.localBaseDir;
+
     if (!this.client) {
       return {
         ok: false,
-        message: 'R2 credentials not configured',
+        message: 'R2 credentials not configured, operating on persistent local disk database',
         latencyMs: 0,
         storage: 'LOCAL_FALLBACK',
+        localDatabaseDir,
       };
     }
 
     try {
-      // Test connectivity by querying bucket or list objects
       const cmd = new ListObjectsV2Command({
         Bucket: this.config.bucketName,
         MaxKeys: 1,
@@ -77,14 +126,16 @@ export class R2StorageService {
         message: `Connected to Cloudflare R2 bucket: ${this.config.bucketName}`,
         latencyMs: Date.now() - start,
         storage: 'R2_CLOUD',
+        localDatabaseDir,
       };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       return {
         ok: false,
-        message: `R2 Ping Result: ${msg}`,
+        message: `R2 Ping Result: ${msg} (Persisting safely to local disk database)`,
         latencyMs: Date.now() - start,
         storage: 'LOCAL_FALLBACK',
+        localDatabaseDir,
       };
     }
   }
@@ -98,6 +149,11 @@ export class R2StorageService {
     const sizeBytes = Buffer.byteLength(bodyStr, 'utf-8');
     const uploadedAt = new Date().toISOString();
 
+    // 1. Always write to local persistent disk database first
+    this.saveToLocalDisk(key, bodyStr);
+    this.inMemoryFallback.set(key, bodyStr);
+
+    // 2. Sync to Cloudflare R2 Cloud
     if (this.client) {
       try {
         const cmd = new PutObjectCommand({
@@ -115,9 +171,7 @@ export class R2StorageService {
           uploadedAt,
           storage: 'R2_CLOUD',
         };
-      } catch (err) {
-        // Fallback to in-memory store if R2 bucket is not yet provisioned in dashboard
-        this.inMemoryFallback.set(key, bodyStr);
+      } catch {
         return {
           key,
           sizeBytes,
@@ -127,7 +181,6 @@ export class R2StorageService {
       }
     }
 
-    this.inMemoryFallback.set(key, bodyStr);
     return {
       key,
       sizeBytes,
@@ -137,6 +190,7 @@ export class R2StorageService {
   }
 
   public async getJson<T>(key: string): Promise<T | null> {
+    // 1. Try Cloudflare R2 first
     if (this.client) {
       try {
         const cmd = new GetObjectCommand({
@@ -146,16 +200,34 @@ export class R2StorageService {
         const res = await this.client.send(cmd);
         if (res.Body) {
           const bodyStr = await res.Body.transformToString();
+          this.saveToLocalDisk(key, bodyStr);
+          this.inMemoryFallback.set(key, bodyStr);
           return JSON.parse(bodyStr) as T;
         }
       } catch {
-        // Fallback to local memory
+        // Fallback to local persistent disk
       }
     }
 
+    // 2. Read from local persistent disk database
+    const diskStr = this.readFromLocalDisk(key);
+    if (diskStr) {
+      this.inMemoryFallback.set(key, diskStr);
+      try {
+        return JSON.parse(diskStr) as T;
+      } catch {
+        // Ignore JSON error
+      }
+    }
+
+    // 3. Fallback to in-memory store
     const fallbackStr = this.inMemoryFallback.get(key);
     if (fallbackStr) {
-      return JSON.parse(fallbackStr) as T;
+      try {
+        return JSON.parse(fallbackStr) as T;
+      } catch {
+        return null;
+      }
     }
     return null;
   }

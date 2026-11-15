@@ -557,6 +557,72 @@ export function createServer() {
     return res.json({ success: true, user: updated });
   });
 
+  // Auth: Get Profile
+  app.get('/api/auth/profile', (req: Request, res: Response) => {
+    const userId = req.query.userId as string | undefined;
+    const username = req.query.username as string | undefined;
+
+    if (userId) {
+      const cleanId = String(userId).trim().toLowerCase();
+      if (cleanId === 'u_homiesplant' || cleanId === 'u_emanuel007' || cleanId.includes('72423906')) {
+        const hp = userProfiles.get('u_homiesplant');
+        if (hp) return res.json({ success: true, user: hp });
+      }
+      const direct = userProfiles.get(userId) || userProfiles.get(`u_${cleanId.replace(/^u_/, '')}`);
+      if (direct) return res.json({ success: true, user: direct });
+    }
+
+    if (username) {
+      const needle = String(username).trim().toLowerCase();
+      const found = Array.from(userProfiles.values()).find(
+        (u: any) => u.username.toLowerCase() === needle || u.id === `u_${needle}`
+      );
+      if (found) return res.json({ success: true, user: found });
+    }
+
+    // Default return primary verified user
+    const defaultHp = userProfiles.get('u_homiesplant');
+    if (defaultHp) return res.json({ success: true, user: defaultHp });
+
+    return res.status(404).json({ success: false, error: 'User profile not found' });
+  });
+
+  // Auth: List Users / Database Audit
+  app.get('/api/users', (_req: Request, res: Response) => {
+    const list = Array.from(userProfiles.values()).map(u => ({
+      id: u.id,
+      username: u.username,
+      email: u.email,
+      primaryBroker: u.primaryBroker,
+      accountNumber: u.accountNumber,
+      tradingStyle: u.tradingStyle,
+      avatarSymbol: u.avatarSymbol,
+      level: u.level,
+      xp: u.xp,
+      rank: u.rank,
+    }));
+    return res.json({ success: true, total: list.length, users: list });
+  });
+
+  // Database / Storage Health Status
+  app.get('/api/database/status', async (_req: Request, res: Response) => {
+    const r2Status = await r2Storage.testConnection();
+    return res.json({
+      status: 'OPERATIONAL',
+      timestamp: new Date().toISOString(),
+      userCount: userProfiles.size,
+      localDatabasePath: r2Storage.getLocalDatabasePath(),
+      storageType: r2Status.storage,
+      r2Cloud: {
+        configured: r2Storage.isConfigured(),
+        bucket: r2Storage.getBucketName(),
+        reachable: r2Status.ok,
+        message: r2Status.message,
+        latencyMs: r2Status.latencyMs,
+      },
+    });
+  });
+
   // 1. Health & Telemetry
   app.get('/api/health', (_req: Request, res: Response) => {
     res.json({
