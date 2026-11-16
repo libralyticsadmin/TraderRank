@@ -1,4 +1,15 @@
 {
+  "342186831": {
+    "userId": "u_zzzemzzz",
+    "username": "zzZEMZzz",
+    "broker": "XM",
+    "accountNumber": "342186831",
+    "platform": "MT5",
+    "accountId": "acc_meta_342186831",
+    "serverName": "XMGlobal-MT5 10",
+    "connectedAt": "2026-11-16T09:00:00.000Z",
+    "status": "CONNECTED"
+  },
   "20938471": {
     "userId": "u_demo_1",
     "username": "TraderAlex",

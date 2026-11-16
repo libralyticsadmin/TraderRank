@@ -18,7 +18,7 @@ Thumbs.db
 .vscode/
 
 # Transient test and trade logs
-data/
+/data/
 server/data/storage/trades/
 server/data/storage/leaderboards/*/
 !server/data/storage/leaderboards/daily_champions.json

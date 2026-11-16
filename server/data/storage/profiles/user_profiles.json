@@ -17,8 +17,8 @@
     "rank": 1,
     "currency": "USD"
   },
-  "u_emanuel001": {
-    "id": "u_zzzemzzz",
+  "u_emanuel007": {
+    "id": "u_emanuel007",
     "username": "zzZEMZzz",
     "email": "libralytics.data@gmail.com",
     "avatarSymbol": "bear_emerald",
@@ -35,8 +35,8 @@
     "rank": 1,
     "currency": "USD"
   },
-  "u_emanuel007": {
-    "id": "u_zzzemzzz",
+  "u_emanuel001": {
+    "id": "u_emanuel001",
     "username": "zzZEMZzz",
     "email": "libralytics.data@gmail.com",
     "avatarSymbol": "bear_emerald",
@@ -70,35 +70,5 @@
     "telegramHandle": "@alex_trades",
     "discordHandle": "vanguard_fx#1284",
     "twitterHandle": "@vanguard_fx"
-  },
-  "u_securetrader_1794820812578": {
-    "id": "u_securetrader_1794820812578",
-    "username": "SecureTrader_1794820812578",
-    "email": "securetrader_1794820812578@test.com",
-    "avatarSymbol": "zap",
-    "traderTitle": "Verified Market Trader",
-    "bio": "",
-    "tradingStyle": "SWING",
-    "primaryBroker": "XMTrading",
-    "country": "Global",
-    "joinedAt": "Today",
-    "level": 1,
-    "xp": 100,
-    "rank": 99
-  },
-  "u_securetrader_1794820882632": {
-    "id": "u_securetrader_1794820882632",
-    "username": "SecureTrader_1794820882632",
-    "email": "securetrader_1794820882632@test.com",
-    "avatarSymbol": "zap",
-    "traderTitle": "Verified Market Trader",
-    "bio": "",
-    "tradingStyle": "SWING",
-    "primaryBroker": "XMTrading",
-    "country": "Global",
-    "joinedAt": "Today",
-    "level": 1,
-    "xp": 100,
-    "rank": 99
   }
 }
