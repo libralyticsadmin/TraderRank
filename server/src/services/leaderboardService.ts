@@ -104,23 +104,37 @@ export class LeaderboardService {
 
     // Guaranteed real user profile name and currency alignment
     const cleanAcc = extractedNumber || '';
-    const isZem =
-      cleanAcc === '342186831' ||
-      userId === 'u_zzzemzzz' ||
-      userId === 'u_emanuel001' ||
-      userId === 'u_emanuel007' ||
-      String(username).toLowerCase() === 'zzzemzzz' ||
-      String(profileName).toLowerCase() === 'zzzemzzz' ||
-      String(username).toLowerCase().includes('emanuel') ||
-      String(profileName).toLowerCase().includes('emanuel');
+    const isHomies =
+      cleanAcc === '72423906' ||
+      userId === 'u_homiesplant_th' ||
+      userId === 'u_homiesplant' ||
+      userId === 'usr_meta_72423906' ||
+      String(username).toLowerCase().includes('homies') ||
+      String(profileName).toLowerCase().includes('homies') ||
+      (cleanAcc === '72423906' && (/emanuel/i.test(String(username)) || /emanuel/i.test(String(profileName))));
 
-    if (isZem) {
+    const isZem =
+      !isHomies &&
+      (cleanAcc === '342186831' ||
+        userId === 'u_zzzemzzz' ||
+        String(username).toLowerCase() === 'zzzemzzz' ||
+        String(profileName).toLowerCase() === 'zzzemzzz' ||
+        (cleanAcc === '342186831' && (/emanuel/i.test(String(username)) || /emanuel/i.test(String(profileName)))));
+
+    if (isHomies) {
+      cleanProfileName = username === 'homiesplant.th' ? 'homiesplant.th' : 'HomiesPlant';
+      broker = 'XMTrading';
+    } else if (isZem) {
       cleanProfileName = 'zzZEMZzz';
+      broker = 'XM';
+    } else if (cleanProfileName && /emanuel/i.test(cleanProfileName)) {
+      cleanProfileName = 'VerifiedTrader_' + (cleanAcc || userId);
     }
 
     const resolvedCurrency = (
-      currency ||
-      (broker === 'XMTrading' || cleanAcc === '72423906' ? 'JPY' : 'USD')
+      isHomies || broker === 'XMTrading' || cleanAcc === '72423906' ? 'JPY' :
+      isZem || broker === 'XM' ? 'USD' :
+      (currency || 'USD')
     ).toUpperCase();
 
     if (!this.traders.has(userId)) {
@@ -295,30 +309,45 @@ export class LeaderboardService {
       const dailyInfo = dailyRankMap.get(t.userId) || { dailyRank: 99, dailyPips: 0 };
 
       const cleanAcc = String(t.accountNumber || '').trim();
+      const isHomies =
+        cleanAcc === '72423906' ||
+        t.userId === 'u_homiesplant_th' ||
+        t.userId === 'u_homiesplant' ||
+        t.userId === 'usr_meta_72423906' ||
+        String(t.username).toLowerCase().includes('homies') ||
+        String(t.profileName).toLowerCase().includes('homies') ||
+        (cleanAcc === '72423906' && (/emanuel/i.test(String(t.username)) || /emanuel/i.test(String(t.profileName))));
+
       const isZem =
-        cleanAcc === '342186831' ||
-        t.userId === 'u_zzzemzzz' ||
-        t.userId === 'u_emanuel001' ||
-        t.userId === 'u_emanuel007' ||
-        String(t.username).toLowerCase() === 'zzzemzzz' ||
-        String(t.profileName).toLowerCase() === 'zzzemzzz' ||
-        String(t.username).toLowerCase().includes('emanuel') ||
-        String(t.profileName).toLowerCase().includes('emanuel');
-      const resolvedProfileName = isZem ? 'zzZEMZzz' : (t.profileName || t.username);
-      const resolvedUsername = isZem ? 'zzZEMZzz' : (t.username || resolvedProfileName);
-      const resolvedCurrency = t.currency || (t.brokers.has('XMTrading' as any) || cleanAcc === '72423906' ? 'JPY' : 'USD');
+        !isHomies &&
+        (cleanAcc === '342186831' ||
+          t.userId === 'u_zzzemzzz' ||
+          String(t.username).toLowerCase() === 'zzzemzzz' ||
+          String(t.profileName).toLowerCase() === 'zzzemzzz' ||
+          (cleanAcc === '342186831' && (/emanuel/i.test(String(t.username)) || /emanuel/i.test(String(t.profileName)))));
+
+      let resolvedProfileName = isHomies ? 'HomiesPlant' : isZem ? 'zzZEMZzz' : (t.profileName || t.username);
+      if (/emanuel/i.test(resolvedProfileName)) {
+        resolvedProfileName = isHomies ? 'HomiesPlant' : isZem ? 'zzZEMZzz' : 'VerifiedTrader_' + cleanAcc;
+      }
+      let resolvedUsername = isHomies ? (t.username === 'homiesplant.th' ? 'homiesplant.th' : 'HomiesPlant') : isZem ? 'zzZEMZzz' : (t.username || resolvedProfileName);
+      if (/emanuel/i.test(resolvedUsername)) {
+        resolvedUsername = resolvedProfileName;
+      }
+      const resolvedCurrency = isHomies || cleanAcc === '72423906' || t.brokers.has('XMTrading' as any) ? 'JPY' : (isZem ? 'USD' : (t.currency || 'USD'));
+      const resolvedBrokers = isHomies ? ['XMTrading' as Broker] : isZem ? ['XM' as Broker] : Array.from(t.brokers);
 
       return {
         rank: 0,
-        userId: isZem ? 'u_zzzemzzz' : t.userId,
+        userId: isHomies ? 'u_homiesplant_th' : isZem ? 'u_zzzemzzz' : t.userId,
         username: resolvedUsername,
         profileName: resolvedProfileName,
-        accountNumber: t.accountNumber || (isZem ? '342186831' : undefined),
+        accountNumber: t.accountNumber || (isHomies ? '72423906' : isZem ? '342186831' : undefined),
         avatarUrl: t.avatarUrl,
-        avatarSymbol: isZem ? 'bear_emerald' : t.avatarSymbol,
+        avatarSymbol: isHomies || isZem ? 'bear_emerald' : t.avatarSymbol,
         currency: resolvedCurrency,
         accountCount: t.accounts.size,
-        brokers: Array.from(t.brokers),
+        brokers: resolvedBrokers,
         closedPips: t.closedPips,
         floatingPips: t.floatingPips,
         totalPips,
@@ -365,29 +394,44 @@ export class LeaderboardService {
         : 0;
 
       const cleanAcc = String(t.accountNumber || '').trim();
+      const isHomies =
+        cleanAcc === '72423906' ||
+        t.userId === 'u_homiesplant_th' ||
+        t.userId === 'u_homiesplant' ||
+        t.userId === 'usr_meta_72423906' ||
+        String(t.username).toLowerCase().includes('homies') ||
+        String(t.profileName).toLowerCase().includes('homies') ||
+        (cleanAcc === '72423906' && (/emanuel/i.test(String(t.username)) || /emanuel/i.test(String(t.profileName))));
+
       const isZem =
-        cleanAcc === '342186831' ||
-        t.userId === 'u_zzzemzzz' ||
-        t.userId === 'u_emanuel001' ||
-        t.userId === 'u_emanuel007' ||
-        String(t.username).toLowerCase() === 'zzzemzzz' ||
-        String(t.profileName).toLowerCase() === 'zzzemzzz' ||
-        String(t.username).toLowerCase().includes('emanuel') ||
-        String(t.profileName).toLowerCase().includes('emanuel');
-      const resolvedProfileName = isZem ? 'zzZEMZzz' : (t.profileName || t.username);
-      const resolvedUsername = isZem ? 'zzZEMZzz' : (t.username || resolvedProfileName);
-      const resolvedCurrency = t.currency || (t.brokers.has('XMTrading' as any) || cleanAcc === '72423906' ? 'JPY' : 'USD');
+        !isHomies &&
+        (cleanAcc === '342186831' ||
+          t.userId === 'u_zzzemzzz' ||
+          String(t.username).toLowerCase() === 'zzzemzzz' ||
+          String(t.profileName).toLowerCase() === 'zzzemzzz' ||
+          (cleanAcc === '342186831' && (/emanuel/i.test(String(t.username)) || /emanuel/i.test(String(t.profileName)))));
+
+      let resolvedProfileName = isHomies ? 'HomiesPlant' : isZem ? 'zzZEMZzz' : (t.profileName || t.username);
+      if (/emanuel/i.test(resolvedProfileName)) {
+        resolvedProfileName = isHomies ? 'HomiesPlant' : isZem ? 'zzZEMZzz' : 'VerifiedTrader_' + cleanAcc;
+      }
+      let resolvedUsername = isHomies ? (t.username === 'homiesplant.th' ? 'homiesplant.th' : 'HomiesPlant') : isZem ? 'zzZEMZzz' : (t.username || resolvedProfileName);
+      if (/emanuel/i.test(resolvedUsername)) {
+        resolvedUsername = resolvedProfileName;
+      }
+      const resolvedCurrency = isHomies || cleanAcc === '72423906' || t.brokers.has('XMTrading' as any) ? 'JPY' : (isZem ? 'USD' : (t.currency || 'USD'));
+      const resolvedBrokers = isHomies ? ['XMTrading' as Broker] : isZem ? ['XM' as Broker] : Array.from(t.brokers);
 
       return {
         rank: 0,
-        userId: isZem ? 'u_zzzemzzz' : t.userId,
+        userId: isHomies ? 'u_homiesplant_th' : isZem ? 'u_zzzemzzz' : t.userId,
         username: resolvedUsername,
         profileName: resolvedProfileName,
-        accountNumber: t.accountNumber || (isZem ? '342186831' : undefined),
+        accountNumber: t.accountNumber || (isHomies ? '72423906' : isZem ? '342186831' : undefined),
         avatarUrl: t.avatarUrl,
-        avatarSymbol: isZem ? 'bear_emerald' : t.avatarSymbol,
+        avatarSymbol: isHomies || isZem ? 'bear_emerald' : t.avatarSymbol,
         currency: resolvedCurrency,
-        brokers: Array.from(t.brokers),
+        brokers: resolvedBrokers,
         accountCount: t.accounts.size,
         dailyClosedPips: t.dailyClosedPips,
         dailyFloatingPips: t.dailyFloatingPips,

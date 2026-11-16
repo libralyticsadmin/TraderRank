@@ -278,9 +278,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   // Derive top 3 exclusively from each trader's own verified real leaderboard entry + per-account ledger
   const topPodiumTraders = leaderboard
     .map(trader => {
-      const cleanAcc = trader.accountNumber
+      const rawAcc = trader.accountNumber
         ? String(trader.accountNumber).replace(/^TraderRank-/i, '').trim()
         : (trader.username.match(/(\d{6,})/)?.[1] || '');
+      const isHomies =
+        rawAcc === '72423906' ||
+        trader.userId === 'u_homiesplant_th' ||
+        trader.userId === 'usr_meta_72423906' ||
+        trader.username === 'HomiesPlant' ||
+        trader.username === 'homiesplant.th' ||
+        trader.username.toLowerCase().includes('homies') ||
+        trader.username.toLowerCase().includes('emanuel007') ||
+        (trader.accountNumber && String(trader.accountNumber).includes('72423906'));
+      const cleanAcc = isHomies ? '72423906' : rawAcc;
 
       const real =
         (cleanAcc && (ledgerStatsByUser[cleanAcc] || ledgerStatsByUser[`TraderRank-${cleanAcc}`])) ||
@@ -297,23 +307,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       const winRate = real ? real.winRate : trader.winRate ?? 0;
       const xp = real ? real.xp : tradesCount > 0 ? tradesCount * 25 : trader.xp || 0;
       const gamification = calculateTraderGamification(xp);
-      const broker = (real?.broker || trader.brokers?.[0] || 'XM') as any;
+      const broker = isHomies ? 'XMTrading' : ((real?.broker || trader.brokers?.[0] || 'XM') as any);
       const identity = resolveTraderIdentity({
-        username: trader.username,
-        profileName: trader.profileName,
-        accountHolderName: real?.accountHolderName,
-        accountNumber: trader.accountNumber || real?.accountNumber || cleanAcc,
-        userId: trader.userId,
+        username: isHomies ? 'HomiesPlant' : trader.username,
+        profileName: isHomies ? 'HomiesPlant' : trader.profileName,
+        accountHolderName: isHomies ? 'HomiesPlant' : real?.accountHolderName,
+        accountNumber: cleanAcc,
+        userId: isHomies ? 'u_homiesplant_th' : trader.userId,
         avatarUrl: trader.avatarUrl,
       });
-      const currency = resolveBrokerCurrency(
+      const currency = isHomies || broker === 'XMTrading' ? 'JPY' : resolveBrokerCurrency(
         broker,
         (real as any)?.serverName || (cleanAcc === '72423906' ? 'XMTrading-MT5' : undefined),
-        (real as any)?.currency || (trader as any).currency
+        (real as any)?.currency || (trader as any).currency,
+        cleanAcc
       );
 
       return {
-        userId: trader.userId,
+        userId: isHomies ? 'u_homiesplant_th' : trader.userId,
         username: identity.profileName || trader.username,
         profileName: identity.profileName,
         accountTag: identity.accountTag,
@@ -321,7 +332,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         avatarUrl: identity.avatarUrl || trader.avatarUrl,
         broker,
         currency,
-        avatarSymbol: trader.avatarSymbol || 'zap',
+        avatarSymbol: isHomies ? 'bear_emerald' : (trader.avatarSymbol || 'zap'),
         pips,
         profit: netProfitUsd,
         rate: winRate,
@@ -354,8 +365,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       glow: idx === 0 ? '#fbbf24' : idx === 1 ? '#94a3b8' : '#d97706',
     }));
 
-  const formatPodiumProfit = (amount: number, _broker?: string, currency?: string) => {
-    return formatCurrency(amount, currency, { showSign: true });
+  const formatPodiumProfit = (amount: number, broker?: string, currency?: string) => {
+    const effCur = currency || (broker === 'XMTrading' ? 'JPY' : 'USD');
+    return formatCurrency(amount, effCur, { showSign: true });
   };
 
   return (

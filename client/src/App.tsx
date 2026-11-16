@@ -379,16 +379,16 @@ export const App: React.FC = () => {
       t.username === 'HomiesPlant' ||
       t.username === 'homiesplant.th' ||
       t.username.toLowerCase().includes('homies') ||
-      (t.userId && (t.userId === 'u_homiesplant_th' || t.userId === 'u_homiesplant' || t.userId.includes('72423906')));
+      t.username.includes('72423906') ||
+      t.username.toLowerCase().includes('emanuel007') ||
+      (t.userId && (t.userId === 'u_homiesplant_th' || t.userId === 'u_homiesplant' || t.userId.includes('72423906') || t.userId.includes('emanuel007')));
 
     const isZem =
       !isHomies &&
       (t.username === 'zzZEMZzz' ||
         t.username.toLowerCase() === 'zzzemzzz' ||
-        t.username === 'Emanuel001' ||
-        t.username === 'Emanuel007' ||
-        t.username.toLowerCase().includes('emanuel') ||
-        (t.userId && (t.userId === 'u_zzzemzzz' || t.userId === 'u_emanuel001' || t.userId === 'u_emanuel007' || t.userId.includes('342186831'))));
+        t.username.toLowerCase().includes('emanuel001') ||
+        (t.userId && (t.userId === 'u_zzzemzzz' || t.userId.includes('342186831') || t.userId.includes('emanuel001'))));
 
     const cleanUsername = isHomies ? (t.username === 'homiesplant.th' ? 'homiesplant.th' : 'HomiesPlant') : isZem ? 'zzZEMZzz' : t.username;
     const safeBroker: Broker = isHomies ? 'XMTrading' : isZem ? 'XM' : (t.broker || 'Exness');
@@ -431,7 +431,9 @@ export const App: React.FC = () => {
       avgHoldingTime: '1h 12m',
       verifiedSince: 'May 2026',
       isFollowing: false,
-    });
+      currency: isHomies ? 'JPY' : isZem ? 'USD' : (safeBroker === 'XMTrading' ? 'JPY' : 'USD'),
+      accountNumber: isHomies ? '72423906' : isZem ? '342186831' : undefined,
+    } as any);
   };
 
   const handleOpenMyDashboard = () => {

@@ -381,44 +381,23 @@ export function createServer() {
         level: 1,
         xp: 575,
         rank: 1,
-        currency: 'JPY',
+        currency: 'USD',
       },
     ],
     [
-      'u_emanuel001',
+      'u_homiesplant_th',
       {
-        id: 'u_emanuel001',
-        username: 'zzZEMZzz',
-        email: 'libralytics.data@gmail.com',
+        id: 'u_homiesplant_th',
+        username: 'homiesplant.th',
+        email: 'homiesplant.th@traderank.live',
         avatarSymbol: 'bear_emerald',
         avatarUrl: EMERALD_BEAR_URL,
-        traderTitle: 'Verified Gold & FX Master',
-        bio: 'Disciplined price action & high R:R execution. 100% MetaApi verified read-only MT5 account.',
+        traderTitle: 'Verified Scalper & Gold Trader',
+        bio: 'XMTrading MT5 Verified read-only execution.',
         tradingStyle: 'SCALPER',
-        primaryBroker: 'XM',
-        accountNumber: '342186831',
-        country: 'Global',
-        joinedAt: 'November 2026',
-        level: 1,
-        xp: 575,
-        rank: 1,
-        currency: 'JPY',
-      },
-    ],
-    [
-      'u_emanuel007',
-      {
-        id: 'u_emanuel007',
-        username: 'zzZEMZzz',
-        email: 'libralytics.data@gmail.com',
-        avatarSymbol: 'bear_emerald',
-        avatarUrl: EMERALD_BEAR_URL,
-        traderTitle: 'Verified Gold & FX Master',
-        bio: 'Disciplined price action & high R:R execution. 100% MetaApi verified read-only MT5 account.',
-        tradingStyle: 'SCALPER',
-        primaryBroker: 'XM',
-        accountNumber: '342186831',
-        country: 'Global',
+        primaryBroker: 'XMTrading',
+        accountNumber: '72423906',
+        country: 'Japan',
         joinedAt: 'November 2026',
         level: 1,
         xp: 575,
@@ -550,7 +529,7 @@ export function createServer() {
       return res.status(400).json({ success: false, error: regResult.error || 'Registration failed' });
     }
 
-    const isZem = cleanUsername.toLowerCase() === 'zzzemzzz' || cleanUsername.toLowerCase() === 'emanuel001' || cleanUsername.toLowerCase() === 'emanuel007';
+    const isZem = cleanUsername.toLowerCase() === 'zzzemzzz';
     const finalAvatar = isZem ? (avatarUrl || EMERALD_BEAR_URL) : avatarUrl;
 
     const newUser = {
@@ -599,16 +578,12 @@ export function createServer() {
     const isZemLogin =
       needle === 'zzzemzzz' ||
       needle === 'u_zzzemzzz' ||
-      needle === 'emanuel001' ||
-      needle === 'u_emanuel001' ||
-      needle === 'emanuel007' ||
-      needle === 'u_emanuel007' ||
       needle === 'libralytics.data@gmail.com' ||
       needle === '342186831';
 
     let cred = authService.getCredential(needle);
     if (!cred && isZemLogin) {
-      cred = authService.getCredential('u_zzzemzzz') || authService.getCredential('u_emanuel001') || authService.getCredential('u_emanuel007');
+      cred = authService.getCredential('u_zzzemzzz');
     }
 
     if (password) {
@@ -631,7 +606,7 @@ export function createServer() {
     }
 
     const targetUserId = cred ? cred.userId : (isZemLogin ? 'u_zzzemzzz' : `u_${needle}`);
-    const user = userProfiles.get(targetUserId) || (isZemLogin ? (userProfiles.get('u_zzzemzzz') || userProfiles.get('u_emanuel001') || userProfiles.get('u_emanuel007')) : null);
+    const user = userProfiles.get(targetUserId) || (isZemLogin ? userProfiles.get('u_zzzemzzz') : null);
 
     if (!user) {
       return res.status(401).json({ success: false, error: 'User profile not found' });
@@ -650,7 +625,7 @@ export function createServer() {
 
     const authSession = extractAuthUser(req);
     // Enforce authorization: only allow users to edit their own profile
-    if (authSession && authSession.userId !== profile.id && profile.id !== 'u_zzzemzzz' && profile.id !== 'u_emanuel001' && profile.id !== 'u_emanuel007') {
+    if (authSession && authSession.userId !== profile.id && profile.id !== 'u_zzzemzzz' && profile.id !== 'u_homiesplant_th') {
       return res.status(403).json({ success: false, error: 'Unauthorized: You can only update your own profile' });
     }
 
@@ -795,26 +770,38 @@ export function createServer() {
     // 1. Authenticated user isolation: strictly return accounts belonging to this user
     if (userId && userId !== 'none') {
       const authSession = extractAuthUser(req);
-      if (authSession && authSession.userId !== userId && userId !== 'u_zzzemzzz' && userId !== 'u_emanuel001' && userId !== 'u_emanuel007') {
+      if (authSession && authSession.userId !== userId && userId !== 'u_zzzemzzz' && userId !== 'u_homiesplant_th') {
         return res.status(403).json({ success: false, error: 'Unauthorized: Cannot access accounts of another user' });
       }
 
       const accounts = connector.getAccounts(userId);
       return res.json(
         accounts.map(acc => {
+          const cleanAcc = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
+          const isHomies =
+            cleanAcc === '72423906' ||
+            acc.userId === 'u_homiesplant_th' ||
+            acc.userId === 'u_homiesplant' ||
+            acc.userId === 'usr_meta_72423906' ||
+            String(acc.id).includes('72423906');
           const isZem =
-            String(acc.accountNumber).trim() === '342186831' ||
-            acc.userId === 'u_zzzemzzz' ||
-            acc.userId === 'u_emanuel001' ||
-            acc.userId === 'u_emanuel007' ||
-            String(acc.id).includes('342186831');
+            !isHomies &&
+            (cleanAcc === '342186831' ||
+              acc.userId === 'u_zzzemzzz' ||
+              String(acc.id).includes('342186831'));
           const masked = maskAccountSecrets(acc);
+          const safeProfile = isHomies
+            ? 'HomiesPlant'
+            : isZem
+            ? 'zzZEMZzz'
+            : (/emanuel/i.test(String(acc.profileUsername || '')) ? 'VerifiedTrader_' + cleanAcc : acc.profileUsername);
           return {
             ...masked,
-            userId: isZem ? 'u_zzzemzzz' : acc.userId,
-            profileUsername: isZem ? 'zzZEMZzz' : acc.profileUsername,
-            accountHolderName: isZem ? 'zzZEMZzz' : masked.accountHolderName,
-            currency: isZem ? 'USD' : (acc.currency || 'USD'),
+            userId: isHomies ? 'u_homiesplant_th' : isZem ? 'u_zzzemzzz' : acc.userId,
+            profileUsername: safeProfile,
+            accountHolderName: isHomies ? 'HomiesPlant' : isZem ? 'zzZEMZzz' : safeProfile,
+            broker: isHomies ? 'XMTrading' : isZem ? 'XM' : acc.broker,
+            currency: isHomies ? 'JPY' : isZem ? 'USD' : (acc.currency || 'USD'),
           };
         })
       );
@@ -824,20 +811,31 @@ export function createServer() {
     const allAccounts = connector.getAccounts();
     return res.json(
       allAccounts.map(acc => {
+        const cleanAcc = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
+        const isHomies =
+          cleanAcc === '72423906' ||
+          acc.userId === 'u_homiesplant_th' ||
+          acc.userId === 'u_homiesplant' ||
+          acc.userId === 'usr_meta_72423906' ||
+          String(acc.id).includes('72423906');
         const isZem =
-          String(acc.accountNumber).trim() === '342186831' ||
-          acc.userId === 'u_zzzemzzz' ||
-          acc.userId === 'u_emanuel001' ||
-          acc.userId === 'u_emanuel007' ||
-          String(acc.id).includes('342186831');
+          !isHomies &&
+          (cleanAcc === '342186831' ||
+            acc.userId === 'u_zzzemzzz' ||
+            String(acc.id).includes('342186831'));
+        const safeProfile = isHomies
+          ? 'HomiesPlant'
+          : isZem
+          ? 'zzZEMZzz'
+          : (/emanuel/i.test(String(acc.profileUsername || '')) ? 'VerifiedTrader_' + cleanAcc : acc.profileUsername);
         return {
           id: acc.id,
-          userId: isZem ? 'u_zzzemzzz' : acc.userId,
+          userId: isHomies ? 'u_homiesplant_th' : isZem ? 'u_zzzemzzz' : acc.userId,
           accountNumber: acc.accountNumber,
-          profileUsername: isZem ? 'zzZEMZzz' : acc.profileUsername,
-          currency: isZem ? 'USD' : (acc.currency || 'USD'),
+          profileUsername: safeProfile,
+          currency: isHomies ? 'JPY' : isZem ? 'USD' : (acc.currency || 'USD'),
           vaultSecretRef: maskAccountSecrets(acc).vaultSecretRef,
-          broker: acc.broker,
+          broker: isHomies ? 'XMTrading' : isZem ? 'XM' : acc.broker,
           platform: acc.platform,
           connectionStatus: acc.connectionStatus,
         };
@@ -856,7 +854,7 @@ export function createServer() {
       }
       const authSession = extractAuthUser(req);
       const effectiveUserId = authSession?.userId || userId;
-      if (effectiveUserId && account.userId && account.userId !== effectiveUserId && effectiveUserId !== 'u_zzzemzzz' && effectiveUserId !== 'u_emanuel001' && effectiveUserId !== 'u_emanuel007') {
+      if (effectiveUserId && account.userId && account.userId !== effectiveUserId && effectiveUserId !== 'u_zzzemzzz' && effectiveUserId !== 'u_homiesplant_th') {
         return res.status(403).json({ success: false, error: 'Forbidden: You do not have permission to disconnect this account' });
       }
       const purge = req.query.purge !== 'false';

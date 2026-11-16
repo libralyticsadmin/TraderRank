@@ -10,24 +10,34 @@ export type SupportedCurrency = 'JPY' | 'USD' | 'EUR' | 'GBP';
 export const resolveBrokerCurrency = (
   broker?: string | null,
   serverName?: string | null,
-  explicitCurrency?: string | null
+  explicitCurrency?: string | null,
+  accountNumber?: string | null
 ): string => {
   const b = (broker || '').toUpperCase();
   const s = (serverName || '').toUpperCase();
   const c = (explicitCurrency || '').toUpperCase();
+  const acc = String(accountNumber || '').replace(/^TraderRank-/i, '').trim();
 
-  // 1. XMTrading (Japan JPY) is strictly JPY
-  if (b === 'XMTRADING' || s.includes('XMTRADING') || s.includes('JAPAN') || s.includes('JPY')) {
+  // 1. XMTrading (Japan JPY) or account 72423906 is strictly JPY
+  if (
+    b === 'XMTRADING' ||
+    s.includes('XMTRADING') ||
+    s.includes('JAPAN') ||
+    s.includes('JPY') ||
+    acc === '72423906' ||
+    c === 'JPY' ||
+    c === '¥'
+  ) {
     return 'JPY';
   }
 
   // 2. XMGlobal is strictly USD ($)
-  if (b === 'XM' || b.includes('XMGLOBAL') || s.includes('XMGLOBAL')) {
+  if (b === 'XM' || b.includes('XMGLOBAL') || s.includes('XMGLOBAL') || acc === '342186831') {
     return 'USD';
   }
 
   // 3. Explicit currency if provided
-  if (c === 'JPY' || c === 'USD' || c === 'EUR' || c === 'GBP') {
+  if (c === 'USD' || c === 'EUR' || c === 'GBP') {
     return c;
   }
 

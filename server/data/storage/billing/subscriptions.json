@@ -4,8 +4,8 @@
     "tier": "PRO_MONTHLY",
     "planName": "Pro Daily Intelligence",
     "priceMonthly": 9,
-    "startedAt": "2026-11-16T09:21:22.908Z",
-    "expiresAt": "2026-12-16T09:21:22.908Z",
+    "startedAt": "2026-11-16T11:40:57.227Z",
+    "expiresAt": "2026-12-16T11:40:57.227Z",
     "paymentMethod": "TEST_STRIPE",
     "features": [
       "Full Daily Technical & Fundamental Summaries"
@@ -16,8 +16,8 @@
     "tier": "PRO_MONTHLY",
     "planName": "Pro Daily Intelligence",
     "priceMonthly": 9,
-    "startedAt": "2026-11-16T09:21:22.745Z",
-    "expiresAt": "2026-12-16T09:21:22.745Z",
+    "startedAt": "2026-11-16T11:40:57.049Z",
+    "expiresAt": "2026-12-16T11:40:57.049Z",
     "paymentMethod": "Card •••• 4242",
     "features": [
       "Full Daily Technical & Fundamental Summaries",
@@ -35,8 +35,8 @@
     "tier": "PRO_ANNUAL",
     "planName": "Pro Annual All-Access",
     "priceMonthly": 6.58,
-    "startedAt": "2026-11-16T09:21:22.752Z",
-    "expiresAt": "2027-11-16T09:21:22.752Z",
+    "startedAt": "2026-11-16T11:40:57.052Z",
+    "expiresAt": "2027-11-16T11:40:57.052Z",
     "paymentMethod": "Crypto (USDT_TRC20)",
     "features": [
       "Full Daily Technical & Fundamental Summaries",
@@ -54,8 +54,8 @@
     "tier": "INSTITUTIONAL",
     "planName": "Institutional VIP Tier",
     "priceMonthly": 49,
-    "startedAt": "2026-11-16T09:21:22.756Z",
-    "expiresAt": "2026-12-16T09:21:22.756Z",
+    "startedAt": "2026-11-16T11:40:57.054Z",
+    "expiresAt": "2026-12-16T11:40:57.054Z",
     "paymentMethod": "Wire Transfer / USDT",
     "features": [
       "Full Daily Technical & Fundamental Summaries",

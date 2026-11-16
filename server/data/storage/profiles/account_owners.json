@@ -1,16 +1,4 @@
 {
-  "342186831": {
-    "userId": "u_zzzemzzz",
-    "username": "zzZEMZzz",
-    "broker": "XM",
-    "accountNumber": "342186831",
-    "platform": "MT5",
-    "accountId": "acc_meta_342186831",
-    "serverName": "XMGlobal-MT5 10",
-    "currency": "USD",
-    "connectedAt": "2026-11-16T09:00:00.000Z",
-    "status": "CONNECTED"
-  },
   "20938471": {
     "userId": "u_demo_1",
     "username": "TraderAlex",
@@ -19,7 +7,7 @@
     "platform": "MT5",
     "accountId": "acc_216ed685",
     "serverName": "XMGlobal-Real 20",
-    "connectedAt": "2026-11-16T09:21:22.585Z",
+    "connectedAt": "2026-11-16T11:40:56.896Z",
     "status": "CONNECTED"
   },
   "33445566": {
@@ -34,18 +22,6 @@
     "status": "CONNECTED"
   },
   "72423906": {
-    "userId": "u_homiesplant_th",
-    "username": "HomiesPlant",
-    "broker": "XMTrading",
-    "accountNumber": "72423906",
-    "platform": "MT5",
-    "accountId": "acc_meta_72423906",
-    "serverName": "XMTrading-MT5 3",
-    "currency": "JPY",
-    "connectedAt": "2026-11-16T08:38:20.940Z",
-    "status": "CONNECTED"
-  },
-  "u_homiesplant_th": {
     "userId": "u_homiesplant_th",
     "username": "homiesplant.th",
     "broker": "XMTrading",
@@ -120,7 +96,7 @@
     "platform": "MT5",
     "accountId": "acc_b9d54455",
     "serverName": "ICMarkets-Mock-Server",
-    "connectedAt": "2026-11-16T09:20:17.218Z",
+    "connectedAt": "2026-11-16T11:41:12.308Z",
     "status": "CONNECTED"
   },
   "EXN-MULTI-01": {

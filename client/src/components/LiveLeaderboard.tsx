@@ -288,10 +288,20 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
     const baseList =
       period === 'daily' && dailyStandings.length > 0
         ? dailyStandings.map(d => {
-            const primaryBroker: Broker = d.brokers && d.brokers.length > 0 ? d.brokers[0] : 'XM';
-            const cleanAcc = d.accountNumber
+            const rawAcc = d.accountNumber
               ? String(d.accountNumber).replace(/^TraderRank-/i, '').trim()
               : (d.username.match(/(\d{6,})/)?.[1] || '');
+            const isHomies =
+              rawAcc === '72423906' ||
+              d.userId === 'u_homiesplant_th' ||
+              d.userId === 'usr_meta_72423906' ||
+              d.username === 'HomiesPlant' ||
+              d.username === 'homiesplant.th' ||
+              d.username.toLowerCase().includes('homies') ||
+              d.username.toLowerCase().includes('emanuel007') ||
+              (d.accountNumber && String(d.accountNumber).includes('72423906'));
+            const cleanAcc = isHomies ? '72423906' : rawAcc;
+            const primaryBroker: Broker = isHomies ? 'XMTrading' : (d.brokers && d.brokers.length > 0 ? d.brokers[0] : 'XM');
             const real =
               (cleanAcc && (ledgerStatsByUser[cleanAcc] || ledgerStatsByUser[`TraderRank-${cleanAcc}`])) ||
               (d.userId && d.userId !== 'usr_live_meta' ? ledgerStatsByUser[d.userId] : undefined) ||
@@ -305,22 +315,23 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                 : real.winRate
               : d.dailyWinRate || 0;
             const identity = resolveTraderIdentity({
-              username: d.username,
-              profileName: d.profileName,
-              accountHolderName: real?.accountHolderName,
-              accountNumber: d.accountNumber || real?.accountNumber || cleanAcc,
-              userId: d.userId,
+              username: isHomies ? 'HomiesPlant' : d.username,
+              profileName: isHomies ? 'HomiesPlant' : d.profileName,
+              accountHolderName: isHomies ? 'HomiesPlant' : real?.accountHolderName,
+              accountNumber: cleanAcc,
+              userId: isHomies ? 'u_homiesplant_th' : d.userId,
               avatarUrl: d.avatarUrl,
             });
 
-            const accCurrency = resolveBrokerCurrency(
+            const accCurrency = isHomies || primaryBroker === 'XMTrading' ? 'JPY' : resolveBrokerCurrency(
               primaryBroker,
               (real as any)?.serverName || (cleanAcc === '72423906' ? 'XMTrading-MT5' : undefined),
-              (real as any)?.currency || (d as any).currency
+              (real as any)?.currency || (d as any).currency,
+              cleanAcc
             );
 
             return {
-              userId: d.userId,
+              userId: isHomies ? 'u_homiesplant_th' : d.userId,
               username: identity.profileName || d.username,
               profileName: identity.profileName,
               accountTag: identity.accountTag,
@@ -328,7 +339,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               avatarUrl: identity.avatarUrl || d.avatarUrl,
               broker: primaryBroker,
               currency: accCurrency,
-              avatarSymbol: d.avatarSymbol,
+              avatarSymbol: isHomies ? 'bear_emerald' : d.avatarSymbol,
               winningPips: pips,
               profitAmount: profitUsd,
               profitRate: winRate,
@@ -341,10 +352,20 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             };
           })
         : entries.map((e, idx) => {
-            const primaryBroker: Broker = e.brokers && e.brokers.length > 0 ? e.brokers[0] : 'XM';
-            const cleanAcc = e.accountNumber
+            const rawAcc = e.accountNumber
               ? String(e.accountNumber).replace(/^TraderRank-/i, '').trim()
               : (e.username.match(/(\d{6,})/)?.[1] || '');
+            const isHomies =
+              rawAcc === '72423906' ||
+              e.userId === 'u_homiesplant_th' ||
+              e.userId === 'usr_meta_72423906' ||
+              e.username === 'HomiesPlant' ||
+              e.username === 'homiesplant.th' ||
+              e.username.toLowerCase().includes('homies') ||
+              e.username.toLowerCase().includes('emanuel007') ||
+              (e.accountNumber && String(e.accountNumber).includes('72423906'));
+            const cleanAcc = isHomies ? '72423906' : rawAcc;
+            const primaryBroker: Broker = isHomies ? 'XMTrading' : (e.brokers && e.brokers.length > 0 ? e.brokers[0] : 'XM');
             const real =
               (cleanAcc && (ledgerStatsByUser[cleanAcc] || ledgerStatsByUser[`TraderRank-${cleanAcc}`])) ||
               (e.userId && e.userId !== 'usr_live_meta' ? ledgerStatsByUser[e.userId] : undefined) ||
@@ -361,22 +382,23 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             const profitRate = real ? real.roiPct : winRate;
             const gamification = calculateTraderGamification(xp);
             const identity = resolveTraderIdentity({
-              username: e.username,
-              profileName: e.profileName,
-              accountHolderName: real?.accountHolderName,
-              accountNumber: e.accountNumber || real?.accountNumber || cleanAcc,
-              userId: e.userId,
+              username: isHomies ? 'HomiesPlant' : e.username,
+              profileName: isHomies ? 'HomiesPlant' : e.profileName,
+              accountHolderName: isHomies ? 'HomiesPlant' : real?.accountHolderName,
+              accountNumber: cleanAcc,
+              userId: isHomies ? 'u_homiesplant_th' : e.userId,
               avatarUrl: e.avatarUrl,
             });
 
-            const accCurrency = resolveBrokerCurrency(
+            const accCurrency = isHomies || primaryBroker === 'XMTrading' ? 'JPY' : resolveBrokerCurrency(
               primaryBroker,
               (real as any)?.serverName || (cleanAcc === '72423906' ? 'XMTrading-MT5' : undefined),
-              (real as any)?.currency || (e as any).currency
+              (real as any)?.currency || (e as any).currency,
+              cleanAcc
             );
 
             return {
-              userId: e.userId,
+              userId: isHomies ? 'u_homiesplant_th' : e.userId,
               username: identity.profileName || e.username,
               profileName: identity.profileName,
               accountTag: identity.accountTag,
@@ -384,7 +406,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               avatarUrl: identity.avatarUrl || e.avatarUrl,
               broker: primaryBroker,
               currency: accCurrency,
-              avatarSymbol: e.avatarSymbol,
+              avatarSymbol: isHomies ? 'bear_emerald' : e.avatarSymbol,
               winningPips: netPips,
               profitAmount: netProfitUsd,
               profitRate,
@@ -439,8 +461,9 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
 
   const top3 = processedEntries.slice(0, 3);
 
-  const formatTraderProfit = (amount: number, _broker?: Broker, currency?: string) => {
-    return formatCurrency(amount, currency, { showSign: true });
+  const formatTraderProfit = (amount: number, broker?: Broker, currency?: string) => {
+    const effCur = currency || (broker === 'XMTrading' ? 'JPY' : 'USD');
+    return formatCurrency(amount, effCur, { showSign: true });
   };
 
   return (

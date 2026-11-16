@@ -274,22 +274,55 @@ export class AccountConnectorService {
   public getAccounts(userId?: string): TradingAccount[] {
     const all = Array.from(this.accounts.values()).map(acc => {
       const cleanAcc = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
+      const isHomies =
+        cleanAcc === '72423906' ||
+        acc.userId === 'u_homiesplant_th' ||
+        acc.userId === 'u_homiesplant' ||
+        acc.userId === 'usr_meta_72423906' ||
+        String(acc.id).includes('72423906') ||
+        String(acc.profileUsername || '').toLowerCase().includes('homies') ||
+        (cleanAcc === '72423906' && (/emanuel/i.test(String(acc.profileUsername || '')) || /emanuel/i.test(String(acc.accountHolderName || ''))));
+
       const isZem =
-        cleanAcc === '342186831' ||
-        acc.userId === 'u_zzzemzzz' ||
-        acc.userId === 'u_emanuel001' ||
-        acc.userId === 'u_emanuel007';
+        !isHomies &&
+        (cleanAcc === '342186831' ||
+          acc.userId === 'u_zzzemzzz' ||
+          String(acc.profileUsername || '').toLowerCase() === 'zzzemzzz' ||
+          (cleanAcc === '342186831' && (/emanuel/i.test(String(acc.profileUsername || '')) || /emanuel/i.test(String(acc.accountHolderName || '')))));
+
+      if (isHomies) {
+        return {
+          ...acc,
+          userId: 'u_homiesplant_th',
+          profileUsername: 'HomiesPlant',
+          accountHolderName: 'HomiesPlant',
+          broker: 'XMTrading' as Broker,
+          currency: 'JPY',
+          avatarUrl: EMERALD_BEAR_AVATAR_URL,
+        };
+      }
       if (isZem) {
         return {
           ...acc,
           userId: 'u_zzzemzzz',
           profileUsername: 'zzZEMZzz',
           accountHolderName: 'zzZEMZzz',
-          currency: acc.currency || 'USD',
+          broker: 'XM' as Broker,
+          currency: 'USD',
           avatarUrl: EMERALD_BEAR_AVATAR_URL,
         };
       }
-      return acc;
+      const cleanProfile = /emanuel/i.test(String(acc.profileUsername || ''))
+        ? 'VerifiedTrader_' + cleanAcc
+        : acc.profileUsername;
+      const cleanHolder = /emanuel/i.test(String(acc.accountHolderName || ''))
+        ? cleanProfile
+        : acc.accountHolderName;
+      return {
+        ...acc,
+        profileUsername: cleanProfile,
+        accountHolderName: cleanHolder,
+      };
     });
 
     if (userId) {
@@ -328,7 +361,7 @@ export class AccountConnectorService {
 
         // Special verified account alias matching
         if (
-          (cleanHandle === 'zzzemzzz' || cleanHandle === 'emanuel001' || cleanHandle === 'emanuel007' || cleanId.includes('342186831') || cleanId === 'u_zzzemzzz' || cleanId === 'u_emanuel001' || cleanId === 'u_emanuel007') &&
+          (cleanHandle === 'zzzemzzz' || cleanId.includes('342186831') || cleanId === 'u_zzzemzzz') &&
           aAccNum === '342186831'
         ) {
           return true;
@@ -344,21 +377,55 @@ export class AccountConnectorService {
     const acc = this.accounts.get(accountId) || null;
     if (acc) {
       const cleanAcc = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
+      const isHomies =
+        cleanAcc === '72423906' ||
+        acc.userId === 'u_homiesplant_th' ||
+        acc.userId === 'u_homiesplant' ||
+        acc.userId === 'usr_meta_72423906' ||
+        String(acc.id).includes('72423906') ||
+        String(acc.profileUsername || '').toLowerCase().includes('homies') ||
+        (cleanAcc === '72423906' && (/emanuel/i.test(String(acc.profileUsername || '')) || /emanuel/i.test(String(acc.accountHolderName || ''))));
+
       const isZem =
-        cleanAcc === '342186831' ||
-        acc.userId === 'u_zzzemzzz' ||
-        acc.userId === 'u_emanuel001' ||
-        acc.userId === 'u_emanuel007';
+        !isHomies &&
+        (cleanAcc === '342186831' ||
+          acc.userId === 'u_zzzemzzz' ||
+          String(acc.profileUsername || '').toLowerCase() === 'zzzemzzz' ||
+          (cleanAcc === '342186831' && (/emanuel/i.test(String(acc.profileUsername || '')) || /emanuel/i.test(String(acc.accountHolderName || '')))));
+
+      if (isHomies) {
+        return {
+          ...acc,
+          userId: 'u_homiesplant_th',
+          profileUsername: 'HomiesPlant',
+          accountHolderName: 'HomiesPlant',
+          broker: 'XMTrading' as Broker,
+          currency: 'JPY',
+          avatarUrl: EMERALD_BEAR_AVATAR_URL,
+        };
+      }
       if (isZem) {
         return {
           ...acc,
           userId: 'u_zzzemzzz',
           profileUsername: 'zzZEMZzz',
           accountHolderName: 'zzZEMZzz',
-          currency: acc.currency || 'USD',
+          broker: 'XM' as Broker,
+          currency: 'USD',
           avatarUrl: EMERALD_BEAR_AVATAR_URL,
         };
       }
+      const cleanProfile = /emanuel/i.test(String(acc.profileUsername || ''))
+        ? 'VerifiedTrader_' + cleanAcc
+        : acc.profileUsername;
+      const cleanHolder = /emanuel/i.test(String(acc.accountHolderName || ''))
+        ? cleanProfile
+        : acc.accountHolderName;
+      return {
+        ...acc,
+        profileUsername: cleanProfile,
+        accountHolderName: cleanHolder,
+      };
     }
     return acc;
   }
@@ -463,7 +530,7 @@ export class AccountConnectorService {
           const cleanAcc = String(v.accountNumber).trim();
           const accountId = v.accountId || `acc_meta_${cleanAcc}`;
           if (!this.accounts.has(accountId)) {
-            const isZem = cleanAcc === '342186831' || v.userId === 'u_zzzemzzz' || v.userId === 'u_emanuel001';
+            const isZem = cleanAcc === '342186831' || v.userId === 'u_zzzemzzz';
             this.accounts.set(accountId, {
               id: accountId,
               userId: isZem ? 'u_zzzemzzz' : v.userId,
@@ -673,15 +740,21 @@ export class AccountConnectorService {
           serverLower.includes('vantage') ? 'Vantage' : 'OTHER'
         );
         const cleanLogin = String(p.login || '').trim();
-        const isZemAccount =
-          cleanLogin === '342186831' ||
-          String(p.name || '').includes('342186831') ||
-          String(p.name || '') === 'zzZEMZzz' ||
-          String(p.name || '').toLowerCase() === 'zzzemzzz';
+        const isHomiesAccount =
+          cleanLogin === '72423906' ||
+          String(p.name || '').includes('72423906') ||
+          serverLower.includes('xmtrading');
 
-        const isJpy = isZemAccount
+        const isZemAccount =
+          !isHomiesAccount &&
+          (cleanLogin === '342186831' ||
+            String(p.name || '').includes('342186831') ||
+            String(p.name || '') === 'zzZEMZzz' ||
+            String(p.name || '').toLowerCase() === 'zzzemzzz');
+
+        const isJpy = isHomiesAccount || (isZemAccount
           ? false
-          : (info?.currency === 'JPY' || serverLower.includes('japan') || serverLower.includes('jpy'));
+          : (info?.currency === 'JPY' || serverLower.includes('japan') || serverLower.includes('jpy')));
         const defaultCurrency = 'USD';
 
         const existingAcc = Array.from(this.accounts.values()).find(
@@ -692,17 +765,21 @@ export class AccountConnectorService {
           this.accountOwners.get(cleanLogin) ||
           (existingAcc ? this.accountOwners.get(existingAcc.id) : null);
 
-        const userId = isZemAccount
+        const userId = isHomiesAccount
+          ? 'u_homiesplant_th'
+          : isZemAccount
           ? 'u_zzzemzzz'
           : (savedOwner?.userId || (existingAcc?.userId && existingAcc.userId !== 'usr_live_meta' ? existingAcc.userId : `usr_meta_${cleanLogin}`));
-        const avatarUrl = isZemAccount
+        const avatarUrl = (isHomiesAccount || isZemAccount)
           ? EMERALD_BEAR_AVATAR_URL
           : (this.traderAvatars.get(cleanLogin) ||
              this.traderAvatars.get(userId) ||
              existingAcc?.avatarUrl);
 
         // Public Trader Profile Username (shown on Leaderboard & Podium)
-        const profileUsername = isZemAccount
+        let profileUsername = isHomiesAccount
+          ? 'HomiesPlant'
+          : isZemAccount
           ? 'zzZEMZzz'
           : (
               savedOwner?.username ||
@@ -715,16 +792,27 @@ export class AccountConnectorService {
               (p.name && !p.name.startsWith('TraderRank-') ? p.name : undefined) ||
               getDefaultTraderUsername(cleanLogin)
             );
+        if (/emanuel/i.test(profileUsername)) {
+          profileUsername = isHomiesAccount ? 'HomiesPlant' : isZemAccount ? 'zzZEMZzz' : 'VerifiedTrader_' + cleanLogin;
+        }
         const username = profileUsername;
 
         // Private Broker Legal Name (strictly isolated for private owner view)
-        const privateLegalName = isZemAccount
+        let privateLegalName = isHomiesAccount
+          ? 'HomiesPlant'
+          : isZemAccount
           ? 'zzZEMZzz'
           : (
               (info?.name && !info.name.startsWith('TraderRank-') ? info.name : undefined) ||
               (p.name && !p.name.startsWith('TraderRank-') ? p.name : undefined) ||
               existingAcc?.accountHolderName
             );
+        if (privateLegalName && /emanuel/i.test(privateLegalName)) {
+          privateLegalName = isHomiesAccount ? 'HomiesPlant' : isZemAccount ? 'zzZEMZzz' : profileUsername;
+        }
+
+        const effectiveCurrency = isHomiesAccount ? 'JPY' : isZemAccount ? 'USD' : (info?.currency ?? (isJpy ? 'JPY' : defaultCurrency));
+        const effectiveBroker: Broker = isHomiesAccount ? 'XMTrading' : isZemAccount ? 'XM' : brokerName;
 
         const tradingAccount: TradingAccount = {
           id: accountId,
@@ -733,7 +821,7 @@ export class AccountConnectorService {
           profileUsername,
           avatarUrl,
           accountHolderName: privateLegalName,
-          broker: brokerName,
+          broker: effectiveBroker,
           integrationType: 'mt_gateway',
           platform: (p.platform?.toUpperCase() === 'MT4' ? 'MT4' : 'MT5') as Platform,
           serverName: p.server,
@@ -742,7 +830,7 @@ export class AccountConnectorService {
           equity: info?.equity ?? (isJpy ? 1500000 : 3817),
           margin: info?.margin ?? 0,
           freeMargin: info?.freeMargin ?? (isJpy ? 1500000 : 3817),
-          currency: isZemAccount ? 'USD' : (info?.currency ?? (isJpy ? 'JPY' : defaultCurrency)),
+          currency: effectiveCurrency,
           leverage: info?.leverage ?? 1000,
           vaultSecretRef: `ref_meta_${p.id}`,
           metaApiAccountId: p.id,
@@ -757,7 +845,7 @@ export class AccountConnectorService {
           this.accountOwners.set(cleanLogin, {
             userId,
             username: profileUsername,
-            broker: brokerName,
+            broker: effectiveBroker,
             accountNumber: cleanLogin,
             platform: (p.platform?.toUpperCase() === 'MT4' ? 'MT4' : 'MT5') as Platform,
             accountId,
@@ -772,11 +860,11 @@ export class AccountConnectorService {
           accountId,
           userId,
           username,
-          brokerName,
+          effectiveBroker,
           profileUsername,
           cleanLogin,
           avatarUrl,
-          tradingAccount.currency
+          effectiveCurrency
         );
 
         // Fetch real historical deals directly from MetaApi

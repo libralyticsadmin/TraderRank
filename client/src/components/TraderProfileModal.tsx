@@ -1243,10 +1243,24 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
 
   // Account currency is strictly resolved from verified broker connection:
   // XMTrading (Japan) is strictly JPY (¥); XMGlobal (XM) is strictly USD ($).
-  const rawCurrency = resolveBrokerCurrency(
-    trader.broker,
+  const isHomiesAcc =
+    trader.broker === 'XMTrading' ||
+    (trader as any).accountNumber === '72423906' ||
+    liveAccountNumber === '72423906' ||
+    trader.userId === 'u_homiesplant_th' ||
+    trader.userId === 'usr_meta_72423906' ||
+    trader.username.includes('72423906') ||
+    trader.username.toLowerCase().includes('homies') ||
+    trader.username.toLowerCase().includes('emanuel007');
+
+  const effectiveBroker: Broker = isHomiesAcc ? 'XMTrading' : trader.broker;
+  const effectiveAccNum = isHomiesAcc ? '72423906' : (liveAccountNumber || (trader as any).accountNumber);
+
+  const rawCurrency = isHomiesAcc || effectiveBroker === 'XMTrading' ? 'JPY' : resolveBrokerCurrency(
+    effectiveBroker,
     liveServerName,
-    liveCurrency || (trader as any).currency
+    liveCurrency || (trader as any).currency,
+    effectiveAccNum
   );
   const isJpy = isJpyCurrency(rawCurrency);
   const curSymbol = getCurrencySymbol(rawCurrency);
@@ -1324,10 +1338,10 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
           >
             {(() => {
               const modalIdentity = resolveTraderIdentity({
-                username: trader.username,
-                accountHolderName: liveHolderName,
-                accountNumber: liveAccountNumber,
-                userId: trader.userId,
+                username: isHomiesAcc ? 'HomiesPlant' : trader.username,
+                accountHolderName: isHomiesAcc ? 'HomiesPlant' : liveHolderName,
+                accountNumber: effectiveAccNum,
+                userId: isHomiesAcc ? 'u_homiesplant_th' : trader.userId,
                 avatarUrl: trader.avatarUrl,
               });
               return (
@@ -1374,7 +1388,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                           gap: '4px',
                         }}
                       >
-                        <ShieldCheck size={12} /> {trader.broker} {copy.mt5VerifiedBadge}
+                        <ShieldCheck size={12} /> {effectiveBroker} {copy.mt5VerifiedBadge}
                         {liveServerName ? ` (${liveServerName})` : ''}
                       </span>
                       {trader.instagramHandle && (
@@ -1579,9 +1593,12 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 {brokerSlots.map(slot => {
                   const isConnected =
-                    connectedBrokers.includes(slot.id.toUpperCase()) ||
-                    trader.broker.toUpperCase() === slot.id.toUpperCase() ||
-                    (Array.isArray(trader.brokers) && trader.brokers.some(b => b.toUpperCase() === slot.id.toUpperCase()));
+                    (isHomiesAcc && slot.id === 'XMTrading') ||
+                    (!isHomiesAcc && (
+                      connectedBrokers.includes(slot.id.toUpperCase()) ||
+                      effectiveBroker.toUpperCase() === slot.id.toUpperCase() ||
+                      (Array.isArray(trader.brokers) && trader.brokers.some(b => b.toUpperCase() === slot.id.toUpperCase()))
+                    ));
                   return (
                     <div
                       key={slot.id}

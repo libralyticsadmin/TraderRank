@@ -82,11 +82,8 @@ const resolveSavedUserAvatar = (username: string, explicitUrl?: string): string 
   const uNorm = (username || '').trim().toLowerCase();
   if (
     uNorm === 'zzzemzzz' ||
-    uNorm === 'emanuel001' ||
-    uNorm === 'emanuel007' ||
     uNorm.includes('342186831') ||
-    uNorm.includes('zzzemzzz') ||
-    uNorm.includes('emanuel')
+    uNorm.includes('zzzemzzz')
   ) {
     return EMERALD_BEAR_URL;
   }

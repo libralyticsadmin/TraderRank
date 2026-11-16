@@ -1231,10 +1231,6 @@ export const DEFAULT_TRADER_AVATARS: Record<string, string> = {
   'zzzemzzz': EMERALD_BEAR_URL,
   'zzZEMZzz': EMERALD_BEAR_URL,
   'u_zzzemzzz': EMERALD_BEAR_URL,
-  'emanuel001': EMERALD_BEAR_URL,
-  'Emanuel001': EMERALD_BEAR_URL,
-  'emanuel007': EMERALD_BEAR_URL,
-  'Emanuel007': EMERALD_BEAR_URL,
   '72423906': EMERALD_BEAR_URL,
   'homiesplant.th': EMERALD_BEAR_URL,
   'u_homiesplant_th': EMERALD_BEAR_URL,
@@ -1422,7 +1418,9 @@ export const resolveTraderIdentity = (params: {
     cleanAcc === '72423906' ||
     rawUid.includes('72423906') ||
     rawProfile.toLowerCase().includes('homies') ||
-    rawUser.toLowerCase().includes('homies');
+    rawUser.toLowerCase().includes('homies') ||
+    rawProfile.toLowerCase().includes('emanuel007') ||
+    rawUser.toLowerCase().includes('emanuel007');
 
   const isZem =
     !isHomiesAcc &&
@@ -1432,8 +1430,8 @@ export const resolveTraderIdentity = (params: {
       rawUser === 'zzZEMZzz' ||
       rawProfile.toLowerCase() === 'zzzemzzz' ||
       rawUser.toLowerCase() === 'zzzemzzz' ||
-      rawProfile.toLowerCase().includes('emanuel') ||
-      rawUser.toLowerCase().includes('emanuel'));
+      rawProfile.toLowerCase().includes('emanuel001') ||
+      rawUser.toLowerCase().includes('emanuel001'));
 
   let profileName = '';
   const localUsername = getLocalTraderUsername(accountNumber, rawUid);
@@ -1442,19 +1440,23 @@ export const resolveTraderIdentity = (params: {
     (isHomiesAcc ? 'HomiesPlant' : isZem ? 'zzZEMZzz' : null);
 
   if (isHomiesAcc) {
-    profileName = localUsername || 'HomiesPlant';
+    profileName = (localUsername && !/emanuel/i.test(localUsername)) ? localUsername : 'HomiesPlant';
   } else if (isZem) {
     profileName = 'zzZEMZzz';
-  } else if (localUsername) {
+  } else if (localUsername && !/emanuel/i.test(localUsername)) {
     profileName = localUsername;
   } else if (defaultMappedUser) {
     profileName = defaultMappedUser;
-  } else if (!isRawAccountTag(rawProfile) && !rawProfile.toLowerCase().includes('emanuel')) {
+  } else if (!isRawAccountTag(rawProfile) && !/emanuel/i.test(rawProfile)) {
     profileName = rawProfile;
-  } else if (!isRawAccountTag(rawUser) && !rawUser.toLowerCase().includes('emanuel')) {
+  } else if (!isRawAccountTag(rawUser) && !/emanuel/i.test(rawUser)) {
     profileName = rawUser;
   } else {
     profileName = defaultMappedUser || getDefaultTraderHandle(accountNumber, accountTag || rawUser || rawUid);
+  }
+
+  if (/emanuel/i.test(profileName)) {
+    profileName = isHomiesAcc ? 'HomiesPlant' : isZem ? 'zzZEMZzz' : 'VerifiedTrader_' + (cleanAcc || '72423906');
   }
 
   // 3. Resolve avatar (explicit parameter -> local saved avatar -> default mapped avatar)

@@ -133,6 +133,12 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
 
                   const isWin = profit > 0 || (profit === 0 && pips > 0);
 
+                  const isHomiesAcc =
+                    String(acc.accountNumber).trim() === '72423906' ||
+                    acc.userId === 'u_homiesplant_th' ||
+                    acc.userId === 'usr_meta_72423906' ||
+                    String(acc.id).includes('72423906');
+
                   const isCurrentUser = Boolean(
                     user && (
                       acc.userId === user.id ||
@@ -140,9 +146,13 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                       (acc.accountNumber && user.accountNumber === acc.accountNumber)
                     )
                   );
-                  const traderDisplayName = (isCurrentUser && user)
+                  const traderDisplayName = isHomiesAcc
+                    ? 'HomiesPlant'
+                    : ((isCurrentUser && user)
                     ? user.username
-                    : (acc.username && !acc.username.startsWith('TraderRank-') ? acc.username : `VerifiedTrader_${acc.accountNumber || acc.id}`);
+                    : (acc.username && !acc.username.startsWith('TraderRank-') ? acc.username : `VerifiedTrader_${acc.accountNumber || acc.id}`));
+
+                  const tradeCurrency = isHomiesAcc || acc.broker === 'XMTrading' ? 'JPY' : (tr.currency || acc.currency || 'USD');
 
                   collected.push({
                     id: tr.id || `tr_${Math.random()}`,
@@ -150,7 +160,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                     userId: acc.userId || acc.id,
                     trader: traderDisplayName,
                     avatarUrl: (isCurrentUser && user) ? user.avatarUrl : undefined,
-                    broker: acc.broker || 'XM',
+                    broker: isHomiesAcc ? 'XMTrading' : (acc.broker || 'XM'),
                     symbol: tr.symbol,
                     type: tr.type === 'BUY' ? 'BUY' : 'SELL',
                     pips,
@@ -158,7 +168,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                     openPrice: Number(tr.openPrice || 0),
                     closePrice: Number(tr.closePrice || 0),
                     profitUsd: profit,
-                    currency: tr.currency || acc.currency || 'JPY',
+                    currency: tradeCurrency,
                     timeAgo: tr.closeTime
                       ? new Date(tr.closeTime).toLocaleString([], {
                           month: 'short',
