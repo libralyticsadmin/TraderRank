@@ -178,7 +178,6 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
           const impliedStartCap = Math.max(100, currentBal - netProfitUsd);
           const roiPct = Number(((netProfitUsd / impliedStartCap) * 100).toFixed(1));
           const cleanAccNum = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
-          const isHomiesAcc = cleanAccNum === '72423906' || acc.userId === 'u_homiesplant' || String(acc.id || '').includes('72423906');
           const statsObj = {
             netPips: Number(netPips.toFixed(1)),
             winningPips: Number(winningPips.toFixed(1)),
@@ -192,9 +191,9 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             dailyProfitUsd: Number(dailyProfitUsd.toFixed(2)),
             dailyTradesCount,
             dailyWinRate: dailyTradesCount > 0 ? Math.round((dailyWins / dailyTradesCount) * 100) : 0,
-            currency: isHomiesAcc ? 'USD' : (acc.currency || 'USD'),
-            accountNumber: isHomiesAcc ? '72423906' : acc.accountNumber,
-            accountHolderName: isHomiesAcc ? 'HomiesPlant' : acc.profileUsername,
+            currency: acc.currency || 'USD',
+            accountNumber: acc.accountNumber,
+            accountHolderName: acc.profileUsername || cleanAccNum,
             liveOrders: openOrders.length > 0 ? openOrders : recentClosedOrders,
           };
 

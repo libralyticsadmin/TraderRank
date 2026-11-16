@@ -5,9 +5,9 @@
     "broker": "XM",
     "accountNumber": "20938471",
     "platform": "MT5",
-    "accountId": "acc_3f330451",
+    "accountId": "acc_216ed685",
     "serverName": "XMGlobal-Real 20",
-    "connectedAt": "2026-11-16T08:51:56.813Z",
+    "connectedAt": "2026-11-16T08:57:31.042Z",
     "status": "CONNECTED"
   },
   "33445566": {
@@ -16,9 +16,9 @@
     "broker": "XMTrading",
     "accountNumber": "33445566",
     "platform": "MT5",
-    "accountId": "acc_010912b2",
+    "accountId": "acc_f1b5a5fb",
     "serverName": "XMTrading-MT5",
-    "connectedAt": "2026-11-16T08:51:57.526Z",
+    "connectedAt": "2026-11-16T08:57:31.364Z",
     "status": "CONNECTED"
   },
   "72423906": {
@@ -48,8 +48,8 @@
     "broker": "Exness",
     "accountNumber": "EXN-554433",
     "platform": "NATIVE",
-    "accountId": "acc_7fb28f42",
-    "connectedAt": "2026-11-16T08:51:57.523Z",
+    "accountId": "acc_53a2ed2c",
+    "connectedAt": "2026-11-16T08:57:31.357Z",
     "status": "CONNECTED"
   }
 }

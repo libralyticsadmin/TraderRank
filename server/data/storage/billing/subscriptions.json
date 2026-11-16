@@ -4,8 +4,8 @@
     "tier": "PRO_MONTHLY",
     "planName": "Pro Daily Intelligence",
     "priceMonthly": 9,
-    "startedAt": "2026-11-16T08:51:56.818Z",
-    "expiresAt": "2026-12-16T08:51:56.818Z",
+    "startedAt": "2026-11-16T08:57:31.044Z",
+    "expiresAt": "2026-12-16T08:57:31.044Z",
     "paymentMethod": "TEST_STRIPE",
     "features": [
       "Full Daily Technical & Fundamental Summaries"

@@ -398,10 +398,10 @@ export const App: React.FC = () => {
     const avatarUrl = t.avatarUrl || matchedLb?.avatarUrl || (isEmanuel ? DEFAULT_TRADER_AVATARS['72423906'] : undefined);
     const avatarSymbol = isEmanuel ? 'bear_emerald' : (matchedLb?.avatarSymbol || 'zap');
 
-    const tradesCount = t.tradesCount ?? matchedLb?.tradesCount ?? (isEmanuel ? 23 : 0);
-    const netPips = t.score ?? matchedLb?.totalPips ?? (isEmanuel ? -676.1 : 0);
-    const winRate = t.winRate ?? matchedLb?.winRate ?? (isEmanuel ? 22 : 0);
-    const xp = matchedLb?.xp ?? (tradesCount > 0 ? tradesCount * 25 : (isEmanuel ? 575 : 100));
+    const tradesCount = t.tradesCount ?? matchedLb?.tradesCount ?? 0;
+    const netPips = t.score ?? matchedLb?.totalPips ?? 0;
+    const winRate = t.winRate ?? matchedLb?.winRate ?? 0;
+    const xp = matchedLb?.xp ?? (tradesCount > 0 ? tradesCount * 25 : 0);
     const level = matchedLb?.level ?? Math.max(1, Math.floor(tradesCount / 40) + 1);
 
     setSelectedTrader({

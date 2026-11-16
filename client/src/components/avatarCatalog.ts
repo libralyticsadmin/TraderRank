@@ -1307,7 +1307,6 @@ const getLocalTraderUsername = (accountNumber?: string | null, userId?: string |
       const savedUser = JSON.parse(userRaw);
       if (savedUser?.username && !isRawAccountTag(savedUser.username)) {
         const sName = String(savedUser.username).trim();
-        if (sName.toLowerCase().includes('emanuel')) return 'HomiesPlant';
         if (
           (userId && (savedUser.id === userId || userId === 'usr_live_meta')) ||
           cleanAcc === '72423906'
