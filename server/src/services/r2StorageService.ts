@@ -24,9 +24,9 @@ export class R2StorageService {
   private localBaseDir: string;
 
   constructor(customConfig?: Partial<R2Config>) {
-    const endpoint = customConfig?.endpoint || process.env.R2_ENDPOINT || 'https://dc95c232d76cc4df23a5ca452a4046ab.r2.cloudflarestorage.com';
-    const accessKeyId = customConfig?.accessKeyId || process.env.R2_ACCESS_KEY_ID || 'e957291c5a3877dc9b2daddf3013049f';
-    const secretAccessKey = customConfig?.secretAccessKey || process.env.R2_SECRET_ACCESS_KEY || '96d8bf9be76ab044564ac10d11e87986457b6980120fd5dc441a528e2f3ba1e7';
+    const endpoint = customConfig?.endpoint || process.env.R2_ENDPOINT || '';
+    const accessKeyId = customConfig?.accessKeyId || process.env.R2_ACCESS_KEY_ID || '';
+    const secretAccessKey = customConfig?.secretAccessKey || process.env.R2_SECRET_ACCESS_KEY || '';
     const bucketName = customConfig?.bucketName || process.env.R2_BUCKET_NAME || 'traderrank-data';
 
     this.config = {

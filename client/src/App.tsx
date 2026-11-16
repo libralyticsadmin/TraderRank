@@ -121,7 +121,10 @@ export const App: React.FC = () => {
         setAccounts([]);
         return;
       }
-      const res = await fetch(`/api/accounts?userId=${encodeURIComponent(activeUser.id)}`);
+      const token = localStorage.getItem('traderank_auth_token_v1');
+      const res = await fetch(`/api/accounts?userId=${encodeURIComponent(activeUser.id)}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (res.ok) {
         const data = await res.json();
         setAccounts(Array.isArray(data) ? data : []);
@@ -338,8 +341,12 @@ export const App: React.FC = () => {
 
   const handleDisconnect = async (accountId: string) => {
     try {
+      const token = localStorage.getItem('traderank_auth_token_v1');
       const uidQuery = user?.id ? `?userId=${encodeURIComponent(user.id)}` : '';
-      const res = await fetch(`/api/accounts/${accountId}${uidQuery}`, { method: 'DELETE' });
+      const res = await fetch(`/api/accounts/${accountId}${uidQuery}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (res.ok) {
         setAccounts(prev => prev.filter(a => a.id !== accountId));
         setPositions(prev => prev.filter(p => p.accountId !== accountId));

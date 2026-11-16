@@ -54,9 +54,18 @@ interface AuthContextType {
 }
 
 const STORAGE_KEY = 'traderank_auth_user_v1';
+const TOKEN_STORAGE_KEY = 'traderank_auth_token_v1';
+
+export const getStoredAuthToken = (): string | null => {
+  try {
+    return localStorage.getItem(TOKEN_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+};
 
 // Default profile template for newly registered users
-const DEFAULT_USER_TEMPLATE: Omit<UserProfile, 'id' | 'username' | 'email'> = {
+export const DEFAULT_USER_TEMPLATE: Omit<UserProfile, 'id' | 'username' | 'email'> = {
   avatarSymbol: 'zap',
   traderTitle: 'Verified Market Trader',
   bio: '',
@@ -181,46 +190,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsProfileModalOpen(false);
   };
 
-  const login = async (emailOrUser: string, _password?: string) => {
+  const login = async (emailOrUser: string, password?: string) => {
     // Quick validation
     const trimmed = emailOrUser.trim();
     if (!trimmed) {
       return { success: false, error: 'Please enter your username or email' };
     }
 
-    // Try server endpoint if available
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emailOrUser: trimmed }),
+        body: JSON.stringify({ emailOrUser: trimmed, password: password || undefined }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.user) {
-          if (!data.user.avatarUrl) {
-            const isEmanuel = data.user.id === 'u_emanuel007' || data.user.id === 'u_homiesplant' || data.user.accountNumber === '72423906' || data.user.username === 'Emanuel007';
-            data.user.avatarUrl = isEmanuel ? DEFAULT_TRADER_AVATARS['72423906'] : getRandomTraderAvatar().url;
+      const data = await res.json();
+      if (res.ok && data.user) {
+        if (data.token) {
+          try {
+            localStorage.setItem(TOKEN_STORAGE_KEY, data.token);
+          } catch {
+            // ignore
           }
-          setUser(data.user);
-          return { success: true };
         }
+        if (!data.user.avatarUrl) {
+          const isEmanuel = data.user.id === 'u_emanuel007' || data.user.accountNumber === '72423906' || data.user.username === 'Emanuel007';
+          data.user.avatarUrl = isEmanuel ? DEFAULT_TRADER_AVATARS['72423906'] : getRandomTraderAvatar().url;
+        }
+        setUser(data.user);
+        return { success: true };
+      } else {
+        return { success: false, error: data.error || 'Invalid username or password' };
       }
     } catch {
-      // Client offline fallback
+      return { success: false, error: 'Could not connect to authentication server' };
     }
-
-    // Client-side authentication fallback for seamless UX
-    const newUser: UserProfile = {
-      ...DEFAULT_USER_TEMPLATE,
-      id: `u_${trimmed.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
-      username: trimmed.includes('@') ? trimmed.split('@')[0] : trimmed,
-      email: trimmed.includes('@') ? trimmed : `${trimmed.toLowerCase()}@traderank.live`,
-      avatarUrl: getRandomTraderAvatar().url,
-    };
-
-    setUser(newUser);
-    return { success: true };
   };
 
   const register = async (data: {
@@ -239,10 +242,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!cleanEmail || !cleanEmail.includes('@')) {
       return { success: false, error: 'Please enter a valid email address' };
     }
+    if (!data.password || data.password.length < 6) {
+      return { success: false, error: 'Password must be at least 6 characters' };
+    }
 
     const randomInitialAvatar = getRandomTraderAvatar().url;
 
-    // Try server endpoint
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
@@ -250,37 +255,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         body: JSON.stringify({
           username: cleanUser,
           email: cleanEmail,
+          password: data.password,
           primaryBroker: data.primaryBroker || 'Exness',
           tradingStyle: data.tradingStyle || 'SCALPER',
           avatarUrl: randomInitialAvatar,
         }),
       });
-      if (res.ok) {
-        const body = await res.json();
-        if (body.user) {
-          if (!body.user.avatarUrl) {
-            body.user.avatarUrl = randomInitialAvatar;
+      const body = await res.json();
+      if (res.ok && body.user) {
+        if (body.token) {
+          try {
+            localStorage.setItem(TOKEN_STORAGE_KEY, body.token);
+          } catch {
+            // ignore
           }
-          setUser(body.user);
-          return { success: true };
         }
+        if (!body.user.avatarUrl) {
+          body.user.avatarUrl = randomInitialAvatar;
+        }
+        setUser(body.user);
+        return { success: true };
+      } else {
+        return { success: false, error: body.error || 'Registration failed' };
       }
     } catch {
-      // Client offline fallback
+      return { success: false, error: 'Could not connect to registration server' };
     }
-
-    const newUser: UserProfile = {
-      ...DEFAULT_USER_TEMPLATE,
-      id: `u_${cleanUser.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
-      username: cleanUser,
-      email: cleanEmail,
-      primaryBroker: data.primaryBroker || 'Exness',
-      tradingStyle: data.tradingStyle || 'SCALPER',
-      avatarUrl: randomInitialAvatar,
-    };
-
-    setUser(newUser);
-    return { success: true };
   };
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
@@ -289,11 +289,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updated = { ...user, ...updates };
     setUser(updated);
 
-    // Sync with server if online
+    const token = localStorage.getItem(TOKEN_STORAGE_KEY);
     try {
       await fetch('/api/auth/profile', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(updated),
       });
     } catch {
@@ -304,6 +307,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
+    try {
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // ignore
+    }
     setUser(null);
     setIsProfileModalOpen(false);
   };

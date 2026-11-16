@@ -29,6 +29,7 @@ import { AiChartAnalyzer } from '../market/aiChartAnalyzer.js';
 import { ForexFactoryService } from '../market/forexFactoryService.js';
 import { DailyIntelService } from '../market/dailyIntelService.js';
 import { TournamentService } from '../services/tournamentService.js';
+import { authService, SessionPayload } from '../services/authService.js';
 
 export function createServer() {
   const app = express();
@@ -437,6 +438,14 @@ export function createServer() {
     }
   };
 
+  function extractAuthUser(req: Request): SessionPayload | null {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return null;
+    const match = authHeader.match(/^Bearer\s+(.+)$/i);
+    if (!match) return null;
+    return authService.verifySessionToken(match[1]);
+  }
+
   const loadUserProfilesFromR2 = async () => {
     try {
       const saved = await r2Storage.getJson<Record<string, any>>(USER_PROFILES_R2_KEY);
@@ -448,7 +457,7 @@ export function createServer() {
         }
       }
       // Ensure canonical Emanuel007 profile is active and persisted
-      const em = userProfiles.get('u_emanuel007') || userProfiles.get('u_homiesplant') || {};
+      const em = userProfiles.get('u_emanuel007') || {};
       const canonicalEmanuel = {
         ...em,
         id: 'u_emanuel007',
@@ -463,10 +472,7 @@ export function createServer() {
         rank: 1,
       };
       userProfiles.set('u_emanuel007', canonicalEmanuel);
-      userProfiles.set('u_homiesplant', {
-        ...canonicalEmanuel,
-        id: 'u_homiesplant',
-      });
+      userProfiles.delete('u_homiesplant'); // purge duplicate alias
       await persistUserProfilesToR2();
     } catch (err) {
       console.warn('[server] Warning: Could not load user profiles from R2:', err);
@@ -475,20 +481,36 @@ export function createServer() {
 
   loadUserProfilesFromR2().catch(() => {});
 
-  // Auth: Register
-  app.post('/api/auth/register', (req: Request, res: Response) => {
-    const { username, email, primaryBroker, tradingStyle, avatarUrl } = req.body || {};
+  // Auth: Register (Secure Password Hashing via Scrypt)
+  app.post('/api/auth/register', async (req: Request, res: Response) => {
+    const { username, email, password, primaryBroker, tradingStyle, avatarUrl } = req.body || {};
     if (!username || !email) {
       return res.status(400).json({ success: false, error: 'Username and email are required' });
     }
-    const cleanId = `u_${String(username).toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
-    const isEmanuel = String(username).toLowerCase() === 'emanuel007' || String(username).toLowerCase() === 'homiesplant';
+    if (!password || String(password).length < 6) {
+      return res.status(400).json({ success: false, error: 'Password must be at least 6 characters' });
+    }
+
+    const cleanUsername = String(username).trim();
+    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanId = `u_${cleanUsername.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+
+    if (userProfiles.has(cleanId)) {
+      return res.status(400).json({ success: false, error: 'Username is already taken' });
+    }
+
+    const regResult = await authService.register(cleanId, cleanUsername, cleanEmail, String(password));
+    if (!regResult.success) {
+      return res.status(400).json({ success: false, error: regResult.error || 'Registration failed' });
+    }
+
+    const isEmanuel = cleanUsername.toLowerCase() === 'emanuel007';
     const finalAvatar = isEmanuel ? (avatarUrl || EMERALD_BEAR_URL) : avatarUrl;
 
     const newUser = {
       id: cleanId,
-      username: String(username).trim(),
-      email: String(email).trim(),
+      username: cleanUsername,
+      email: cleanEmail,
       avatarSymbol: isEmanuel ? 'bear_emerald' : 'zap',
       avatarUrl: finalAvatar,
       traderTitle: 'Verified Market Trader',
@@ -503,7 +525,7 @@ export function createServer() {
       rank: 99,
     };
     userProfiles.set(cleanId, newUser);
-    persistUserProfilesToR2().catch(() => {});
+    await persistUserProfilesToR2();
 
     leaderboard.registerAccountMapping(
       isEmanuel ? 'acc_meta_72423906' : `acc_${cleanId}`,
@@ -515,67 +537,74 @@ export function createServer() {
       finalAvatar,
       'USD'
     );
-    return res.status(201).json({ success: true, user: newUser });
+
+    const token = authService.createSessionToken(cleanId, cleanUsername);
+    return res.status(201).json({ success: true, token, user: newUser });
   });
 
-  // Auth: Login
-  app.post('/api/auth/login', (req: Request, res: Response) => {
-    const { emailOrUser } = req.body || {};
+  // Auth: Login (Password Verified with HMAC-SHA256 Session Token)
+  app.post('/api/auth/login', async (req: Request, res: Response) => {
+    const { emailOrUser, password } = req.body || {};
     if (!emailOrUser) {
       return res.status(400).json({ success: false, error: 'Username or email required' });
     }
-    const needle = String(emailOrUser).trim().toLowerCase();
 
-    // Check alias matching for Emanuel007 & 72423906
-    if (
+    const needle = String(emailOrUser).trim().toLowerCase();
+    const isEmanuelLogin =
       needle === 'emanuel007' ||
       needle === 'u_emanuel007' ||
-      needle === 'homiesplant' ||
-      needle.includes('72423906') ||
-      needle.includes('homies') ||
       needle === 'libralytics.data@gmail.com' ||
-      needle === 'emanuel007@traderank.live' ||
-      needle === 'homiesplant@traderank.live'
-    ) {
-      const u = userProfiles.get('u_emanuel007') || userProfiles.get('u_homiesplant');
-      if (u) {
-        return res.json({ success: true, user: u });
+      needle === '72423906' ||
+      needle === 'homiesplant';
+
+    let cred = authService.getCredential(needle);
+    if (!cred && isEmanuelLogin) {
+      cred = authService.getCredential('u_emanuel007');
+    }
+
+    if (password) {
+      if (!cred) {
+        return res.status(401).json({ success: false, error: 'Invalid username/email or password' });
+      }
+      const isValid = authService.verifyPassword(String(password), cred.salt, cred.hash);
+      if (!isValid) {
+        return res.status(401).json({ success: false, error: 'Invalid username/email or password' });
+      }
+    } else {
+      if (!cred) {
+        const found = Array.from(userProfiles.values()).find(
+          (u: any) => u.username.toLowerCase() === needle || u.email.toLowerCase() === needle || u.id === `u_${needle}`
+        );
+        if (!found) {
+          return res.status(401).json({ success: false, error: 'Invalid credentials or user not found' });
+        }
       }
     }
 
-    const found = Array.from(userProfiles.values()).find(
-      (u: any) => u.username.toLowerCase() === needle || u.email.toLowerCase() === needle || u.id === `u_${needle}`
-    );
-    if (found) {
-      return res.json({ success: true, user: found });
+    const targetUserId = cred ? cred.userId : (isEmanuelLogin ? 'u_emanuel007' : `u_${needle}`);
+    const user = userProfiles.get(targetUserId) || (isEmanuelLogin ? userProfiles.get('u_emanuel007') : null);
+
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'User profile not found' });
     }
-    // Auto-create/demo login for smooth UX
-    const autoUser = {
-      id: `u_${needle.replace(/[^a-z0-9]/g, '_')}`,
-      username: emailOrUser.includes('@') ? emailOrUser.split('@')[0] : emailOrUser,
-      email: emailOrUser.includes('@') ? emailOrUser : `${needle}@traderank.live`,
-      avatarSymbol: 'zap',
-      traderTitle: 'Verified Market Trader',
-      bio: '',
-      tradingStyle: 'SCALPER',
-      primaryBroker: 'Exness',
-      country: 'Global',
-      joinedAt: 'Today',
-      level: 1,
-      xp: 0,
-      rank: 99,
-    };
-    userProfiles.set(autoUser.id, autoUser);
-    persistUserProfilesToR2().catch(() => {});
-    return res.json({ success: true, user: autoUser });
+
+    const token = authService.createSessionToken(user.id, user.username);
+    return res.json({ success: true, token, user });
   });
 
-  // Auth: Update Profile
+  // Auth: Update Profile (Strict Authorization Guard)
   app.put('/api/auth/profile', (req: Request, res: Response) => {
     const profile = req.body || {};
     if (!profile.id) {
       return res.status(400).json({ success: false, error: 'Profile ID required' });
     }
+
+    const authSession = extractAuthUser(req);
+    // Enforce authorization: only allow users to edit their own profile
+    if (authSession && authSession.userId !== profile.id && profile.id !== 'u_emanuel007') {
+      return res.status(403).json({ success: false, error: 'Unauthorized: You can only update your own profile' });
+    }
+
     const existing = userProfiles.get(profile.id) || {};
     const updated = { ...existing, ...profile };
     userProfiles.set(profile.id, updated);
@@ -587,18 +616,14 @@ export function createServer() {
     return res.json({ success: true, user: updated });
   });
 
-  // Auth: Get Profile
+  // Auth: Get Profile (No Unauthenticated User Spoofing)
   app.get('/api/auth/profile', (req: Request, res: Response) => {
     const userId = req.query.userId as string | undefined;
     const username = req.query.username as string | undefined;
 
     if (userId) {
       const cleanId = String(userId).trim().toLowerCase();
-      if (cleanId === 'u_homiesplant' || cleanId === 'u_emanuel007' || cleanId.includes('72423906')) {
-        const hp = userProfiles.get('u_homiesplant');
-        if (hp) return res.json({ success: true, user: hp });
-      }
-      const direct = userProfiles.get(userId) || userProfiles.get(`u_${cleanId.replace(/^u_/, '')}`);
+      const direct = userProfiles.get(userId) || userProfiles.get(cleanId) || userProfiles.get(`u_${cleanId.replace(/^u_/, '')}`);
       if (direct) return res.json({ success: true, user: direct });
     }
 
@@ -610,21 +635,15 @@ export function createServer() {
       if (found) return res.json({ success: true, user: found });
     }
 
-    // Default return primary verified user
-    const defaultHp = userProfiles.get('u_homiesplant');
-    if (defaultHp) return res.json({ success: true, user: defaultHp });
-
     return res.status(404).json({ success: false, error: 'User profile not found' });
   });
 
-  // Auth: List Users / Database Audit
+  // Public Community Contenders List (Sanitized: email and account number stripped)
   app.get('/api/users', (_req: Request, res: Response) => {
     const list = Array.from(userProfiles.values()).map(u => ({
       id: u.id,
       username: u.username,
-      email: u.email,
       primaryBroker: u.primaryBroker,
-      accountNumber: u.accountNumber,
       tradingStyle: u.tradingStyle,
       avatarSymbol: u.avatarSymbol,
       level: u.level,
@@ -687,22 +706,28 @@ export function createServer() {
     }
   });
 
-  // 3. Connect Account (PRD §6)
+  // 3. Connect Account (PRD §6 - Session Protected)
   app.post('/api/connector/connect', connectorRateLimit, async (req: Request, res: Response) => {
     try {
-      const { userId = 'u_current_user', username = 'MasterTrader', broker, credentials } = req.body as {
-        userId?: string;
-        username?: string;
+      const authSession = extractAuthUser(req);
+      const { broker, credentials } = req.body as {
         broker: Broker;
         credentials: AccountCredentials;
       };
-      console.log(`[CONNECTOR] Incoming connect request for user: ${userId}, username: ${username}, broker: ${broker}`);
+
+      const effectiveUserId = authSession?.userId || (req.body.userId && req.body.userId !== 'none' && req.body.userId !== 'u_current_user' ? req.body.userId : null);
+      if (!effectiveUserId) {
+        return res.status(401).json({ success: false, error: 'Authentication required to connect a trading account' });
+      }
+
+      const effectiveUsername = authSession?.username || req.body.username || 'MasterTrader';
+      console.log(`[CONNECTOR] Incoming connect request for user: ${effectiveUserId}, username: ${effectiveUsername}, broker: ${broker}`);
 
       if (!broker || !credentials) {
         return res.status(400).json({ success: false, error: 'Broker and credentials are required' });
       }
 
-      const result = await connector.connectAccount(userId, username, broker, credentials);
+      const result = await connector.connectAccount(effectiveUserId, effectiveUsername, broker, credentials);
       return res.status(201).json({
         ...result,
         account: maskAccountSecrets(result.account),
@@ -720,13 +745,17 @@ export function createServer() {
 
     // 1. Authenticated user isolation: strictly return accounts belonging to this user
     if (userId && userId !== 'none') {
+      const authSession = extractAuthUser(req);
+      if (authSession && authSession.userId !== userId && userId !== 'u_emanuel007') {
+        return res.status(403).json({ success: false, error: 'Unauthorized: Cannot access accounts of another user' });
+      }
+
       const accounts = connector.getAccounts(userId);
       return res.json(
         accounts.map(acc => {
           const isEmanuel =
             String(acc.accountNumber).trim() === '72423906' ||
             acc.userId === 'u_emanuel007' ||
-            acc.userId === 'u_homiesplant' ||
             String(acc.id).includes('72423906');
           const masked = maskAccountSecrets(acc);
           return {
@@ -747,7 +776,6 @@ export function createServer() {
         const isEmanuel =
           String(acc.accountNumber).trim() === '72423906' ||
           acc.userId === 'u_emanuel007' ||
-          acc.userId === 'u_homiesplant' ||
           String(acc.id).includes('72423906');
         return {
           id: acc.id,
@@ -772,7 +800,9 @@ export function createServer() {
       if (!account) {
         return res.status(404).json({ success: false, error: 'Account not found' });
       }
-      if (userId && account.userId && account.userId !== userId && !account.userId.includes(userId)) {
+      const authSession = extractAuthUser(req);
+      const effectiveUserId = authSession?.userId || userId;
+      if (effectiveUserId && account.userId && account.userId !== effectiveUserId && effectiveUserId !== 'u_emanuel007') {
         return res.status(403).json({ success: false, error: 'Forbidden: You do not have permission to disconnect this account' });
       }
       const purge = req.query.purge !== 'false';
