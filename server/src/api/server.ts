@@ -1301,8 +1301,38 @@ export function createServer() {
     }
   });
 
-  // Subscription Store in memory
+  // Subscription Store with Persistent Storage (Local Disk + Cloudflare R2)
+  const SUBSCRIPTIONS_R2_KEY = 'billing/subscriptions.json';
   const userSubscriptions = new Map<string, any>();
+
+  const persistSubscriptionsToR2 = async () => {
+    try {
+      const records: Record<string, any> = {};
+      for (const [k, v] of userSubscriptions.entries()) {
+        records[k] = v;
+      }
+      await r2Storage.uploadJson(SUBSCRIPTIONS_R2_KEY, records, { 'x-traderrank-type': 'user_subscriptions' });
+    } catch (err) {
+      console.warn('[server] Warning: Could not persist subscriptions to R2:', err);
+    }
+  };
+
+  const loadSubscriptionsFromR2 = async () => {
+    try {
+      const saved = await r2Storage.getJson<Record<string, any>>(SUBSCRIPTIONS_R2_KEY);
+      if (saved && typeof saved === 'object') {
+        for (const [k, v] of Object.entries(saved)) {
+          if (v && typeof v === 'object') {
+            userSubscriptions.set(k, v);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[server] Warning: Could not load subscriptions from R2:', err);
+    }
+  };
+
+  loadSubscriptionsFromR2().catch(() => {});
 
   // 20. Pro Subscription Plans ($9/mo)
   app.get('/api/subscription/plans', (_req: Request, res: Response) => {
@@ -1363,6 +1393,7 @@ export function createServer() {
       };
 
       userSubscriptions.set(userId, subRecord);
+      persistSubscriptionsToR2().catch(() => {});
 
       // Update user profile if exists
       if (userId && userProfiles.has(userId)) {
@@ -1370,6 +1401,7 @@ export function createServer() {
         u.subscriptionTier = tier;
         u.isPro = true;
         userProfiles.set(userId, u);
+        persistUserProfilesToR2().catch(() => {});
       }
 
       res.json({

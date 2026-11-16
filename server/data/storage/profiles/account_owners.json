@@ -1,0 +1,55 @@
+{
+  "20938471": {
+    "userId": "u_demo_1",
+    "username": "TraderAlex",
+    "broker": "XM",
+    "accountNumber": "20938471",
+    "platform": "MT5",
+    "accountId": "acc_9b3a7677",
+    "serverName": "XMGlobal-Real 20",
+    "connectedAt": "2026-11-16T08:38:20.940Z",
+    "status": "CONNECTED"
+  },
+  "33445566": {
+    "userId": "u_demo_jp",
+    "username": "TokyoTrader",
+    "broker": "XMTrading",
+    "accountNumber": "33445566",
+    "platform": "MT5",
+    "accountId": "acc_3101215f",
+    "serverName": "XMTrading-MT5",
+    "connectedAt": "2026-11-16T08:38:20.954Z",
+    "status": "CONNECTED"
+  },
+  "72423906": {
+    "userId": "u_emanuel007",
+    "username": "Emanuel007",
+    "broker": "XMTrading",
+    "accountNumber": "72423906",
+    "platform": "MT5",
+    "serverName": "XMTrading-MT5 3",
+    "connectedAt": "2026-11-16T08:38:20.940Z",
+    "status": "CONNECTED"
+  },
+  "88229911": {
+    "userId": "u_persistence_tester",
+    "username": "PersistenceTester",
+    "broker": "Exness",
+    "accountNumber": "88229911",
+    "platform": "MT5",
+    "accountId": "acc_101efb0f",
+    "serverName": "Exness-Real15",
+    "connectedAt": "2026-11-16T08:38:20.946Z",
+    "status": "CONNECTED"
+  },
+  "EXN-554433": {
+    "userId": "u_demo_2",
+    "username": "ExnessSniper",
+    "broker": "Exness",
+    "accountNumber": "EXN-554433",
+    "platform": "NATIVE",
+    "accountId": "acc_ea438e85",
+    "connectedAt": "2026-11-16T08:38:20.950Z",
+    "status": "CONNECTED"
+  }
+}

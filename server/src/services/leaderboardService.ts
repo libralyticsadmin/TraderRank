@@ -15,6 +15,7 @@ import {
   DailyChampionRecord,
 } from '../../../shared/src/types.js';
 import { RedisStreamsBus } from '../eventbus/redisStreamsBus.js';
+import { r2Storage } from './r2StorageService.js';
 
 interface TraderAggregate {
   userId: string;
@@ -58,6 +59,7 @@ export class LeaderboardService {
 
   constructor() {
     this.initEventConsumers();
+    this.loadHistoricalChampionsFromR2().catch(() => {});
   }
 
   public static getInstance(): LeaderboardService {
@@ -426,6 +428,37 @@ export class LeaderboardService {
    */
   public getDailyChampionsHistory(): DailyChampionRecord[] {
     return [...this.historicalChampions];
+  }
+
+  public recordHistoricalDailyChampion(record: DailyChampionRecord): void {
+    const existingIdx = this.historicalChampions.findIndex(c => c.date === record.date);
+    if (existingIdx >= 0) {
+      this.historicalChampions[existingIdx] = record;
+    } else {
+      this.historicalChampions.unshift(record);
+    }
+    this.persistHistoricalChampionsToR2().catch(() => {});
+  }
+
+  public async persistHistoricalChampionsToR2(): Promise<void> {
+    try {
+      await r2Storage.uploadJson('leaderboards/daily_champions.json', this.historicalChampions, {
+        'x-traderrank-type': 'daily_champions',
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  public async loadHistoricalChampionsFromR2(): Promise<void> {
+    try {
+      const saved = await r2Storage.getJson<DailyChampionRecord[]>('leaderboards/daily_champions.json');
+      if (Array.isArray(saved) && saved.length > 0) {
+        this.historicalChampions = saved;
+      }
+    } catch {
+      // ignore
+    }
   }
 
   public onLeaderboardChange(cb: (entries: LeaderboardEntry[]) => void): () => void {

@@ -1,0 +1,26 @@
+[
+  {
+    "date": "2026-11-14",
+    "winnerUserId": "u_emanuel007",
+    "winnerUsername": "Emanuel007",
+    "winnerAvatarSymbol": "bear_emerald",
+    "winnerBrokers": [
+      "XMTrading"
+    ],
+    "pipsWon": 62.8,
+    "winRate": 85,
+    "tradesCompleted": 7
+  },
+  {
+    "date": "2026-11-15",
+    "winnerUserId": "u_emanuel007",
+    "winnerUsername": "Emanuel007",
+    "winnerAvatarSymbol": "bear_emerald",
+    "winnerBrokers": [
+      "XMTrading"
+    ],
+    "pipsWon": 45.2,
+    "winRate": 80,
+    "tradesCompleted": 5
+  }
+]

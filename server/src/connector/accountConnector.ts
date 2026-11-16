@@ -65,6 +65,18 @@ function getDefaultTraderUsername(accountNumber?: string): string {
   return TRADER_HANDLE_POOL[Math.abs(hash) % TRADER_HANDLE_POOL.length];
 }
 
+export interface AccountOwnerRecord {
+  userId: string;
+  username?: string;
+  broker: Broker;
+  accountNumber: string;
+  platform?: Platform;
+  accountId?: string;
+  serverName?: string;
+  connectedAt: string;
+  status: 'CONNECTED' | 'DISCONNECTED';
+}
+
 export class AccountConnectorService {
   private static instance: AccountConnectorService;
   private vault = SecretsVault.getInstance();
@@ -76,6 +88,7 @@ export class AccountConnectorService {
 
   // Relational storage simulation for connected trading accounts (Postgres model)
   private accounts = new Map<string, TradingAccount>();
+  private accountOwners = new Map<string, AccountOwnerRecord>();
   private traderUsernames = new Map<string, string>();
   private traderAvatars = new Map<string, string>();
   private tradesStorage = new Map<string, CanonicalTrade[]>();
@@ -93,6 +106,7 @@ export class AccountConnectorService {
     this.traderAvatars.set('homiesplant', EMERALD_BEAR_URL);
 
     this.initWorkerEventWiring();
+    this.loadAccountOwnersFromR2().catch(() => {});
     this.syncCloudProvisionedAccounts().catch(() => {});
   }
 
@@ -199,6 +213,23 @@ export class AccountConnectorService {
     };
 
     this.accounts.set(accountId, account);
+
+    // Persist account ownership mapping across server restarts (multi-tenant boundary)
+    const ownerRecord: AccountOwnerRecord = {
+      userId,
+      username: resolvedProfileUsername,
+      broker,
+      accountNumber,
+      platform,
+      accountId,
+      serverName,
+      connectedAt: new Date().toISOString(),
+      status: 'CONNECTED',
+    };
+    this.accountOwners.set(accountNumber, ownerRecord);
+    this.accountOwners.set(accountId, ownerRecord);
+    this.persistAccountOwnersToR2().catch(() => {});
+
     this.leaderboard.registerAccountMapping(accountId, userId, resolvedProfileUsername, broker, resolvedProfileUsername, accountNumber);
 
     // 4. Provision worker
@@ -385,6 +416,82 @@ export class AccountConnectorService {
     }
   }
 
+  public async loadAccountOwnersFromR2(): Promise<void> {
+    try {
+      const saved = await r2Storage.getJson<Record<string, AccountOwnerRecord>>('profiles/account_owners.json');
+      if (saved && typeof saved === 'object') {
+        for (const [k, v] of Object.entries(saved)) {
+          if (v && v.userId && v.accountNumber) {
+            this.accountOwners.set(k, v);
+            this.accountOwners.set(String(v.accountNumber).trim(), v);
+            if (v.accountId) {
+              this.accountOwners.set(v.accountId, v);
+            }
+          }
+        }
+      }
+      // Ensure canonical owner mapping for verified Emanuel007 account
+      if (!this.accountOwners.has('72423906')) {
+        const canonicalEmanuelOwner: AccountOwnerRecord = {
+          userId: 'u_emanuel007',
+          username: 'Emanuel007',
+          broker: 'XMTrading',
+          accountNumber: '72423906',
+          platform: 'MT5',
+          serverName: 'XMTrading-MT5 3',
+          connectedAt: new Date().toISOString(),
+          status: 'CONNECTED',
+        };
+        this.accountOwners.set('72423906', canonicalEmanuelOwner);
+        this.accountOwners.set('acc_meta_72423906', canonicalEmanuelOwner);
+        this.persistAccountOwnersToR2().catch(() => {});
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  public async persistAccountOwnersToR2(): Promise<void> {
+    try {
+      const records: Record<string, AccountOwnerRecord> = {};
+      for (const [, v] of this.accountOwners.entries()) {
+        if (v && v.accountNumber) {
+          records[String(v.accountNumber).trim()] = v;
+        }
+      }
+      if (!records['72423906']) {
+        records['72423906'] = {
+          userId: 'u_emanuel007',
+          username: 'Emanuel007',
+          broker: 'XMTrading',
+          accountNumber: '72423906',
+          platform: 'MT5',
+          serverName: 'XMTrading-MT5 3',
+          connectedAt: new Date().toISOString(),
+          status: 'CONNECTED',
+        };
+      }
+      await r2Storage.uploadJson('profiles/account_owners.json', records, { 'x-traderrank-type': 'account_owners' });
+    } catch {
+      // ignore
+    }
+  }
+
+  public getAccountOwner(accountNumberOrId: string): AccountOwnerRecord | null {
+    const clean = String(accountNumberOrId || '').trim();
+    return this.accountOwners.get(clean) || null;
+  }
+
+  public getAllAccountOwners(): AccountOwnerRecord[] {
+    const unique = new Map<string, AccountOwnerRecord>();
+    for (const v of this.accountOwners.values()) {
+      if (v && v.accountNumber) {
+        unique.set(String(v.accountNumber).trim(), v);
+      }
+    }
+    return Array.from(unique.values());
+  }
+
   public updateUserAccountsName(
     userId: string,
     newUsername: string,
@@ -459,6 +566,7 @@ export class AccountConnectorService {
 
     await this.loadTraderUsernamesFromR2();
     await this.loadTraderAvatarsFromR2();
+    await this.loadAccountOwnersFromR2();
 
     try {
       const provisionedList = await this.metaApiClient.listProvisionedAccounts();
@@ -493,9 +601,13 @@ export class AccountConnectorService {
           a => String(a.accountNumber).trim() === cleanLogin || a.metaApiAccountId === p.id
         );
         const accountId = existingAcc?.id || `acc_meta_${cleanLogin}`;
+        const savedOwner =
+          this.accountOwners.get(cleanLogin) ||
+          (existingAcc ? this.accountOwners.get(existingAcc.id) : null);
+
         const userId = isEmanuelAccount
           ? 'u_emanuel007'
-          : (existingAcc?.userId && existingAcc.userId !== 'usr_live_meta' ? existingAcc.userId : `usr_meta_${cleanLogin}`);
+          : (savedOwner?.userId || (existingAcc?.userId && existingAcc.userId !== 'usr_live_meta' ? existingAcc.userId : `usr_meta_${cleanLogin}`));
         const avatarUrl = isEmanuelAccount
           ? EMERALD_BEAR_AVATAR_URL
           : (this.traderAvatars.get(cleanLogin) ||
@@ -506,6 +618,7 @@ export class AccountConnectorService {
         const profileUsername = isEmanuelAccount
           ? 'Emanuel007'
           : (
+              savedOwner?.username ||
               this.traderUsernames.get(cleanLogin) ||
               this.traderUsernames.get(userId) ||
               DEFAULT_TRADER_USERNAMES[cleanLogin] ||
@@ -560,6 +673,22 @@ export class AccountConnectorService {
         };
 
         this.accounts.set(accountId, tradingAccount);
+
+        if (!this.accountOwners.has(cleanLogin)) {
+          this.accountOwners.set(cleanLogin, {
+            userId,
+            username: profileUsername,
+            broker: brokerName,
+            accountNumber: cleanLogin,
+            platform: (p.platform?.toUpperCase() === 'MT4' ? 'MT4' : 'MT5') as Platform,
+            accountId,
+            serverName: p.server,
+            connectedAt: new Date().toISOString(),
+            status: 'CONNECTED',
+          });
+          this.persistAccountOwnersToR2().catch(() => {});
+        }
+
         this.leaderboard.registerAccountMapping(
           accountId,
           userId,
@@ -1073,6 +1202,20 @@ export class AccountConnectorService {
       this.rawDealsCache.delete(accountId);
       this.lastDealSyncAt.delete(accountId);
       this.lastDealCursorTime.delete(accountId);
+    }
+
+    // Update persistent account ownership status
+    const cleanAcc = String(account.accountNumber || '').trim();
+    const existingOwner = this.accountOwners.get(cleanAcc) || this.accountOwners.get(accountId);
+    if (existingOwner) {
+      if (purge) {
+        this.accountOwners.delete(cleanAcc);
+        this.accountOwners.delete(accountId);
+      } else {
+        existingOwner.status = 'DISCONNECTED';
+        this.accountOwners.set(cleanAcc, existingOwner);
+      }
+      this.persistAccountOwnersToR2().catch(() => {});
     }
 
     await this.eventBus.publish('stream:account.events', 'account.disconnected', accountId, {

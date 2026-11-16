@@ -6,7 +6,7 @@ describe('Daily Winning Pips & Best Trader Engine', () => {
   const leaderboard = LeaderboardService.getInstance();
   const eventBus = RedisStreamsBus.getInstance();
 
-  beforeAll(() => {
+  beforeAll(async () => {
     // Setup verified active traders across brokers
     leaderboard.registerAccountMapping(
       'acc_u_apex',
@@ -44,6 +44,26 @@ describe('Daily Winning Pips & Best Trader Engine', () => {
       winRate: 80,
       tradesCompleted: 5,
     });
+
+    // Publish verified closed trade today so Daily Best Trader has active scored pips
+    await eventBus.publish('stream:trade.closed.normalized', 'trade.closed.normalized', 'acc_u_apex', {
+      id: 'trade_setup_apex_1',
+      accountId: 'acc_u_apex',
+      ticket: '10001',
+      symbol: 'EURUSD',
+      type: 'BUY',
+      lotSize: 1.0,
+      openPrice: 1.0800,
+      closePrice: 1.0850,
+      pnlCurrency: 50.0,
+      currency: 'USD',
+      pnlPips: 50.0,
+      commission: 0,
+      swap: 0,
+      openTime: new Date().toISOString(),
+      closeTime: new Date().toISOString(),
+    });
+    await new Promise(r => setTimeout(r, 50));
   });
 
   it('should calculate daily leaderboard and identify Daily Best Trader', () => {
