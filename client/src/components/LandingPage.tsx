@@ -305,14 +305,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         userId: trader.userId,
         avatarUrl: trader.avatarUrl,
       });
-      const isHomiesAcc =
+      const isEmanuelAcc =
         cleanAcc === '72423906' ||
-        identity.profileName === 'HomiesPlant' ||
-        trader.username === 'HomiesPlant' ||
+        identity.profileName === 'Emanuel007' ||
+        trader.username === 'Emanuel007' ||
+        trader.userId === 'u_emanuel007' ||
         trader.userId === 'u_homiesplant' ||
         String(trader.accountNumber || '').includes('72423906') ||
-        String(trader.username || '').toLowerCase().includes('emanuel');
-      const currency = isHomiesAcc ? 'USD' : (real?.currency || (trader as any).currency || 'USD');
+        String(trader.username || '').toLowerCase().includes('emanuel') ||
+        String(trader.username || '').toLowerCase().includes('homies');
+      const currency = isEmanuelAcc ? 'USD' : (real?.currency || (trader as any).currency || 'USD');
 
       return {
         userId: trader.userId,

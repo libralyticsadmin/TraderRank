@@ -363,10 +363,30 @@ export function createServer() {
 
   const userProfiles = new Map<string, any>([
     [
+      'u_emanuel007',
+      {
+        id: 'u_emanuel007',
+        username: 'Emanuel007',
+        email: 'libralytics.data@gmail.com',
+        avatarSymbol: 'bear_emerald',
+        avatarUrl: EMERALD_BEAR_URL,
+        traderTitle: 'Verified Gold & FX Master',
+        bio: 'Disciplined price action & high R:R execution. 100% MetaApi verified read-only MT5 account.',
+        tradingStyle: 'SCALPER',
+        primaryBroker: 'XMTrading',
+        accountNumber: '72423906',
+        country: 'Global',
+        joinedAt: 'November 2026',
+        level: 1,
+        xp: 575,
+        rank: 1,
+      },
+    ],
+    [
       'u_homiesplant',
       {
         id: 'u_homiesplant',
-        username: 'HomiesPlant',
+        username: 'Emanuel007',
         email: 'libralytics.data@gmail.com',
         avatarSymbol: 'bear_emerald',
         avatarUrl: EMERALD_BEAR_URL,
@@ -422,32 +442,30 @@ export function createServer() {
       const saved = await r2Storage.getJson<Record<string, any>>(USER_PROFILES_R2_KEY);
       if (saved && typeof saved === 'object') {
         for (const [k, v] of Object.entries(saved)) {
-          if (
-            v &&
-            v.id &&
-            k !== 'u_emanuel007' &&
-            v.id !== 'u_emanuel007' &&
-            String(v.username || '').toLowerCase() !== 'emanuel007' &&
-            (v.accountNumber !== '72423906' || k === 'u_homiesplant')
-          ) {
+          if (v && v.id) {
             userProfiles.set(k, v);
           }
         }
       }
-      userProfiles.delete('u_emanuel007');
-      userProfiles.delete('emanuel007');
-      const hp = userProfiles.get('u_homiesplant') || {};
-      userProfiles.set('u_homiesplant', {
-        ...hp,
-        id: 'u_homiesplant',
-        username: 'HomiesPlant',
-        email: hp.email || 'libralytics.data@gmail.com',
+      // Ensure canonical Emanuel007 profile is active and persisted
+      const em = userProfiles.get('u_emanuel007') || userProfiles.get('u_homiesplant') || {};
+      const canonicalEmanuel = {
+        ...em,
+        id: 'u_emanuel007',
+        username: 'Emanuel007',
+        email: em.email || 'libralytics.data@gmail.com',
         accountNumber: '72423906',
         avatarSymbol: 'bear_emerald',
         avatarUrl: EMERALD_BEAR_URL,
         primaryBroker: 'XMTrading',
+        currency: 'USD',
         xp: 575,
         rank: 1,
+      };
+      userProfiles.set('u_emanuel007', canonicalEmanuel);
+      userProfiles.set('u_homiesplant', {
+        ...canonicalEmanuel,
+        id: 'u_homiesplant',
       });
       await persistUserProfilesToR2();
     } catch (err) {
@@ -464,20 +482,20 @@ export function createServer() {
       return res.status(400).json({ success: false, error: 'Username and email are required' });
     }
     const cleanId = `u_${String(username).toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
-    const isHomies = String(username).toLowerCase() === 'homiesplant' || String(username).toLowerCase() === 'emanuel007';
-    const finalAvatar = isHomies ? (avatarUrl || EMERALD_BEAR_URL) : avatarUrl;
+    const isEmanuel = String(username).toLowerCase() === 'emanuel007' || String(username).toLowerCase() === 'homiesplant';
+    const finalAvatar = isEmanuel ? (avatarUrl || EMERALD_BEAR_URL) : avatarUrl;
 
     const newUser = {
       id: cleanId,
       username: String(username).trim(),
       email: String(email).trim(),
-      avatarSymbol: isHomies ? 'bear_emerald' : 'zap',
+      avatarSymbol: isEmanuel ? 'bear_emerald' : 'zap',
       avatarUrl: finalAvatar,
       traderTitle: 'Verified Market Trader',
       bio: '',
       tradingStyle: tradingStyle || 'SCALPER',
-      primaryBroker: isHomies ? 'XMTrading' : (primaryBroker || 'Exness'),
-      accountNumber: isHomies ? '72423906' : undefined,
+      primaryBroker: isEmanuel ? 'XMTrading' : (primaryBroker || 'Exness'),
+      accountNumber: isEmanuel ? '72423906' : undefined,
       country: 'Global',
       joinedAt: 'Today',
       level: 1,
@@ -488,12 +506,12 @@ export function createServer() {
     persistUserProfilesToR2().catch(() => {});
 
     leaderboard.registerAccountMapping(
-      isHomies ? 'acc_meta_72423906' : `acc_${cleanId}`,
+      isEmanuel ? 'acc_meta_72423906' : `acc_${cleanId}`,
       cleanId,
       newUser.username,
       newUser.primaryBroker as Broker,
       newUser.username,
-      isHomies ? '72423906' : undefined,
+      isEmanuel ? '72423906' : undefined,
       finalAvatar,
       'USD'
     );
@@ -508,19 +526,20 @@ export function createServer() {
     }
     const needle = String(emailOrUser).trim().toLowerCase();
 
-    // Check alias matching for HomiesPlant & 72423906
+    // Check alias matching for Emanuel007 & 72423906
     if (
-      needle === 'homiesplant' ||
       needle === 'emanuel007' ||
+      needle === 'u_emanuel007' ||
+      needle === 'homiesplant' ||
       needle.includes('72423906') ||
       needle.includes('homies') ||
       needle === 'libralytics.data@gmail.com' ||
-      needle === 'homiesplant@traderank.live' ||
-      needle === 'emanuel007@traderank.live'
+      needle === 'emanuel007@traderank.live' ||
+      needle === 'homiesplant@traderank.live'
     ) {
-      const hp = userProfiles.get('u_homiesplant');
-      if (hp) {
-        return res.json({ success: true, user: hp });
+      const u = userProfiles.get('u_emanuel007') || userProfiles.get('u_homiesplant');
+      if (u) {
+        return res.json({ success: true, user: u });
       }
     }
 
@@ -543,7 +562,7 @@ export function createServer() {
       country: 'Global',
       joinedAt: 'Today',
       level: 1,
-      xp: 100,
+      xp: 0,
       rank: 99,
     };
     userProfiles.set(autoUser.id, autoUser);
@@ -704,13 +723,18 @@ export function createServer() {
       const accounts = connector.getAccounts(userId);
       return res.json(
         accounts.map(acc => {
-          const isHomies = String(acc.accountNumber).trim() === '72423906' || acc.userId === 'u_homiesplant' || String(acc.id).includes('72423906');
+          const isEmanuel =
+            String(acc.accountNumber).trim() === '72423906' ||
+            acc.userId === 'u_emanuel007' ||
+            acc.userId === 'u_homiesplant' ||
+            String(acc.id).includes('72423906');
           const masked = maskAccountSecrets(acc);
           return {
             ...masked,
-            userId: isHomies ? 'u_homiesplant' : acc.userId,
-            profileUsername: isHomies ? 'HomiesPlant' : acc.profileUsername,
-            currency: isHomies ? 'USD' : (acc.currency || 'USD'),
+            userId: isEmanuel ? 'u_emanuel007' : acc.userId,
+            profileUsername: isEmanuel ? 'Emanuel007' : acc.profileUsername,
+            accountHolderName: isEmanuel ? 'Emanuel007' : masked.accountHolderName,
+            currency: isEmanuel ? 'USD' : (acc.currency || 'USD'),
           };
         })
       );
@@ -720,13 +744,17 @@ export function createServer() {
     const allAccounts = connector.getAccounts();
     return res.json(
       allAccounts.map(acc => {
-        const isHomies = String(acc.accountNumber).trim() === '72423906' || acc.userId === 'u_homiesplant' || String(acc.id).includes('72423906');
+        const isEmanuel =
+          String(acc.accountNumber).trim() === '72423906' ||
+          acc.userId === 'u_emanuel007' ||
+          acc.userId === 'u_homiesplant' ||
+          String(acc.id).includes('72423906');
         return {
           id: acc.id,
-          userId: isHomies ? 'u_homiesplant' : acc.userId,
+          userId: isEmanuel ? 'u_emanuel007' : acc.userId,
           accountNumber: acc.accountNumber,
-          profileUsername: isHomies ? 'HomiesPlant' : acc.profileUsername,
-          currency: isHomies ? 'USD' : (acc.currency || 'USD'),
+          profileUsername: isEmanuel ? 'Emanuel007' : acc.profileUsername,
+          currency: isEmanuel ? 'USD' : (acc.currency || 'USD'),
           broker: acc.broker,
           platform: acc.platform,
           connectionStatus: acc.connectionStatus,

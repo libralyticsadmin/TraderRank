@@ -1251,7 +1251,7 @@ const isRawAccountTag = (val?: string | null): boolean => {
 };
 
 const DEFAULT_TRADER_USERNAMES: Record<string, string> = {
-  '72423906': 'HomiesPlant',
+  '72423906': 'Emanuel007',
   '342186831': 'ApexTrader_FX',
   '411407722': 'Vanguard_FX',
 };
@@ -1289,18 +1289,16 @@ const getLocalTraderUsername = (accountNumber?: string | null, userId?: string |
   if (typeof window === 'undefined') return null;
   try {
     const cleanAcc = accountNumber ? String(accountNumber).replace(/^TraderRank-/i, '').trim() : '';
-    if (cleanAcc === '72423906') return 'HomiesPlant';
+    if (cleanAcc === '72423906') return 'Emanuel007';
 
     const mapRaw = localStorage.getItem('traderank_account_usernames_v1');
     if (mapRaw) {
       const map = JSON.parse(mapRaw);
       if (cleanAcc && map[cleanAcc] && !isRawAccountTag(map[cleanAcc])) {
-        const val = String(map[cleanAcc]).trim();
-        if (!val.toLowerCase().includes('emanuel')) return val;
+        return String(map[cleanAcc]).trim();
       }
       if (userId && map[userId] && !isRawAccountTag(map[userId])) {
-        const val = String(map[userId]).trim();
-        if (!val.toLowerCase().includes('emanuel')) return val;
+        return String(map[userId]).trim();
       }
     }
 
@@ -1401,7 +1399,7 @@ export const resolveTraderIdentity = (params: {
 
   // 2. Resolve Trader Profile Username (Priority: local user profile username -> default mapped username for verified real accounts -> server profile -> default handle)
   const cleanAcc = accountNumber ? String(accountNumber).replace(/^TraderRank-/i, '').trim() : '';
-  const isHomies =
+  const isEmanuel =
     cleanAcc === '72423906' ||
     rawUid.includes('72423906') ||
     rawProfile === 'Emanuel007' ||
@@ -1416,19 +1414,15 @@ export const resolveTraderIdentity = (params: {
   const localUsername = getLocalTraderUsername(accountNumber, rawUid);
   const defaultMappedUser =
     (cleanAcc && DEFAULT_TRADER_USERNAMES[cleanAcc]) ||
-    (isHomies ? 'HomiesPlant' : null);
+    (isEmanuel ? 'Emanuel007' : null);
 
-  if (isHomies) {
-    profileName = 'HomiesPlant';
-  } else if (localUsername && !localUsername.toLowerCase().includes('emanuel')) {
+  if (isEmanuel) {
+    profileName = 'Emanuel007';
+  } else if (localUsername) {
     profileName = localUsername;
   } else if (
     defaultMappedUser &&
-    (rawProfile === 'Emanuel007' ||
-      rawUser === 'Emanuel007' ||
-      rawUser.toLowerCase().includes('emanuel') ||
-      isRawAccountTag(rawProfile) ||
-      isRawAccountTag(rawUser))
+    (isRawAccountTag(rawProfile) || isRawAccountTag(rawUser))
   ) {
     profileName = defaultMappedUser;
   } else if (!isRawAccountTag(rawProfile)) {
@@ -1445,7 +1439,7 @@ export const resolveTraderIdentity = (params: {
     (cleanAcc && DEFAULT_TRADER_AVATARS[cleanAcc]) ||
     (profileName && DEFAULT_TRADER_AVATARS[profileName]) ||
     (profileName && DEFAULT_TRADER_AVATARS[profileName.toLowerCase()]);
-  const avatarUrl = isHomies
+  const avatarUrl = isEmanuel
     ? (params.avatarUrl || localAvatar || DEFAULT_TRADER_AVATARS['72423906'])
     : (params.avatarUrl || localAvatar || defaultMappedAvatar || undefined);
 

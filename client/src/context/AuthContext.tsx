@@ -88,16 +88,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           parsed.level = 1;
         }
 
-        // Guaranteed real user profile alignment: sanitize cached Emanuel007 to HomiesPlant
+        // Guaranteed real user profile alignment: sanitize cached user to canonical Emanuel007
         if (
           parsed.username === 'Emanuel007' ||
           parsed.username?.toLowerCase().includes('emanuel') ||
+          parsed.username === 'HomiesPlant' ||
+          parsed.id === 'u_homiesplant' ||
           parsed.accountNumber === '72423906' ||
-          parsed.id?.includes('72423906') ||
-          parsed.id === 'u_homiesplant'
+          parsed.id?.includes('72423906')
         ) {
-          parsed.id = 'u_homiesplant';
-          parsed.username = 'HomiesPlant';
+          parsed.id = 'u_emanuel007';
+          parsed.username = 'Emanuel007';
           parsed.avatarSymbol = 'bear_emerald';
           parsed.avatarUrl = parsed.avatarUrl || DEFAULT_TRADER_AVATARS['72423906'];
           parsed.primaryBroker = 'XMTrading';
@@ -198,8 +199,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const data = await res.json();
         if (data.user) {
           if (!data.user.avatarUrl) {
-            const isHomies = data.user.id === 'u_homiesplant' || data.user.accountNumber === '72423906' || data.user.username === 'HomiesPlant';
-            data.user.avatarUrl = isHomies ? DEFAULT_TRADER_AVATARS['72423906'] : getRandomTraderAvatar().url;
+            const isEmanuel = data.user.id === 'u_emanuel007' || data.user.id === 'u_homiesplant' || data.user.accountNumber === '72423906' || data.user.username === 'Emanuel007';
+            data.user.avatarUrl = isEmanuel ? DEFAULT_TRADER_AVATARS['72423906'] : getRandomTraderAvatar().url;
           }
           setUser(data.user);
           return { success: true };

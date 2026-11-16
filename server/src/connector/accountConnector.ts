@@ -28,7 +28,7 @@ import { PipCalculator } from '../core/pipCalculator.js';
 import { r2Storage } from '../services/r2StorageService.js';
 
 const DEFAULT_TRADER_USERNAMES: Record<string, string> = {
-  '72423906': 'HomiesPlant',
+  '72423906': 'Emanuel007',
   '342186831': 'ApexTrader_FX',
   '411407722': 'Vanguard_FX',
 };
@@ -236,12 +236,13 @@ export class AccountConnectorService {
   public getAccounts(userId?: string): TradingAccount[] {
     const all = Array.from(this.accounts.values()).map(acc => {
       const cleanAcc = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
-      const isHomies = cleanAcc === '72423906' || acc.userId === 'u_homiesplant';
-      if (isHomies) {
+      const isEmanuel = cleanAcc === '72423906' || acc.userId === 'u_emanuel007' || acc.userId === 'u_homiesplant';
+      if (isEmanuel) {
         return {
           ...acc,
-          userId: 'u_homiesplant',
-          profileUsername: 'HomiesPlant',
+          userId: 'u_emanuel007',
+          profileUsername: 'Emanuel007',
+          accountHolderName: 'Emanuel007',
           currency: 'USD',
           avatarUrl: EMERALD_BEAR_AVATAR_URL,
         };
@@ -278,14 +279,14 @@ export class AccountConnectorService {
           return true;
         }
 
-        // Default trader mapping match (e.g. 72423906 mapped to HomiesPlant)
+        // Default trader mapping match (e.g. 72423906 mapped to Emanuel007)
         if (defaultNameForAcc && (defaultNameForAcc === cleanHandle || `u_${defaultNameForAcc}` === cleanId)) {
           return true;
         }
 
         // Special verified account alias matching
         if (
-          (cleanHandle === 'homiesplant' || cleanHandle === 'emanuel007' || cleanId.includes('72423906')) &&
+          (cleanHandle === 'emanuel007' || cleanHandle === 'homiesplant' || cleanId.includes('72423906')) &&
           aAccNum === '72423906'
         ) {
           return true;
@@ -301,11 +302,12 @@ export class AccountConnectorService {
     const acc = this.accounts.get(accountId) || null;
     if (acc) {
       const cleanAcc = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
-      if (cleanAcc === '72423906' || acc.userId === 'u_homiesplant') {
+      if (cleanAcc === '72423906' || acc.userId === 'u_emanuel007' || acc.userId === 'u_homiesplant') {
         return {
           ...acc,
-          userId: 'u_homiesplant',
-          profileUsername: 'HomiesPlant',
+          userId: 'u_emanuel007',
+          profileUsername: 'Emanuel007',
+          accountHolderName: 'Emanuel007',
           currency: 'USD',
           avatarUrl: EMERALD_BEAR_AVATAR_URL,
         };
@@ -320,14 +322,13 @@ export class AccountConnectorService {
       if (saved && typeof saved === 'object') {
         for (const [k, v] of Object.entries(saved)) {
           if (v && typeof v === 'string' && !v.startsWith('TraderRank-')) {
-            const finalVal = v.toLowerCase().includes('emanuel') ? 'HomiesPlant' : v;
-            this.traderUsernames.set(k, finalVal);
+            this.traderUsernames.set(k, v);
           }
         }
       }
-      this.traderUsernames.set('72423906', 'HomiesPlant');
-      this.traderUsernames.set('u_homiesplant', 'HomiesPlant');
-      this.traderUsernames.set('u_emanuel007', 'HomiesPlant');
+      this.traderUsernames.set('72423906', 'Emanuel007');
+      this.traderUsernames.set('u_emanuel007', 'Emanuel007');
+      this.traderUsernames.set('u_homiesplant', 'Emanuel007');
       this.persistTraderUsernamesToR2().catch(() => {});
     } catch {
       // ignore
@@ -341,7 +342,7 @@ export class AccountConnectorService {
         obj[k] = v;
       }
       if (!obj['72423906']) {
-        obj['72423906'] = 'HomiesPlant';
+        obj['72423906'] = 'Emanuel007';
       }
       await r2Storage.uploadJson('profiles/account_usernames.json', obj);
     } catch {
@@ -393,9 +394,6 @@ export class AccountConnectorService {
   ): void {
     let cleanName = (newUsername || '').trim();
     if (!cleanName || cleanName.startsWith('TraderRank-')) return;
-    if (cleanName.toLowerCase().includes('emanuel')) {
-      cleanName = 'HomiesPlant';
-    }
 
     this.traderUsernames.set(userId, cleanName);
     if (accountNumber) {
@@ -479,52 +477,54 @@ export class AccountConnectorService {
           serverLower.includes('vantage') ? 'Vantage' : 'OTHER'
         );
         const cleanLogin = String(p.login || '').trim();
-        const isHomiesAccount =
+        const isEmanuelAccount =
           cleanLogin === '72423906' ||
           String(p.name || '').includes('72423906') ||
           String(p.name || '') === 'Emanuel007' ||
-          String(p.name || '').toLowerCase().includes('homies') ||
-          String(p.name || '').toLowerCase().includes('emanuel');
+          String(p.name || '').toLowerCase().includes('emanuel') ||
+          String(p.name || '').toLowerCase().includes('homies');
 
-        const isJpy = isHomiesAccount
+        const isJpy = isEmanuelAccount
           ? false
           : (info?.currency === 'JPY' || serverLower.includes('japan') || serverLower.includes('jpy'));
-        const defaultCurrency = isJpy ? 'JPY' : 'USD';
+        const defaultCurrency = 'USD';
 
         const existingAcc = Array.from(this.accounts.values()).find(
           a => String(a.accountNumber).trim() === cleanLogin || a.metaApiAccountId === p.id
         );
         const accountId = existingAcc?.id || `acc_meta_${cleanLogin}`;
-        const userId = isHomiesAccount
-          ? 'u_homiesplant'
+        const userId = isEmanuelAccount
+          ? 'u_emanuel007'
           : (existingAcc?.userId && existingAcc.userId !== 'usr_live_meta' ? existingAcc.userId : `usr_meta_${cleanLogin}`);
-        const avatarUrl = isHomiesAccount
+        const avatarUrl = isEmanuelAccount
           ? EMERALD_BEAR_AVATAR_URL
           : (this.traderAvatars.get(cleanLogin) ||
              this.traderAvatars.get(userId) ||
              existingAcc?.avatarUrl);
 
         // Public Trader Profile Username (shown on Leaderboard & Podium)
-        // Strictly force HomiesPlant for account 72423906 and never expose Emanuel007
-        const profileUsername = isHomiesAccount
-          ? 'HomiesPlant'
+        const profileUsername = isEmanuelAccount
+          ? 'Emanuel007'
           : (
-              (this.traderUsernames.get(cleanLogin) && !this.traderUsernames.get(cleanLogin)!.toLowerCase().includes('emanuel') ? this.traderUsernames.get(cleanLogin) : undefined) ||
-              (this.traderUsernames.get(userId) && !this.traderUsernames.get(userId)!.toLowerCase().includes('emanuel') ? this.traderUsernames.get(userId) : undefined) ||
+              this.traderUsernames.get(cleanLogin) ||
+              this.traderUsernames.get(userId) ||
               DEFAULT_TRADER_USERNAMES[cleanLogin] ||
-              (existingAcc?.profileUsername && !existingAcc.profileUsername.startsWith('TraderRank-') && !existingAcc.profileUsername.toLowerCase().includes('emanuel')
+              (existingAcc?.profileUsername && !existingAcc.profileUsername.startsWith('TraderRank-')
                 ? existingAcc.profileUsername
                 : undefined) ||
-              (p.name && !p.name.startsWith('TraderRank-') && !p.name.toLowerCase().includes('emanuel') ? p.name : undefined) ||
+              (p.name && !p.name.startsWith('TraderRank-') ? p.name : undefined) ||
               getDefaultTraderUsername(cleanLogin)
             );
         const username = profileUsername;
 
-        // Private Broker Legal Name (strictly kept in private for the account owner only, never exposed on public endpoints)
-        const privateLegalName =
-          (info?.name && !info.name.startsWith('TraderRank-') ? info.name : undefined) ||
-          (p.name && !p.name.startsWith('TraderRank-') ? p.name : undefined) ||
-          existingAcc?.accountHolderName;
+        // Private Broker Legal Name (strictly isolated for private owner view)
+        const privateLegalName = isEmanuelAccount
+          ? 'Emanuel007'
+          : (
+              (info?.name && !info.name.startsWith('TraderRank-') ? info.name : undefined) ||
+              (p.name && !p.name.startsWith('TraderRank-') ? p.name : undefined) ||
+              existingAcc?.accountHolderName
+            );
 
         const tradingAccount: TradingAccount = {
           id: accountId,
@@ -538,19 +538,19 @@ export class AccountConnectorService {
           platform: (p.platform?.toUpperCase() === 'MT4' ? 'MT4' : 'MT5') as Platform,
           serverName: p.server,
           connectionStatus: p.connectionStatus === 'CONNECTED' || p.state === 'DEPLOYED' ? 'CONNECTED' : 'SYNCING',
-          balance: isHomiesAccount && (info?.balance ?? 0) > 1000
+          balance: isEmanuelAccount && (info?.balance ?? 0) > 1000
             ? Number(((info?.balance ?? 0) / 155).toFixed(2))
             : (info?.balance ?? (isJpy ? 1500000 : 2.8)),
-          equity: isHomiesAccount && (info?.equity ?? 0) > 1000
+          equity: isEmanuelAccount && (info?.equity ?? 0) > 1000
             ? Number(((info?.equity ?? 0) / 155).toFixed(2))
             : (info?.equity ?? (isJpy ? 1500000 : 2.8)),
-          margin: isHomiesAccount && (info?.margin ?? 0) > 1000
+          margin: isEmanuelAccount && (info?.margin ?? 0) > 1000
             ? Number(((info?.margin ?? 0) / 155).toFixed(2))
             : (info?.margin ?? 0),
-          freeMargin: isHomiesAccount && (info?.freeMargin ?? 0) > 1000
+          freeMargin: isEmanuelAccount && (info?.freeMargin ?? 0) > 1000
             ? Number(((info?.freeMargin ?? 0) / 155).toFixed(2))
             : (info?.freeMargin ?? (isJpy ? 1500000 : 2.8)),
-          currency: isHomiesAccount ? 'USD' : (info?.currency ?? defaultCurrency),
+          currency: isEmanuelAccount ? 'USD' : (info?.currency ?? defaultCurrency),
           leverage: info?.leverage ?? 1000,
           vaultSecretRef: `ref_meta_${p.id}`,
           metaApiAccountId: p.id,

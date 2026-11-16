@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   TradingAccount,
   CanonicalPosition,
@@ -312,6 +312,30 @@ export const App: React.FC = () => {
     fetchAccounts(user);
   }, [user?.id]);
 
+  // User isolated live open positions: strictly isolated to the authenticated user's own connected accounts
+  const userPositions = useMemo(() => {
+    if (!user) return [];
+    const uid = (user.id || '').toLowerCase();
+    const uName = (user.username || '').toLowerCase();
+    const uAcc = String(user.accountNumber || '').trim();
+    const userAccIds = new Set(
+      accounts
+        .filter(acc => {
+          const accUid = (acc.userId || '').toLowerCase();
+          const accProfile = (acc.profileUsername || '').toLowerCase();
+          const aAcc = String(acc.accountNumber || '').trim();
+          return (
+            accUid === uid ||
+            accUid === `u_${uid.replace(/^u_/, '')}` ||
+            (uAcc && aAcc && uAcc === aAcc) ||
+            (accProfile && uName && accProfile === uName)
+          );
+        })
+        .map(a => a.id)
+    );
+    return positions.filter(p => userAccIds.has(p.accountId));
+  }, [accounts, positions, user]);
+
   const handleDisconnect = async (accountId: string) => {
     try {
       const uidQuery = user?.id ? `?userId=${encodeURIComponent(user.id)}` : '';
@@ -344,14 +368,15 @@ export const App: React.FC = () => {
   };
 
   const handleSelectTrader = (t: { userId?: string; username: string; broker?: Broker; rank?: number; score?: number; winRate?: number; tradesCount?: number; avatarUrl?: string }) => {
-    const isHomies =
+    const isEmanuel =
+      t.username === 'Emanuel007' ||
+      t.username.toLowerCase().includes('emanuel') ||
       t.username === 'HomiesPlant' ||
       t.username.toLowerCase().includes('homies') ||
-      t.username.toLowerCase().includes('emanuel') ||
-      (t.userId && (t.userId === 'u_homiesplant' || t.userId.includes('72423906')));
+      (t.userId && (t.userId === 'u_emanuel007' || t.userId === 'u_homiesplant' || t.userId.includes('72423906')));
 
-    const cleanUsername = isHomies ? 'HomiesPlant' : t.username;
-    const safeBroker: Broker = isHomies ? 'XMTrading' : (t.broker || 'Exness');
+    const cleanUsername = isEmanuel ? 'Emanuel007' : t.username;
+    const safeBroker: Broker = isEmanuel ? 'XMTrading' : (t.broker || 'Exness');
 
     const matchedLb = leaderboard.find(
       e => (t.userId && e.userId === t.userId) || e.username.toLowerCase() === cleanUsername.toLowerCase()
@@ -359,17 +384,17 @@ export const App: React.FC = () => {
     const matchedAcc = accounts.find(
       a =>
         (t.userId && (a.id === t.userId || a.userId === t.userId)) ||
-        (a.accountNumber && (cleanUsername.includes(a.accountNumber) || (isHomies && a.accountNumber === '72423906')))
+        (a.accountNumber && (cleanUsername.includes(a.accountNumber) || (isEmanuel && a.accountNumber === '72423906')))
     );
-    const resolvedId = isHomies ? 'u_homiesplant' : (t.userId || matchedAcc?.id || matchedLb?.userId || `u_${cleanUsername.toLowerCase()}`);
+    const resolvedId = isEmanuel ? 'u_emanuel007' : (t.userId || matchedAcc?.id || matchedLb?.userId || `u_${cleanUsername.toLowerCase()}`);
 
-    const avatarUrl = t.avatarUrl || matchedLb?.avatarUrl || (isHomies ? DEFAULT_TRADER_AVATARS['72423906'] : undefined);
-    const avatarSymbol = isHomies ? 'bear_emerald' : (matchedLb?.avatarSymbol || 'zap');
+    const avatarUrl = t.avatarUrl || matchedLb?.avatarUrl || (isEmanuel ? DEFAULT_TRADER_AVATARS['72423906'] : undefined);
+    const avatarSymbol = isEmanuel ? 'bear_emerald' : (matchedLb?.avatarSymbol || 'zap');
 
-    const tradesCount = t.tradesCount ?? matchedLb?.tradesCount ?? (isHomies ? 23 : 0);
-    const netPips = t.score ?? matchedLb?.totalPips ?? (isHomies ? -676.1 : 0);
-    const winRate = t.winRate ?? matchedLb?.winRate ?? (isHomies ? 22 : 0);
-    const xp = matchedLb?.xp ?? (tradesCount > 0 ? tradesCount * 25 : (isHomies ? 575 : 100));
+    const tradesCount = t.tradesCount ?? matchedLb?.tradesCount ?? (isEmanuel ? 23 : 0);
+    const netPips = t.score ?? matchedLb?.totalPips ?? (isEmanuel ? -676.1 : 0);
+    const winRate = t.winRate ?? matchedLb?.winRate ?? (isEmanuel ? 22 : 0);
+    const xp = matchedLb?.xp ?? (tradesCount > 0 ? tradesCount * 25 : (isEmanuel ? 575 : 100));
     const level = matchedLb?.level ?? Math.max(1, Math.floor(tradesCount / 40) + 1);
 
     setSelectedTrader({
@@ -387,7 +412,7 @@ export const App: React.FC = () => {
       profitFactor: winRate >= 50 ? 1.4 : 0.8,
       maxDrawdown: 0,
       totalTrades: tradesCount,
-      bestTradePips: isHomies ? 97.7 : 1933.0,
+      bestTradePips: isEmanuel ? 97.7 : 1933.0,
       avgHoldingTime: '1h 12m',
       verifiedSince: 'May 2026',
       isFollowing: false,
@@ -865,7 +890,7 @@ export const App: React.FC = () => {
                 onSyncAccount={handleSyncAccount}
                 onOpenSecurityVault={() => setActiveTab('security')}
               />
-              <LivePositionsTicker positions={positions} />
+              <LivePositionsTicker positions={userPositions} />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -892,7 +917,7 @@ export const App: React.FC = () => {
       {activeTab === 'charts' && (
         <div style={{ maxWidth: '1080px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <LiveCandleChart initialSymbol="USDJPY" initialTimeframe="1m" height={440} />
-          <LivePositionsTicker positions={positions} />
+          <LivePositionsTicker positions={userPositions} />
         </div>
       )}
 
@@ -939,7 +964,7 @@ export const App: React.FC = () => {
       {/* Tab 6: Streaming Positions */}
       {activeTab === 'positions' && (
         <div>
-          <LivePositionsTicker positions={positions} />
+          <LivePositionsTicker positions={userPositions} />
         </div>
       )}
 

@@ -101,8 +101,9 @@ export class LeaderboardService {
         : undefined;
 
     // Guaranteed real user profile name alignment
-    const isHomies =
+    const isEmanuel =
       extractedNumber === '72423906' ||
+      userId === 'u_emanuel007' ||
       userId === 'u_homiesplant' ||
       userId === 'usr_meta_72423906' ||
       String(username).toLowerCase().includes('emanuel') ||
@@ -110,11 +111,11 @@ export class LeaderboardService {
       String(username).toLowerCase().includes('homies') ||
       String(profileName).toLowerCase().includes('homies');
 
-    if (isHomies) {
-      cleanProfileName = 'HomiesPlant';
+    if (isEmanuel) {
+      cleanProfileName = 'Emanuel007';
     }
 
-    const resolvedCurrency = isHomies ? 'USD' : (currency || 'USD');
+    const resolvedCurrency = isEmanuel ? 'USD' : (currency || 'USD');
 
     if (!this.traders.has(userId)) {
       this.traders.set(userId, {
@@ -287,24 +288,25 @@ export class LeaderboardService {
       const winRate = t.totalTrades > 0 ? Math.round((t.winningTrades / t.totalTrades) * 100) : 0;
       const dailyInfo = dailyRankMap.get(t.userId) || { dailyRank: 99, dailyPips: 0 };
 
-      const isHomies =
+      const isEmanuel =
         String(t.accountNumber).trim() === '72423906' ||
+        t.userId === 'u_emanuel007' ||
         t.userId === 'u_homiesplant' ||
         t.userId === 'usr_meta_72423906' ||
         String(t.username).toLowerCase().includes('emanuel') ||
         String(t.profileName).toLowerCase().includes('emanuel');
-      const resolvedProfileName = isHomies ? 'HomiesPlant' : (t.profileName || t.username);
-      const resolvedUsername = isHomies ? 'HomiesPlant' : (t.username || resolvedProfileName);
-      const resolvedCurrency = isHomies ? 'USD' : (t.currency || 'USD');
+      const resolvedProfileName = isEmanuel ? 'Emanuel007' : (t.profileName || t.username);
+      const resolvedUsername = isEmanuel ? 'Emanuel007' : (t.username || resolvedProfileName);
+      const resolvedCurrency = isEmanuel ? 'USD' : (t.currency || 'USD');
 
       return {
         rank: 0,
-        userId: isHomies ? 'u_homiesplant' : t.userId,
+        userId: isEmanuel ? 'u_emanuel007' : t.userId,
         username: resolvedUsername,
         profileName: resolvedProfileName,
-        accountNumber: t.accountNumber || (isHomies ? '72423906' : undefined),
+        accountNumber: t.accountNumber || (isEmanuel ? '72423906' : undefined),
         avatarUrl: t.avatarUrl,
-        avatarSymbol: isHomies ? 'bear_emerald' : t.avatarSymbol,
+        avatarSymbol: isEmanuel ? 'bear_emerald' : t.avatarSymbol,
         currency: resolvedCurrency,
         accountCount: t.accounts.size,
         brokers: Array.from(t.brokers),
@@ -353,24 +355,25 @@ export class LeaderboardService {
         ? Math.round((t.dailyWinningTrades / t.dailyTotalTrades) * 100)
         : 0;
 
-      const isHomies =
+      const isEmanuel =
         String(t.accountNumber).trim() === '72423906' ||
+        t.userId === 'u_emanuel007' ||
         t.userId === 'u_homiesplant' ||
         t.userId === 'usr_meta_72423906' ||
         String(t.username).toLowerCase().includes('emanuel') ||
         String(t.profileName).toLowerCase().includes('emanuel');
-      const resolvedProfileName = isHomies ? 'HomiesPlant' : (t.profileName || t.username);
-      const resolvedUsername = isHomies ? 'HomiesPlant' : (t.username || resolvedProfileName);
-      const resolvedCurrency = isHomies ? 'USD' : (t.currency || 'USD');
+      const resolvedProfileName = isEmanuel ? 'Emanuel007' : (t.profileName || t.username);
+      const resolvedUsername = isEmanuel ? 'Emanuel007' : (t.username || resolvedProfileName);
+      const resolvedCurrency = isEmanuel ? 'USD' : (t.currency || 'USD');
 
       return {
         rank: 0,
-        userId: isHomies ? 'u_homiesplant' : t.userId,
+        userId: isEmanuel ? 'u_emanuel007' : t.userId,
         username: resolvedUsername,
         profileName: resolvedProfileName,
-        accountNumber: t.accountNumber || (isHomies ? '72423906' : undefined),
+        accountNumber: t.accountNumber || (isEmanuel ? '72423906' : undefined),
         avatarUrl: t.avatarUrl,
-        avatarSymbol: isHomies ? 'bear_emerald' : t.avatarSymbol,
+        avatarSymbol: isEmanuel ? 'bear_emerald' : t.avatarSymbol,
         currency: resolvedCurrency,
         brokers: Array.from(t.brokers),
         accountCount: t.accounts.size,

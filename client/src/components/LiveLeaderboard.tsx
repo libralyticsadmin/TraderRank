@@ -313,14 +313,16 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               avatarUrl: d.avatarUrl,
             });
 
-            const isHomiesAcc =
+            const isEmanuelAcc =
               cleanAcc === '72423906' ||
-              identity.profileName === 'HomiesPlant' ||
-              d.username === 'HomiesPlant' ||
+              identity.profileName === 'Emanuel007' ||
+              d.username === 'Emanuel007' ||
+              d.userId === 'u_emanuel007' ||
               d.userId === 'u_homiesplant' ||
               String(d.accountNumber || '').includes('72423906') ||
-              String(d.username || '').toLowerCase().includes('emanuel');
-            const accCurrency = isHomiesAcc ? 'USD' : (real?.currency || (d as any).currency || 'USD');
+              String(d.username || '').toLowerCase().includes('emanuel') ||
+              String(d.username || '').toLowerCase().includes('homies');
+            const accCurrency = isEmanuelAcc ? 'USD' : (real?.currency || (d as any).currency || 'USD');
 
             return {
               userId: d.userId,
@@ -372,14 +374,16 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               avatarUrl: e.avatarUrl,
             });
 
-            const isHomiesAcc =
+            const isEmanuelAcc =
               cleanAcc === '72423906' ||
-              identity.profileName === 'HomiesPlant' ||
-              e.username === 'HomiesPlant' ||
+              identity.profileName === 'Emanuel007' ||
+              e.username === 'Emanuel007' ||
+              e.userId === 'u_emanuel007' ||
               e.userId === 'u_homiesplant' ||
               String(e.accountNumber || '').includes('72423906') ||
-              String(e.username || '').toLowerCase().includes('emanuel');
-            const accCurrency = isHomiesAcc ? 'USD' : (real?.currency || (e as any).currency || 'USD');
+              String(e.username || '').toLowerCase().includes('emanuel') ||
+              String(e.username || '').toLowerCase().includes('homies');
+            const accCurrency = isEmanuelAcc ? 'USD' : (real?.currency || (e as any).currency || 'USD');
 
             return {
               userId: e.userId,

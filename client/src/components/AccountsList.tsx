@@ -27,12 +27,15 @@ export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconne
     const uEmail = (user.email || '').toLowerCase();
     const uName = (user.username || '').toLowerCase();
     const accProfile = (acc.profileUsername || '').toLowerCase();
+    const uAcc = String(user.accountNumber || '').trim();
+    const aAcc = String(acc.accountNumber || '').trim();
+
     return (
       accUid === uid ||
       accUid === `u_${uid.replace(/^u_/, '')}` ||
       `u_${accUid.replace(/^u_/, '')}` === uid ||
+      (uAcc && aAcc && uAcc === aAcc) ||
       (accProfile && uName && accProfile === uName) ||
-      (accUid && uName && (accUid.includes(uName) || accUid.includes(uid))) ||
       (uEmail && (accUid === uEmail || accUid === `u_${uEmail.replace(/[^a-z0-9]/g, '_')}`))
     );
   });
@@ -70,7 +73,7 @@ export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconne
           <Server size={18} color="#81d8d0" />
           {t.accounts.connectedAccounts}
           <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 400 }}>
-            ({visibleAccounts.length} {t.accounts.activeAccounts})
+            ({t.accounts.activeAccounts.replace('{count}', String(visibleAccounts.length))})
           </span>
           <span style={{ fontSize: '11px', color: '#0abab5', display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(10, 186, 181, 0.12)', border: '1px solid rgba(10, 186, 181, 0.25)', padding: '2px 8px', borderRadius: '6px', fontWeight: 600 }}>
             <Lock size={10} /> Isolated & Private

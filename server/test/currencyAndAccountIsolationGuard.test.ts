@@ -175,9 +175,9 @@ describe('TraderRank Protection Suite: Currency, Account Isolation & Contender I
       leaderboard.registerAccountMapping(
         'acc_meta_72423906',
         'usr_meta_72423906',
-        'HomiesPlant',
+        'Emanuel007',
         'XMTrading' as Broker,
-        'HomiesPlant',
+        'Emanuel007',
         '72423906'
       );
       leaderboard.registerAccountMapping(
@@ -209,8 +209,8 @@ describe('TraderRank Protection Suite: Currency, Account Isolation & Contender I
       const realAcc = entries.find(e => e.accountNumber === '72423906');
       expect(realAcc).toBeDefined();
       expect(realAcc?.accountNumber).toBe('72423906');
-      expect(realAcc?.profileName).toBe('HomiesPlant');
-      expect(realAcc?.username).toBe('HomiesPlant');
+      expect(realAcc?.profileName).toBe('Emanuel007');
+      expect(realAcc?.username).toBe('Emanuel007');
       expect(realAcc?.currency).toBe('USD');
 
       // Verify monetary profit normalization from broker JPY deals to USD ($)
@@ -224,25 +224,24 @@ describe('TraderRank Protection Suite: Currency, Account Isolation & Contender I
       expect(formatUsd(jpyToUsd(-3693))).not.toContain('¥');
     });
 
-    it('5. Real Trader Identity & Broker Masking Guard: strictly enforces HomiesPlant and USD', () => {
+    it('5. Real Trader Identity & Broker Masking Guard: strictly enforces Emanuel007 and USD', () => {
       // Direct connector retrieval test
       const accounts = connector.getAccounts();
       const target = accounts.find(a => a.accountNumber === '72423906');
       if (target) {
-        expect(target.profileUsername).toBe('HomiesPlant');
-        expect(target.profileUsername).not.toBe('Emanuel007');
+        expect(target.profileUsername).toBe('Emanuel007');
+        expect(target.accountHolderName).toBe('Emanuel007');
         expect(target.currency).toBe('USD');
         expect(target.currency).not.toBe('JPY');
-        expect(target.userId).toBe('u_homiesplant');
+        expect(target.userId).toBe('u_emanuel007');
       }
 
       // Leaderboard view test
       const lb = leaderboard.getLeaderboard(10);
       const lbTarget = lb.find(e => e.accountNumber === '72423906');
       if (lbTarget) {
-        expect(lbTarget.username).toBe('HomiesPlant');
-        expect(lbTarget.profileName).toBe('HomiesPlant');
-        expect(lbTarget.username).not.toBe('Emanuel007');
+        expect(lbTarget.username).toBe('Emanuel007');
+        expect(lbTarget.profileName).toBe('Emanuel007');
         expect(lbTarget.currency).toBe('USD');
       }
     });

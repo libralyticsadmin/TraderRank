@@ -7,7 +7,43 @@ describe('Daily Winning Pips & Best Trader Engine', () => {
   const eventBus = RedisStreamsBus.getInstance();
 
   beforeAll(() => {
-    leaderboard.seedDemoTraders();
+    // Setup verified active traders across brokers
+    leaderboard.registerAccountMapping(
+      'acc_u_apex',
+      'u_apex',
+      'ApexTrader_FX',
+      'Exness',
+      'ApexTrader_FX',
+      '342186831'
+    );
+    leaderboard.registerAccountMapping(
+      'acc_u_apex_xm',
+      'u_apex',
+      'ApexTrader_FX',
+      'XM',
+      'ApexTrader_FX',
+      '342186832'
+    );
+    leaderboard.registerAccountMapping(
+      'acc_meta_72423906',
+      'u_emanuel007',
+      'Emanuel007',
+      'XMTrading',
+      'Emanuel007',
+      '72423906'
+    );
+
+    // Record an archive champion record for history verification
+    leaderboard.recordHistoricalDailyChampion({
+      date: '2026-11-15',
+      winnerUserId: 'u_emanuel007',
+      winnerUsername: 'Emanuel007',
+      winnerAvatarSymbol: 'bear_emerald',
+      winnerBrokers: ['XMTrading'],
+      pipsWon: 45.2,
+      winRate: 80,
+      tradesCompleted: 5,
+    });
   });
 
   it('should calculate daily leaderboard and identify Daily Best Trader', () => {
