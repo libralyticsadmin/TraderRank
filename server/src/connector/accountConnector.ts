@@ -26,6 +26,7 @@ import { RawPositionPayload } from '../workers/baseWorker.js';
 import { TournamentService } from '../services/tournamentService.js';
 import { PipCalculator } from '../core/pipCalculator.js';
 import { r2Storage } from '../services/r2StorageService.js';
+import { resolveBrokerCurrency } from '../utils/currencyFlow.js';
 
 const DEFAULT_TRADER_USERNAMES: Record<string, string> = {
   '342186831': 'zzZEMZzz',
@@ -105,11 +106,11 @@ export class AccountConnectorService {
     this.traderAvatars.set('zzZEMZzz', EMERALD_BEAR_URL);
     this.traderAvatars.set('zzzemzzz', EMERALD_BEAR_URL);
     this.traderAvatars.set('u_zzzemzzz', EMERALD_BEAR_URL);
-    this.traderAvatars.set('Emanuel001', EMERALD_BEAR_URL);
-    this.traderAvatars.set('Emanuel007', EMERALD_BEAR_URL);
     this.traderAvatars.set('72423906', EMERALD_BEAR_URL);
     this.traderAvatars.set('HomiesPlant', EMERALD_BEAR_URL);
     this.traderAvatars.set('homiesplant', EMERALD_BEAR_URL);
+    this.traderAvatars.set('homiesplant.th', EMERALD_BEAR_URL);
+    this.traderAvatars.set('u_homiesplant_th', EMERALD_BEAR_URL);
 
     this.initWorkerEventWiring();
     this.loadAccountOwnersFromR2().catch(() => {});
@@ -374,9 +375,11 @@ export class AccountConnectorService {
       }
       this.traderUsernames.set('342186831', 'zzZEMZzz');
       this.traderUsernames.set('u_zzzemzzz', 'zzZEMZzz');
-      this.traderUsernames.set('u_emanuel001', 'zzZEMZzz');
-      this.traderUsernames.set('u_emanuel007', 'zzZEMZzz');
       this.traderUsernames.set('72423906', 'HomiesPlant');
+      this.traderUsernames.set('u_homiesplant_th', 'homiesplant.th');
+      this.traderUsernames.set('u_homiesplant', 'homiesplant.th');
+      this.traderUsernames.delete('u_emanuel001');
+      this.traderUsernames.delete('u_emanuel007');
       this.persistTraderUsernamesToR2().catch(() => {});
     } catch {
       // ignore
@@ -418,6 +421,8 @@ export class AccountConnectorService {
         this.traderAvatars.set('72423906', EMERALD_BEAR_URL);
         this.traderAvatars.set('HomiesPlant', EMERALD_BEAR_URL);
         this.traderAvatars.set('homiesplant', EMERALD_BEAR_URL);
+        this.traderAvatars.set('homiesplant.th', EMERALD_BEAR_URL);
+        this.traderAvatars.set('u_homiesplant_th', EMERALD_BEAR_URL);
         this.persistTraderAvatarsToR2().catch(() => {});
       }
     } catch {
@@ -1097,7 +1102,11 @@ export class AccountConnectorService {
 
     const canonicalTrades: CanonicalTrade[] = [];
     const acc = this.accounts.get(accountId);
-    const tradeCurrency = acc?.currency || (accountId.includes('72423906') ? 'USD' : 'USD');
+    const tradeCurrency = resolveBrokerCurrency(
+      acc?.broker,
+      acc?.serverName,
+      acc?.currency || (accountId.includes('72423906') ? 'JPY' : undefined)
+    );
 
     for (const [posId, deals] of groups.entries()) {
       // Sort deals in chronological order

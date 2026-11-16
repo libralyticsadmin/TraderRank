@@ -121,10 +121,8 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onOpenConnectWizar
             user && (
               acc.userId === user.id ||
               acc.id === user.id ||
-              acc.accountNumber === '72423906' ||
-              (acc.username && acc.username.includes('72423906')) ||
-              (acc.accountNumber && user.username.includes(acc.accountNumber)) ||
-              accounts.length === 1
+              (acc.accountNumber && user.accountNumber === acc.accountNumber) ||
+              (acc.username && user.username && acc.username.toLowerCase() === user.username.toLowerCase())
             )
           );
 
@@ -346,8 +344,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onOpenConnectWizar
               const isMyEv = Boolean(
                 user && (
                   item.userId === user.id ||
-                  item.username?.includes('72423906') ||
-                  item.username?.startsWith('TraderRank-')
+                  (user.accountNumber && item.username?.includes(user.accountNumber))
                 )
               );
               if (isMyEv && user) {

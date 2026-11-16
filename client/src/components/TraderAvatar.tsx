@@ -40,12 +40,10 @@ const TRADER_PRESET_MAP: Record<string, string> = {
   'zzzemzzz': EMERALD_BEAR_URL,
   '342186831': EMERALD_BEAR_URL,
   'TraderRank-342186831': EMERALD_BEAR_URL,
-  'Emanuel001': EMERALD_BEAR_URL,
-  'emanuel001': EMERALD_BEAR_URL,
-  'Emanuel007': EMERALD_BEAR_URL,
-  'emanuel007': EMERALD_BEAR_URL,
   'HomiesPlant': EMERALD_BEAR_URL,                        // Emerald Quant Bear (Green Bear)
   'homiesplant': EMERALD_BEAR_URL,
+  'homiesplant.th': EMERALD_BEAR_URL,
+  'u_homiesplant_th': EMERALD_BEAR_URL,
   '72423906': EMERALD_BEAR_URL,
   'TraderRank-72423906': EMERALD_BEAR_URL,
   'ApexTrader_FX': INSTITUTIONAL_ANIMAL_PRESETS[3].url,   // Imperial Violet Lion

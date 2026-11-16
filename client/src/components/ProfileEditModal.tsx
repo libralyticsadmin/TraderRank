@@ -163,7 +163,6 @@ export const ProfileEditModal: React.FC = () => {
       if (finalUser) avatarMap[finalUser.toLowerCase()] = finalAvatar;
       if (user.id) avatarMap[user.id] = finalAvatar;
       if (user.accountNumber) avatarMap[user.accountNumber] = finalAvatar;
-      avatarMap['72423906'] = finalAvatar;
       localStorage.setItem('traderank_account_avatars_v1', JSON.stringify(avatarMap));
     } catch {
       // ignore storage error
@@ -175,7 +174,6 @@ export const ProfileEditModal: React.FC = () => {
       if (finalUser) {
         if (user.id) usernameMap[user.id] = finalUser;
         if (user.accountNumber) usernameMap[user.accountNumber] = finalUser;
-        usernameMap['72423906'] = finalUser;
         localStorage.setItem('traderank_account_usernames_v1', JSON.stringify(usernameMap));
       }
     } catch {

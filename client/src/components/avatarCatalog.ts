@@ -1236,6 +1236,8 @@ export const DEFAULT_TRADER_AVATARS: Record<string, string> = {
   'emanuel007': EMERALD_BEAR_URL,
   'Emanuel007': EMERALD_BEAR_URL,
   '72423906': EMERALD_BEAR_URL,
+  'homiesplant.th': EMERALD_BEAR_URL,
+  'u_homiesplant_th': EMERALD_BEAR_URL,
   'homiesplant': EMERALD_BEAR_URL,
   'HomiesPlant': EMERALD_BEAR_URL,
   '411407722': TIFFANY_WOLF_URL,
@@ -1298,15 +1300,23 @@ const getLocalTraderUsername = (accountNumber?: string | null, userId?: string |
     const mapRaw = localStorage.getItem('traderank_account_usernames_v1');
     if (mapRaw) {
       const map = JSON.parse(mapRaw);
-      // Clean stale overrides
-      if (map['72423906'] === 'Emanuel007') {
-        delete map['72423906'];
-        try { localStorage.setItem('traderank_account_usernames_v1', JSON.stringify(map)); } catch {}
+      // Clean stale overrides & purge any legacy Emanuel handles
+      if (map['72423906'] === 'Emanuel007' || map['72423906'] === 'zzZEMZzz') {
+        map['72423906'] = 'HomiesPlant';
       }
-      if (cleanAcc && map[cleanAcc] && !isRawAccountTag(map[cleanAcc])) {
+      if (map['342186831'] === 'Emanuel007' || map['342186831'] === 'Emanuel001') {
+        map['342186831'] = 'zzZEMZzz';
+      }
+      for (const k of Object.keys(map)) {
+        if (typeof map[k] === 'string' && map[k].toLowerCase().includes('emanuel')) {
+          delete map[k];
+        }
+      }
+      try { localStorage.setItem('traderank_account_usernames_v1', JSON.stringify(map)); } catch {}
+      if (cleanAcc && map[cleanAcc] && !isRawAccountTag(map[cleanAcc]) && !String(map[cleanAcc]).toLowerCase().includes('emanuel')) {
         return String(map[cleanAcc]).trim();
       }
-      if (userId && map[userId] && !isRawAccountTag(map[userId])) {
+      if (userId && map[userId] && !isRawAccountTag(map[userId]) && !String(map[userId]).toLowerCase().includes('emanuel')) {
         return String(map[userId]).trim();
       }
     }
@@ -1407,34 +1417,41 @@ export const resolveTraderIdentity = (params: {
 
   // 2. Resolve Trader Profile Username (Priority: local user profile username -> default mapped username for verified real accounts -> server profile -> default handle)
   const cleanAcc = accountNumber ? String(accountNumber).replace(/^TraderRank-/i, '').trim() : '';
+
+  const isHomiesAcc =
+    cleanAcc === '72423906' ||
+    rawUid.includes('72423906') ||
+    rawProfile.toLowerCase().includes('homies') ||
+    rawUser.toLowerCase().includes('homies');
+
   const isZem =
-    cleanAcc === '342186831' ||
-    rawUid.includes('342186831') ||
-    rawProfile === 'zzZEMZzz' ||
-    rawUser === 'zzZEMZzz' ||
-    rawProfile.toLowerCase() === 'zzzemzzz' ||
-    rawUser.toLowerCase() === 'zzzemzzz' ||
-    rawProfile.toLowerCase().includes('emanuel') ||
-    rawUser.toLowerCase().includes('emanuel');
+    !isHomiesAcc &&
+    (cleanAcc === '342186831' ||
+      rawUid.includes('342186831') ||
+      rawProfile === 'zzZEMZzz' ||
+      rawUser === 'zzZEMZzz' ||
+      rawProfile.toLowerCase() === 'zzzemzzz' ||
+      rawUser.toLowerCase() === 'zzzemzzz' ||
+      rawProfile.toLowerCase().includes('emanuel') ||
+      rawUser.toLowerCase().includes('emanuel'));
 
   let profileName = '';
   const localUsername = getLocalTraderUsername(accountNumber, rawUid);
   const defaultMappedUser =
     (cleanAcc && DEFAULT_TRADER_USERNAMES[cleanAcc]) ||
-    (isZem ? 'zzZEMZzz' : null);
+    (isHomiesAcc ? 'HomiesPlant' : isZem ? 'zzZEMZzz' : null);
 
-  if (isZem) {
+  if (isHomiesAcc) {
+    profileName = localUsername || 'HomiesPlant';
+  } else if (isZem) {
     profileName = 'zzZEMZzz';
   } else if (localUsername) {
     profileName = localUsername;
-  } else if (
-    defaultMappedUser &&
-    (isRawAccountTag(rawProfile) || isRawAccountTag(rawUser))
-  ) {
+  } else if (defaultMappedUser) {
     profileName = defaultMappedUser;
-  } else if (!isRawAccountTag(rawProfile)) {
+  } else if (!isRawAccountTag(rawProfile) && !rawProfile.toLowerCase().includes('emanuel')) {
     profileName = rawProfile;
-  } else if (!isRawAccountTag(rawUser)) {
+  } else if (!isRawAccountTag(rawUser) && !rawUser.toLowerCase().includes('emanuel')) {
     profileName = rawUser;
   } else {
     profileName = defaultMappedUser || getDefaultTraderHandle(accountNumber, accountTag || rawUser || rawUid);

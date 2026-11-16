@@ -480,7 +480,7 @@ export function createServer() {
         }
       }
       // Ensure canonical zzZEMZzz profile is active and persisted
-      const em = userProfiles.get('u_zzzemzzz') || userProfiles.get('u_emanuel001') || userProfiles.get('u_emanuel007') || {};
+      const em = userProfiles.get('u_zzzemzzz') || {};
       const canonicalZem = {
         ...em,
         id: 'u_zzzemzzz',
@@ -495,9 +495,30 @@ export function createServer() {
         rank: 1,
       };
       userProfiles.set('u_zzzemzzz', canonicalZem);
-      userProfiles.set('u_emanuel001', canonicalZem);
-      userProfiles.set('u_emanuel007', canonicalZem);
-      userProfiles.delete('u_homiesplant'); // purge duplicate alias
+      userProfiles.delete('u_emanuel001');
+      userProfiles.delete('u_emanuel007');
+
+      // Ensure authentic homiesplant.th profile is active and persisted
+      const hp = userProfiles.get('u_homiesplant_th') || userProfiles.get('u_homiesplant') || userProfiles.get('usr_meta_72423906') || {};
+      const canonicalHomies = {
+        ...hp,
+        id: 'u_homiesplant_th',
+        username: 'homiesplant.th',
+        email: hp.email || 'homiesplant.th@traderank.live',
+        accountNumber: '72423906',
+        avatarSymbol: 'bear_emerald',
+        avatarUrl: EMERALD_BEAR_URL,
+        primaryBroker: 'XMTrading',
+        currency: 'JPY',
+        traderTitle: 'Verified Scalper & Gold Trader',
+        bio: 'XMTrading MT5 Verified read-only execution.',
+        tradingStyle: 'SCALPER',
+        level: 1,
+        xp: 575,
+      };
+      userProfiles.set('u_homiesplant_th', canonicalHomies);
+      userProfiles.set('u_homiesplant', canonicalHomies);
+      userProfiles.set('usr_meta_72423906', canonicalHomies);
       await persistUserProfilesToR2();
     } catch (err) {
       console.warn('[server] Warning: Could not load user profiles from R2:', err);

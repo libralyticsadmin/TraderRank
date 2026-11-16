@@ -375,16 +375,23 @@ export const App: React.FC = () => {
   };
 
   const handleSelectTrader = (t: { userId?: string; username: string; broker?: Broker; rank?: number; score?: number; winRate?: number; tradesCount?: number; avatarUrl?: string }) => {
-    const isZem =
-      t.username === 'zzZEMZzz' ||
-      t.username.toLowerCase() === 'zzzemzzz' ||
-      t.username === 'Emanuel001' ||
-      t.username === 'Emanuel007' ||
-      t.username.toLowerCase().includes('emanuel') ||
-      (t.userId && (t.userId === 'u_zzzemzzz' || t.userId === 'u_emanuel001' || t.userId === 'u_emanuel007' || t.userId.includes('342186831')));
+    const isHomies =
+      t.username === 'HomiesPlant' ||
+      t.username === 'homiesplant.th' ||
+      t.username.toLowerCase().includes('homies') ||
+      (t.userId && (t.userId === 'u_homiesplant_th' || t.userId === 'u_homiesplant' || t.userId.includes('72423906')));
 
-    const cleanUsername = isZem ? 'zzZEMZzz' : t.username;
-    const safeBroker: Broker = isZem ? 'XM' : (t.broker || 'Exness');
+    const isZem =
+      !isHomies &&
+      (t.username === 'zzZEMZzz' ||
+        t.username.toLowerCase() === 'zzzemzzz' ||
+        t.username === 'Emanuel001' ||
+        t.username === 'Emanuel007' ||
+        t.username.toLowerCase().includes('emanuel') ||
+        (t.userId && (t.userId === 'u_zzzemzzz' || t.userId === 'u_emanuel001' || t.userId === 'u_emanuel007' || t.userId.includes('342186831'))));
+
+    const cleanUsername = isHomies ? (t.username === 'homiesplant.th' ? 'homiesplant.th' : 'HomiesPlant') : isZem ? 'zzZEMZzz' : t.username;
+    const safeBroker: Broker = isHomies ? 'XMTrading' : isZem ? 'XM' : (t.broker || 'Exness');
 
     const matchedLb = leaderboard.find(
       e => (t.userId && e.userId === t.userId) || e.username.toLowerCase() === cleanUsername.toLowerCase()

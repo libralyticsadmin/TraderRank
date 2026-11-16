@@ -34,8 +34,20 @@
     "status": "CONNECTED"
   },
   "72423906": {
-    "userId": "usr_meta_72423906",
+    "userId": "u_homiesplant_th",
     "username": "HomiesPlant",
+    "broker": "XMTrading",
+    "accountNumber": "72423906",
+    "platform": "MT5",
+    "accountId": "acc_meta_72423906",
+    "serverName": "XMTrading-MT5 3",
+    "currency": "JPY",
+    "connectedAt": "2026-11-16T08:38:20.940Z",
+    "status": "CONNECTED"
+  },
+  "u_homiesplant_th": {
+    "userId": "u_homiesplant_th",
+    "username": "homiesplant.th",
     "broker": "XMTrading",
     "accountNumber": "72423906",
     "platform": "MT5",

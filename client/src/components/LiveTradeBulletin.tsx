@@ -137,9 +137,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                     user && (
                       acc.userId === user.id ||
                       acc.id === user.id ||
-                      acc.accountNumber === '72423906' ||
-                      (acc.username && acc.username.includes('72423906')) ||
-                      accounts.length === 1
+                      (acc.accountNumber && user.accountNumber === acc.accountNumber)
                     )
                   );
                   const traderDisplayName = (isCurrentUser && user)

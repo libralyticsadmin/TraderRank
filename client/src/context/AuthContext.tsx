@@ -97,8 +97,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           parsed.level = 1;
         }
 
-        // Guaranteed real user profile alignment: sanitize cached user to canonical zzZEMZzz
-        if (
+        // Guaranteed real user profile alignment: sanitize cached user to canonical identities
+        const isHomies =
+          parsed.username === 'HomiesPlant' ||
+          parsed.username === 'homiesplant.th' ||
+          parsed.username?.toLowerCase().includes('homies') ||
+          parsed.id === 'u_homiesplant_th' ||
+          parsed.id === 'u_homiesplant' ||
+          parsed.id === 'usr_meta_72423906' ||
+          parsed.accountNumber === '72423906';
+
+        if (isHomies) {
+          parsed.id = 'u_homiesplant_th';
+          parsed.username = parsed.username === 'HomiesPlant' ? 'HomiesPlant' : 'homiesplant.th';
+          parsed.avatarSymbol = 'bear_emerald';
+          parsed.avatarUrl = parsed.avatarUrl || DEFAULT_TRADER_AVATARS['72423906'];
+          parsed.primaryBroker = 'XMTrading';
+          parsed.accountNumber = '72423906';
+          parsed.currency = 'JPY';
+        } else if (
           parsed.username === 'zzZEMZzz' ||
           parsed.username?.toLowerCase() === 'zzzemzzz' ||
           parsed.username === 'Emanuel001' ||
@@ -108,8 +125,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           parsed.id === 'u_emanuel001' ||
           parsed.id === 'u_emanuel007' ||
           parsed.accountNumber === '342186831' ||
-          parsed.id?.includes('342186831') ||
-          parsed.accountNumber === '72423906'
+          parsed.id?.includes('342186831')
         ) {
           parsed.id = 'u_zzzemzzz';
           parsed.username = 'zzZEMZzz';
