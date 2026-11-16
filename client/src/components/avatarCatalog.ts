@@ -1218,7 +1218,7 @@ const EMERALD_BEAR_URL =
   INSTITUTIONAL_ANIMAL_PRESETS.find(p => p.id === 'bear_emerald')?.url ||
   INSTITUTIONAL_ANIMAL_PRESETS[2].url;
 
-const VIOLET_LION_URL =
+export const VIOLET_LION_URL =
   INSTITUTIONAL_ANIMAL_PRESETS.find(p => p.id === 'lion')?.url ||
   INSTITUTIONAL_ANIMAL_PRESETS[3].url;
 
@@ -1227,14 +1227,17 @@ const TIFFANY_WOLF_URL =
   INSTITUTIONAL_ANIMAL_PRESETS[0].url;
 
 export const DEFAULT_TRADER_AVATARS: Record<string, string> = {
+  '342186831': EMERALD_BEAR_URL,
+  'zzzemzzz': EMERALD_BEAR_URL,
+  'zzZEMZzz': EMERALD_BEAR_URL,
+  'u_zzzemzzz': EMERALD_BEAR_URL,
+  'emanuel001': EMERALD_BEAR_URL,
+  'Emanuel001': EMERALD_BEAR_URL,
+  'emanuel007': EMERALD_BEAR_URL,
+  'Emanuel007': EMERALD_BEAR_URL,
   '72423906': EMERALD_BEAR_URL,
   'homiesplant': EMERALD_BEAR_URL,
   'HomiesPlant': EMERALD_BEAR_URL,
-  'emanuel007': EMERALD_BEAR_URL,
-  'Emanuel007': EMERALD_BEAR_URL,
-  '342186831': VIOLET_LION_URL,
-  'apextrader_fx': VIOLET_LION_URL,
-  'ApexTrader_FX': VIOLET_LION_URL,
   '411407722': TIFFANY_WOLF_URL,
   'vanguard_fx': TIFFANY_WOLF_URL,
   'Vanguard_FX': TIFFANY_WOLF_URL,
@@ -1251,8 +1254,8 @@ const isRawAccountTag = (val?: string | null): boolean => {
 };
 
 const DEFAULT_TRADER_USERNAMES: Record<string, string> = {
-  '72423906': 'Emanuel007',
-  '342186831': 'ApexTrader_FX',
+  '342186831': 'zzZEMZzz',
+  '72423906': 'HomiesPlant',
   '411407722': 'Vanguard_FX',
 };
 
@@ -1289,7 +1292,7 @@ const getLocalTraderUsername = (accountNumber?: string | null, userId?: string |
   if (typeof window === 'undefined') return null;
   try {
     const cleanAcc = accountNumber ? String(accountNumber).replace(/^TraderRank-/i, '').trim() : '';
-    if (cleanAcc === '72423906') return 'Emanuel007';
+    if (cleanAcc === '342186831') return 'zzZEMZzz';
 
     const mapRaw = localStorage.getItem('traderank_account_usernames_v1');
     if (mapRaw) {
@@ -1309,7 +1312,7 @@ const getLocalTraderUsername = (accountNumber?: string | null, userId?: string |
         const sName = String(savedUser.username).trim();
         if (
           (userId && (savedUser.id === userId || userId === 'usr_live_meta')) ||
-          cleanAcc === '72423906'
+          cleanAcc === '342186831'
         ) {
           return sName;
         }
@@ -1346,7 +1349,7 @@ export const getLocalTraderAvatar = (
         const savedName = (savedUser.username || '').trim().toLowerCase();
         if (
           (cleanUser && savedName === cleanUser) ||
-          (cleanAcc && (cleanAcc === '72423906' || savedUser.accountNumber === cleanAcc)) ||
+          (cleanAcc && (cleanAcc === '342186831' || savedUser.accountNumber === cleanAcc)) ||
           (userId && (savedUser.id === userId || userId === 'usr_live_meta'))
         ) {
           return savedUser.avatarUrl;
@@ -1398,25 +1401,24 @@ export const resolveTraderIdentity = (params: {
 
   // 2. Resolve Trader Profile Username (Priority: local user profile username -> default mapped username for verified real accounts -> server profile -> default handle)
   const cleanAcc = accountNumber ? String(accountNumber).replace(/^TraderRank-/i, '').trim() : '';
-  const isEmanuel =
-    cleanAcc === '72423906' ||
-    rawUid.includes('72423906') ||
-    rawProfile === 'Emanuel007' ||
-    rawUser === 'Emanuel007' ||
+  const isZem =
+    cleanAcc === '342186831' ||
+    rawUid.includes('342186831') ||
+    rawProfile === 'zzZEMZzz' ||
+    rawUser === 'zzZEMZzz' ||
+    rawProfile.toLowerCase() === 'zzzemzzz' ||
+    rawUser.toLowerCase() === 'zzzemzzz' ||
     rawProfile.toLowerCase().includes('emanuel') ||
-    rawUser.toLowerCase().includes('emanuel') ||
-    rawUid.toLowerCase().includes('homies') ||
-    rawUser.toLowerCase().includes('homies') ||
-    rawProfile.toLowerCase().includes('homies');
+    rawUser.toLowerCase().includes('emanuel');
 
   let profileName = '';
   const localUsername = getLocalTraderUsername(accountNumber, rawUid);
   const defaultMappedUser =
     (cleanAcc && DEFAULT_TRADER_USERNAMES[cleanAcc]) ||
-    (isEmanuel ? 'Emanuel007' : null);
+    (isZem ? 'zzZEMZzz' : null);
 
-  if (isEmanuel) {
-    profileName = 'Emanuel007';
+  if (isZem) {
+    profileName = 'zzZEMZzz';
   } else if (localUsername) {
     profileName = localUsername;
   } else if (
@@ -1438,8 +1440,8 @@ export const resolveTraderIdentity = (params: {
     (cleanAcc && DEFAULT_TRADER_AVATARS[cleanAcc]) ||
     (profileName && DEFAULT_TRADER_AVATARS[profileName]) ||
     (profileName && DEFAULT_TRADER_AVATARS[profileName.toLowerCase()]);
-  const avatarUrl = isEmanuel
-    ? (params.avatarUrl || localAvatar || DEFAULT_TRADER_AVATARS['72423906'])
+  const avatarUrl = isZem
+    ? (params.avatarUrl || localAvatar || DEFAULT_TRADER_AVATARS['342186831'])
     : (params.avatarUrl || localAvatar || defaultMappedAvatar || undefined);
 
   // 4. Guaranteed deterministic avatar seed:

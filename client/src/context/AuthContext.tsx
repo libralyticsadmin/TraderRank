@@ -97,21 +97,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           parsed.level = 1;
         }
 
-        // Guaranteed real user profile alignment: sanitize cached user to canonical Emanuel007
+        // Guaranteed real user profile alignment: sanitize cached user to canonical zzZEMZzz
         if (
+          parsed.username === 'zzZEMZzz' ||
+          parsed.username?.toLowerCase() === 'zzzemzzz' ||
+          parsed.username === 'Emanuel001' ||
           parsed.username === 'Emanuel007' ||
           parsed.username?.toLowerCase().includes('emanuel') ||
-          parsed.username === 'HomiesPlant' ||
-          parsed.id === 'u_homiesplant' ||
-          parsed.accountNumber === '72423906' ||
-          parsed.id?.includes('72423906')
+          parsed.id === 'u_zzzemzzz' ||
+          parsed.id === 'u_emanuel001' ||
+          parsed.id === 'u_emanuel007' ||
+          parsed.accountNumber === '342186831' ||
+          parsed.id?.includes('342186831') ||
+          parsed.accountNumber === '72423906'
         ) {
-          parsed.id = 'u_emanuel007';
-          parsed.username = 'Emanuel007';
+          parsed.id = 'u_zzzemzzz';
+          parsed.username = 'zzZEMZzz';
           parsed.avatarSymbol = 'bear_emerald';
-          parsed.avatarUrl = parsed.avatarUrl || DEFAULT_TRADER_AVATARS['72423906'];
-          parsed.primaryBroker = 'XMTrading';
-          parsed.accountNumber = '72423906';
+          parsed.avatarUrl = parsed.avatarUrl || DEFAULT_TRADER_AVATARS['342186831'];
+          parsed.primaryBroker = 'XM';
+          parsed.accountNumber = '342186831';
+          parsed.currency = 'USD';
         }
 
         try {
@@ -213,8 +219,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
         if (!data.user.avatarUrl) {
-          const isEmanuel = data.user.id === 'u_emanuel007' || data.user.accountNumber === '72423906' || data.user.username === 'Emanuel007';
-          data.user.avatarUrl = isEmanuel ? DEFAULT_TRADER_AVATARS['72423906'] : getRandomTraderAvatar().url;
+          const isZem =
+            data.user.id === 'u_zzzemzzz' ||
+            data.user.id === 'u_emanuel001' ||
+            data.user.id === 'u_emanuel007' ||
+            data.user.accountNumber === '342186831' ||
+            data.user.username === 'zzZEMZzz';
+          data.user.avatarUrl = isZem ? (DEFAULT_TRADER_AVATARS['342186831'] || DEFAULT_TRADER_AVATARS['zzZEMZzz']) : getRandomTraderAvatar().url;
         }
         setUser(data.user);
         return { success: true };

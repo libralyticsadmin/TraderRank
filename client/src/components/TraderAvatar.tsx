@@ -36,16 +36,20 @@ const EMERALD_BEAR_URL =
   INSTITUTIONAL_ANIMAL_PRESETS[2].url;
 
 const TRADER_PRESET_MAP: Record<string, string> = {
+  'zzZEMZzz': EMERALD_BEAR_URL,
+  'zzzemzzz': EMERALD_BEAR_URL,
+  '342186831': EMERALD_BEAR_URL,
+  'TraderRank-342186831': EMERALD_BEAR_URL,
+  'Emanuel001': EMERALD_BEAR_URL,
+  'emanuel001': EMERALD_BEAR_URL,
+  'Emanuel007': EMERALD_BEAR_URL,
+  'emanuel007': EMERALD_BEAR_URL,
   'HomiesPlant': EMERALD_BEAR_URL,                        // Emerald Quant Bear (Green Bear)
   'homiesplant': EMERALD_BEAR_URL,
   '72423906': EMERALD_BEAR_URL,
   'TraderRank-72423906': EMERALD_BEAR_URL,
-  'Emanuel007': EMERALD_BEAR_URL,
-  'emanuel007': EMERALD_BEAR_URL,
   'ApexTrader_FX': INSTITUTIONAL_ANIMAL_PRESETS[3].url,   // Imperial Violet Lion
   'apextrader_fx': INSTITUTIONAL_ANIMAL_PRESETS[3].url,
-  '342186831': INSTITUTIONAL_ANIMAL_PRESETS[3].url,
-  'TraderRank-342186831': INSTITUTIONAL_ANIMAL_PRESETS[3].url,
   'Vanguard_FX': INSTITUTIONAL_ANIMAL_PRESETS[0].url,     // Cyber Tiffany Wolf
   'vanguard_fx': INSTITUTIONAL_ANIMAL_PRESETS[0].url,
   '411407722': INSTITUTIONAL_ANIMAL_PRESETS[0].url,
@@ -78,7 +82,14 @@ const TRADER_PRESET_MAP: Record<string, string> = {
 const resolveSavedUserAvatar = (username: string, explicitUrl?: string): string | undefined => {
   if (explicitUrl && explicitUrl.trim()) return explicitUrl.trim();
   const uNorm = (username || '').trim().toLowerCase();
-  if (uNorm === 'homiesplant' || uNorm === 'emanuel007' || uNorm.includes('72423906') || uNorm.includes('emanuel') || uNorm.includes('homies')) {
+  if (
+    uNorm === 'zzzemzzz' ||
+    uNorm === 'emanuel001' ||
+    uNorm === 'emanuel007' ||
+    uNorm.includes('342186831') ||
+    uNorm.includes('zzzemzzz') ||
+    uNorm.includes('emanuel')
+  ) {
     return EMERALD_BEAR_URL;
   }
   if (typeof window === 'undefined') return undefined;

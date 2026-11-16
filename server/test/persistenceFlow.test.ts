@@ -62,14 +62,15 @@ describe('Dual-Layer Persistence Flow (Account Ownership, Subscriptions, Daily C
     }
   });
 
-  it('should guarantee Emanuel007 canonical account 72423906 ownership is always persisted', async () => {
+  it('should guarantee canonical verified account 342186831 ownership is always persisted', async () => {
     await connector.loadAccountOwnersFromR2();
-    const emanuelOwner = connector.getAccountOwner('72423906');
-    expect(emanuelOwner).toBeDefined();
-    expect(emanuelOwner?.userId).toBe('u_emanuel007');
-    expect(emanuelOwner?.username).toBe('Emanuel007');
-    expect(emanuelOwner?.broker).toBe('XMTrading');
-    expect(emanuelOwner?.status).toBe('CONNECTED');
+    const owner = connector.getAccountOwner('342186831');
+    expect(owner).toBeDefined();
+    expect(owner?.userId).toBe('u_zzzemzzz');
+    expect(owner?.username).toBe('zzZEMZzz');
+    expect(owner?.broker).toBe('XM');
+    expect(owner?.serverName).toBe('XMGlobal-MT5 10');
+    expect(owner?.status).toBe('CONNECTED');
   });
 
   it('should persist user subscriptions to storage and restore on reload', async () => {

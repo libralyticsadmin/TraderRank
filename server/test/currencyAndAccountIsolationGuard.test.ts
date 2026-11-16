@@ -183,9 +183,9 @@ describe('TraderRank Protection Suite: Currency, Account Isolation & Contender I
       leaderboard.registerAccountMapping(
         'acc_meta_342186831',
         'usr_meta_342186831',
-        'ApexTrader_FX',
+        'zzZEMZzz',
         'XM' as Broker,
-        'ApexTrader_FX',
+        'zzZEMZzz',
         '342186831'
       );
       leaderboard.registerAccountMapping(
@@ -224,24 +224,23 @@ describe('TraderRank Protection Suite: Currency, Account Isolation & Contender I
       expect(formatUsd(jpyToUsd(-3693))).not.toContain('¥');
     });
 
-    it('5. Real Trader Identity & Broker Masking Guard: strictly enforces Emanuel007 and USD', () => {
+    it('5. Real Trader Identity & Broker Masking Guard: strictly enforces zzZEMZzz and USD', () => {
       // Direct connector retrieval test
       const accounts = connector.getAccounts();
-      const target = accounts.find(a => a.accountNumber === '72423906');
+      const target = accounts.find(a => a.accountNumber === '342186831');
       if (target) {
-        expect(target.profileUsername).toBe('Emanuel007');
-        expect(target.accountHolderName).toBe('Emanuel007');
+        expect(target.profileUsername).toBe('zzZEMZzz');
+        expect(target.accountHolderName).toBe('zzZEMZzz');
         expect(target.currency).toBe('USD');
-        expect(target.currency).not.toBe('JPY');
-        expect(target.userId).toBe('u_emanuel007');
+        expect(target.userId).toBe('u_zzzemzzz');
       }
 
       // Leaderboard view test
       const lb = leaderboard.getLeaderboard(10);
-      const lbTarget = lb.find(e => e.accountNumber === '72423906');
+      const lbTarget = lb.find(e => e.accountNumber === '342186831');
       if (lbTarget) {
-        expect(lbTarget.username).toBe('Emanuel007');
-        expect(lbTarget.profileName).toBe('Emanuel007');
+        expect(lbTarget.username).toBe('zzZEMZzz');
+        expect(lbTarget.profileName).toBe('zzZEMZzz');
         expect(lbTarget.currency).toBe('USD');
       }
     });

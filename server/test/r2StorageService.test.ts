@@ -3,6 +3,10 @@ import { R2StorageService } from '../src/services/r2StorageService.js';
 
 describe('Cloudflare R2 Storage Service', () => {
   it('initializes with default credentials and marks configured', () => {
+    process.env.R2_ACCESS_KEY_ID = 'test_key';
+    process.env.R2_SECRET_ACCESS_KEY = 'test_secret';
+    process.env.R2_ACCOUNT_ID = 'test_account';
+    process.env.R2_ENDPOINT = 'https://test_account.r2.cloudflarestorage.com';
     const service = new R2StorageService();
     expect(service.isConfigured()).toBe(true);
     expect(service.getBucketName()).toBe('traderrank-data');

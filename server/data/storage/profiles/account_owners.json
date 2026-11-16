@@ -7,7 +7,7 @@
     "platform": "MT5",
     "accountId": "acc_216ed685",
     "serverName": "XMGlobal-Real 20",
-    "connectedAt": "2026-11-16T08:57:31.042Z",
+    "connectedAt": "2026-11-16T09:21:22.585Z",
     "status": "CONNECTED"
   },
   "33445566": {
@@ -22,13 +22,25 @@
     "status": "CONNECTED"
   },
   "72423906": {
-    "userId": "u_emanuel007",
-    "username": "Emanuel007",
+    "userId": "usr_meta_72423906",
+    "username": "HomiesPlant",
     "broker": "XMTrading",
     "accountNumber": "72423906",
     "platform": "MT5",
+    "accountId": "acc_meta_72423906",
     "serverName": "XMTrading-MT5 3",
     "connectedAt": "2026-11-16T08:38:20.940Z",
+    "status": "CONNECTED"
+  },
+  "77221199": {
+    "userId": "u_real_trader_alpha",
+    "username": "AlphaQuant",
+    "broker": "IC_MARKETS",
+    "accountNumber": "77221199",
+    "platform": "MT5",
+    "accountId": "acc_4c229290",
+    "serverName": "ICMarketsSC-Live01",
+    "connectedAt": "2026-11-16T09:21:23.069Z",
     "status": "CONNECTED"
   },
   "88229911": {
@@ -42,6 +54,28 @@
     "connectedAt": "2026-11-16T08:38:20.946Z",
     "status": "CONNECTED"
   },
+  "99881122": {
+    "userId": "u_trader_axiory_scalper",
+    "username": "AxioryScalper",
+    "broker": "Axiory",
+    "accountNumber": "99881122",
+    "platform": "MT5",
+    "accountId": "acc_db896d6b",
+    "serverName": "Axiory-Live 01",
+    "connectedAt": "2026-11-16T09:21:28.376Z",
+    "status": "CONNECTED"
+  },
+  "342186831": {
+    "userId": "u_zzzemzzz",
+    "username": "zzZEMZzz",
+    "broker": "XM",
+    "accountNumber": "342186831",
+    "platform": "MT5",
+    "accountId": "acc_meta_342186831",
+    "serverName": "XMGlobal-MT5 10",
+    "connectedAt": "2026-11-16T09:00:00.000Z",
+    "status": "CONNECTED"
+  },
   "EXN-554433": {
     "userId": "u_demo_2",
     "username": "ExnessSniper",
@@ -50,6 +84,27 @@
     "platform": "NATIVE",
     "accountId": "acc_53a2ed2c",
     "connectedAt": "2026-11-16T08:57:31.357Z",
+    "status": "CONNECTED"
+  },
+  "mock_9921048": {
+    "userId": "u_tester_1",
+    "username": "TestChallenger",
+    "broker": "IC_MARKETS",
+    "accountNumber": "mock_9921048",
+    "platform": "MT5",
+    "accountId": "acc_b9d54455",
+    "serverName": "ICMarkets-Mock-Server",
+    "connectedAt": "2026-11-16T09:20:17.218Z",
+    "status": "CONNECTED"
+  },
+  "EXN-MULTI-01": {
+    "userId": "u_trader_exness_pro",
+    "username": "ExnessSniper",
+    "broker": "Exness",
+    "accountNumber": "EXN-MULTI-01",
+    "platform": "NATIVE",
+    "accountId": "acc_a561335a",
+    "connectedAt": "2026-11-16T09:21:28.372Z",
     "status": "CONNECTED"
   }
 }

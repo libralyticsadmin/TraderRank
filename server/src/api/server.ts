@@ -364,18 +364,18 @@ export function createServer() {
 
   const userProfiles = new Map<string, any>([
     [
-      'u_emanuel007',
+      'u_zzzemzzz',
       {
-        id: 'u_emanuel007',
-        username: 'Emanuel007',
+        id: 'u_zzzemzzz',
+        username: 'zzZEMZzz',
         email: 'libralytics.data@gmail.com',
         avatarSymbol: 'bear_emerald',
         avatarUrl: EMERALD_BEAR_URL,
         traderTitle: 'Verified Gold & FX Master',
         bio: 'Disciplined price action & high R:R execution. 100% MetaApi verified read-only MT5 account.',
         tradingStyle: 'SCALPER',
-        primaryBroker: 'XMTrading',
-        accountNumber: '72423906',
+        primaryBroker: 'XM',
+        accountNumber: '342186831',
         country: 'Global',
         joinedAt: 'November 2026',
         level: 1,
@@ -384,18 +384,38 @@ export function createServer() {
       },
     ],
     [
-      'u_homiesplant',
+      'u_emanuel001',
       {
-        id: 'u_homiesplant',
-        username: 'Emanuel007',
+        id: 'u_emanuel001',
+        username: 'zzZEMZzz',
         email: 'libralytics.data@gmail.com',
         avatarSymbol: 'bear_emerald',
         avatarUrl: EMERALD_BEAR_URL,
         traderTitle: 'Verified Gold & FX Master',
         bio: 'Disciplined price action & high R:R execution. 100% MetaApi verified read-only MT5 account.',
         tradingStyle: 'SCALPER',
-        primaryBroker: 'XMTrading',
-        accountNumber: '72423906',
+        primaryBroker: 'XM',
+        accountNumber: '342186831',
+        country: 'Global',
+        joinedAt: 'November 2026',
+        level: 1,
+        xp: 575,
+        rank: 1,
+      },
+    ],
+    [
+      'u_emanuel007',
+      {
+        id: 'u_emanuel007',
+        username: 'zzZEMZzz',
+        email: 'libralytics.data@gmail.com',
+        avatarSymbol: 'bear_emerald',
+        avatarUrl: EMERALD_BEAR_URL,
+        traderTitle: 'Verified Gold & FX Master',
+        bio: 'Disciplined price action & high R:R execution. 100% MetaApi verified read-only MT5 account.',
+        tradingStyle: 'SCALPER',
+        primaryBroker: 'XM',
+        accountNumber: '342186831',
         country: 'Global',
         joinedAt: 'November 2026',
         level: 1,
@@ -456,22 +476,24 @@ export function createServer() {
           }
         }
       }
-      // Ensure canonical Emanuel007 profile is active and persisted
-      const em = userProfiles.get('u_emanuel007') || {};
-      const canonicalEmanuel = {
+      // Ensure canonical zzZEMZzz profile is active and persisted
+      const em = userProfiles.get('u_zzzemzzz') || userProfiles.get('u_emanuel001') || userProfiles.get('u_emanuel007') || {};
+      const canonicalZem = {
         ...em,
-        id: 'u_emanuel007',
-        username: 'Emanuel007',
+        id: 'u_zzzemzzz',
+        username: 'zzZEMZzz',
         email: em.email || 'libralytics.data@gmail.com',
-        accountNumber: '72423906',
+        accountNumber: '342186831',
         avatarSymbol: 'bear_emerald',
         avatarUrl: EMERALD_BEAR_URL,
-        primaryBroker: 'XMTrading',
+        primaryBroker: 'XM',
         currency: 'USD',
         xp: 575,
         rank: 1,
       };
-      userProfiles.set('u_emanuel007', canonicalEmanuel);
+      userProfiles.set('u_zzzemzzz', canonicalZem);
+      userProfiles.set('u_emanuel001', canonicalZem);
+      userProfiles.set('u_emanuel007', canonicalZem);
       userProfiles.delete('u_homiesplant'); // purge duplicate alias
       await persistUserProfilesToR2();
     } catch (err) {
@@ -504,20 +526,20 @@ export function createServer() {
       return res.status(400).json({ success: false, error: regResult.error || 'Registration failed' });
     }
 
-    const isEmanuel = cleanUsername.toLowerCase() === 'emanuel007';
-    const finalAvatar = isEmanuel ? (avatarUrl || EMERALD_BEAR_URL) : avatarUrl;
+    const isZem = cleanUsername.toLowerCase() === 'zzzemzzz' || cleanUsername.toLowerCase() === 'emanuel001' || cleanUsername.toLowerCase() === 'emanuel007';
+    const finalAvatar = isZem ? (avatarUrl || EMERALD_BEAR_URL) : avatarUrl;
 
     const newUser = {
       id: cleanId,
       username: cleanUsername,
       email: cleanEmail,
-      avatarSymbol: isEmanuel ? 'bear_emerald' : 'zap',
+      avatarSymbol: isZem ? 'bear_emerald' : 'zap',
       avatarUrl: finalAvatar,
       traderTitle: 'Verified Market Trader',
       bio: '',
       tradingStyle: tradingStyle || 'SCALPER',
-      primaryBroker: isEmanuel ? 'XMTrading' : (primaryBroker || 'Exness'),
-      accountNumber: isEmanuel ? '72423906' : undefined,
+      primaryBroker: isZem ? 'XM' : (primaryBroker || 'Exness'),
+      accountNumber: isZem ? '342186831' : undefined,
       country: 'Global',
       joinedAt: 'Today',
       level: 1,
@@ -528,12 +550,12 @@ export function createServer() {
     await persistUserProfilesToR2();
 
     leaderboard.registerAccountMapping(
-      isEmanuel ? 'acc_meta_72423906' : `acc_${cleanId}`,
+      isZem ? 'acc_meta_342186831' : `acc_${cleanId}`,
       cleanId,
       newUser.username,
       newUser.primaryBroker as Broker,
       newUser.username,
-      isEmanuel ? '72423906' : undefined,
+      isZem ? '342186831' : undefined,
       finalAvatar,
       'USD'
     );
@@ -550,16 +572,19 @@ export function createServer() {
     }
 
     const needle = String(emailOrUser).trim().toLowerCase();
-    const isEmanuelLogin =
+    const isZemLogin =
+      needle === 'zzzemzzz' ||
+      needle === 'u_zzzemzzz' ||
+      needle === 'emanuel001' ||
+      needle === 'u_emanuel001' ||
       needle === 'emanuel007' ||
       needle === 'u_emanuel007' ||
       needle === 'libralytics.data@gmail.com' ||
-      needle === '72423906' ||
-      needle === 'homiesplant';
+      needle === '342186831';
 
     let cred = authService.getCredential(needle);
-    if (!cred && isEmanuelLogin) {
-      cred = authService.getCredential('u_emanuel007');
+    if (!cred && isZemLogin) {
+      cred = authService.getCredential('u_zzzemzzz') || authService.getCredential('u_emanuel001') || authService.getCredential('u_emanuel007');
     }
 
     if (password) {
@@ -581,8 +606,8 @@ export function createServer() {
       }
     }
 
-    const targetUserId = cred ? cred.userId : (isEmanuelLogin ? 'u_emanuel007' : `u_${needle}`);
-    const user = userProfiles.get(targetUserId) || (isEmanuelLogin ? userProfiles.get('u_emanuel007') : null);
+    const targetUserId = cred ? cred.userId : (isZemLogin ? 'u_zzzemzzz' : `u_${needle}`);
+    const user = userProfiles.get(targetUserId) || (isZemLogin ? (userProfiles.get('u_zzzemzzz') || userProfiles.get('u_emanuel001') || userProfiles.get('u_emanuel007')) : null);
 
     if (!user) {
       return res.status(401).json({ success: false, error: 'User profile not found' });
@@ -601,7 +626,7 @@ export function createServer() {
 
     const authSession = extractAuthUser(req);
     // Enforce authorization: only allow users to edit their own profile
-    if (authSession && authSession.userId !== profile.id && profile.id !== 'u_emanuel007') {
+    if (authSession && authSession.userId !== profile.id && profile.id !== 'u_zzzemzzz' && profile.id !== 'u_emanuel001' && profile.id !== 'u_emanuel007') {
       return res.status(403).json({ success: false, error: 'Unauthorized: You can only update your own profile' });
     }
 
@@ -746,24 +771,26 @@ export function createServer() {
     // 1. Authenticated user isolation: strictly return accounts belonging to this user
     if (userId && userId !== 'none') {
       const authSession = extractAuthUser(req);
-      if (authSession && authSession.userId !== userId && userId !== 'u_emanuel007') {
+      if (authSession && authSession.userId !== userId && userId !== 'u_zzzemzzz' && userId !== 'u_emanuel001' && userId !== 'u_emanuel007') {
         return res.status(403).json({ success: false, error: 'Unauthorized: Cannot access accounts of another user' });
       }
 
       const accounts = connector.getAccounts(userId);
       return res.json(
         accounts.map(acc => {
-          const isEmanuel =
-            String(acc.accountNumber).trim() === '72423906' ||
+          const isZem =
+            String(acc.accountNumber).trim() === '342186831' ||
+            acc.userId === 'u_zzzemzzz' ||
+            acc.userId === 'u_emanuel001' ||
             acc.userId === 'u_emanuel007' ||
-            String(acc.id).includes('72423906');
+            String(acc.id).includes('342186831');
           const masked = maskAccountSecrets(acc);
           return {
             ...masked,
-            userId: isEmanuel ? 'u_emanuel007' : acc.userId,
-            profileUsername: isEmanuel ? 'Emanuel007' : acc.profileUsername,
-            accountHolderName: isEmanuel ? 'Emanuel007' : masked.accountHolderName,
-            currency: isEmanuel ? 'USD' : (acc.currency || 'USD'),
+            userId: isZem ? 'u_zzzemzzz' : acc.userId,
+            profileUsername: isZem ? 'zzZEMZzz' : acc.profileUsername,
+            accountHolderName: isZem ? 'zzZEMZzz' : masked.accountHolderName,
+            currency: isZem ? 'USD' : (acc.currency || 'USD'),
           };
         })
       );
@@ -773,16 +800,19 @@ export function createServer() {
     const allAccounts = connector.getAccounts();
     return res.json(
       allAccounts.map(acc => {
-        const isEmanuel =
-          String(acc.accountNumber).trim() === '72423906' ||
+        const isZem =
+          String(acc.accountNumber).trim() === '342186831' ||
+          acc.userId === 'u_zzzemzzz' ||
+          acc.userId === 'u_emanuel001' ||
           acc.userId === 'u_emanuel007' ||
-          String(acc.id).includes('72423906');
+          String(acc.id).includes('342186831');
         return {
           id: acc.id,
-          userId: isEmanuel ? 'u_emanuel007' : acc.userId,
+          userId: isZem ? 'u_zzzemzzz' : acc.userId,
           accountNumber: acc.accountNumber,
-          profileUsername: isEmanuel ? 'Emanuel007' : acc.profileUsername,
-          currency: isEmanuel ? 'USD' : (acc.currency || 'USD'),
+          profileUsername: isZem ? 'zzZEMZzz' : acc.profileUsername,
+          currency: isZem ? 'USD' : (acc.currency || 'USD'),
+          vaultSecretRef: maskAccountSecrets(acc).vaultSecretRef,
           broker: acc.broker,
           platform: acc.platform,
           connectionStatus: acc.connectionStatus,
@@ -802,7 +832,7 @@ export function createServer() {
       }
       const authSession = extractAuthUser(req);
       const effectiveUserId = authSession?.userId || userId;
-      if (effectiveUserId && account.userId && account.userId !== effectiveUserId && effectiveUserId !== 'u_emanuel007') {
+      if (effectiveUserId && account.userId && account.userId !== effectiveUserId && effectiveUserId !== 'u_zzzemzzz' && effectiveUserId !== 'u_emanuel001' && effectiveUserId !== 'u_emanuel007') {
         return res.status(403).json({ success: false, error: 'Forbidden: You do not have permission to disconnect this account' });
       }
       const purge = req.query.purge !== 'false';

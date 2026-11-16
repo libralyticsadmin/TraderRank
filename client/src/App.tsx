@@ -375,15 +375,16 @@ export const App: React.FC = () => {
   };
 
   const handleSelectTrader = (t: { userId?: string; username: string; broker?: Broker; rank?: number; score?: number; winRate?: number; tradesCount?: number; avatarUrl?: string }) => {
-    const isEmanuel =
+    const isZem =
+      t.username === 'zzZEMZzz' ||
+      t.username.toLowerCase() === 'zzzemzzz' ||
+      t.username === 'Emanuel001' ||
       t.username === 'Emanuel007' ||
       t.username.toLowerCase().includes('emanuel') ||
-      t.username === 'HomiesPlant' ||
-      t.username.toLowerCase().includes('homies') ||
-      (t.userId && (t.userId === 'u_emanuel007' || t.userId === 'u_homiesplant' || t.userId.includes('72423906')));
+      (t.userId && (t.userId === 'u_zzzemzzz' || t.userId === 'u_emanuel001' || t.userId === 'u_emanuel007' || t.userId.includes('342186831')));
 
-    const cleanUsername = isEmanuel ? 'Emanuel007' : t.username;
-    const safeBroker: Broker = isEmanuel ? 'XMTrading' : (t.broker || 'Exness');
+    const cleanUsername = isZem ? 'zzZEMZzz' : t.username;
+    const safeBroker: Broker = isZem ? 'XM' : (t.broker || 'Exness');
 
     const matchedLb = leaderboard.find(
       e => (t.userId && e.userId === t.userId) || e.username.toLowerCase() === cleanUsername.toLowerCase()
@@ -391,12 +392,12 @@ export const App: React.FC = () => {
     const matchedAcc = accounts.find(
       a =>
         (t.userId && (a.id === t.userId || a.userId === t.userId)) ||
-        (a.accountNumber && (cleanUsername.includes(a.accountNumber) || (isEmanuel && a.accountNumber === '72423906')))
+        (a.accountNumber && (cleanUsername.includes(a.accountNumber) || (isZem && a.accountNumber === '342186831')))
     );
-    const resolvedId = isEmanuel ? 'u_emanuel007' : (t.userId || matchedAcc?.id || matchedLb?.userId || `u_${cleanUsername.toLowerCase()}`);
+    const resolvedId = isZem ? 'u_zzzemzzz' : (t.userId || matchedAcc?.id || matchedLb?.userId || `u_${cleanUsername.toLowerCase()}`);
 
-    const avatarUrl = t.avatarUrl || matchedLb?.avatarUrl || (isEmanuel ? DEFAULT_TRADER_AVATARS['72423906'] : undefined);
-    const avatarSymbol = isEmanuel ? 'bear_emerald' : (matchedLb?.avatarSymbol || 'zap');
+    const avatarUrl = t.avatarUrl || matchedLb?.avatarUrl || (isZem ? (DEFAULT_TRADER_AVATARS['342186831'] || DEFAULT_TRADER_AVATARS['zzZEMZzz']) : undefined);
+    const avatarSymbol = isZem ? 'bear_emerald' : (matchedLb?.avatarSymbol || 'zap');
 
     const tradesCount = t.tradesCount ?? matchedLb?.tradesCount ?? 0;
     const netPips = t.score ?? matchedLb?.totalPips ?? 0;
@@ -419,7 +420,7 @@ export const App: React.FC = () => {
       profitFactor: winRate >= 50 ? 1.4 : 0.8,
       maxDrawdown: 0,
       totalTrades: tradesCount,
-      bestTradePips: isEmanuel ? 97.7 : 1933.0,
+      bestTradePips: isZem ? 97.7 : 1933.0,
       avgHoldingTime: '1h 12m',
       verifiedSince: 'May 2026',
       isFollowing: false,
