@@ -14,6 +14,7 @@ import {
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { resolveTraderIdentity } from './avatarCatalog.ts';
+import { resolveCurrency, formatCurrency } from '../utils/currencyFlow.ts';
 import { BrandLogo, BrandMark } from './BrandLogo.tsx';
 import { LiveTradeBulletin } from './LiveTradeBulletin.tsx';
 import { MarketLivePricesTicker } from './MarketLivePricesTicker.tsx';
@@ -305,16 +306,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         userId: trader.userId,
         avatarUrl: trader.avatarUrl,
       });
-      const isEmanuelAcc =
-        cleanAcc === '72423906' ||
-        identity.profileName === 'Emanuel007' ||
-        trader.username === 'Emanuel007' ||
+      const isZemAcc =
+        cleanAcc === '342186831' ||
+        identity.profileName === 'zzZEMZzz' ||
+        trader.username === 'zzZEMZzz' ||
+        trader.userId === 'u_zzzemzzz' ||
+        trader.userId === 'u_emanuel001' ||
         trader.userId === 'u_emanuel007' ||
-        trader.userId === 'u_homiesplant' ||
-        String(trader.accountNumber || '').includes('72423906') ||
-        String(trader.username || '').toLowerCase().includes('emanuel') ||
-        String(trader.username || '').toLowerCase().includes('homies');
-      const currency = isEmanuelAcc ? 'USD' : (real?.currency || (trader as any).currency || 'USD');
+        String(trader.accountNumber || '').includes('342186831');
+      const currency = resolveCurrency(real?.currency || (trader as any).currency || (isZemAcc ? 'JPY' : undefined), isZemAcc ? 'JPY' : 'USD');
 
       return {
         userId: trader.userId,
@@ -359,13 +359,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     }));
 
   const formatPodiumProfit = (amount: number, _broker?: string, currency?: string) => {
-    const cur = (currency || '').toUpperCase().trim();
-    const isJpy = cur === 'JPY';
-    const sym = cur === 'USD' ? '$' : cur === 'JPY' ? '¥' : cur === 'EUR' ? '€' : cur === 'GBP' ? '£' : isJpy ? '¥' : '$';
-    const formattedVal = isJpy
-      ? Math.round(Math.abs(amount)).toLocaleString('ja-JP')
-      : Math.abs(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    return amount >= 0 ? `+${sym}${formattedVal}` : `-${sym}${formattedVal}`;
+    return formatCurrency(amount, currency, { showSign: true });
   };
 
   return (

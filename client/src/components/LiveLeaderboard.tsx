@@ -4,6 +4,7 @@ import { calculateTraderGamification } from '../../../shared/src/gamification.ts
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { resolveTraderIdentity } from './avatarCatalog.ts';
+import { resolveCurrency, formatCurrency } from '../utils/currencyFlow.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
 import {
@@ -312,16 +313,15 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               avatarUrl: d.avatarUrl,
             });
 
-            const isEmanuelAcc =
-              cleanAcc === '72423906' ||
-              identity.profileName === 'Emanuel007' ||
-              d.username === 'Emanuel007' ||
+            const isZemAcc =
+              cleanAcc === '342186831' ||
+              identity.profileName === 'zzZEMZzz' ||
+              d.username === 'zzZEMZzz' ||
+              d.userId === 'u_zzzemzzz' ||
+              d.userId === 'u_emanuel001' ||
               d.userId === 'u_emanuel007' ||
-              d.userId === 'u_homiesplant' ||
-              String(d.accountNumber || '').includes('72423906') ||
-              String(d.username || '').toLowerCase().includes('emanuel') ||
-              String(d.username || '').toLowerCase().includes('homies');
-            const accCurrency = isEmanuelAcc ? 'USD' : (real?.currency || (d as any).currency || 'USD');
+              String(d.accountNumber || '').includes('342186831');
+            const accCurrency = resolveCurrency(real?.currency || (d as any).currency || (isZemAcc ? 'JPY' : undefined), isZemAcc ? 'JPY' : 'USD');
 
             return {
               userId: d.userId,
@@ -373,16 +373,15 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               avatarUrl: e.avatarUrl,
             });
 
-            const isEmanuelAcc =
-              cleanAcc === '72423906' ||
-              identity.profileName === 'Emanuel007' ||
-              e.username === 'Emanuel007' ||
+            const isZemAcc =
+              cleanAcc === '342186831' ||
+              identity.profileName === 'zzZEMZzz' ||
+              e.username === 'zzZEMZzz' ||
+              e.userId === 'u_zzzemzzz' ||
+              e.userId === 'u_emanuel001' ||
               e.userId === 'u_emanuel007' ||
-              e.userId === 'u_homiesplant' ||
-              String(e.accountNumber || '').includes('72423906') ||
-              String(e.username || '').toLowerCase().includes('emanuel') ||
-              String(e.username || '').toLowerCase().includes('homies');
-            const accCurrency = isEmanuelAcc ? 'USD' : (real?.currency || (e as any).currency || 'USD');
+              String(e.accountNumber || '').includes('342186831');
+            const accCurrency = resolveCurrency(real?.currency || (e as any).currency || (isZemAcc ? 'JPY' : undefined), isZemAcc ? 'JPY' : 'USD');
 
             return {
               userId: e.userId,
@@ -449,13 +448,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
   const top3 = processedEntries.slice(0, 3);
 
   const formatTraderProfit = (amount: number, _broker?: Broker, currency?: string) => {
-    const cur = (currency || '').toUpperCase().trim();
-    const isJpy = cur === 'JPY';
-    const sym = cur === 'USD' ? '$' : cur === 'JPY' ? '¥' : cur === 'EUR' ? '€' : cur === 'GBP' ? '£' : isJpy ? '¥' : '$';
-    const formattedVal = isJpy
-      ? Math.round(Math.abs(amount)).toLocaleString('ja-JP')
-      : Math.abs(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    return amount >= 0 ? `+${sym}${formattedVal}` : `-${sym}${formattedVal}`;
+    return formatCurrency(amount, currency, { showSign: true });
   };
 
   return (

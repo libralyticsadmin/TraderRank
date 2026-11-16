@@ -381,6 +381,7 @@ export function createServer() {
         level: 1,
         xp: 575,
         rank: 1,
+        currency: 'JPY',
       },
     ],
     [
@@ -401,6 +402,7 @@ export function createServer() {
         level: 1,
         xp: 575,
         rank: 1,
+        currency: 'JPY',
       },
     ],
     [
@@ -421,6 +423,7 @@ export function createServer() {
         level: 1,
         xp: 575,
         rank: 1,
+        currency: 'JPY',
       },
     ],
     [
@@ -487,7 +490,7 @@ export function createServer() {
         avatarSymbol: 'bear_emerald',
         avatarUrl: EMERALD_BEAR_URL,
         primaryBroker: 'XM',
-        currency: 'USD',
+        currency: em.currency || 'JPY',
         xp: 575,
         rank: 1,
       };

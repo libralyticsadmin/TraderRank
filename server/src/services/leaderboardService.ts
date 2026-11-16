@@ -102,22 +102,23 @@ export class LeaderboardService {
         ? username
         : undefined;
 
-    // Guaranteed real user profile name alignment
-    const isEmanuel =
-      extractedNumber === '72423906' ||
+    // Guaranteed real user profile name and currency alignment
+    const cleanAcc = extractedNumber || '';
+    const isZem =
+      cleanAcc === '342186831' ||
+      userId === 'u_zzzemzzz' ||
+      userId === 'u_emanuel001' ||
       userId === 'u_emanuel007' ||
-      userId === 'u_homiesplant' ||
-      userId === 'usr_meta_72423906' ||
+      String(username).toLowerCase() === 'zzzemzzz' ||
+      String(profileName).toLowerCase() === 'zzzemzzz' ||
       String(username).toLowerCase().includes('emanuel') ||
-      String(profileName).toLowerCase().includes('emanuel') ||
-      String(username).toLowerCase().includes('homies') ||
-      String(profileName).toLowerCase().includes('homies');
+      String(profileName).toLowerCase().includes('emanuel');
 
-    if (isEmanuel) {
-      cleanProfileName = 'Emanuel007';
+    if (isZem) {
+      cleanProfileName = 'zzZEMZzz';
     }
 
-    const resolvedCurrency = isEmanuel ? 'USD' : (currency || 'USD');
+    const resolvedCurrency = (currency || (isZem ? 'JPY' : 'USD')).toUpperCase();
 
     if (!this.traders.has(userId)) {
       this.traders.set(userId, {
@@ -290,25 +291,28 @@ export class LeaderboardService {
       const winRate = t.totalTrades > 0 ? Math.round((t.winningTrades / t.totalTrades) * 100) : 0;
       const dailyInfo = dailyRankMap.get(t.userId) || { dailyRank: 99, dailyPips: 0 };
 
-      const isEmanuel =
-        String(t.accountNumber).trim() === '72423906' ||
+      const cleanAcc = String(t.accountNumber || '').trim();
+      const isZem =
+        cleanAcc === '342186831' ||
+        t.userId === 'u_zzzemzzz' ||
+        t.userId === 'u_emanuel001' ||
         t.userId === 'u_emanuel007' ||
-        t.userId === 'u_homiesplant' ||
-        t.userId === 'usr_meta_72423906' ||
+        String(t.username).toLowerCase() === 'zzzemzzz' ||
+        String(t.profileName).toLowerCase() === 'zzzemzzz' ||
         String(t.username).toLowerCase().includes('emanuel') ||
         String(t.profileName).toLowerCase().includes('emanuel');
-      const resolvedProfileName = isEmanuel ? 'Emanuel007' : (t.profileName || t.username);
-      const resolvedUsername = isEmanuel ? 'Emanuel007' : (t.username || resolvedProfileName);
-      const resolvedCurrency = isEmanuel ? 'USD' : (t.currency || 'USD');
+      const resolvedProfileName = isZem ? 'zzZEMZzz' : (t.profileName || t.username);
+      const resolvedUsername = isZem ? 'zzZEMZzz' : (t.username || resolvedProfileName);
+      const resolvedCurrency = t.currency || (isZem ? 'JPY' : 'USD');
 
       return {
         rank: 0,
-        userId: isEmanuel ? 'u_emanuel007' : t.userId,
+        userId: isZem ? 'u_zzzemzzz' : t.userId,
         username: resolvedUsername,
         profileName: resolvedProfileName,
-        accountNumber: t.accountNumber || (isEmanuel ? '72423906' : undefined),
+        accountNumber: t.accountNumber || (isZem ? '342186831' : undefined),
         avatarUrl: t.avatarUrl,
-        avatarSymbol: isEmanuel ? 'bear_emerald' : t.avatarSymbol,
+        avatarSymbol: isZem ? 'bear_emerald' : t.avatarSymbol,
         currency: resolvedCurrency,
         accountCount: t.accounts.size,
         brokers: Array.from(t.brokers),
@@ -357,25 +361,28 @@ export class LeaderboardService {
         ? Math.round((t.dailyWinningTrades / t.dailyTotalTrades) * 100)
         : 0;
 
-      const isEmanuel =
-        String(t.accountNumber).trim() === '72423906' ||
+      const cleanAcc = String(t.accountNumber || '').trim();
+      const isZem =
+        cleanAcc === '342186831' ||
+        t.userId === 'u_zzzemzzz' ||
+        t.userId === 'u_emanuel001' ||
         t.userId === 'u_emanuel007' ||
-        t.userId === 'u_homiesplant' ||
-        t.userId === 'usr_meta_72423906' ||
+        String(t.username).toLowerCase() === 'zzzemzzz' ||
+        String(t.profileName).toLowerCase() === 'zzzemzzz' ||
         String(t.username).toLowerCase().includes('emanuel') ||
         String(t.profileName).toLowerCase().includes('emanuel');
-      const resolvedProfileName = isEmanuel ? 'Emanuel007' : (t.profileName || t.username);
-      const resolvedUsername = isEmanuel ? 'Emanuel007' : (t.username || resolvedProfileName);
-      const resolvedCurrency = isEmanuel ? 'USD' : (t.currency || 'USD');
+      const resolvedProfileName = isZem ? 'zzZEMZzz' : (t.profileName || t.username);
+      const resolvedUsername = isZem ? 'zzZEMZzz' : (t.username || resolvedProfileName);
+      const resolvedCurrency = t.currency || (isZem ? 'JPY' : 'USD');
 
       return {
         rank: 0,
-        userId: isEmanuel ? 'u_emanuel007' : t.userId,
+        userId: isZem ? 'u_zzzemzzz' : t.userId,
         username: resolvedUsername,
         profileName: resolvedProfileName,
-        accountNumber: t.accountNumber || (isEmanuel ? '72423906' : undefined),
+        accountNumber: t.accountNumber || (isZem ? '342186831' : undefined),
         avatarUrl: t.avatarUrl,
-        avatarSymbol: isEmanuel ? 'bear_emerald' : t.avatarSymbol,
+        avatarSymbol: isZem ? 'bear_emerald' : t.avatarSymbol,
         currency: resolvedCurrency,
         brokers: Array.from(t.brokers),
         accountCount: t.accounts.size,

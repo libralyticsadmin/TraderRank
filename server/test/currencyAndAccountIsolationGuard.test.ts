@@ -175,14 +175,14 @@ describe('TraderRank Protection Suite: Currency, Account Isolation & Contender I
       leaderboard.registerAccountMapping(
         'acc_meta_72423906',
         'usr_meta_72423906',
-        'Emanuel007',
+        'HomiesPlant',
         'XMTrading' as Broker,
-        'Emanuel007',
+        'HomiesPlant',
         '72423906'
       );
       leaderboard.registerAccountMapping(
         'acc_meta_342186831',
-        'usr_meta_342186831',
+        'u_zzzemzzz',
         'zzZEMZzz',
         'XM' as Broker,
         'zzZEMZzz',
@@ -209,9 +209,13 @@ describe('TraderRank Protection Suite: Currency, Account Isolation & Contender I
       const realAcc = entries.find(e => e.accountNumber === '72423906');
       expect(realAcc).toBeDefined();
       expect(realAcc?.accountNumber).toBe('72423906');
-      expect(realAcc?.profileName).toBe('Emanuel007');
-      expect(realAcc?.username).toBe('Emanuel007');
-      expect(realAcc?.currency).toBe('USD');
+      expect(realAcc?.profileName).toBe('HomiesPlant');
+      expect(realAcc?.username).toBe('HomiesPlant');
+
+      const zemAcc = entries.find(e => e.accountNumber === '342186831');
+      expect(zemAcc).toBeDefined();
+      expect(zemAcc?.profileName).toBe('zzZEMZzz');
+      expect(zemAcc?.currency).toBe('JPY');
 
       // Verify monetary profit normalization from broker JPY deals to USD ($)
       const jpyToUsd = (valJpy: number) => Number((valJpy / 155.0).toFixed(2));
@@ -224,14 +228,14 @@ describe('TraderRank Protection Suite: Currency, Account Isolation & Contender I
       expect(formatUsd(jpyToUsd(-3693))).not.toContain('¥');
     });
 
-    it('5. Real Trader Identity & Broker Masking Guard: strictly enforces zzZEMZzz and USD', () => {
+    it('5. Real Trader Identity & Broker Masking Guard: strictly enforces zzZEMZzz and JPY', () => {
       // Direct connector retrieval test
       const accounts = connector.getAccounts();
       const target = accounts.find(a => a.accountNumber === '342186831');
       if (target) {
         expect(target.profileUsername).toBe('zzZEMZzz');
         expect(target.accountHolderName).toBe('zzZEMZzz');
-        expect(target.currency).toBe('USD');
+        expect(target.currency).toBe('JPY');
         expect(target.userId).toBe('u_zzzemzzz');
       }
 
@@ -241,7 +245,7 @@ describe('TraderRank Protection Suite: Currency, Account Isolation & Contender I
       if (lbTarget) {
         expect(lbTarget.username).toBe('zzZEMZzz');
         expect(lbTarget.profileName).toBe('zzZEMZzz');
-        expect(lbTarget.currency).toBe('USD');
+        expect(lbTarget.currency).toBe('JPY');
       }
     });
   });

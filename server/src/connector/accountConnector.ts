@@ -284,7 +284,7 @@ export class AccountConnectorService {
           userId: 'u_zzzemzzz',
           profileUsername: 'zzZEMZzz',
           accountHolderName: 'zzZEMZzz',
-          currency: 'USD',
+          currency: acc.currency || 'JPY',
           avatarUrl: EMERALD_BEAR_AVATAR_URL,
         };
       }
@@ -354,7 +354,7 @@ export class AccountConnectorService {
           userId: 'u_zzzemzzz',
           profileUsername: 'zzZEMZzz',
           accountHolderName: 'zzZEMZzz',
-          currency: 'USD',
+          currency: acc.currency || 'JPY',
           avatarUrl: EMERALD_BEAR_AVATAR_URL,
         };
       }
@@ -475,7 +475,7 @@ export class AccountConnectorService {
               equity: isZem ? 3817 : 10000,
               margin: 0,
               freeMargin: isZem ? 3817 : 10000,
-              currency: 'USD',
+              currency: isZem ? 'JPY' : ((v as any).currency || 'USD'),
               leverage: 100,
               vaultSecretRef: `ref_restored_${accountId}`,
               lastSyncedAt: new Date().toISOString(),
@@ -518,7 +518,7 @@ export class AccountConnectorService {
             equity: 3817,
             margin: 0,
             freeMargin: 3817,
-            currency: 'USD',
+            currency: 'JPY',
             leverage: 100,
             vaultSecretRef: 'ref_restored_acc_meta_342186831',
             lastSyncedAt: new Date().toISOString(),
@@ -733,19 +733,11 @@ export class AccountConnectorService {
           platform: (p.platform?.toUpperCase() === 'MT4' ? 'MT4' : 'MT5') as Platform,
           serverName: p.server,
           connectionStatus: p.connectionStatus === 'CONNECTED' || p.state === 'DEPLOYED' ? 'CONNECTED' : 'SYNCING',
-          balance: isZemAccount && (info?.balance ?? 0) > 1000
-            ? Number(((info?.balance ?? 0) / 155).toFixed(2))
-            : (info?.balance ?? (isJpy ? 1500000 : 2.8)),
-          equity: isZemAccount && (info?.equity ?? 0) > 1000
-            ? Number(((info?.equity ?? 0) / 155).toFixed(2))
-            : (info?.equity ?? (isJpy ? 1500000 : 2.8)),
-          margin: isZemAccount && (info?.margin ?? 0) > 1000
-            ? Number(((info?.margin ?? 0) / 155).toFixed(2))
-            : (info?.margin ?? 0),
-          freeMargin: isZemAccount && (info?.freeMargin ?? 0) > 1000
-            ? Number(((info?.freeMargin ?? 0) / 155).toFixed(2))
-            : (info?.freeMargin ?? (isJpy ? 1500000 : 2.8)),
-          currency: isZemAccount ? 'USD' : (info?.currency ?? defaultCurrency),
+          balance: info?.balance ?? (isJpy || isZemAccount ? 590000 : 2.8),
+          equity: info?.equity ?? (isJpy || isZemAccount ? 590000 : 2.8),
+          margin: info?.margin ?? 0,
+          freeMargin: info?.freeMargin ?? (isJpy || isZemAccount ? 590000 : 2.8),
+          currency: isZemAccount ? 'JPY' : (info?.currency ?? defaultCurrency),
           leverage: info?.leverage ?? 1000,
           vaultSecretRef: `ref_meta_${p.id}`,
           metaApiAccountId: p.id,

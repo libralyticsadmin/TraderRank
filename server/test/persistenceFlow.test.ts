@@ -103,10 +103,10 @@ describe('Dual-Layer Persistence Flow (Account Ownership, Subscriptions, Daily C
     const testDate = '2026-11-14';
     leaderboard.recordHistoricalDailyChampion({
       date: testDate,
-      winnerUserId: 'u_emanuel007',
-      winnerUsername: 'Emanuel007',
+      winnerUserId: 'u_zzzemzzz',
+      winnerUsername: 'zzZEMZzz',
       winnerAvatarSymbol: 'bear_emerald',
-      winnerBrokers: ['XMTrading'],
+      winnerBrokers: ['XM'],
       pipsWon: 62.8,
       winRate: 85,
       tradesCompleted: 7,
@@ -123,7 +123,7 @@ describe('Dual-Layer Persistence Flow (Account Ownership, Subscriptions, Daily C
     const historyAfter = leaderboard.getDailyChampionsHistory();
     const matchAfter = historyAfter.find(c => c.date === testDate);
     expect(matchAfter).toBeDefined();
-    expect(matchAfter?.winnerUsername).toBe('Emanuel007');
+    expect(matchAfter?.winnerUsername).toBe('zzZEMZzz');
     expect(matchAfter?.pipsWon).toBe(62.8);
   });
 });

@@ -14,7 +14,7 @@ describe('Daily Winning Pips & Best Trader Engine', () => {
       'ApexTrader_FX',
       'Exness',
       'ApexTrader_FX',
-      '342186831'
+      '99887711'
     );
     leaderboard.registerAccountMapping(
       'acc_u_apex_xm',
@@ -25,21 +25,21 @@ describe('Daily Winning Pips & Best Trader Engine', () => {
       '342186832'
     );
     leaderboard.registerAccountMapping(
-      'acc_meta_72423906',
-      'u_emanuel007',
-      'Emanuel007',
-      'XMTrading',
-      'Emanuel007',
-      '72423906'
+      'acc_meta_342186831',
+      'u_zzzemzzz',
+      'zzZEMZzz',
+      'XM',
+      'zzZEMZzz',
+      '342186831'
     );
 
     // Record an archive champion record for history verification
     leaderboard.recordHistoricalDailyChampion({
       date: '2026-11-15',
-      winnerUserId: 'u_emanuel007',
-      winnerUsername: 'Emanuel007',
+      winnerUserId: 'u_zzzemzzz',
+      winnerUsername: 'zzZEMZzz',
       winnerAvatarSymbol: 'bear_emerald',
-      winnerBrokers: ['XMTrading'],
+      winnerBrokers: ['XM'],
       pipsWon: 45.2,
       winRate: 80,
       tradesCompleted: 5,

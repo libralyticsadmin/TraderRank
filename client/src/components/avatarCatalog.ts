@@ -1293,10 +1293,16 @@ const getLocalTraderUsername = (accountNumber?: string | null, userId?: string |
   try {
     const cleanAcc = accountNumber ? String(accountNumber).replace(/^TraderRank-/i, '').trim() : '';
     if (cleanAcc === '342186831') return 'zzZEMZzz';
+    if (cleanAcc === '72423906') return 'HomiesPlant';
 
     const mapRaw = localStorage.getItem('traderank_account_usernames_v1');
     if (mapRaw) {
       const map = JSON.parse(mapRaw);
+      // Clean stale overrides
+      if (map['72423906'] === 'Emanuel007') {
+        delete map['72423906'];
+        try { localStorage.setItem('traderank_account_usernames_v1', JSON.stringify(map)); } catch {}
+      }
       if (cleanAcc && map[cleanAcc] && !isRawAccountTag(map[cleanAcc])) {
         return String(map[cleanAcc]).trim();
       }

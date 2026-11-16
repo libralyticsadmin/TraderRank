@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { resolveTraderIdentity } from './avatarCatalog.ts';
+import { resolveCurrency, isJpyCurrency, getCurrencySymbol, formatCurrency } from '../utils/currencyFlow.ts';
 import { Broker } from '../../../shared/src/types.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
@@ -1241,21 +1242,18 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
     : `${t.profile.verifiedSinceLabel} ${stats.verifiedSince}`;
 
   // Account currency is strictly resolved from verified broker connection
-  const isHomiesTrader =
-    liveAccountNumber === '72423906' ||
-    trader.username === 'HomiesPlant' ||
-    trader.username.includes('72423906') ||
-    trader.userId?.includes('72423906') ||
-    trader.userId === 'u_homiesplant' ||
-    trader.userId?.toLowerCase().includes('homies') ||
-    trader.username.toLowerCase().includes('homies') ||
-    trader.username.toLowerCase().includes('emanuel');
-  const rawCurrency = (isHomiesTrader ? 'USD' : (liveCurrency || (trader as any).currency || '')).toUpperCase().trim();
-  const isJpy = !isHomiesTrader && (rawCurrency === 'JPY' || (!rawCurrency && (
-    trader.broker === 'XMTrading' &&
-    Boolean(liveServerName && (liveServerName.toLowerCase().includes('japan') || liveServerName.toLowerCase().includes('jpy')))
-  )));
-  const curSymbol = isJpy ? '¥' : '$';
+  const rawCurrency = resolveCurrency(
+    liveCurrency || (trader as any).currency || (
+      (liveServerName && (liveServerName.toLowerCase().includes('japan') || liveServerName.toLowerCase().includes('jpy') || liveServerName.toLowerCase().includes('xmtrading'))) ||
+      liveAccountNumber === '72423906' ||
+      liveAccountNumber === '342186831'
+        ? 'JPY'
+        : 'USD'
+    ),
+    'JPY'
+  );
+  const isJpy = isJpyCurrency(rawCurrency);
+  const curSymbol = getCurrencySymbol(rawCurrency);
 
   const brokerSlots: Array<{ id: Broker; label: string }> = [
     { id: 'XM', label: 'XM Global' },
@@ -1268,21 +1266,11 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
   ];
 
   const formatUsdSigned = (val: number) => {
-    const sign = val > 0 ? '+' : val < 0 ? '-' : '';
-    if (isJpy) {
-      return `${sign}¥${Math.round(Math.abs(val)).toLocaleString('ja-JP')}`;
-    }
-    return `${sign}${curSymbol}${Math.abs(val).toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
+    return formatCurrency(val, rawCurrency, { showSign: true });
   };
 
   const formatCurrencyVal = (val: number) => {
-    if (isJpy) {
-      return `¥${Math.round(val).toLocaleString('ja-JP')}`;
-    }
-    return `${curSymbol}${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return formatCurrency(val, rawCurrency);
   };
 
   return (

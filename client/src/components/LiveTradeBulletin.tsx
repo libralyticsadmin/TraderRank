@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
+import { formatCurrency } from '../utils/currencyFlow.ts';
 
 export interface BulletinTradeItem {
   id: string;
@@ -32,6 +33,7 @@ export interface BulletinTradeItem {
   openPrice?: number;
   closePrice?: number;
   profitUsd: number;
+  currency?: string;
   timeAgo: string;
   tag?: string;
   tagKey?: string;
@@ -158,6 +160,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                     openPrice: Number(tr.openPrice || 0),
                     closePrice: Number(tr.closePrice || 0),
                     profitUsd: profit,
+                    currency: tr.currency || acc.currency || 'JPY',
                     timeAgo: tr.closeTime
                       ? new Date(tr.closeTime).toLocaleString([], {
                           month: 'short',
@@ -356,9 +359,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                   fontWeight: 800,
                 }}
               >
-                {currentTrade.profitUsd >= 0
-                  ? `+$${currentTrade.profitUsd.toFixed(2)} USD`
-                  : `-$${Math.abs(currentTrade.profitUsd).toFixed(2)} USD`}
+                {formatCurrency(currentTrade.profitUsd, currentTrade.currency, { showSign: true, showCode: true })}
               </div>
             </div>
 
@@ -524,9 +525,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                         opacity: 0.9,
                       }}
                     >
-                      {item.profitUsd >= 0
-                        ? `+$${item.profitUsd.toFixed(1)}`
-                        : `-$${Math.abs(item.profitUsd).toFixed(1)}`}
+                      {formatCurrency(item.profitUsd, item.currency, { showSign: true })}
                     </span>
                   </div>
                 </button>

@@ -113,14 +113,14 @@ export class AuthService {
         }
       }
 
-      // Ensure default verified credentials for Emanuel007 (libralytics.data@gmail.com)
-      if (!this.credentials.has('u_emanuel007')) {
+      // Ensure default verified credentials for zzZEMZzz (libralytics.data@gmail.com)
+      if (!this.credentials.has('u_zzzemzzz')) {
         const salt = this.generateSalt();
         const hash = this.hashPassword('TraderRank2026!', salt);
         const defaultCred: StoredCredential = {
-          userId: 'u_emanuel007',
+          userId: 'u_zzzemzzz',
           email: 'libralytics.data@gmail.com',
-          username: 'Emanuel007',
+          username: 'zzZEMZzz',
           salt,
           hash,
           createdAt: new Date().toISOString(),

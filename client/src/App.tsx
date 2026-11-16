@@ -431,22 +431,38 @@ export const App: React.FC = () => {
     if (user) {
       const primaryAcc =
         accounts.find(a => user.accountNumber && a.accountNumber === user.accountNumber) ||
-        accounts.find(a => a.userId === user.id) ||
-        accounts[0];
-      handleSelectTrader({
-        userId: primaryAcc?.id || primaryAcc?.userId || (user.accountNumber ? `acc_meta_${user.accountNumber}` : user.id),
-        username: user.username,
-        broker: primaryAcc?.broker || user.primaryBroker || 'XMTrading',
-        rank: 1,
-      });
-    } else if (accounts.length > 0) {
-      const primaryAcc = accounts[0];
-      handleSelectTrader({
-        userId: primaryAcc.userId || primaryAcc.id,
-        username: `TraderRank-${primaryAcc.accountNumber || 'Pro'}`,
-        broker: primaryAcc.broker || 'XMTrading',
-        rank: 1,
-      });
+        accounts.find(a => a.userId === user.id);
+
+      if (primaryAcc) {
+        handleSelectTrader({
+          userId: primaryAcc.userId || primaryAcc.id,
+          username: user.username,
+          broker: primaryAcc.broker || user.primaryBroker || 'XM',
+          rank: user.rank || 1,
+        });
+      } else {
+        // User has no connected broker accounts yet — open their own profile without leaking foreign accounts
+        setSelectedTrader({
+          userId: user.id,
+          username: user.username,
+          broker: user.primaryBroker || 'XM',
+          avatarSymbol: user.avatarSymbol || 'zap',
+          avatarUrl: user.avatarUrl,
+          tier: 'Novice Trader',
+          level: user.level || 1,
+          xp: user.xp || 0,
+          rank: user.rank || 99,
+          netPips: 0,
+          winRate: 0,
+          profitFactor: 0,
+          maxDrawdown: 0,
+          totalTrades: 0,
+          bestTradePips: 0,
+          avgHoldingTime: 'N/A',
+          verifiedSince: user.joinedAt || 'Today',
+          isFollowing: false,
+        });
+      }
     } else {
       openAuthModal('signin');
     }
