@@ -117,7 +117,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           parsed.avatarUrl = parsed.avatarUrl || DEFAULT_TRADER_AVATARS['342186831'];
           parsed.primaryBroker = 'XM';
           parsed.accountNumber = '342186831';
-          parsed.currency = 'JPY';
+          parsed.currency = 'USD';
         }
 
         try {

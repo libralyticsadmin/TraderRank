@@ -14,7 +14,7 @@ import {
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { resolveTraderIdentity } from './avatarCatalog.ts';
-import { resolveCurrency, formatCurrency } from '../utils/currencyFlow.ts';
+import { resolveBrokerCurrency, formatCurrency } from '../utils/currencyFlow.ts';
 import { BrandLogo, BrandMark } from './BrandLogo.tsx';
 import { LiveTradeBulletin } from './LiveTradeBulletin.tsx';
 import { MarketLivePricesTicker } from './MarketLivePricesTicker.tsx';
@@ -306,15 +306,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         userId: trader.userId,
         avatarUrl: trader.avatarUrl,
       });
-      const isZemAcc =
-        cleanAcc === '342186831' ||
-        identity.profileName === 'zzZEMZzz' ||
-        trader.username === 'zzZEMZzz' ||
-        trader.userId === 'u_zzzemzzz' ||
-        trader.userId === 'u_emanuel001' ||
-        trader.userId === 'u_emanuel007' ||
-        String(trader.accountNumber || '').includes('342186831');
-      const currency = resolveCurrency(real?.currency || (trader as any).currency || (isZemAcc ? 'JPY' : undefined), isZemAcc ? 'JPY' : 'USD');
+      const currency = resolveBrokerCurrency(
+        broker,
+        (real as any)?.serverName || (cleanAcc === '72423906' ? 'XMTrading-MT5' : undefined),
+        (real as any)?.currency || (trader as any).currency
+      );
 
       return {
         userId: trader.userId,

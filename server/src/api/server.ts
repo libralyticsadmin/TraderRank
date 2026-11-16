@@ -490,7 +490,7 @@ export function createServer() {
         avatarSymbol: 'bear_emerald',
         avatarUrl: EMERALD_BEAR_URL,
         primaryBroker: 'XM',
-        currency: em.currency || 'JPY',
+        currency: 'USD',
         xp: 575,
         rank: 1,
       };

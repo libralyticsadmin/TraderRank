@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { resolveTraderIdentity } from './avatarCatalog.ts';
-import { resolveCurrency, isJpyCurrency, getCurrencySymbol, formatCurrency } from '../utils/currencyFlow.ts';
+import { resolveBrokerCurrency, isJpyCurrency, getCurrencySymbol, formatCurrency } from '../utils/currencyFlow.ts';
 import { Broker } from '../../../shared/src/types.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
@@ -1241,16 +1241,12 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
     ? t.profile.verifiedSinceLabel.replace('{date}', stats.verifiedSince)
     : `${t.profile.verifiedSinceLabel} ${stats.verifiedSince}`;
 
-  // Account currency is strictly resolved from verified broker connection
-  const rawCurrency = resolveCurrency(
-    liveCurrency || (trader as any).currency || (
-      (liveServerName && (liveServerName.toLowerCase().includes('japan') || liveServerName.toLowerCase().includes('jpy') || liveServerName.toLowerCase().includes('xmtrading'))) ||
-      liveAccountNumber === '72423906' ||
-      liveAccountNumber === '342186831'
-        ? 'JPY'
-        : 'USD'
-    ),
-    'JPY'
+  // Account currency is strictly resolved from verified broker connection:
+  // XMTrading (Japan) is strictly JPY (¥); XMGlobal (XM) is strictly USD ($).
+  const rawCurrency = resolveBrokerCurrency(
+    trader.broker,
+    liveServerName,
+    liveCurrency || (trader as any).currency
   );
   const isJpy = isJpyCurrency(rawCurrency);
   const curSymbol = getCurrencySymbol(rawCurrency);

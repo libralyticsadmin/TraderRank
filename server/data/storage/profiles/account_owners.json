@@ -7,7 +7,7 @@
     "platform": "MT5",
     "accountId": "acc_meta_342186831",
     "serverName": "XMGlobal-MT5 10",
-    "currency": "JPY",
+    "currency": "USD",
     "connectedAt": "2026-11-16T09:00:00.000Z",
     "status": "CONNECTED"
   },
@@ -41,6 +41,7 @@
     "platform": "MT5",
     "accountId": "acc_meta_72423906",
     "serverName": "XMTrading-MT5 3",
+    "currency": "JPY",
     "connectedAt": "2026-11-16T08:38:20.940Z",
     "status": "CONNECTED"
   },
@@ -85,7 +86,7 @@
     "platform": "MT5",
     "accountId": "acc_meta_342186831",
     "serverName": "XMGlobal-MT5 10",
-    "currency": "JPY",
+    "currency": "USD",
     "connectedAt": "2026-11-16T09:00:00.000Z",
     "status": "CONNECTED"
   },

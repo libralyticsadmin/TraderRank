@@ -118,7 +118,10 @@ export class LeaderboardService {
       cleanProfileName = 'zzZEMZzz';
     }
 
-    const resolvedCurrency = (currency || (isZem ? 'JPY' : 'USD')).toUpperCase();
+    const resolvedCurrency = (
+      currency ||
+      (broker === 'XMTrading' || cleanAcc === '72423906' ? 'JPY' : 'USD')
+    ).toUpperCase();
 
     if (!this.traders.has(userId)) {
       this.traders.set(userId, {
@@ -303,7 +306,7 @@ export class LeaderboardService {
         String(t.profileName).toLowerCase().includes('emanuel');
       const resolvedProfileName = isZem ? 'zzZEMZzz' : (t.profileName || t.username);
       const resolvedUsername = isZem ? 'zzZEMZzz' : (t.username || resolvedProfileName);
-      const resolvedCurrency = t.currency || (isZem ? 'JPY' : 'USD');
+      const resolvedCurrency = t.currency || (t.brokers.has('XMTrading' as any) || cleanAcc === '72423906' ? 'JPY' : 'USD');
 
       return {
         rank: 0,
@@ -373,7 +376,7 @@ export class LeaderboardService {
         String(t.profileName).toLowerCase().includes('emanuel');
       const resolvedProfileName = isZem ? 'zzZEMZzz' : (t.profileName || t.username);
       const resolvedUsername = isZem ? 'zzZEMZzz' : (t.username || resolvedProfileName);
-      const resolvedCurrency = t.currency || (isZem ? 'JPY' : 'USD');
+      const resolvedCurrency = t.currency || (t.brokers.has('XMTrading' as any) || cleanAcc === '72423906' ? 'JPY' : 'USD');
 
       return {
         rank: 0,

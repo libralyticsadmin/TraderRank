@@ -4,7 +4,7 @@ import { calculateTraderGamification } from '../../../shared/src/gamification.ts
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { resolveTraderIdentity } from './avatarCatalog.ts';
-import { resolveCurrency, formatCurrency } from '../utils/currencyFlow.ts';
+import { resolveBrokerCurrency, formatCurrency } from '../utils/currencyFlow.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
 import {
@@ -313,15 +313,11 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               avatarUrl: d.avatarUrl,
             });
 
-            const isZemAcc =
-              cleanAcc === '342186831' ||
-              identity.profileName === 'zzZEMZzz' ||
-              d.username === 'zzZEMZzz' ||
-              d.userId === 'u_zzzemzzz' ||
-              d.userId === 'u_emanuel001' ||
-              d.userId === 'u_emanuel007' ||
-              String(d.accountNumber || '').includes('342186831');
-            const accCurrency = resolveCurrency(real?.currency || (d as any).currency || (isZemAcc ? 'JPY' : undefined), isZemAcc ? 'JPY' : 'USD');
+            const accCurrency = resolveBrokerCurrency(
+              primaryBroker,
+              (real as any)?.serverName || (cleanAcc === '72423906' ? 'XMTrading-MT5' : undefined),
+              (real as any)?.currency || (d as any).currency
+            );
 
             return {
               userId: d.userId,
@@ -373,15 +369,11 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               avatarUrl: e.avatarUrl,
             });
 
-            const isZemAcc =
-              cleanAcc === '342186831' ||
-              identity.profileName === 'zzZEMZzz' ||
-              e.username === 'zzZEMZzz' ||
-              e.userId === 'u_zzzemzzz' ||
-              e.userId === 'u_emanuel001' ||
-              e.userId === 'u_emanuel007' ||
-              String(e.accountNumber || '').includes('342186831');
-            const accCurrency = resolveCurrency(real?.currency || (e as any).currency || (isZemAcc ? 'JPY' : undefined), isZemAcc ? 'JPY' : 'USD');
+            const accCurrency = resolveBrokerCurrency(
+              primaryBroker,
+              (real as any)?.serverName || (cleanAcc === '72423906' ? 'XMTrading-MT5' : undefined),
+              (real as any)?.currency || (e as any).currency
+            );
 
             return {
               userId: e.userId,

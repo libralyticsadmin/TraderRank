@@ -7,6 +7,39 @@
 export type SupportedCurrency = 'JPY' | 'USD' | 'EUR' | 'GBP';
 
 /**
+ * Resolves currency strictly according to broker and server conventions:
+ * - XMTrading / Japan servers -> strictly JPY (¥)
+ * - XMGlobal / XM -> strictly USD ($)
+ * - Other brokers -> explicit currency or USD ($)
+ */
+export const resolveBrokerCurrency = (
+  broker?: string | null,
+  serverName?: string | null,
+  explicitCurrency?: string | null
+): string => {
+  const b = (broker || '').toUpperCase();
+  const s = (serverName || '').toUpperCase();
+  const c = (explicitCurrency || '').toUpperCase();
+
+  // 1. XMTrading (Japan JPY) is strictly JPY
+  if (b === 'XMTRADING' || s.includes('XMTRADING') || s.includes('JAPAN') || s.includes('JPY')) {
+    return 'JPY';
+  }
+
+  // 2. XMGlobal is strictly USD ($)
+  if (b === 'XM' || b.includes('XMGLOBAL') || s.includes('XMGLOBAL')) {
+    return 'USD';
+  }
+
+  // 3. Explicit currency if provided
+  if (c === 'JPY' || c === 'USD' || c === 'EUR' || c === 'GBP') {
+    return c;
+  }
+
+  return 'USD';
+};
+
+/**
  * Resolves the clean uppercase currency code from account, profile, or fallback.
  */
 export const resolveCurrency = (
@@ -106,3 +139,4 @@ export const formatSignedProfit = (
 ): string => {
   return formatCurrency(amount, currency, { showSign: true, showCode });
 };
+
