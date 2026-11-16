@@ -140,9 +140,19 @@ export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconne
                         <Zap size={11} style={{ marginRight: '3px' }} /> MetaApi Cloud
                       </span>
                     )}
-                    <span className="status-pill status-connected">
-                      <span className="status-dot"></span> {t.accounts.activeFeed}
-                    </span>
+                    {acc.connectionStatus === 'CONNECTED' ? (
+                      <span className="status-pill status-connected" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <span className="status-dot"></span> {t.accounts.activeFeed || 'Online'}
+                      </span>
+                    ) : acc.connectionStatus === 'SYNCING' ? (
+                      <span className="status-pill" style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.35)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <RefreshCw size={10} style={{ animation: 'spin 1s linear infinite' }} /> {t.accounts.syncing || 'Syncing...'}
+                      </span>
+                    ) : (
+                      <span className="status-pill" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.35)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444' }}></span> Offline
+                      </span>
+                    )}
                   </div>
                   <div style={{ display: 'flex', gap: '14px', fontSize: '12px', color: 'var(--text-muted)', flexWrap: 'wrap', alignItems: 'center' }}>
                     <span>{t.accounts.accountLabel}: <strong className="tabular" style={{ color: '#fff' }}>TraderRank-{acc.accountNumber}</strong></span>
