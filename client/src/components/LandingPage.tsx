@@ -20,7 +20,6 @@ import { LiveTradeBulletin } from './LiveTradeBulletin.tsx';
 import { MarketLivePricesTicker } from './MarketLivePricesTicker.tsx';
 import { LiveCandleChart } from './LiveCandleChart.tsx';
 import { useTranslation } from '../context/LanguageContext.tsx';
-import { useAuth } from '../context/AuthContext.tsx';
 import { LanguageSelector } from './LanguageSelector.tsx';
 import { UserNavMenu } from './UserNavMenu.tsx';
 import { calculateTraderGamification } from '../../../shared/src/gamification.ts';
@@ -43,7 +42,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   leaderboard = [],
 }) => {
   const { t, language } = useTranslation();
-  const { isAuthenticated } = useAuth();
   const [activeTabRanking, setActiveTabRanking] = useState<'pips' | 'profit' | 'rate'>('pips');
   const [ledgerStatsByUser, setLedgerStatsByUser] = useState<
     Record<
@@ -402,35 +400,32 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <LanguageSelector />
-            {isAuthenticated ? (
-              <UserNavMenu
-                onOpenConnectWizard={onOpenConnectWizard}
-                onOpenSubscriptionModal={onOpenSubscriptionModal}
-                onOpenMyDashboard={onOpenMyDashboard}
-              />
-            ) : (
-              <button
-                onClick={() => onEnterApp()}
-                style={{
-                  background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 100%)',
-                  border: 'none',
-                  color: '#080b11',
-                  padding: '8px 16px',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  fontWeight: 900,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 16px rgba(0, 240, 255, 0.3)',
-                }}
-              >
-                <Trophy size={13} />
-                <span>{t.landing.enterArenaBtn}</span>
-              </button>
-            )}
+            <button
+              onClick={() => onEnterApp()}
+              style={{
+                background: 'linear-gradient(135deg, #00F0FF 0%, #00DAC6 100%)',
+                border: 'none',
+                color: '#080b11',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 900,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                whiteSpace: 'nowrap',
+                boxShadow: '0 4px 16px rgba(0, 240, 255, 0.3)',
+              }}
+            >
+              <Trophy size={13} />
+              <span>{t.landing.enterArenaBtn}</span>
+            </button>
+            <UserNavMenu
+              onOpenConnectWizard={onOpenConnectWizard}
+              onOpenSubscriptionModal={onOpenSubscriptionModal}
+              onOpenMyDashboard={onOpenMyDashboard}
+            />
           </div>
         </div>
       </header>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   TradingAccount,
   CanonicalPosition,
@@ -66,6 +66,29 @@ export const App: React.FC = () => {
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [isAffiliateModalOpen, setIsAffiliateModalOpen] = useState(false);
+  const [pendingEnterTab, setPendingEnterTab] = useState<string | null>(null);
+  const prevAuthRef = useRef(isAuthenticated);
+
+  // Auto-direct to arena page when authenticated from landing
+  useEffect(() => {
+    if (!prevAuthRef.current && isAuthenticated) {
+      if (pendingEnterTab) {
+        setActiveTab(pendingEnterTab as any);
+        setPendingEnterTab(null);
+      }
+      setCurrentView('app');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    prevAuthRef.current = isAuthenticated;
+  }, [isAuthenticated, pendingEnterTab]);
+
+  // Auth gate: unauthenticated users cannot access the arena app view without logging in
+  useEffect(() => {
+    if (!isAuthenticated && currentView === 'app') {
+      setCurrentView('landing');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [isAuthenticated, currentView]);
 
   // Detect referral invite code from URL (?ref=...)
   useEffect(() => {
@@ -518,9 +541,14 @@ export const App: React.FC = () => {
           onSelectTrader={handleSelectTrader}
           onOpenMyDashboard={handleOpenMyDashboard}
           onEnterApp={(tab?: string) => {
-            if (tab === 'leaderboard') tab = 'ranking';
-            if (tab) {
-              setActiveTab(tab as any);
+            const targetTab = tab === 'leaderboard' ? 'ranking' : tab;
+            if (!isAuthenticated) {
+              setPendingEnterTab(targetTab || 'ranking');
+              openAuthModal('signin');
+              return;
+            }
+            if (targetTab) {
+              setActiveTab(targetTab as any);
             }
             setCurrentView('app');
             window.scrollTo({ top: 0, behavior: 'smooth' });
