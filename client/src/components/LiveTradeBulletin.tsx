@@ -58,7 +58,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
 }) => {
   const { t, language } = useTranslation();
   const { user } = useAuth();
-  const { getTraderStats } = useTraderStats();
+  const { traders: canonicalTraders, platformTotals, getTraderStats } = useTraderStats();
   const [allRealTrades, setAllRealTrades] = useState<BulletinTradeItem[]>([]);
   const [winningRealTrades, setWinningRealTrades] = useState<BulletinTradeItem[]>([]);
   const [deckMode, setDeckMode] = useState<'WINS' | 'LATEST'>('LATEST');
@@ -208,15 +208,6 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
     setProgress(0);
     setCurrentIndex(prev => (prev - 1 + safeLen) % safeLen);
   };
-
-  const handleSelectMiniChip = (idx: number) => {
-    setProgress(0);
-    setCurrentIndex(idx);
-  };
-
-  // Compute 4 visible window items for the right-hand execution matrix
-  const windowStart = Math.floor(activeIdx / 4) * 4;
-  const visibleMatrixItems = activeDeck.slice(windowStart, windowStart + 4);
 
   const isPositive = currentTrade
     ? currentTrade.profitUsd > 0 || (currentTrade.profitUsd === 0 && currentTrade.pips >= 0)
@@ -465,53 +456,133 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
             </div>
           </div>
 
-          {/* Bottom Tier: 4-Column Compact Execution Matrix filling the Green Box */}
-          <div className="bulletin-mini-chips">
-            {visibleMatrixItems.map((item, idx) => {
-              const realIdx = windowStart + idx;
-              const active = realIdx === activeIdx;
-              const itemPos = item.profitUsd > 0 || (item.profitUsd === 0 && item.pips >= 0);
-              return (
+          {/* Bottom Tier: Live Arena Pulse (Utilizing full panel width with accurate canonical metrics) */}
+          {(() => {
+            const liveOpenCount = allRealTrades.filter(item => item.timeAgo === 'LIVE OPEN').length;
+            const activeTradersCount = canonicalTraders.filter(tr => tr.tradesCount > 0).length;
+            const dailyLeader = [...canonicalTraders].sort((a, b) => b.dailyNetPips - a.dailyNetPips)[0];
+            const totalFills = platformTotals?.totalTrades ?? 0;
+            const totalHarvested = platformTotals?.totalWinningPips ?? 0;
+
+            return (
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                  gap: '8px',
+                  width: '100%',
+                }}
+              >
+                {/* Card 1: Active Live Orders */}
                 <button
-                  key={`${item.id}-chip`}
-                  className={`bulletin-mini-chip ${active ? 'active' : ''}`}
-                  onClick={() => handleSelectMiniChip(realIdx)}
-                  title={`${item.type} ${item.symbol} (${item.lotSize}L) • ${item.pips >= 0 ? '+' : ''}${item.pips} pips (${formatCurrency(item.profitUsd, item.currency, { showSign: true })})`}
+                  type="button"
+                  onClick={() => {
+                    setDeckMode('LATEST');
+                    setCurrentIndex(0);
+                    setProgress(0);
+                  }}
+                  style={{
+                    textAlign: 'left',
+                    padding: '8px 10px',
+                    borderRadius: '10px',
+                    background: liveOpenCount > 0 ? 'rgba(16, 185, 129, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+                    border: liveOpenCount > 0 ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(255, 255, 255, 0.07)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '3px',
+                    minWidth: 0,
+                  }}
                 >
-                  <div className="mini-chip-top">
-                    <span className={`mini-chip-side ${item.type === 'BUY' ? 'buy' : 'sell'}`}>
-                      {item.type === 'BUY' ? 'B' : 'S'}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '9px', fontWeight: 800, color: liveOpenCount > 0 ? '#34d399' : '#94a3b8', letterSpacing: '0.4px', textTransform: 'uppercase' }}>
+                    <span
+                      style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: liveOpenCount > 0 ? '#10b981' : '#64748b',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {language === 'ja' ? '保有中ポジション' : language === 'zh' ? '实时持仓' : 'Live Open Orders'}
                     </span>
-                    <span className="mini-chip-sym">{item.symbol.replace('#', '')}</span>
-                    <span className="mini-chip-lot">{item.lotSize}L</span>
                   </div>
-                  <div className="mini-chip-bottom" style={{ gap: '4px', whiteSpace: 'nowrap' }}>
-                    <span
-                      style={{
-                        color: itemPos ? '#10b981' : '#f87171',
-                        fontWeight: 800,
-                        fontFamily: 'var(--font-mono, monospace)',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {item.pips >= 0 ? `+${item.pips}p` : `${item.pips}p`}
-                    </span>
-                    <span
-                      style={{
-                        color: item.profitUsd >= 0 ? '#34d399' : '#fb7185',
-                        fontSize: '9.5px',
-                        fontFamily: 'var(--font-mono, monospace)',
-                        opacity: 0.9,
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {formatCurrency(item.profitUsd, item.currency, { showSign: true })}
-                    </span>
+                  <div className="tabular" style={{ fontSize: '13px', fontWeight: 900, color: '#ffffff', whiteSpace: 'nowrap' }}>
+                    {liveOpenCount} {language === 'ja' ? '件' : language === 'zh' ? '笔持仓' : 'Active'}
+                  </div>
+                  <div style={{ fontSize: '10px', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {activeTradersCount} {language === 'ja' ? '名の認証トレーダー' : language === 'zh' ? '位认证交易员' : 'Verified Traders'}
                   </div>
                 </button>
-              );
-            })}
-          </div>
+
+                {/* Card 2: Today's Leader (UTC) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (dailyLeader && onSelectTrader) {
+                      onSelectTrader({
+                        userId: dailyLeader.userId,
+                        username: dailyLeader.profileName,
+                        broker: dailyLeader.broker,
+                        rank: dailyLeader.rank,
+                        score: dailyLeader.totalPips,
+                      });
+                    }
+                  }}
+                  style={{
+                    textAlign: 'left',
+                    padding: '8px 10px',
+                    borderRadius: '10px',
+                    background: 'rgba(245, 158, 11, 0.07)',
+                    border: '1px solid rgba(245, 158, 11, 0.25)',
+                    cursor: dailyLeader ? 'pointer' : 'default',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '3px',
+                    minWidth: 0,
+                  }}
+                >
+                  <div style={{ fontSize: '9px', fontWeight: 800, color: '#fbbf24', letterSpacing: '0.4px', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {language === 'ja' ? '本日トップ (UTC)' : language === 'zh' ? '今日榜首 (UTC)' : "Today's Leader (UTC)"}
+                  </div>
+                  <div style={{ fontSize: '13px', fontWeight: 900, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {dailyLeader ? dailyLeader.profileName : '—'}
+                  </div>
+                  <div className="tabular" style={{ fontSize: '10px', fontWeight: 700, color: dailyLeader && dailyLeader.dailyNetPips >= 0 ? '#34d399' : '#f87171', whiteSpace: 'nowrap' }}>
+                    {dailyLeader
+                      ? `${dailyLeader.dailyNetPips >= 0 ? '+' : ''}${dailyLeader.dailyNetPips.toFixed(1)}p • ${dailyLeader.dailyTradesCount}T`
+                      : '0.0p'}
+                  </div>
+                </button>
+
+                {/* Card 3: Verified Arena Fills */}
+                <div
+                  style={{
+                    textAlign: 'left',
+                    padding: '8px 10px',
+                    borderRadius: '10px',
+                    background: 'rgba(0, 240, 255, 0.05)',
+                    border: '1px solid rgba(0, 240, 255, 0.2)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '3px',
+                    minWidth: 0,
+                  }}
+                >
+                  <div style={{ fontSize: '9px', fontWeight: 800, color: '#00F0FF', letterSpacing: '0.4px', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {language === 'ja' ? '累計認証約定' : language === 'zh' ? '全平台认证成交' : 'Verified Arena Fills'}
+                  </div>
+                  <div className="tabular" style={{ fontSize: '13px', fontWeight: 900, color: '#ffffff', whiteSpace: 'nowrap' }}>
+                    {totalFills.toLocaleString()} {language === 'ja' ? '約定' : language === 'zh' ? '笔' : 'Fills'}
+                  </div>
+                  <div className="tabular" style={{ fontSize: '10px', fontWeight: 700, color: '#10b981', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    +{totalHarvested.toLocaleString()}p {language === 'ja' ? '獲得' : language === 'zh' ? '总盈利点' : 'Harvested'}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
