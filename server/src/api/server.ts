@@ -640,18 +640,30 @@ export function createServer() {
     }
 
     const authSession = extractAuthUser(req);
-    // Enforce authorization: only allow users to edit their own profile
-    if (authSession && authSession.userId !== profile.id && profile.id !== 'u_zzzemzzz' && profile.id !== 'u_homiesplant_th') {
+    if (!authSession) {
+      return res.status(401).json({ success: false, error: 'Authentication required to update profile' });
+    }
+    // Enforce authorization: strictly allow users to edit only their own profile
+    if (authSession.userId !== profile.id) {
       return res.status(403).json({ success: false, error: 'Unauthorized: You can only update your own profile' });
     }
 
     const existing = userProfiles.get(profile.id) || {};
-    const updated = { ...existing, ...profile };
+    const safeUpdates: Record<string, any> = {};
+    if (typeof profile.username === 'string' && profile.username.trim()) safeUpdates.username = profile.username.trim();
+    if (typeof profile.primaryBroker === 'string') safeUpdates.primaryBroker = profile.primaryBroker;
+    if (typeof profile.tradingStyle === 'string') safeUpdates.tradingStyle = profile.tradingStyle;
+    if (typeof profile.avatarSymbol === 'string') safeUpdates.avatarSymbol = profile.avatarSymbol;
+    if (typeof profile.avatarUrl === 'string') safeUpdates.avatarUrl = profile.avatarUrl;
+    if (typeof profile.accountNumber === 'string') safeUpdates.accountNumber = profile.accountNumber;
+    if (typeof profile.bio === 'string') safeUpdates.bio = profile.bio;
+
+    const updated = { ...existing, ...safeUpdates, id: profile.id };
     userProfiles.set(profile.id, updated);
     persistUserProfilesToR2().catch(() => {});
 
-    if (profile.username) {
-      connector.updateUserAccountsName(profile.id, profile.username, profile.primaryBroker, profile.accountNumber, profile.avatarUrl);
+    if (safeUpdates.username) {
+      connector.updateUserAccountsName(profile.id, safeUpdates.username, safeUpdates.primaryBroker, safeUpdates.accountNumber, safeUpdates.avatarUrl);
     }
     return res.json({ success: true, user: updated });
   });
@@ -759,6 +771,9 @@ export function createServer() {
       if (!effectiveUserId) {
         return res.status(401).json({ success: false, error: 'Authentication required to connect a trading account' });
       }
+      if (!authSession && (effectiveUserId === 'u_zzzemzzz' || effectiveUserId === 'u_homiesplant_th' || Boolean(authService.getCredential(effectiveUserId)))) {
+        return res.status(401).json({ success: false, error: 'Authentication token required to bind accounts to this user' });
+      }
 
       const effectiveUsername = authSession?.username || req.body.username || 'MasterTrader';
       console.log(`[CONNECTOR] Incoming connect request for user: ${effectiveUserId}, username: ${effectiveUsername}, broker: ${broker}`);
@@ -786,8 +801,8 @@ export function createServer() {
     // 1. Authenticated user isolation: strictly return accounts belonging to this user
     if (userId && userId !== 'none') {
       const authSession = extractAuthUser(req);
-      if (authSession && authSession.userId !== userId && userId !== 'u_zzzemzzz' && userId !== 'u_homiesplant_th') {
-        return res.status(403).json({ success: false, error: 'Unauthorized: Cannot access accounts of another user' });
+      if (!authSession || authSession.userId !== userId) {
+        return res.status(403).json({ success: false, error: 'Unauthorized: Valid session token required to access user accounts' });
       }
 
       const accounts = connector.getAccounts(userId);
@@ -870,7 +885,16 @@ export function createServer() {
       }
       const authSession = extractAuthUser(req);
       const effectiveUserId = authSession?.userId || userId;
-      if (effectiveUserId && account.userId && account.userId !== effectiveUserId && effectiveUserId !== 'u_zzzemzzz' && effectiveUserId !== 'u_homiesplant_th') {
+      const isProtectedAccount =
+        account.accountNumber === '72423906' ||
+        account.accountNumber === '342186831' ||
+        account.userId === 'u_zzzemzzz' ||
+        account.userId === 'u_homiesplant_th';
+
+      if (isProtectedAccount && (!authSession || authSession.userId !== account.userId)) {
+        return res.status(403).json({ success: false, error: 'Forbidden: Valid owner session required to disconnect this account' });
+      }
+      if (effectiveUserId && account.userId && account.userId !== effectiveUserId) {
         return res.status(403).json({ success: false, error: 'Forbidden: You do not have permission to disconnect this account' });
       }
       const purge = req.query.purge !== 'false';
