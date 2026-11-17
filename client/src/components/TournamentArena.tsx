@@ -6,6 +6,7 @@ import { FeatureSymbol, FeatureSymbolType } from './FeatureSymbol.tsx';
 import { Broker } from '../../../shared/src/types.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
+import { useTraderStats } from '../hooks/useTraderStats.ts';
 
 export interface Tournament {
   id: string;
@@ -48,6 +49,7 @@ export interface TournamentArenaProps {
 export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectWizard }) => {
   const { t } = useTranslation();
   const { user, isAuthenticated, openAuthModal } = useAuth();
+  const { getTraderStats } = useTraderStats();
   const [selectedTournamentId, setSelectedTournamentId] = useState<string>('tourn_weekly_fx_blitz_01');
   const [isUserEntered, setIsUserEntered] = useState<boolean>(false);
   const [isJoining, setIsJoining] = useState<boolean>(false);
@@ -590,6 +592,12 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
             participants.map(p => {
             const isTop3 = p.rank <= 3;
             const isDq = p.status === 'DISQUALIFIED';
+            const canonical = getTraderStats({ userId: p.userId, username: p.username });
+            const displayPips = canonical ? canonical.totalPips : p.netPips;
+            const displayTrades = canonical ? canonical.tradesCount : p.tradesCount;
+            const displayWinRate = canonical ? canonical.winRate : p.winRate;
+            const displayAvatarUrl = canonical?.avatarUrl;
+            const displayAvatarSymbol = canonical?.avatarSymbol || p.avatarSymbol;
 
             return (
               <div
@@ -634,7 +642,7 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
                     {isDq ? 'DQ' : `#${p.rank}`}
                   </div>
 
-                  <TraderAvatar username={p.username} symbol={p.avatarSymbol} size={36} />
+                  <TraderAvatar username={p.username} symbol={displayAvatarSymbol} avatarUrl={displayAvatarUrl} size={36} />
 
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -657,9 +665,9 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
                       )}
                     </div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <span>{p.tradesCount} {t.dailyBest.trades}</span>
+                      <span>{displayTrades} {t.dailyBest.trades}</span>
                       <span>•</span>
-                      <span>{t.dailyBest.winRate}: <strong style={{ color: 'var(--text-main)' }}>{p.winRate}%</strong></span>
+                      <span>{t.dailyBest.winRate}: <strong style={{ color: 'var(--text-main)' }}>{displayWinRate}%</strong></span>
                       <span>•</span>
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                         <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>DD Risk:</span>
@@ -709,8 +717,8 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
                 <div style={{ display: 'flex', alignItems: 'center', gap: '24px', textAlign: 'right' }}>
                   <div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.arena.netPips}</div>
-                    <div style={{ fontSize: '16px', fontWeight: 800, color: isDq ? 'var(--text-muted)' : 'var(--accent-green)' }}>
-                      +{p.netPips.toFixed(1)}
+                    <div style={{ fontSize: '16px', fontWeight: 800, color: isDq ? 'var(--text-muted)' : displayPips >= 0 ? 'var(--accent-green)' : '#ef4444' }}>
+                      {displayPips >= 0 ? `+${displayPips.toFixed(1)}` : displayPips.toFixed(1)}
                     </div>
                   </div>
 

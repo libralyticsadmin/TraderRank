@@ -18,6 +18,7 @@ import {
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
 import { formatCurrency } from '../utils/currencyFlow.ts';
+import { useTraderStats } from '../hooks/useTraderStats.ts';
 
 export interface BulletinTradeItem {
   id: string;
@@ -53,6 +54,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
 }) => {
   const { t, language } = useTranslation();
   const { user } = useAuth();
+  const { getTraderStats } = useTraderStats();
   const [allRealTrades, setAllRealTrades] = useState<BulletinTradeItem[]>([]);
   const [winningRealTrades, setWinningRealTrades] = useState<BulletinTradeItem[]>([]);
   const [deckMode, setDeckMode] = useState<'WINS' | 'LATEST'>('WINS');
@@ -102,8 +104,70 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
 
         for (const acc of accounts) {
           try {
-            const trRes = await fetch(`/api/accounts/${acc.id}/trades`);
-            if (trRes.ok) {
+            const [trRes, posRes] = await Promise.all([
+              fetch(`/api/accounts/${acc.id}/trades`).catch(() => null),
+              fetch(`/api/accounts/${acc.id}/positions`).catch(() => null),
+            ]);
+
+            const isHomiesAcc =
+              String(acc.accountNumber).trim() === '72423906' ||
+              acc.userId === 'u_homiesplant_th' ||
+              acc.userId === 'usr_meta_72423906' ||
+              String(acc.id).includes('72423906');
+
+            const isCurrentUser = Boolean(
+              user && (
+                acc.userId === user.id ||
+                acc.id === user.id ||
+                (acc.accountNumber && user.accountNumber === acc.accountNumber)
+              )
+            );
+            const canonical = getTraderStats({
+              accountNumber: acc.accountNumber,
+              userId: acc.userId,
+              username: acc.profileUsername || acc.username,
+            });
+            const traderDisplayName = isHomiesAcc
+              ? 'HomiesPlant'
+              : canonical?.profileName ||
+                (isCurrentUser && user ? user.username : acc.profileUsername || acc.username || `VerifiedTrader_${acc.accountNumber || acc.id}`);
+            const resolvedAvatarUrl =
+              canonical?.avatarUrl || (isCurrentUser && user ? user.avatarUrl : undefined);
+            const tradeCurrency = isHomiesAcc || acc.broker === 'XMTrading' ? 'JPY' : (acc.currency || 'USD');
+
+            if (posRes && posRes.ok) {
+              const rawPositions = await posRes.json();
+              if (Array.isArray(rawPositions)) {
+                for (const pos of rawPositions) {
+                  if (!pos.symbol || pos.symbol === 'UNKNOWN') continue;
+                  const pips = Number((pos.profitPips ?? 0).toFixed(1));
+                  const profit = Number((pos.profitCurrency ?? pos.profit ?? 0).toFixed(2));
+                  const lotSize = Number((pos.lotSize ?? pos.volume ?? 0.01).toFixed(2));
+                  collected.push({
+                    id: `pos_${pos.id || pos.ticket || Math.random()}`,
+                    accountId: acc.id,
+                    userId: acc.userId || acc.id,
+                    trader: traderDisplayName,
+                    avatarUrl: resolvedAvatarUrl,
+                    broker: isHomiesAcc ? 'XMTrading' : (acc.broker || 'XM'),
+                    symbol: pos.symbol,
+                    type: String(pos.type || 'BUY').toUpperCase().includes('SELL') ? 'SELL' : 'BUY',
+                    pips,
+                    lotSize,
+                    openPrice: Number(pos.openPrice || 0),
+                    closePrice: Number(pos.currentPrice || pos.openPrice || 0),
+                    profitUsd: profit,
+                    currency: tradeCurrency,
+                    timeAgo: 'LIVE OPEN',
+                    tag: 'LIVE OPEN',
+                    isHot: true,
+                    rank: canonical?.rank ?? 1,
+                  });
+                }
+              }
+            }
+
+            if (trRes && trRes.ok) {
               const rawTrades = await trRes.json();
               if (Array.isArray(rawTrades)) {
                 totalCount += rawTrades.length;
@@ -133,33 +197,12 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
 
                   const isWin = profit > 0 || (profit === 0 && pips > 0);
 
-                  const isHomiesAcc =
-                    String(acc.accountNumber).trim() === '72423906' ||
-                    acc.userId === 'u_homiesplant_th' ||
-                    acc.userId === 'usr_meta_72423906' ||
-                    String(acc.id).includes('72423906');
-
-                  const isCurrentUser = Boolean(
-                    user && (
-                      acc.userId === user.id ||
-                      acc.id === user.id ||
-                      (acc.accountNumber && user.accountNumber === acc.accountNumber)
-                    )
-                  );
-                  const traderDisplayName = isHomiesAcc
-                    ? 'HomiesPlant'
-                    : ((isCurrentUser && user)
-                    ? user.username
-                    : (acc.username && !acc.username.startsWith('TraderRank-') ? acc.username : `VerifiedTrader_${acc.accountNumber || acc.id}`));
-
-                  const tradeCurrency = isHomiesAcc || acc.broker === 'XMTrading' ? 'JPY' : (tr.currency || acc.currency || 'USD');
-
                   collected.push({
                     id: tr.id || `tr_${Math.random()}`,
                     accountId: acc.id,
                     userId: acc.userId || acc.id,
                     trader: traderDisplayName,
-                    avatarUrl: (isCurrentUser && user) ? user.avatarUrl : undefined,
+                    avatarUrl: resolvedAvatarUrl,
                     broker: isHomiesAcc ? 'XMTrading' : (acc.broker || 'XM'),
                     symbol: tr.symbol,
                     type: tr.type === 'BUY' ? 'BUY' : 'SELL',
@@ -168,7 +211,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                     openPrice: Number(tr.openPrice || 0),
                     closePrice: Number(tr.closePrice || 0),
                     profitUsd: profit,
-                    currency: tradeCurrency,
+                    currency: tr.currency || tradeCurrency,
                     timeAgo: tr.closeTime
                       ? new Date(tr.closeTime).toLocaleString([], {
                           month: 'short',
@@ -180,7 +223,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                     tagKey: isWin ? (pips >= 30 ? 'goldRush' : 'takeProfit') : undefined,
                     tag: !isWin ? 'Verified Fill' : undefined,
                     isHot: isWin && pips >= 25,
-                    rank: 1,
+                    rank: canonical?.rank ?? 1,
                   });
                 }
               }
@@ -191,8 +234,14 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
         }
 
         if (isMounted && collected.length > 0) {
-          const wins = collected.filter(item => item.profitUsd > 0 || (item.profitUsd === 0 && item.pips > 0));
-          setAllRealTrades(collected);
+          const liveFirst = [
+            ...collected.filter(item => item.timeAgo === 'LIVE OPEN'),
+            ...collected.filter(item => item.timeAgo !== 'LIVE OPEN'),
+          ];
+          const wins = liveFirst.filter(
+            item => item.timeAgo === 'LIVE OPEN' || item.profitUsd > 0 || (item.profitUsd === 0 && item.pips > 0)
+          );
+          setAllRealTrades(liveFirst);
           setWinningRealTrades(wins.slice(0, 12));
           setSummaryStats({
             totalFills: totalCount || collected.length,
@@ -206,12 +255,12 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
     };
 
     loadRealTrades();
-    const interval = setInterval(loadRealTrades, 15000);
+    const interval = setInterval(loadRealTrades, 10000);
     return () => {
       isMounted = false;
       clearInterval(interval);
     };
-  }, []);
+  }, [getTraderStats, user?.avatarUrl, user?.username]);
 
   // Ensure currentIndex stays within bounds
   const safeLen = activeDeck.length || 1;

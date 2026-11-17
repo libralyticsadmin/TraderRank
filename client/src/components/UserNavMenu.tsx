@@ -3,6 +3,7 @@ import { User, Settings, LogOut, ChevronDown, ShieldCheck, Crown, Users, LayoutD
 import { useAuth } from '../context/AuthContext.tsx';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { TraderAvatar } from './TraderAvatar.tsx';
+import { useTraderStats } from '../hooks/useTraderStats.ts';
 
 interface UserNavMenuProps {
   onOpenConnectWizard?: () => void;
@@ -19,6 +20,7 @@ export const UserNavMenu: React.FC<UserNavMenuProps> = ({
 }) => {
   const { user, isAuthenticated, openAuthModal, openProfileModal, logout } = useAuth();
   const { t } = useTranslation();
+  const { getTraderStats } = useTraderStats();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -72,39 +74,51 @@ export const UserNavMenu: React.FC<UserNavMenuProps> = ({
 
   return (
     <div ref={menuRef} style={{ position: 'relative', zIndex: menuOpen ? 5000 : 'auto' }}>
-      <button
-        onClick={() => setMenuOpen(!menuOpen)}
-        style={{
-          background: 'rgba(255, 255, 255, 0.06)',
-          border: '1px solid rgba(10, 186, 181, 0.35)',
-          borderRadius: '10px',
-          padding: '4px 10px 4px 6px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          cursor: 'pointer',
-          transition: 'all 0.2s',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'rgba(10, 186, 181, 0.12)';
-          e.currentTarget.style.borderColor = 'var(--tiffany, #0abab5)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-          e.currentTarget.style.borderColor = 'rgba(10, 186, 181, 0.35)';
-        }}
-      >
-        <TraderAvatar username={user.username} symbol={user.avatarSymbol} avatarUrl={user.avatarUrl} size={28} />
-        <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontSize: '12px', fontWeight: 800, color: '#ffffff', lineHeight: 1.2 }}>
-            {user.username}
-          </span>
-          <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--tiffany, #0abab5)', lineHeight: 1 }}>
-            Lv. {user.level} {user.tradingStyle || 'Pro'}
-          </span>
-        </div>
-        <ChevronDown size={14} color="#94a3b8" />
-      </button>
+      {(() => {
+        const canonical = getTraderStats({
+          accountNumber: user.accountNumber,
+          userId: user.id,
+          username: user.username,
+        });
+        const effectiveLevel = canonical ? canonical.level : user.level;
+        const effectiveAvatarUrl = canonical?.avatarUrl || user.avatarUrl;
+        const effectiveAvatarSymbol = canonical?.avatarSymbol || user.avatarSymbol;
+        return (
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            style={{
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(10, 186, 181, 0.35)',
+              borderRadius: '10px',
+              padding: '4px 10px 4px 6px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(10, 186, 181, 0.12)';
+              e.currentTarget.style.borderColor = 'var(--tiffany, #0abab5)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+              e.currentTarget.style.borderColor = 'rgba(10, 186, 181, 0.35)';
+            }}
+          >
+            <TraderAvatar username={user.username} symbol={effectiveAvatarSymbol} avatarUrl={effectiveAvatarUrl} size={28} />
+            <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '12px', fontWeight: 800, color: '#ffffff', lineHeight: 1.2 }}>
+                {user.username}
+              </span>
+              <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--tiffany, #0abab5)', lineHeight: 1 }}>
+                Lv. {effectiveLevel} {user.tradingStyle || 'Pro'}
+              </span>
+            </div>
+            <ChevronDown size={14} color="#94a3b8" />
+          </button>
+        );
+      })()}
 
       {/* Dropdown Menu */}
       {menuOpen && (

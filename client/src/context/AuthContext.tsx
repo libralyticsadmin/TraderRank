@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Broker } from '../../../shared/src/types.ts';
 import { getRandomTraderAvatar, DEFAULT_TRADER_AVATARS } from '../components/avatarCatalog.ts';
+import { fetchCanonicalStats } from '../hooks/useTraderStats.ts';
 
 export interface UserProfile {
   id: string;
@@ -319,6 +320,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
         body: JSON.stringify(updated),
       });
+      fetchCanonicalStats(true);
     } catch {
       // Local copy already saved
     }
