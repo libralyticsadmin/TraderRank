@@ -30,6 +30,7 @@ import { ForexFactoryService } from '../market/forexFactoryService.js';
 import { DailyIntelService } from '../market/dailyIntelService.js';
 import { TournamentService } from '../services/tournamentService.js';
 import { authService, SessionPayload } from '../services/authService.js';
+import { computeCanonicalStats } from '../services/canonicalStatsService.js';
 
 export function createServer() {
   const app = express();
@@ -228,6 +229,21 @@ export function createServer() {
       if (client.readyState === WebSocket.OPEN) {
         client.send(payload);
       }
+    }
+    if (clients.size > 0) {
+      computeCanonicalStats(connector, leaderboard, marketFeed)
+        .then(canonical => {
+          const canonicalPayload = JSON.stringify({
+            type: 'CANONICAL_STATS_UPDATE',
+            data: canonical,
+          });
+          for (const client of clients) {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(canonicalPayload);
+            }
+          }
+        })
+        .catch(() => {});
     }
   });
 
@@ -1103,6 +1119,16 @@ export function createServer() {
   app.get('/api/leaderboard', (_req: Request, res: Response) => {
     const entries = leaderboard.getLeaderboard();
     res.json(entries);
+  });
+
+  // 8a. Unified Canonical Trader Stats (Single Source of Truth)
+  app.get('/api/traders/canonical', async (_req: Request, res: Response) => {
+    try {
+      const canonical = await computeCanonicalStats(connector, leaderboard, marketFeed);
+      res.json(canonical);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || 'Failed to compute canonical stats' });
+    }
   });
 
   // 8b. Daily Winning Pips & Daily Best Trader

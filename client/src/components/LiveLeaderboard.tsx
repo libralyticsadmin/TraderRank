@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { LeaderboardEntry, DailyLeaderboardResult, Broker } from '../../../shared/src/types.ts';
 import { calculateTraderGamification } from '../../../shared/src/gamification.ts';
 import { TraderAvatar } from './TraderAvatar.tsx';
@@ -7,6 +7,7 @@ import { resolveTraderIdentity } from './avatarCatalog.ts';
 import { resolveBrokerCurrency, formatCurrency } from '../utils/currencyFlow.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
+import { useTraderStats } from '../hooks/useTraderStats.ts';
 import {
   Trophy,
   Award,
@@ -41,250 +42,14 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
   const [period, setPeriod] = useState<RankingPeriod>('all_time');
   const [brokerFilter, setBrokerFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-  const [ledgerStatsByUser, setLedgerStatsByUser] = useState<
-    Record<
-      string,
-      {
-        netPips: number;
-        winningPips: number;
-        netProfitUsd: number;
-        grossProfitUsd: number;
-        tradesCount: number;
-        winRate: number;
-        xp: number;
-        roiPct: number;
-        dailyNetPips: number;
-        dailyProfitUsd: number;
-        dailyTradesCount: number;
-        dailyWinRate: number;
-        currency?: string;
-        accountNumber?: string;
-        accountHolderName?: string;
-        liveOrders: Array<{
-          id: string;
-          ticket: string;
-          symbol: string;
-          type: 'BUY' | 'SELL';
-          lotSize: number;
-          openPrice: number;
-          currentPrice: number;
-          profitPips: number;
-          profitCurrency: number;
-          isLivePosition: boolean;
-          timeLabel: string;
-        }>;
-      }
-    >
-  >({});
-
-  // Fetch 100% real closed trade ledger & real-time open orders from MetaApi accounts
-  useEffect(() => {
-    let isMounted = true;
-    const loadLedger = async () => {
-      try {
-        const accRes = await fetch('/api/accounts?scope=public');
-        if (!accRes.ok) return;
-        const accounts = await accRes.json();
-        if (!Array.isArray(accounts) || accounts.length === 0) return;
-
-        const todayStr = new Date().toISOString().slice(0, 10);
-        const map: typeof ledgerStatsByUser = {};
-
-        for (const acc of accounts) {
-          const [trRes, posRes] = await Promise.all([
-            fetch(`/api/accounts/${acc.id}/trades`).catch(() => null),
-            fetch(`/api/accounts/${acc.id}/positions`).catch(() => null),
-          ]);
-          const rawTrades = trRes && trRes.ok ? await trRes.json() : [];
-          const rawPositions = posRes && posRes.ok ? await posRes.json() : [];
-
-          const valid = Array.isArray(rawTrades)
-            ? rawTrades.filter((d: any) => {
-                const sym = String(d.symbol || '').toUpperCase();
-                return sym && sym !== 'UNKNOWN' && sym !== 'BALANCE' && Number(d.lotSize ?? d.volume ?? 0) > 0;
-              })
-            : [];
-
-          let netPips = 0;
-          let winningPips = 0;
-          let netProfitUsd = 0;
-          let grossProfitUsd = 0;
-          let wins = 0;
-          let dailyNetPips = 0;
-          let dailyProfitUsd = 0;
-          let dailyTradesCount = 0;
-          let dailyWins = 0;
-
-          for (const tr of valid) {
-            const usd = Number(tr.pnlCurrency ?? tr.profitCurrency ?? tr.profit ?? 0);
-            const pips = Number(tr.pnlPips ?? tr.profitPips ?? 0);
-            const isWin = usd > 0 || (usd === 0 && pips > 0);
-
-            netPips += pips;
-            netProfitUsd += usd;
-            if (isWin) {
-              wins++;
-              winningPips += Math.max(0, pips);
-              grossProfitUsd += Math.max(0, usd);
-            }
-
-            if (String(tr.closeTime || '').startsWith(todayStr)) {
-              dailyTradesCount++;
-              dailyNetPips += pips;
-              dailyProfitUsd += usd;
-              if (isWin) dailyWins++;
-            }
-          }
-
-          // Build live open positions or latest real orders for the Top 3 card
-          const openOrders = Array.isArray(rawPositions)
-            ? rawPositions.slice(0, 2).map((pos: any) => ({
-                id: String(pos.id || pos.ticket || Math.random()),
-                ticket: String(pos.ticket || pos.id || '').slice(-6),
-                symbol: String(pos.symbol || 'XAUUSD'),
-                type: (String(pos.type || 'BUY').toUpperCase().includes('SELL') ? 'SELL' : 'BUY') as 'BUY' | 'SELL',
-                lotSize: Number(pos.lotSize ?? pos.volume ?? 0.01),
-                openPrice: Number(pos.openPrice || 0),
-                currentPrice: Number(pos.currentPrice || pos.openPrice || 0),
-                profitPips: Number((pos.profitPips ?? 0).toFixed(1)),
-                profitCurrency: Number((pos.profitCurrency ?? pos.profit ?? 0).toFixed(2)),
-                isLivePosition: true,
-                timeLabel: 'LIVE OPEN',
-              }))
-            : [];
-
-          const recentClosedOrders =
-            openOrders.length === 0 && valid.length > 0
-              ? [...valid]
-                  .sort((a: any, b: any) => new Date(b.closeTime || 0).getTime() - new Date(a.closeTime || 0).getTime())
-                  .slice(0, 2)
-                  .map((tr: any) => ({
-                    id: String(tr.id || tr.ticket || Math.random()),
-                    ticket: String(tr.ticket || tr.id || '').slice(-6),
-                    symbol: String(tr.symbol || 'XAUUSD'),
-                    type: (String(tr.type || 'BUY').toUpperCase().includes('SELL') ? 'SELL' : 'BUY') as 'BUY' | 'SELL',
-                    lotSize: Number(tr.lotSize ?? tr.volume ?? 0.01),
-                    openPrice: Number(tr.openPrice || 0),
-                    currentPrice: Number(tr.closePrice || tr.openPrice || 0),
-                    profitPips: Number((tr.pnlPips ?? tr.profitPips ?? 0).toFixed(1)),
-                    profitCurrency: Number((tr.pnlCurrency ?? tr.profitCurrency ?? tr.profit ?? 0).toFixed(2)),
-                    isLivePosition: false,
-                    timeLabel: tr.closeTime
-                      ? new Date(tr.closeTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                      : 'FILLED',
-                  }))
-              : [];
-
-          const currentBal = Number(acc.equity ?? acc.balance ?? 2.8);
-          const impliedStartCap = Math.max(100, currentBal - netProfitUsd);
-          const roiPct = Number(((netProfitUsd / impliedStartCap) * 100).toFixed(1));
-          const cleanAccNum = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
-          const statsObj = {
-            netPips: Number(netPips.toFixed(1)),
-            winningPips: Number(winningPips.toFixed(1)),
-            netProfitUsd: Number(netProfitUsd.toFixed(2)),
-            grossProfitUsd: Number(grossProfitUsd.toFixed(2)),
-            tradesCount: valid.length,
-            winRate: valid.length > 0 ? Math.round((wins / valid.length) * 100) : 0,
-            xp: valid.length * 25,
-            roiPct,
-            dailyNetPips: Number(dailyNetPips.toFixed(1)),
-            dailyProfitUsd: Number(dailyProfitUsd.toFixed(2)),
-            dailyTradesCount,
-            dailyWinRate: dailyTradesCount > 0 ? Math.round((dailyWins / dailyTradesCount) * 100) : 0,
-            currency: acc.currency || 'USD',
-            accountNumber: acc.accountNumber,
-            accountHolderName: acc.profileUsername || cleanAccNum,
-            liveOrders: openOrders.length > 0 ? openOrders : recentClosedOrders,
-          };
-
-          if (acc.accountNumber) {
-            const cleanNum = String(acc.accountNumber).replace(/^TraderRank-/i, '').trim();
-            map[cleanNum] = statsObj;
-            map[`TraderRank-${cleanNum}`] = statsObj;
-          }
-          if (acc.id) map[acc.id] = statsObj;
-          if (acc.userId && acc.userId !== 'usr_live_meta') map[acc.userId] = statsObj;
-          if (acc.profileUsername) map[acc.profileUsername] = statsObj;
-        }
-
-        if (isMounted) {
-          setLedgerStatsByUser(prev => ({ ...prev, ...map }));
-        }
-      } catch {
-        // ignore
-      }
-    };
-
-    // Fast non-jank live positions poller (every 6 seconds) so Top 3 real-time orders update smoothly in place
-    const pollTop3LivePositions = async () => {
-      try {
-        const accRes = await fetch('/api/accounts?scope=public');
-        if (!accRes.ok) return;
-        const accounts = await accRes.json();
-        if (!Array.isArray(accounts) || accounts.length === 0) return;
-
-        const updates: Record<string, any[]> = {};
-        await Promise.all(
-          accounts.map(async (acc: any) => {
-            try {
-              const posRes = await fetch(`/api/accounts/${acc.id}/positions`);
-              if (!posRes.ok) return;
-              const rawPositions = await posRes.json();
-              if (!Array.isArray(rawPositions) || rawPositions.length === 0) return;
-              const openOrders = rawPositions.slice(0, 2).map((pos: any) => ({
-                id: String(pos.id || pos.ticket || Math.random()),
-                ticket: String(pos.ticket || pos.id || '').slice(-6),
-                symbol: String(pos.symbol || 'XAUUSD'),
-                type: (String(pos.type || 'BUY').toUpperCase().includes('SELL') ? 'SELL' : 'BUY') as 'BUY' | 'SELL',
-                lotSize: Number(pos.lotSize ?? pos.volume ?? 0.01),
-                openPrice: Number(pos.openPrice || 0),
-                currentPrice: Number(pos.currentPrice || pos.openPrice || 0),
-                profitPips: Number((pos.profitPips ?? 0).toFixed(1)),
-                profitCurrency: Number((pos.profitCurrency ?? pos.profit ?? 0).toFixed(2)),
-                isLivePosition: true,
-                timeLabel: 'LIVE OPEN',
-              }));
-              if (acc.userId) updates[acc.userId] = openOrders;
-              if (acc.id) updates[acc.id] = openOrders;
-              if (acc.accountNumber) updates[`TraderRank-${acc.accountNumber}`] = openOrders;
-            } catch {
-              // ignore
-            }
-          })
-        );
-
-        if (isMounted && Object.keys(updates).length > 0) {
-          setLedgerStatsByUser(prev => {
-            const next = { ...prev };
-            for (const [k, orders] of Object.entries(updates)) {
-              if (next[k]) {
-                next[k] = { ...next[k], liveOrders: orders };
-              }
-            }
-            return next;
-          });
-        }
-      } catch {
-        // ignore
-      }
-    };
-
-    loadLedger();
-    const ledgerInterval = setInterval(loadLedger, 60000); // 1-minute full ledger sync
-    const posInterval = setInterval(pollTop3LivePositions, 6000); // 6-second smooth position update
-    return () => {
-      isMounted = false;
-      clearInterval(ledgerInterval);
-      clearInterval(posInterval);
-    };
-  }, [entries.length]);
+  const { traders: canonicalTraders, getTraderStats } = useTraderStats();
 
   // Daily standings from server
   const dailyStandings = dailyResult?.standings || [];
 
-  // Build leaderboard items strictly from real MetaApi data
+  // Build leaderboard items strictly from the unified Canonical Stats source of truth
   const processedEntries = useMemo(() => {
+    const allTimeSource = canonicalTraders.length > 0 ? canonicalTraders : entries;
     const baseList =
       period === 'daily' && dailyStandings.length > 0
         ? dailyStandings.map(d => {
@@ -302,12 +67,14 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               (d.accountNumber && String(d.accountNumber).includes('72423906'));
             const cleanAcc = isHomies ? '72423906' : rawAcc;
             const primaryBroker: Broker = isHomies ? 'XMTrading' : (d.brokers && d.brokers.length > 0 ? d.brokers[0] : 'XM');
-            const real =
-              (cleanAcc && (ledgerStatsByUser[cleanAcc] || ledgerStatsByUser[`TraderRank-${cleanAcc}`])) ||
-              (d.userId && d.userId !== 'usr_live_meta' ? ledgerStatsByUser[d.userId] : undefined) ||
-              ledgerStatsByUser[d.username];
+            const real = getTraderStats({
+              accountNumber: cleanAcc,
+              userId: d.userId,
+              username: d.username,
+            });
             const pips = real ? real.dailyNetPips : d.dailyTotalPips || 0;
             const trades = real ? real.dailyTradesCount : d.dailyTradesCount || 0;
+            const profitNative = real ? real.dailyProfitNative : 0;
             const profitUsd = real ? real.dailyProfitUsd : 0;
             const winRate = real
               ? trades > 0
@@ -317,7 +84,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             const identity = resolveTraderIdentity({
               username: isHomies ? 'HomiesPlant' : d.username,
               profileName: isHomies ? 'HomiesPlant' : d.profileName,
-              accountHolderName: isHomies ? 'HomiesPlant' : real?.accountHolderName,
+              accountHolderName: isHomies ? 'HomiesPlant' : real?.profileName,
               accountNumber: cleanAcc,
               userId: isHomies ? 'u_homiesplant_th' : d.userId,
               avatarUrl: d.avatarUrl,
@@ -325,8 +92,8 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
 
             const accCurrency = isHomies || primaryBroker === 'XMTrading' ? 'JPY' : resolveBrokerCurrency(
               primaryBroker,
-              (real as any)?.serverName || (cleanAcc === '72423906' ? 'XMTrading-MT5' : undefined),
-              (real as any)?.currency || (d as any).currency,
+              cleanAcc === '72423906' ? 'XMTrading-MT5' : undefined,
+              real?.currency || (d as any).currency,
               cleanAcc
             );
 
@@ -341,7 +108,8 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               currency: accCurrency,
               avatarSymbol: isHomies ? 'bear_emerald' : d.avatarSymbol,
               winningPips: pips,
-              profitAmount: profitUsd,
+              profitAmount: profitNative,
+              profitUsd,
               profitRate: winRate,
               rank: d.rank,
               tradesCount: trades > 0 ? trades : real?.tradesCount ?? 0,
@@ -351,31 +119,39 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               liveOrders: real?.liveOrders || [],
             };
           })
-        : entries.map((e, idx) => {
+        : allTimeSource.map((e: any, idx: number) => {
             const rawAcc = e.accountNumber
               ? String(e.accountNumber).replace(/^TraderRank-/i, '').trim()
-              : (e.username.match(/(\d{6,})/)?.[1] || '');
+              : (String(e.username || '').match(/(\d{6,})/)?.[1] || '');
             const isHomies =
               rawAcc === '72423906' ||
               e.userId === 'u_homiesplant_th' ||
               e.userId === 'usr_meta_72423906' ||
               e.username === 'HomiesPlant' ||
               e.username === 'homiesplant.th' ||
-              e.username.toLowerCase().includes('homies') ||
-              e.username.toLowerCase().includes('emanuel007') ||
+              String(e.username || '').toLowerCase().includes('homies') ||
+              String(e.username || '').toLowerCase().includes('emanuel007') ||
               (e.accountNumber && String(e.accountNumber).includes('72423906'));
             const cleanAcc = isHomies ? '72423906' : rawAcc;
-            const primaryBroker: Broker = isHomies ? 'XMTrading' : (e.brokers && e.brokers.length > 0 ? e.brokers[0] : 'XM');
-            const real =
-              (cleanAcc && (ledgerStatsByUser[cleanAcc] || ledgerStatsByUser[`TraderRank-${cleanAcc}`])) ||
-              (e.userId && e.userId !== 'usr_live_meta' ? ledgerStatsByUser[e.userId] : undefined) ||
-              ledgerStatsByUser[e.username];
-            const netPips = real ? real.netPips : e.totalPips || 0;
-            const netProfitUsd = real
-              ? real.netProfitUsd
+            const primaryBroker: Broker = isHomies ? 'XMTrading' : (e.broker || (e.brokers && e.brokers.length > 0 ? e.brokers[0] : 'XM'));
+            const real = getTraderStats({
+              accountNumber: cleanAcc,
+              userId: e.userId,
+              username: e.username,
+            });
+            const netPips = real ? real.totalPips : e.totalPips || 0;
+            const profitNative = real
+              ? real.netProfitNative
+              : typeof e.netProfitNative === 'number'
+              ? e.netProfitNative
               : typeof e.closedProfitUsd === 'number'
               ? e.closedProfitUsd
               : 0;
+            const profitUsd = real
+              ? real.netProfitUsd
+              : typeof e.netProfitUsd === 'number'
+              ? e.netProfitUsd
+              : profitNative;
             const tradesCount = real ? real.tradesCount : e.tradesCount || 0;
             const winRate = real ? real.winRate : e.winRate || 0;
             const xp = real ? real.xp : tradesCount > 0 ? tradesCount * 25 : e.xp || 0;
@@ -384,7 +160,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             const identity = resolveTraderIdentity({
               username: isHomies ? 'HomiesPlant' : e.username,
               profileName: isHomies ? 'HomiesPlant' : e.profileName,
-              accountHolderName: isHomies ? 'HomiesPlant' : real?.accountHolderName,
+              accountHolderName: isHomies ? 'HomiesPlant' : real?.profileName,
               accountNumber: cleanAcc,
               userId: isHomies ? 'u_homiesplant_th' : e.userId,
               avatarUrl: e.avatarUrl,
@@ -392,8 +168,8 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
 
             const accCurrency = isHomies || primaryBroker === 'XMTrading' ? 'JPY' : resolveBrokerCurrency(
               primaryBroker,
-              (real as any)?.serverName || (cleanAcc === '72423906' ? 'XMTrading-MT5' : undefined),
-              (real as any)?.currency || (e as any).currency,
+              cleanAcc === '72423906' ? 'XMTrading-MT5' : undefined,
+              real?.currency || (e as any).currency,
               cleanAcc
             );
 
@@ -408,14 +184,15 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               currency: accCurrency,
               avatarSymbol: isHomies ? 'bear_emerald' : e.avatarSymbol,
               winningPips: netPips,
-              profitAmount: netProfitUsd,
+              profitAmount: profitNative,
+              profitUsd,
               profitRate,
               rank: idx + 1,
               tradesCount,
               winRate,
               xp,
               tier: t.rewards[gamification.tierKey] || gamification.tierName,
-              liveOrders: real?.liveOrders || [],
+              liveOrders: real?.liveOrders || e.liveOrders || [],
             };
           });
 
@@ -444,7 +221,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
         return bActive - aActive;
       }
       if (metric === 'profit') {
-        return b.profitAmount - a.profitAmount;
+        return b.profitUsd - a.profitUsd;
       }
       if (metric === 'rate') {
         return b.profitRate - a.profitRate;
@@ -457,7 +234,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
       ...item,
       displayRank: index + 1,
     }));
-  }, [entries, dailyStandings, period, metric, brokerFilter, searchQuery, ledgerStatsByUser, t, user?.username]);
+  }, [entries, canonicalTraders, dailyStandings, period, metric, brokerFilter, searchQuery, getTraderStats, t, user?.username]);
 
   const top3 = processedEntries.slice(0, 3);
 

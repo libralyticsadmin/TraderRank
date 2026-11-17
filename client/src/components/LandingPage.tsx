@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Shield,
   Trophy,
@@ -23,6 +23,7 @@ import { useTranslation } from '../context/LanguageContext.tsx';
 import { LanguageSelector } from './LanguageSelector.tsx';
 import { UserNavMenu } from './UserNavMenu.tsx';
 import { calculateTraderGamification } from '../../../shared/src/gamification.ts';
+import { useTraderStats } from '../hooks/useTraderStats.ts';
 
 interface LandingPageProps {
   onEnterApp: (tab?: string) => void;
@@ -43,281 +44,62 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 }) => {
   const { t, language } = useTranslation();
   const [activeTabRanking, setActiveTabRanking] = useState<'pips' | 'profit' | 'rate'>('pips');
-  const [ledgerStatsByUser, setLedgerStatsByUser] = useState<
-    Record<
-      string,
-      {
-        tradesCount: number;
-        winningPips: number;
-        netPips: number;
-        netProfitUsd: number;
-        grossProfitUsd: number;
-        winRate: number;
-        xp: number;
-        level: number;
-        currency?: string;
-        broker?: string;
-        accountNumber?: string;
-        accountHolderName?: string;
-        liveOrders: Array<{
-          id: string;
-          ticket: string;
-          symbol: string;
-          type: 'BUY' | 'SELL';
-          lotSize: number;
-          openPrice: number;
-          currentPrice: number;
-          profitPips: number;
-          profitCurrency: number;
-          isLivePosition: boolean;
-          timeLabel: string;
-        }>;
-      }
-    >
-  >({});
-  const [platformTotals, setPlatformTotals] = useState<{
-    totalTrades: number;
-    totalWinningPips: number;
-  } | null>(null);
+  const { traders: canonicalTraders, platformTotals, getTraderStats } = useTraderStats();
 
-  useEffect(() => {
-    let isMounted = true;
-    const loadLandingLedger = async () => {
-      try {
-        const res = await fetch('/api/accounts?scope=public');
-        if (!res.ok) return;
-        const accounts = await res.json();
-        if (!isMounted || !Array.isArray(accounts) || accounts.length === 0) return;
-
-        const map: typeof ledgerStatsByUser = {};
-        let totalPlatformTrades = 0;
-        let totalPlatformWinningPips = 0;
-
-        for (const acc of accounts) {
-          try {
-            const [trRes, posRes] = await Promise.all([
-              fetch(`/api/accounts/${acc.id}/trades`).catch(() => null),
-              fetch(`/api/accounts/${acc.id}/positions`).catch(() => null),
-            ]);
-            const trades = trRes && trRes.ok ? await trRes.json() : [];
-            const rawPositions = posRes && posRes.ok ? await posRes.json() : [];
-
-            const valid = Array.isArray(trades)
-              ? trades.filter((d: any) => {
-                  const sym = String(d.symbol || '').toUpperCase();
-                  return sym && sym !== 'UNKNOWN' && sym !== 'BALANCE' && Number(d.lotSize ?? d.volume ?? 0) > 0;
-                })
-              : [];
-
-            let winningPips = 0;
-            let netPips = 0;
-            let netProfitUsd = 0;
-            let grossProfitUsd = 0;
-            let wins = 0;
-
-            for (const tr of valid) {
-              const usd = Number(tr.pnlCurrency ?? tr.profitCurrency ?? tr.profit ?? 0);
-              const pips = Number(tr.pnlPips ?? tr.profitPips ?? 0);
-              const isWin = usd > 0 || (usd === 0 && pips > 0);
-              netPips += pips;
-              netProfitUsd += usd;
-              if (isWin) {
-                wins++;
-                winningPips += Math.max(0, pips);
-                grossProfitUsd += Math.max(0, usd);
-              }
-            }
-
-            totalPlatformTrades += valid.length;
-            totalPlatformWinningPips += winningPips;
-
-            const openOrders = Array.isArray(rawPositions)
-              ? rawPositions.slice(0, 2).map((pos: any) => ({
-                  id: String(pos.id || pos.ticket || Math.random()),
-                  ticket: String(pos.ticket || pos.id || '').slice(-6),
-                  symbol: String(pos.symbol || 'XAUUSD'),
-                  type: (String(pos.type || 'BUY').toUpperCase().includes('SELL') ? 'SELL' : 'BUY') as 'BUY' | 'SELL',
-                  lotSize: Number(pos.lotSize ?? pos.volume ?? 0.01),
-                  openPrice: Number(pos.openPrice || 0),
-                  currentPrice: Number(pos.currentPrice || pos.openPrice || 0),
-                  profitPips: Number((pos.profitPips ?? 0).toFixed(1)),
-                  profitCurrency: Number((pos.profitCurrency ?? pos.profit ?? 0).toFixed(2)),
-                  isLivePosition: true,
-                  timeLabel: 'LIVE OPEN',
-                }))
-              : [];
-
-            const recentClosedOrders =
-              openOrders.length === 0 && valid.length > 0
-                ? [...valid]
-                    .sort((a: any, b: any) => new Date(b.closeTime || 0).getTime() - new Date(a.closeTime || 0).getTime())
-                    .slice(0, 2)
-                    .map((tr: any) => ({
-                      id: String(tr.id || tr.ticket || Math.random()),
-                      ticket: String(tr.ticket || tr.id || '').slice(-6),
-                      symbol: String(tr.symbol || 'XAUUSD'),
-                      type: (String(tr.type || 'BUY').toUpperCase().includes('SELL') ? 'SELL' : 'BUY') as 'BUY' | 'SELL',
-                      lotSize: Number(tr.lotSize ?? tr.volume ?? 0.01),
-                      openPrice: Number(tr.openPrice || 0),
-                      currentPrice: Number(tr.closePrice || tr.openPrice || 0),
-                      profitPips: Number((tr.pnlPips ?? tr.profitPips ?? 0).toFixed(1)),
-                      profitCurrency: Number((tr.pnlCurrency ?? tr.profitCurrency ?? tr.profit ?? 0).toFixed(2)),
-                      isLivePosition: false,
-                      timeLabel: tr.closeTime
-                        ? new Date(tr.closeTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                        : 'FILLED',
-                    }))
-                : [];
-
-            const statsObj = {
-              tradesCount: valid.length,
-              winningPips: Number(winningPips.toFixed(1)),
-              netPips: Number(netPips.toFixed(1)),
-              netProfitUsd: Number(netProfitUsd.toFixed(2)),
-              grossProfitUsd: Number(grossProfitUsd.toFixed(2)),
-              winRate: valid.length > 0 ? Math.round((wins / valid.length) * 100) : 0,
-              xp: valid.length * 25,
-              level: Math.max(1, Math.floor(valid.length / 40) + 1),
-              currency: acc.currency,
-              broker: acc.broker,
-              accountNumber: acc.accountNumber,
-              accountHolderName: acc.profileUsername,
-              liveOrders: openOrders.length > 0 ? openOrders : recentClosedOrders,
-            };
-
-            if (acc.accountNumber) {
-              const cleanNum = String(acc.accountNumber).replace(/^TraderRank-/i, '').trim();
-              map[cleanNum] = statsObj;
-              map[`TraderRank-${cleanNum}`] = statsObj;
-            }
-            if (acc.id) map[acc.id] = statsObj;
-            if (acc.userId && acc.userId !== 'usr_live_meta') map[acc.userId] = statsObj;
-            if (acc.profileUsername) map[acc.profileUsername] = statsObj;
-          } catch {
-            // ignore single account fetch error
-          }
-        }
-
-        if (isMounted) {
-          setLedgerStatsByUser(prev => ({ ...prev, ...map }));
-          if (totalPlatformTrades > 0) {
-            setPlatformTotals({
-              totalTrades: totalPlatformTrades,
-              totalWinningPips: Number(totalPlatformWinningPips.toFixed(1)),
-            });
-          }
-        }
-      } catch {
-        // ignore
-      }
-    };
-
-    const pollLandingTop3Positions = async () => {
-      try {
-        const res = await fetch('/api/accounts?scope=public');
-        if (!res.ok) return;
-        const accounts = await res.json();
-        if (!isMounted || !Array.isArray(accounts) || accounts.length === 0) return;
-
-        const updates: Record<string, any[]> = {};
-        await Promise.all(
-          accounts.map(async (acc: any) => {
-            try {
-              const posRes = await fetch(`/api/accounts/${acc.id}/positions`);
-              if (!posRes.ok) return;
-              const rawPositions = await posRes.json();
-              if (!Array.isArray(rawPositions) || rawPositions.length === 0) return;
-              const openOrders = rawPositions.slice(0, 2).map((pos: any) => ({
-                id: String(pos.id || pos.ticket || Math.random()),
-                ticket: String(pos.ticket || pos.id || '').slice(-6),
-                symbol: String(pos.symbol || 'XAUUSD'),
-                type: (String(pos.type || 'BUY').toUpperCase().includes('SELL') ? 'SELL' : 'BUY') as 'BUY' | 'SELL',
-                lotSize: Number(pos.lotSize ?? pos.volume ?? 0.01),
-                openPrice: Number(pos.openPrice || 0),
-                currentPrice: Number(pos.currentPrice || pos.openPrice || 0),
-                profitPips: Number((pos.profitPips ?? 0).toFixed(1)),
-                profitCurrency: Number((pos.profitCurrency ?? pos.profit ?? 0).toFixed(2)),
-                isLivePosition: true,
-                timeLabel: 'LIVE OPEN',
-              }));
-              if (acc.userId) updates[acc.userId] = openOrders;
-              if (acc.id) updates[acc.id] = openOrders;
-              if (acc.accountNumber) updates[`TraderRank-${acc.accountNumber}`] = openOrders;
-            } catch {
-              // ignore
-            }
-          })
-        );
-
-        if (isMounted && Object.keys(updates).length > 0) {
-          setLedgerStatsByUser(prev => {
-            const next = { ...prev };
-            for (const [k, orders] of Object.entries(updates)) {
-              if (next[k]) {
-                next[k] = { ...next[k], liveOrders: orders };
-              }
-            }
-            return next;
-          });
-        }
-      } catch {
-        // ignore
-      }
-    };
-
-    loadLandingLedger();
-    const posTimer = setInterval(pollLandingTop3Positions, 6000);
-    return () => {
-      isMounted = false;
-      clearInterval(posTimer);
-    };
-  }, []);
-
-  // Derive top 3 exclusively from each trader's own verified real leaderboard entry + per-account ledger
-  const topPodiumTraders = leaderboard
+  // Derive top 3 exclusively from the unified Canonical Stats source of truth
+  const baseSource = canonicalTraders.length > 0 ? canonicalTraders : leaderboard;
+  const topPodiumTraders = baseSource
     .map(trader => {
       const rawAcc = trader.accountNumber
         ? String(trader.accountNumber).replace(/^TraderRank-/i, '').trim()
-        : (trader.username.match(/(\d{6,})/)?.[1] || '');
+        : (String(trader.username || '').match(/(\d{6,})/)?.[1] || '');
       const isHomies =
         rawAcc === '72423906' ||
         trader.userId === 'u_homiesplant_th' ||
         trader.userId === 'usr_meta_72423906' ||
         trader.username === 'HomiesPlant' ||
         trader.username === 'homiesplant.th' ||
-        trader.username.toLowerCase().includes('homies') ||
-        trader.username.toLowerCase().includes('emanuel007') ||
+        String(trader.username || '').toLowerCase().includes('homies') ||
+        String(trader.username || '').toLowerCase().includes('emanuel007') ||
         (trader.accountNumber && String(trader.accountNumber).includes('72423906'));
       const cleanAcc = isHomies ? '72423906' : rawAcc;
 
-      const real =
-        (cleanAcc && (ledgerStatsByUser[cleanAcc] || ledgerStatsByUser[`TraderRank-${cleanAcc}`])) ||
-        (trader.userId && trader.userId !== 'usr_live_meta' ? ledgerStatsByUser[trader.userId] : undefined) ||
-        ledgerStatsByUser[trader.username];
+      const real = getTraderStats({
+        accountNumber: cleanAcc,
+        userId: trader.userId,
+        username: trader.username,
+      });
 
       const tradesCount = real ? real.tradesCount : trader.tradesCount ?? 0;
-      const pips = real ? real.netPips : trader.totalPips ?? 0;
-      const netProfitUsd = real
-        ? real.netProfitUsd
+      const pips = real ? real.totalPips : trader.totalPips ?? 0;
+      const profitNative = real
+        ? real.netProfitNative
+        : typeof trader.netProfitNative === 'number'
+        ? trader.netProfitNative
         : typeof trader.closedProfitUsd === 'number'
         ? trader.closedProfitUsd
         : 0;
+      const profitUsd = real
+        ? real.netProfitUsd
+        : typeof trader.netProfitUsd === 'number'
+        ? trader.netProfitUsd
+        : profitNative;
       const winRate = real ? real.winRate : trader.winRate ?? 0;
       const xp = real ? real.xp : tradesCount > 0 ? tradesCount * 25 : trader.xp || 0;
       const gamification = calculateTraderGamification(xp);
-      const broker = isHomies ? 'XMTrading' : ((real?.broker || trader.brokers?.[0] || 'XM') as any);
+      const broker = isHomies ? 'XMTrading' : ((real?.broker || trader.broker || trader.brokers?.[0] || 'XM') as any);
       const identity = resolveTraderIdentity({
         username: isHomies ? 'HomiesPlant' : trader.username,
         profileName: isHomies ? 'HomiesPlant' : trader.profileName,
-        accountHolderName: isHomies ? 'HomiesPlant' : real?.accountHolderName,
+        accountHolderName: isHomies ? 'HomiesPlant' : real?.profileName,
         accountNumber: cleanAcc,
         userId: isHomies ? 'u_homiesplant_th' : trader.userId,
         avatarUrl: trader.avatarUrl,
       });
       const currency = isHomies || broker === 'XMTrading' ? 'JPY' : resolveBrokerCurrency(
         broker,
-        (real as any)?.serverName || (cleanAcc === '72423906' ? 'XMTrading-MT5' : undefined),
-        (real as any)?.currency || (trader as any).currency,
+        cleanAcc === '72423906' ? 'XMTrading-MT5' : undefined,
+        real?.currency || (trader as any).currency,
         cleanAcc
       );
 
@@ -332,23 +114,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         currency,
         avatarSymbol: isHomies ? 'bear_emerald' : (trader.avatarSymbol || 'zap'),
         pips,
-        profit: netProfitUsd,
+        profit: profitNative,
+        profitUsd,
         rate: winRate,
         trades: tradesCount,
         winRate,
         tier: t.rewards[gamification.tierKey] || gamification.tierName,
-        liveOrders: real?.liveOrders || [],
+        liveOrders: real?.liveOrders || trader.liveOrders || [],
       };
     })
     .sort((a, b) => {
-      // Active verified traders with real closed trades always rank above 0-trade accounts
       const aActive = a.trades > 0 ? 1 : 0;
       const bActive = b.trades > 0 ? 1 : 0;
       if (aActive !== bActive) {
         return bActive - aActive;
       }
       if (activeTabRanking === 'profit') {
-        return b.profit - a.profit;
+        return b.profitUsd - a.profitUsd;
       }
       if (activeTabRanking === 'rate') {
         return b.winRate - a.winRate;

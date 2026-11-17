@@ -162,6 +162,64 @@ export interface LeaderboardEntry {
 }
 
 /**
+ * Live or recent order snippet attached to canonical trader stats.
+ */
+export interface CanonicalLiveOrder {
+  id: string;
+  ticket: string;
+  symbol: string;
+  type: 'BUY' | 'SELL';
+  lotSize: number;
+  openPrice: number;
+  currentPrice: number;
+  profitPips: number;
+  profitCurrency: number;
+  isLivePosition: boolean;
+  timeLabel: string;
+}
+
+/**
+ * Single Source of Truth for a trader's aggregated performance across all dashboards.
+ */
+export interface CanonicalTraderStats {
+  rank: number;
+  userId: string;
+  username: string;
+  profileName: string;
+  accountNumber?: string;
+  accountId?: string;
+  broker: Broker;
+  brokers: Broker[];
+  currency: 'JPY' | 'USD' | string;
+  avatarUrl?: string;
+  avatarSymbol: string;
+  accountCount: number;
+  closedPips: number;
+  floatingPips: number;
+  totalPips: number;
+  winningPips: number;
+  netProfitNative: number;
+  netProfitUsd: number;
+  grossProfitNative: number;
+  grossProfitUsd: number;
+  winRate: number;
+  tradesCount: number;
+  roiPct: number;
+  dailyNetPips: number;
+  dailyProfitNative: number;
+  dailyProfitUsd: number;
+  dailyTradesCount: number;
+  dailyWinRate: number;
+  dailyRank: number;
+  xp: number;
+  level: number;
+  badges: string[];
+  liveOrders: CanonicalLiveOrder[];
+  usdJpyRate: number;
+  lastUpdated: string;
+}
+
+/**
  * Daily Best Trader / Daily Winning Pips Stats.
  * Aggregates performance within the current 24-hour UTC window across any connected broker.
  */

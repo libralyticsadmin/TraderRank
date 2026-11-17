@@ -25,10 +25,12 @@ import { Broker } from '../../../shared/src/types.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
 import { LanguageSelector } from './LanguageSelector.tsx';
+import { useTraderStats } from '../hooks/useTraderStats.ts';
 
 export interface TraderProfileData {
   userId: string;
   username: string;
+  accountNumber?: string;
   broker: Broker;
   avatarSymbol: string;
   avatarUrl?: string;
@@ -194,6 +196,7 @@ interface TraderProfileModalProps {
 export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, onClose }) => {
   const { t, language } = useTranslation();
   const { user } = useAuth();
+  const { getTraderStats } = useTraderStats();
   const historicalTableRef = useRef<HTMLDivElement>(null);
 
   if (!trader) return null;
@@ -1127,36 +1130,50 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
     return realTrades;
   }, [realTrades, ledgerFilter, selectedDayKey, selectedYearMonth]);
 
-  // Compute live performance metrics dynamically from the active verified trade ledger
+  // Compute live performance metrics dynamically from the active verified trade ledger + canonical source of truth
   const stats = useMemo(() => {
+    const canonical = getTraderStats({
+      accountNumber: trader.accountNumber,
+      userId: trader.userId,
+      username: trader.username,
+    });
+    const isUnfiltered = filteredTrades.length === realTrades.length;
     const source = filteredTrades.length > 0 ? filteredTrades : realTrades;
     if (source.length === 0) {
       return {
-        netPips: trader.netPips,
-        winningPips: Math.max(0, trader.netPips),
-        winRate: trader.winRate,
-        winCount: Math.round((trader.totalTrades * trader.winRate) / 100),
-        lossCount: Math.max(0, trader.totalTrades - Math.round((trader.totalTrades * trader.winRate) / 100)),
+        netPips: canonical ? canonical.totalPips : trader.netPips,
+        winningPips: canonical ? canonical.winningPips : Math.max(0, trader.netPips),
+        winRate: canonical ? canonical.winRate : trader.winRate,
+        winCount: canonical
+          ? Math.round((canonical.tradesCount * canonical.winRate) / 100)
+          : Math.round((trader.totalTrades * trader.winRate) / 100),
+        lossCount: canonical
+          ? Math.max(0, canonical.tradesCount - Math.round((canonical.tradesCount * canonical.winRate) / 100))
+          : Math.max(0, trader.totalTrades - Math.round((trader.totalTrades * trader.winRate) / 100)),
         profitFactor: trader.profitFactor,
-        grossProfit: 0,
+        grossProfit: canonical ? canonical.grossProfitNative : 0,
         grossLoss: 0,
-        netProfitUsd: 0,
-        totalTrades: trader.totalTrades,
+        netProfitUsd: canonical ? canonical.netProfitNative : 0,
+        totalTrades: canonical ? canonical.tradesCount : trader.totalTrades,
         bestTradePips: trader.bestTradePips,
         bestTradeUsd: 0,
-        level: trader.level,
-        xp: trader.xp,
+        level: canonical ? canonical.level : trader.level,
+        xp: canonical ? canonical.xp : trader.xp,
         verifiedSince: trader.verifiedSince,
-        isLiveCalculated: false,
+        isLiveCalculated: Boolean(canonical),
       };
     }
 
-    const netPips = Number(source.reduce((sum, t) => sum + t.pnlPips, 0).toFixed(1));
+    const netPips = isUnfiltered && canonical
+      ? canonical.totalPips
+      : Number(source.reduce((sum, t) => sum + t.pnlPips, 0).toFixed(1));
     const winningTrades = source.filter(t => t.pnlCurrency > 0 || (t.pnlCurrency === 0 && t.pnlPips > 0));
-    const winningPips = Number(
-      winningTrades.reduce((sum, t) => sum + Math.max(0, t.pnlPips), 0).toFixed(1)
-    );
-    const winRate = Math.round((winningTrades.length / source.length) * 100);
+    const winningPips = isUnfiltered && canonical
+      ? canonical.winningPips
+      : Number(winningTrades.reduce((sum, t) => sum + Math.max(0, t.pnlPips), 0).toFixed(1));
+    const winRate = isUnfiltered && canonical
+      ? canonical.winRate
+      : Math.round((winningTrades.length / source.length) * 100);
 
     const grossProfit = Number(
       source.filter(t => t.pnlCurrency > 0).reduce((s, t) => s + t.pnlCurrency, 0).toFixed(2)
@@ -1164,7 +1181,9 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
     const grossLoss = Number(
       Math.abs(source.filter(t => t.pnlCurrency < 0).reduce((s, t) => s + t.pnlCurrency, 0)).toFixed(2)
     );
-    const netProfitUsd = Number(source.reduce((s, t) => s + t.pnlCurrency, 0).toFixed(2));
+    const netProfitUsd = isUnfiltered && canonical
+      ? canonical.netProfitNative
+      : Number(source.reduce((s, t) => s + t.pnlCurrency, 0).toFixed(2));
     const profitFactor = grossLoss > 0
       ? Number((grossProfit / grossLoss).toFixed(2))
       : grossProfit > 0 ? 99.99 : 1.0;
@@ -1177,8 +1196,8 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
       ? new Date(oldestTrade.openTime).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
       : trader.verifiedSince;
 
-    const xp = realTrades.length * 25;
-    const level = Math.max(1, Math.floor(realTrades.length / 40) + 1);
+    const xp = canonical ? canonical.xp : realTrades.length * 25;
+    const level = canonical ? canonical.level : Math.max(1, Math.floor(realTrades.length / 40) + 1);
 
     return {
       netPips,
@@ -1190,7 +1209,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
       grossProfit,
       grossLoss,
       netProfitUsd,
-      totalTrades: source.length,
+      totalTrades: isUnfiltered && canonical ? canonical.tradesCount : source.length,
       bestTradePips: Number(bestTradePips.toFixed(1)),
       bestTradeUsd: Number(bestTradeUsd.toFixed(2)),
       level,
@@ -1198,7 +1217,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
       verifiedSince,
       isLiveCalculated: true,
     };
-  }, [filteredTrades, realTrades, trader]);
+  }, [filteredTrades, realTrades, trader, getTraderStats]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

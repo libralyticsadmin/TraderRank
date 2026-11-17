@@ -28,6 +28,7 @@ import { LanguageSelector } from './components/LanguageSelector.tsx';
 import { useTranslation } from './context/LanguageContext.tsx';
 import { useAuth } from './context/AuthContext.tsx';
 import { AuthModal } from './components/AuthModal.tsx';
+import { publishCanonicalStatsSnapshot } from './hooks/useTraderStats.ts';
 import { ProfileEditModal } from './components/ProfileEditModal.tsx';
 import { UserNavMenu } from './components/UserNavMenu.tsx';
 import { FeatureSymbol, FeatureSymbolType } from './components/FeatureSymbol.tsx';
@@ -301,6 +302,8 @@ export const App: React.FC = () => {
         const msg = JSON.parse(event.data);
         if (msg.type === 'LEADERBOARD_UPDATE') {
           applyThrottledLeaderboard(msg.data);
+        } else if (msg.type === 'CANONICAL_STATS_UPDATE' && msg.data) {
+          publishCanonicalStatsSnapshot(msg.data);
         } else if (msg.type === 'DAILY_LEADERBOARD_UPDATE') {
           applyThrottledDaily(msg.data);
         } else if (msg.type === 'MARKET_QUOTES') {
