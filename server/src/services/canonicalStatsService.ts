@@ -330,6 +330,7 @@ export async function computeCanonicalStats(
       grossProfitNative: Number(grossProfitNative.toFixed(2)),
       grossProfitUsd,
       winRate: validTrades.length > 0 ? Math.round((wins / validTrades.length) * 100) : 0,
+      winningTradesCount: wins,
       tradesCount: validTrades.length,
       roiPct,
       dailyNetPips: Number(dailyNetPips.toFixed(1)),
@@ -466,6 +467,7 @@ export interface BulletinFeedItem {
   rank: number;
   traderTradesCount: number;
   traderWinRate: number;
+  traderWinningTrades: number;
 }
 
 export interface BulletinFeedResponse {
@@ -513,6 +515,7 @@ export async function getBulletinFeed(
       const rank = matched?.rank ?? 99;
       const traderTradesCount = matched?.tradesCount ?? 0;
       const traderWinRate = matched?.winRate ?? 0;
+      const traderWinningTrades = matched?.winningTradesCount ?? Math.round((traderTradesCount * traderWinRate) / 100);
       const avatarUrl = matched?.avatarUrl || acc.avatarUrl;
       const avatarSymbol = matched?.avatarSymbol || identity.avatarSymbol;
 
@@ -543,6 +546,7 @@ export async function getBulletinFeed(
           rank,
           traderTradesCount,
           traderWinRate,
+          traderWinningTrades,
         });
       }
 
@@ -578,6 +582,7 @@ export async function getBulletinFeed(
           rank,
           traderTradesCount,
           traderWinRate,
+          traderWinningTrades,
         });
       }
     })

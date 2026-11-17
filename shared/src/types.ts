@@ -203,6 +203,7 @@ export interface CanonicalTraderStats {
   grossProfitNative: number;
   grossProfitUsd: number;
   winRate: number;
+  winningTradesCount?: number;
   tradesCount: number;
   roiPct: number;
   dailyNetPips: number;

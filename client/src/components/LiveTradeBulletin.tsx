@@ -43,6 +43,7 @@ export interface BulletinTradeItem {
   rank?: number;
   traderTradesCount?: number;
   traderWinRate?: number;
+  traderWinningTrades?: number;
 }
 
 interface LiveTradeBulletinProps {
@@ -133,6 +134,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
         rank: canonical?.rank ?? item.rank ?? 1,
         traderTradesCount: canonical?.tradesCount ?? item.traderTradesCount ?? 0,
         traderWinRate: canonical?.winRate ?? item.traderWinRate ?? 0,
+        traderWinningTrades: canonical?.winningTradesCount ?? item.traderWinningTrades,
       };
     };
 
@@ -373,7 +375,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
               {(() => {
                 const activeFills = currentTrade?.traderTradesCount ?? summaryStats.totalFills ?? activeDeck.length;
                 const activeWinRate = currentTrade?.traderWinRate ?? summaryStats.winRate ?? 0;
-                const activeWins = Math.round((activeFills * activeWinRate) / 100);
+                const activeWins = currentTrade?.traderWinningTrades ?? Math.round((activeFills * activeWinRate) / 100);
                 return (
                   <>
                     <span className="bulletin-stat-pill">
@@ -474,7 +476,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                   key={`${item.id}-chip`}
                   className={`bulletin-mini-chip ${active ? 'active' : ''}`}
                   onClick={() => handleSelectMiniChip(realIdx)}
-                  title={`${item.type} ${item.symbol} (${item.lotSize}L) • ${item.pips >= 0 ? '+' : ''}${item.pips} pips (${item.profitUsd >= 0 ? '+' : '-'}$${Math.abs(item.profitUsd).toFixed(2)})`}
+                  title={`${item.type} ${item.symbol} (${item.lotSize}L) • ${item.pips >= 0 ? '+' : ''}${item.pips} pips (${formatCurrency(item.profitUsd, item.currency, { showSign: true })})`}
                 >
                   <div className="mini-chip-top">
                     <span className={`mini-chip-side ${item.type === 'BUY' ? 'buy' : 'sell'}`}>
@@ -483,12 +485,13 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                     <span className="mini-chip-sym">{item.symbol.replace('#', '')}</span>
                     <span className="mini-chip-lot">{item.lotSize}L</span>
                   </div>
-                  <div className="mini-chip-bottom">
+                  <div className="mini-chip-bottom" style={{ gap: '4px', whiteSpace: 'nowrap' }}>
                     <span
                       style={{
                         color: itemPos ? '#10b981' : '#f87171',
                         fontWeight: 800,
                         fontFamily: 'var(--font-mono, monospace)',
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {item.pips >= 0 ? `+${item.pips}p` : `${item.pips}p`}
@@ -499,6 +502,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                         fontSize: '9.5px',
                         fontFamily: 'var(--font-mono, monospace)',
                         opacity: 0.9,
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {formatCurrency(item.profitUsd, item.currency, { showSign: true })}
