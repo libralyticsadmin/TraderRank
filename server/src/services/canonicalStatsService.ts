@@ -442,3 +442,159 @@ export async function computeCanonicalStats(
     generatedAt: new Date().toISOString(),
   };
 }
+
+export interface BulletinFeedItem {
+  id: string;
+  accountId: string;
+  userId: string;
+  accountNumber?: string;
+  trader: string;
+  avatarUrl?: string;
+  avatarSymbol: string;
+  broker: Broker;
+  symbol: string;
+  type: 'BUY' | 'SELL';
+  pips: number;
+  lotSize: number;
+  openPrice: number;
+  closePrice: number;
+  profitNative: number;
+  currency: string;
+  isLiveOpen: boolean;
+  timestamp: string;
+  rawTime: number;
+  rank: number;
+  traderTradesCount: number;
+  traderWinRate: number;
+}
+
+export interface BulletinFeedResponse {
+  latest: BulletinFeedItem[];
+  topWins: BulletinFeedItem[];
+  generatedAt: string;
+}
+
+export async function getBulletinFeed(
+  connector: AccountConnectorService,
+  leaderboard: LeaderboardService,
+  marketFeed?: LiveMarketFeedService
+): Promise<BulletinFeedResponse> {
+  const canonical = await getCachedCanonicalStats(connector, leaderboard, marketFeed);
+  const accounts = connector.getAccounts();
+
+  const statsByAcc = new Map<string, CanonicalTraderStats>();
+  for (const t of canonical.traders) {
+    if (t.accountId) statsByAcc.set(t.accountId, t);
+    if (t.accountNumber) statsByAcc.set(t.accountNumber, t);
+    statsByAcc.set(t.userId, t);
+  }
+
+  const openItems: BulletinFeedItem[] = [];
+  const closedItems: BulletinFeedItem[] = [];
+
+  await Promise.all(
+    accounts.map(async acc => {
+      const cleanAcc = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
+      const matched =
+        statsByAcc.get(acc.id) ||
+        (cleanAcc ? statsByAcc.get(cleanAcc) : undefined) ||
+        statsByAcc.get(acc.userId);
+
+      const identity = resolveCanonicalIdentity({
+        accountNumber: acc.accountNumber,
+        userId: acc.userId,
+        username: acc.profileUsername,
+        profileName: acc.profileUsername,
+        broker: acc.broker,
+      });
+
+      const traderName = matched?.profileName || identity.profileName;
+      const currency = matched?.currency || resolveBrokerCurrency(identity.broker, acc.serverName, acc.currency, cleanAcc);
+      const rank = matched?.rank ?? 99;
+      const traderTradesCount = matched?.tradesCount ?? 0;
+      const traderWinRate = matched?.winRate ?? 0;
+      const avatarUrl = matched?.avatarUrl || acc.avatarUrl;
+      const avatarSymbol = matched?.avatarSymbol || identity.avatarSymbol;
+
+      const positions = await connector.getActivePositions(acc.id).catch(() => []);
+      for (const pos of positions) {
+        if (!pos.symbol || pos.symbol === 'UNKNOWN') continue;
+        const rawTime = pos.openTime ? new Date(pos.openTime).getTime() : Date.now();
+        openItems.push({
+          id: `pos_${pos.id || pos.ticket}`,
+          accountId: acc.id,
+          userId: identity.userId,
+          accountNumber: identity.accountNumber,
+          trader: traderName,
+          avatarUrl,
+          avatarSymbol,
+          broker: identity.broker,
+          symbol: pos.symbol,
+          type: String(pos.type || 'BUY').toUpperCase().includes('SELL') ? 'SELL' : 'BUY',
+          pips: Number((pos.profitPips ?? 0).toFixed(1)),
+          lotSize: Number((pos.lotSize ?? 0.01).toFixed(2)),
+          openPrice: Number(pos.openPrice || 0),
+          closePrice: Number(pos.currentPrice || pos.openPrice || 0),
+          profitNative: Number((pos.profitCurrency ?? 0).toFixed(2)),
+          currency,
+          isLiveOpen: true,
+          timestamp: pos.openTime || new Date().toISOString(),
+          rawTime,
+          rank,
+          traderTradesCount,
+          traderWinRate,
+        });
+      }
+
+      const trades = connector.getAccountTrades(acc.id);
+      for (const tr of trades) {
+        const sym = String(tr.symbol || '').toUpperCase();
+        if (!sym || sym === 'UNKNOWN' || sym === 'BALANCE' || Number(tr.lotSize ?? 0) <= 0) continue;
+        const pips = Number((tr.pnlPips ?? 0).toFixed(1));
+        const profitNative = Number((tr.pnlCurrency ?? 0).toFixed(2));
+        if (pips === 0 && profitNative === 0) continue;
+
+        const rawTime = tr.closeTime ? new Date(tr.closeTime).getTime() : 0;
+        closedItems.push({
+          id: tr.id,
+          accountId: acc.id,
+          userId: identity.userId,
+          accountNumber: identity.accountNumber,
+          trader: traderName,
+          avatarUrl,
+          avatarSymbol,
+          broker: identity.broker,
+          symbol: tr.symbol,
+          type: tr.type === 'SELL' ? 'SELL' : 'BUY',
+          pips,
+          lotSize: Number((tr.lotSize ?? 0.01).toFixed(2)),
+          openPrice: Number(tr.openPrice || 0),
+          closePrice: Number(tr.closePrice || 0),
+          profitNative,
+          currency: tr.currency || currency,
+          isLiveOpen: false,
+          timestamp: tr.closeTime || new Date().toISOString(),
+          rawTime,
+          rank,
+          traderTradesCount,
+          traderWinRate,
+        });
+      }
+    })
+  );
+
+  openItems.sort((a, b) => b.rawTime - a.rawTime);
+  closedItems.sort((a, b) => b.rawTime - a.rawTime);
+
+  const latest = [...openItems, ...closedItems].slice(0, 12);
+  const topWins = [...closedItems]
+    .filter(item => item.profitNative > 0 || (item.profitNative === 0 && item.pips > 0))
+    .sort((a, b) => b.pips - a.pips)
+    .slice(0, 12);
+
+  return {
+    latest,
+    topWins,
+    generatedAt: new Date().toISOString(),
+  };
+}

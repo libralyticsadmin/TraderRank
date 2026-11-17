@@ -41,6 +41,8 @@ export interface BulletinTradeItem {
   tagKey?: string;
   isHot?: boolean;
   rank?: number;
+  traderTradesCount?: number;
+  traderWinRate?: number;
 }
 
 interface LiveTradeBulletinProps {
@@ -88,180 +90,82 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
     return item.tag || t.bulletin.verifiedBridge;
   };
 
-  // Fetch real trades from connected MetaApi / broker accounts
+  // Fetch unified bulletin feed (Latest Open + Closed + Top Wins) in a single fast request
   useEffect(() => {
     let isMounted = true;
 
-    const loadRealTrades = async () => {
+    const mapItem = (item: any): BulletinTradeItem => {
+      const canonical = getTraderStats({
+        accountNumber: item.accountNumber,
+        userId: item.userId,
+        username: item.trader,
+      });
+      const isWin = item.profitNative > 0 || (item.profitNative === 0 && item.pips > 0);
+      return {
+        id: item.id,
+        accountId: item.accountId,
+        userId: item.userId,
+        trader: canonical?.profileName || item.trader,
+        avatarUrl: canonical?.avatarUrl || item.avatarUrl,
+        broker: item.broker,
+        symbol: item.symbol,
+        type: item.type,
+        pips: item.pips,
+        lotSize: item.lotSize,
+        openPrice: item.openPrice,
+        closePrice: item.closePrice,
+        profitUsd: item.profitNative,
+        currency: canonical?.currency || item.currency,
+        rawTime: item.rawTime,
+        timeAgo: item.isLiveOpen
+          ? 'LIVE OPEN'
+          : item.timestamp
+          ? new Date(item.timestamp).toLocaleString([], {
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+          : 'Live',
+        tag: item.isLiveOpen ? 'LIVE OPEN' : !isWin ? 'Verified Fill' : undefined,
+        tagKey: item.isLiveOpen ? undefined : isWin ? (item.pips >= 30 ? 'goldRush' : 'takeProfit') : undefined,
+        isHot: item.isLiveOpen || (isWin && item.pips >= 25),
+        rank: canonical?.rank ?? item.rank ?? 1,
+        traderTradesCount: canonical?.tradesCount ?? item.traderTradesCount ?? 0,
+        traderWinRate: canonical?.winRate ?? item.traderWinRate ?? 0,
+      };
+    };
+
+    const loadBulletin = async () => {
       try {
-        const accRes = await fetch('/api/accounts?scope=public');
-        if (!accRes.ok) return;
-        const accounts = await accRes.json();
-        if (!Array.isArray(accounts) || accounts.length === 0) return;
+        const res = await fetch('/api/bulletin');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!isMounted || !data) return;
 
-        const collected: BulletinTradeItem[] = [];
-        let totalCount = 0;
-        let totalWins = 0;
+        const latestItems: BulletinTradeItem[] = Array.isArray(data.latest) ? data.latest.map(mapItem) : [];
+        const topWinItems: BulletinTradeItem[] = Array.isArray(data.topWins) ? data.topWins.map(mapItem) : [];
 
-        await Promise.all(accounts.slice(0, 20).map(async (acc: any) => {
-          try {
-            const [trRes, posRes] = await Promise.all([
-              fetch(`/api/accounts/${acc.id}/trades`).catch(() => null),
-              fetch(`/api/accounts/${acc.id}/positions`).catch(() => null),
-            ]);
+        setAllRealTrades(latestItems);
+        setWinningRealTrades(topWinItems);
 
-            const isHomiesAcc =
-              String(acc.accountNumber).trim() === '72423906' ||
-              acc.userId === 'u_homiesplant_th' ||
-              acc.userId === 'usr_meta_72423906' ||
-              String(acc.id).includes('72423906');
-
-            const isCurrentUser = Boolean(
-              user && (
-                acc.userId === user.id ||
-                acc.id === user.id ||
-                (acc.accountNumber && user.accountNumber === acc.accountNumber)
-              )
-            );
-            const canonical = getTraderStats({
-              accountNumber: acc.accountNumber,
-              userId: acc.userId,
-              username: acc.profileUsername || acc.username,
-            });
-            const traderDisplayName = isHomiesAcc
-              ? 'HomiesPlant'
-              : canonical?.profileName ||
-                (isCurrentUser && user ? user.username : acc.profileUsername || acc.username || `VerifiedTrader_${acc.accountNumber || acc.id}`);
-            const resolvedAvatarUrl =
-              canonical?.avatarUrl || (isCurrentUser && user ? user.avatarUrl : undefined);
-            const tradeCurrency = isHomiesAcc || acc.broker === 'XMTrading' ? 'JPY' : (acc.currency || 'USD');
-
-            if (posRes && posRes.ok) {
-              const rawPositions = await posRes.json();
-              if (Array.isArray(rawPositions)) {
-                for (const pos of rawPositions) {
-                  if (!pos.symbol || pos.symbol === 'UNKNOWN') continue;
-                  const pips = Number((pos.profitPips ?? 0).toFixed(1));
-                  const profit = Number((pos.profitCurrency ?? pos.profit ?? 0).toFixed(2));
-                  const lotSize = Number((pos.lotSize ?? pos.volume ?? 0.01).toFixed(2));
-                  collected.push({
-                    id: `pos_${pos.id || pos.ticket || Math.random()}`,
-                    accountId: acc.id,
-                    userId: acc.userId || acc.id,
-                    trader: traderDisplayName,
-                    avatarUrl: resolvedAvatarUrl,
-                    broker: isHomiesAcc ? 'XMTrading' : (acc.broker || 'XM'),
-                    symbol: pos.symbol,
-                    type: String(pos.type || 'BUY').toUpperCase().includes('SELL') ? 'SELL' : 'BUY',
-                    pips,
-                    lotSize,
-                    openPrice: Number(pos.openPrice || 0),
-                    closePrice: Number(pos.currentPrice || pos.openPrice || 0),
-                    profitUsd: profit,
-                    currency: tradeCurrency,
-                    timeAgo: 'LIVE OPEN',
-                    rawTime: Date.now(),
-                    tag: 'LIVE OPEN',
-                    isHot: true,
-                    rank: canonical?.rank ?? 1,
-                  });
-                }
-              }
-            }
-
-            if (trRes && trRes.ok) {
-              const rawTrades = await trRes.json();
-              if (Array.isArray(rawTrades)) {
-                totalCount += rawTrades.length;
-                for (const tr of rawTrades) {
-                  if (!tr.symbol || tr.symbol === 'UNKNOWN' || tr.symbol.trim() === '') continue;
-
-                  let pips = Number((tr.profitPips ?? tr.pnlPips ?? 0).toFixed(1));
-                  const profit = Number((tr.pnlCurrency ?? tr.profitCurrency ?? tr.profit ?? 0).toFixed(2));
-                  const lotSize = Number((tr.lotSize ?? tr.volume ?? 0.01).toFixed(2));
-
-                  if (profit > 0 || (profit === 0 && pips > 0)) {
-                    totalWins++;
-                  }
-
-                  // Calculate pips from price delta if server sent 0
-                  if (pips === 0 && tr.closePrice && tr.openPrice && tr.closePrice !== tr.openPrice) {
-                    const isJPY = tr.symbol.includes('JPY');
-                    const isGold = tr.symbol.includes('XAU') || tr.symbol.includes('GOLD');
-                    const mult = isJPY ? 100 : isGold ? 10 : 10000;
-                    const diff = tr.type === 'BUY' ? tr.closePrice - tr.openPrice : tr.openPrice - tr.closePrice;
-                    pips = Number((diff * mult).toFixed(1));
-                  } else if (pips === 0 && profit !== 0 && lotSize > 0) {
-                    pips = Number((profit / (lotSize * 10)).toFixed(1));
-                  }
-
-                  if (pips === 0 && profit === 0) continue;
-
-                  const isWin = profit > 0 || (profit === 0 && pips > 0);
-
-                  collected.push({
-                    id: tr.id || `tr_${Math.random()}`,
-                    accountId: acc.id,
-                    userId: acc.userId || acc.id,
-                    trader: traderDisplayName,
-                    avatarUrl: resolvedAvatarUrl,
-                    broker: isHomiesAcc ? 'XMTrading' : (acc.broker || 'XM'),
-                    symbol: tr.symbol,
-                    type: tr.type === 'BUY' ? 'BUY' : 'SELL',
-                    pips,
-                    lotSize,
-                    openPrice: Number(tr.openPrice || 0),
-                    closePrice: Number(tr.closePrice || 0),
-                    profitUsd: profit,
-                    currency: tr.currency || tradeCurrency,
-                    rawTime: tr.closeTime ? new Date(tr.closeTime).getTime() : 0,
-                    timeAgo: tr.closeTime
-                      ? new Date(tr.closeTime).toLocaleString([], {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })
-                      : 'Live',
-                    tagKey: isWin ? (pips >= 30 ? 'goldRush' : 'takeProfit') : undefined,
-                    tag: !isWin ? 'Verified Fill' : undefined,
-                    isHot: isWin && pips >= 25,
-                    rank: canonical?.rank ?? 1,
-                  });
-                }
-              }
-            }
-          } catch {
-            // ignore
-          }
-        }));
-
-        if (isMounted && collected.length > 0) {
-          const openSorted = collected
-            .filter(item => item.timeAgo === 'LIVE OPEN')
-            .sort((a, b) => (b.rawTime || 0) - (a.rawTime || 0));
-          const closedSorted = collected
-            .filter(item => item.timeAgo !== 'LIVE OPEN')
-            .sort((a, b) => (b.rawTime || 0) - (a.rawTime || 0));
-          const liveFirst = [...openSorted, ...closedSorted];
-          const wins = liveFirst.filter(
-            item => item.timeAgo === 'LIVE OPEN' || item.profitUsd > 0 || (item.profitUsd === 0 && item.pips > 0)
-          );
-          setAllRealTrades(liveFirst);
-          setWinningRealTrades(wins.slice(0, 12));
+        const first = latestItems[0] || topWinItems[0];
+        if (first) {
+          const total = first.traderTradesCount || latestItems.length;
+          const wr = first.traderWinRate || 0;
           setSummaryStats({
-            totalFills: totalCount || collected.length,
-            winsCount: totalWins || wins.length,
-            winRate: totalCount > 0 ? Math.round((totalWins / totalCount) * 100) : 55,
+            totalFills: total,
+            winsCount: Math.round((total * wr) / 100),
+            winRate: wr,
           });
         }
       } catch {
-        // ignore
+        // ignore transient network errors
       }
     };
 
-    loadRealTrades();
-    const interval = setInterval(loadRealTrades, 10000);
+    loadBulletin();
+    const interval = setInterval(loadBulletin, 10000);
     return () => {
       isMounted = false;
       clearInterval(interval);
@@ -466,29 +370,38 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
           {/* Top Tier: Verified Account Pulse + Mode Switcher + Navigation Controls */}
           <div className="bulletin-deck-header">
             <div className="bulletin-deck-stats">
-              <span className="bulletin-stat-pill">
-                <Activity size={11} color="#0abab5" />
-                <strong>{summaryStats.totalFills || activeDeck.length}</strong>{' '}
-                {language === 'ja' ? '約定' : language === 'zh' ? '笔成交' : 'Fills'}
-              </span>
-              {summaryStats.totalFills > 0 && (
-                <span className="bulletin-stat-pill win-pill">
-                  {language === 'ja' ? (
-                    <>
-                      勝率 <strong>{summaryStats.winRate}%</strong> ({summaryStats.winsCount}勝)
-                    </>
-                  ) : language === 'zh' ? (
-                    <>
-                      胜率 <strong>{summaryStats.winRate}%</strong> ({summaryStats.winsCount}胜)
-                    </>
-                  ) : (
-                    <>
-                      <strong>{summaryStats.winRate}%</strong> Win ({summaryStats.winsCount}W)
-                    </>
-                  )}
-                </span>
-              )}
-              <div className="bulletin-mode-toggle">
+              {(() => {
+                const activeFills = currentTrade?.traderTradesCount ?? summaryStats.totalFills ?? activeDeck.length;
+                const activeWinRate = currentTrade?.traderWinRate ?? summaryStats.winRate ?? 0;
+                const activeWins = Math.round((activeFills * activeWinRate) / 100);
+                return (
+                  <>
+                    <span className="bulletin-stat-pill">
+                      <Activity size={11} color="#0abab5" />
+                      <strong>{activeFills}</strong>{' '}
+                      {language === 'ja' ? '約定' : language === 'zh' ? '笔成交' : 'Fills'}
+                    </span>
+                    {activeFills > 0 && (
+                      <span className="bulletin-stat-pill win-pill">
+                        {language === 'ja' ? (
+                          <>
+                            勝率 <strong>{activeWinRate}%</strong> ({activeWins}勝)
+                          </>
+                        ) : language === 'zh' ? (
+                          <>
+                            胜率 <strong>{activeWinRate}%</strong> ({activeWins}胜)
+                          </>
+                        ) : (
+                          <>
+                            <strong>{activeWinRate}%</strong> Win ({activeWins}W)
+                          </>
+                        )}
+                      </span>
+                    )}
+                  </>
+                );
+              })()}
+                            <div className="bulletin-mode-toggle">
                 <button
                   type="button"
                   className={`bulletin-mode-btn ${deckMode === 'WINS' ? 'active' : ''}`}

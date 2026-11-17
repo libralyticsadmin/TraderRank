@@ -30,7 +30,7 @@ import { ForexFactoryService } from '../market/forexFactoryService.js';
 import { DailyIntelService } from '../market/dailyIntelService.js';
 import { TournamentService } from '../services/tournamentService.js';
 import { authService, SessionPayload } from '../services/authService.js';
-import { getCachedCanonicalStats } from '../services/canonicalStatsService.js';
+import { getCachedCanonicalStats, getBulletinFeed } from '../services/canonicalStatsService.js';
 
 export function createServer() {
   const app = express();
@@ -1152,6 +1152,16 @@ export function createServer() {
       res.json(canonical);
     } catch (err: any) {
       res.status(500).json({ error: err.message || 'Failed to compute canonical stats' });
+    }
+  });
+
+  // 8a-2. Live Trade Bulletin Feed (Single Fast Request: Latest Open + Closed + Top Wins)
+  app.get('/api/bulletin', async (_req: Request, res: Response) => {
+    try {
+      const feed = await getBulletinFeed(connector, leaderboard, marketFeed);
+      res.json(feed);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || 'Failed to build bulletin feed' });
     }
   });
 
