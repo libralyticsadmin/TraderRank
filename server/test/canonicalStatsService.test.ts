@@ -56,6 +56,8 @@ describe('CanonicalStatsService (Single Source of Truth)', () => {
             closePrice: 1.08977,
             pnlPips: 97.7,
             pnlCurrency: 97.7,
+            swap: -5.0,
+            commission: -2.0,
             closeTime: `${todayUtc}T12:00:00.000Z`,
           },
         ];
@@ -104,8 +106,8 @@ describe('CanonicalStatsService (Single Source of Truth)', () => {
     expect(zem?.profileName).toBe('zzZEMZzz');
     expect(zem?.currency).toBe('USD');
     expect(zem?.totalPips).toBe(97.7);
-    expect(zem?.netProfitNative).toBe(97.7);
-    expect(zem?.netProfitUsd).toBe(97.7);
+    expect(zem?.netProfitNative).toBe(90.7);
+    expect(zem?.netProfitUsd).toBe(90.7);
     expect(zem?.rank).toBe(1);
 
     expect(homies).toBeDefined();
@@ -115,9 +117,9 @@ describe('CanonicalStatsService (Single Source of Truth)', () => {
     expect(homies?.closedPips).toBe(-100);
     expect(homies?.floatingPips).toBe(20);
     expect(homies?.totalPips).toBe(-80);
-    // Native stays in JPY, USD normalized via 154.5
-    expect(homies?.netProfitNative).toBe(-292243);
-    expect(homies?.netProfitUsd).toBeCloseTo(-292243 / 154.5, 1);
+    // Native stays in JPY (-292243 closed + 3000 floating = -289243), USD normalized via 154.5
+    expect(homies?.netProfitNative).toBe(-289243);
+    expect(homies?.netProfitUsd).toBeCloseTo(-289243 / 154.5, 1);
     expect(homies?.dailyTradesCount).toBe(1);
     expect(homies?.liveOrders.length).toBe(1);
     expect(homies?.liveOrders[0].isLivePosition).toBe(true);

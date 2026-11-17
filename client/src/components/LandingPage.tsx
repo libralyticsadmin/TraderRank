@@ -610,6 +610,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
+                                gap: '8px',
                                 fontSize: '11px',
                                 padding: '4px 8px',
                                 borderRadius: '6px',
@@ -617,23 +618,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                                 border: '1px solid rgba(255, 255, 255, 0.05)',
                               }}
                             >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', minWidth: 0, overflow: 'hidden' }}>
                                 <span
                                   style={{
                                     fontSize: '9.5px',
                                     fontWeight: 900,
                                     padding: '1px 5px',
                                     borderRadius: '4px',
+                                    flexShrink: 0,
                                     background: ord.type === 'BUY' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
                                     color: ord.type === 'BUY' ? '#34d399' : '#f87171',
                                   }}
                                 >
                                   {ord.type}
                                 </span>
-                                <strong className="tabular" style={{ color: '#fff', fontSize: '11px' }}>{ord.symbol}</strong>
-                                <span className="tabular" style={{ color: '#848E9C', fontSize: '10px' }}>{ord.lotSize.toFixed(2)}L</span>
+                                <strong className="tabular" style={{ color: '#fff', fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ord.symbol}</strong>
+                                <span className="tabular" style={{ color: '#848E9C', fontSize: '10px', flexShrink: 0 }}>{ord.lotSize.toFixed(2)}L</span>
                               </div>
-                              <div className="tabular" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                              <div className="tabular" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0, whiteSpace: 'nowrap' }}>
                                 <span style={{ fontWeight: 800, color: isPos ? '#10b981' : '#ef4444' }}>
                                   {isPos ? `+${ord.profitPips}` : ord.profitPips}p
                                 </span>

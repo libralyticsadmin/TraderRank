@@ -473,7 +473,7 @@ export class MetaApiClient {
       const startEncoded = encodeURIComponent(startTime);
       const endEncoded = encodeURIComponent(endTime);
       const limit = 1000;
-      const maxPages = 5;
+      const maxPages = 25;
       const allRawDeals: any[] = [];
 
       for (let page = 0; page < maxPages; page++) {

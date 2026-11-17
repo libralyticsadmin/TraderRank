@@ -194,7 +194,10 @@ export async function computeCanonicalStats(
     let dailyWins = 0;
 
     for (const tr of validTrades) {
-      const profitNative = Number(tr.pnlCurrency ?? 0);
+      const rawProfit = Number(tr.pnlCurrency ?? 0);
+      const swap = Number(tr.swap ?? 0);
+      const commission = Number(tr.commission ?? 0);
+      const profitNative = rawProfit + swap + commission;
       const pips = Number(tr.pnlPips ?? 0);
       const isWin = profitNative > 0 || (profitNative === 0 && pips > 0);
 
@@ -217,6 +220,13 @@ export async function computeCanonicalStats(
     const floatingPips = Array.isArray(rawPositions)
       ? rawPositions.reduce((sum, p) => sum + Number(p.profitPips ?? 0), 0)
       : 0;
+    const floatingProfitNative = Array.isArray(rawPositions)
+      ? rawPositions.reduce(
+          (sum, p) => sum + Number(p.profitCurrency ?? 0) + Number(p.swap ?? 0) + Number(p.commission ?? 0),
+          0
+        )
+      : 0;
+    netProfitNative += floatingProfitNative;
 
     totalPlatformTrades += validTrades.length;
     totalPlatformWinningPips += winningPips;
