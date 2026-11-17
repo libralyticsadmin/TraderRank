@@ -58,7 +58,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
   const { getTraderStats } = useTraderStats();
   const [allRealTrades, setAllRealTrades] = useState<BulletinTradeItem[]>([]);
   const [winningRealTrades, setWinningRealTrades] = useState<BulletinTradeItem[]>([]);
-  const [deckMode, setDeckMode] = useState<'WINS' | 'LATEST'>('WINS');
+  const [deckMode, setDeckMode] = useState<'WINS' | 'LATEST'>('LATEST');
   const [summaryStats, setSummaryStats] = useState<{
     totalFills: number;
     winsCount: number;
