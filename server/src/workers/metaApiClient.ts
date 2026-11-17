@@ -69,6 +69,8 @@ export class MetaApiClient {
   private provisioningBaseUrl = 'https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai';
   private metaStatsBaseUrl = 'https://metastats-api-v1.agiliumtrade.agiliumtrade.ai';
   private accountRegions = new Map<string, string>();
+  private positionsCache = new Map<string, { positions: MetaApiPosition[]; fetchedAt: number }>();
+  private positionsInFlight = new Map<string, Promise<MetaApiPosition[]>>();
 
   constructor(token?: string) {
     this.token = token || process.env.META_API_TOKEN || '';
@@ -400,34 +402,59 @@ export class MetaApiClient {
   public async getPositions(metaApiAccountId: string): Promise<MetaApiPosition[]> {
     if (!this.hasToken() || !metaApiAccountId || typeof metaApiAccountId !== 'string' || metaApiAccountId.startsWith('mock_')) return [];
 
-    try {
-      const clientUrl = this.getClientBaseUrl(metaApiAccountId);
-      const res = await fetch(`${clientUrl}/users/current/accounts/${metaApiAccountId}/positions`, {
-        headers: {
-          'auth-token': this.token,
-          'Accept': 'application/json',
-        },
-      });
-
-      if (!res.ok) return [];
-      const data = await res.json();
-      if (!Array.isArray(data)) return [];
-      return data.map((p: any) => ({
-        id: String(p.id || p._id || p.positionId),
-        symbol: p.symbol,
-        type: p.type === 'POSITION_TYPE_BUY' || p.type === 0 ? 'POSITION_TYPE_BUY' : 'POSITION_TYPE_SELL',
-        volume: Number(p.volume ?? 0),
-        openPrice: Number(p.openPrice ?? 0),
-        currentPrice: Number(p.currentPrice ?? p.openPrice ?? 0),
-        profit: Number(p.profit ?? 0),
-        swap: Number(p.swap ?? 0),
-        commission: Number(p.commission ?? 0),
-        openTime: p.time ? new Date(p.time).toISOString() : new Date().toISOString(),
-        updateTime: p.updateTime ? new Date(p.updateTime).toISOString() : new Date().toISOString(),
-      }));
-    } catch {
-      return [];
+    const cached = this.positionsCache.get(metaApiAccountId);
+    if (cached && Date.now() - cached.fetchedAt < 3000) {
+      return cached.positions;
     }
+
+    const inFlight = this.positionsInFlight.get(metaApiAccountId);
+    if (inFlight) {
+      return inFlight;
+    }
+
+    const promise = (async (): Promise<MetaApiPosition[]> => {
+      try {
+        const clientUrl = this.getClientBaseUrl(metaApiAccountId);
+        const res = await fetch(`${clientUrl}/users/current/accounts/${metaApiAccountId}/positions`, {
+          headers: {
+            'auth-token': this.token,
+            'Accept': 'application/json',
+          },
+        });
+
+        if (!res.ok) {
+          console.warn(`[MetaApiClient] getPositions HTTP ${res.status} for ${metaApiAccountId}`);
+          return cached?.positions ?? [];
+        }
+        const data = await res.json();
+        if (!Array.isArray(data)) {
+          return cached?.positions ?? [];
+        }
+        const parsed: MetaApiPosition[] = data.map((p: any) => ({
+          id: String(p.id || p._id || p.positionId),
+          symbol: p.symbol,
+          type: p.type === 'POSITION_TYPE_BUY' || p.type === 0 ? 'POSITION_TYPE_BUY' : 'POSITION_TYPE_SELL',
+          volume: Number(p.volume ?? 0),
+          openPrice: Number(p.openPrice ?? 0),
+          currentPrice: Number(p.currentPrice ?? p.openPrice ?? 0),
+          profit: Number(p.profit ?? 0),
+          swap: Number(p.swap ?? 0),
+          commission: Number(p.commission ?? 0),
+          openTime: p.time ? new Date(p.time).toISOString() : new Date().toISOString(),
+          updateTime: p.updateTime ? new Date(p.updateTime).toISOString() : new Date().toISOString(),
+        }));
+        this.positionsCache.set(metaApiAccountId, { positions: parsed, fetchedAt: Date.now() });
+        return parsed;
+      } catch (err) {
+        console.warn(`[MetaApiClient] getPositions error for ${metaApiAccountId}:`, err);
+        return cached?.positions ?? [];
+      } finally {
+        this.positionsInFlight.delete(metaApiAccountId);
+      }
+    })();
+
+    this.positionsInFlight.set(metaApiAccountId, promise);
+    return promise;
   }
 
   /**

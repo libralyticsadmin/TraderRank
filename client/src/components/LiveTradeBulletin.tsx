@@ -36,6 +36,7 @@ export interface BulletinTradeItem {
   profitUsd: number;
   currency?: string;
   timeAgo: string;
+  rawTime?: number;
   tag?: string;
   tagKey?: string;
   isHot?: boolean;
@@ -159,6 +160,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                     profitUsd: profit,
                     currency: tradeCurrency,
                     timeAgo: 'LIVE OPEN',
+                    rawTime: Date.now(),
                     tag: 'LIVE OPEN',
                     isHot: true,
                     rank: canonical?.rank ?? 1,
@@ -212,6 +214,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                     closePrice: Number(tr.closePrice || 0),
                     profitUsd: profit,
                     currency: tr.currency || tradeCurrency,
+                    rawTime: tr.closeTime ? new Date(tr.closeTime).getTime() : 0,
                     timeAgo: tr.closeTime
                       ? new Date(tr.closeTime).toLocaleString([], {
                           month: 'short',
@@ -234,10 +237,13 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
         }
 
         if (isMounted && collected.length > 0) {
-          const liveFirst = [
-            ...collected.filter(item => item.timeAgo === 'LIVE OPEN'),
-            ...collected.filter(item => item.timeAgo !== 'LIVE OPEN'),
-          ];
+          const openSorted = collected
+            .filter(item => item.timeAgo === 'LIVE OPEN')
+            .sort((a, b) => (b.rawTime || 0) - (a.rawTime || 0));
+          const closedSorted = collected
+            .filter(item => item.timeAgo !== 'LIVE OPEN')
+            .sort((a, b) => (b.rawTime || 0) - (a.rawTime || 0));
+          const liveFirst = [...openSorted, ...closedSorted];
           const wins = liveFirst.filter(
             item => item.timeAgo === 'LIVE OPEN' || item.profitUsd > 0 || (item.profitUsd === 0 && item.pips > 0)
           );
