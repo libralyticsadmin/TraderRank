@@ -117,6 +117,32 @@ function resolveCanonicalIdentity(params: {
   };
 }
 
+const CANONICAL_CACHE_TTL_MS = 3000;
+let canonicalSnapshotCache: { data: CanonicalStatsResponse; fetchedAt: number } | null = null;
+let canonicalInFlight: Promise<CanonicalStatsResponse> | null = null;
+
+export async function getCachedCanonicalStats(
+  connector: AccountConnectorService,
+  leaderboard: LeaderboardService,
+  marketFeed?: LiveMarketFeedService
+): Promise<CanonicalStatsResponse> {
+  if (canonicalSnapshotCache && Date.now() - canonicalSnapshotCache.fetchedAt < CANONICAL_CACHE_TTL_MS) {
+    return canonicalSnapshotCache.data;
+  }
+  if (canonicalInFlight) {
+    return canonicalInFlight;
+  }
+  canonicalInFlight = computeCanonicalStats(connector, leaderboard, marketFeed)
+    .then(data => {
+      canonicalSnapshotCache = { data, fetchedAt: Date.now() };
+      return data;
+    })
+    .finally(() => {
+      canonicalInFlight = null;
+    });
+  return canonicalInFlight;
+}
+
 export async function computeCanonicalStats(
   connector: AccountConnectorService,
   leaderboard: LeaderboardService,
@@ -127,6 +153,19 @@ export async function computeCanonicalStats(
   const accounts = connector.getAccounts();
   const lbEntries = leaderboard.getLeaderboard(50);
 
+  // Fetch active positions across all accounts in bounded parallel batches (5 at a time)
+  const positionsByAccount = new Map<string, any[]>();
+  const BATCH_SIZE = 5;
+  for (let i = 0; i < accounts.length; i += BATCH_SIZE) {
+    const batch = accounts.slice(i, i + BATCH_SIZE);
+    const results = await Promise.all(
+      batch.map(acc => connector.getActivePositions(acc.id).catch(() => []))
+    );
+    batch.forEach((acc, idx) => {
+      positionsByAccount.set(acc.id, results[idx] || []);
+    });
+  }
+
   const byKey = new Map<string, CanonicalTraderStats>();
   let totalPlatformTrades = 0;
   let totalPlatformWinningPips = 0;
@@ -134,7 +173,7 @@ export async function computeCanonicalStats(
   // 1. Aggregate from real connected accounts (Primary Source of Truth)
   for (const acc of accounts) {
     const rawTrades = connector.getAccountTrades(acc.id);
-    const rawPositions = await connector.getActivePositions(acc.id).catch(() => []);
+    const rawPositions = positionsByAccount.get(acc.id) || [];
 
     const validTrades = Array.isArray(rawTrades)
       ? rawTrades.filter(d => {

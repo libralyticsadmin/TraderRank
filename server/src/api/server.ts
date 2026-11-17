@@ -30,7 +30,7 @@ import { ForexFactoryService } from '../market/forexFactoryService.js';
 import { DailyIntelService } from '../market/dailyIntelService.js';
 import { TournamentService } from '../services/tournamentService.js';
 import { authService, SessionPayload } from '../services/authService.js';
-import { computeCanonicalStats } from '../services/canonicalStatsService.js';
+import { getCachedCanonicalStats } from '../services/canonicalStatsService.js';
 
 export function createServer() {
   const app = express();
@@ -231,7 +231,7 @@ export function createServer() {
       }
     }
     if (clients.size > 0) {
-      computeCanonicalStats(connector, leaderboard, marketFeed)
+      getCachedCanonicalStats(connector, leaderboard, marketFeed)
         .then(canonical => {
           const canonicalPayload = JSON.stringify({
             type: 'CANONICAL_STATS_UPDATE',
@@ -1148,7 +1148,7 @@ export function createServer() {
   // 8a. Unified Canonical Trader Stats (Single Source of Truth)
   app.get('/api/traders/canonical', async (_req: Request, res: Response) => {
     try {
-      const canonical = await computeCanonicalStats(connector, leaderboard, marketFeed);
+      const canonical = await getCachedCanonicalStats(connector, leaderboard, marketFeed);
       res.json(canonical);
     } catch (err: any) {
       res.status(500).json({ error: err.message || 'Failed to compute canonical stats' });

@@ -103,7 +103,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
         let totalCount = 0;
         let totalWins = 0;
 
-        for (const acc of accounts) {
+        await Promise.all(accounts.slice(0, 20).map(async (acc: any) => {
           try {
             const [trRes, posRes] = await Promise.all([
               fetch(`/api/accounts/${acc.id}/trades`).catch(() => null),
@@ -234,7 +234,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
           } catch {
             // ignore
           }
-        }
+        }));
 
         if (isMounted && collected.length > 0) {
           const openSorted = collected
