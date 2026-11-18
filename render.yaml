@@ -7,9 +7,15 @@ services:
     buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
+    disk:
+      name: traderrank-storage
+      mountPath: /var/data/traderrank
+      sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production
+      - key: DATA_DIR
+        value: /var/data/traderrank
       - key: META_API_TOKEN
         sync: false # Set securely in Render dashboard
       - key: ALLTICK_API_TOKEN

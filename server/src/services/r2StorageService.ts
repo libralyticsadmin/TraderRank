@@ -42,16 +42,21 @@ export class R2StorageService {
     const isTestEnv = Boolean(process.env.VITEST || process.env.NODE_ENV === 'test');
     const rootServerData = path.resolve(process.cwd(), 'server/data/storage');
     const cwdData = path.resolve(process.cwd(), 'data/storage');
-    this.localBaseDir =
-      process.env.DATA_DIR ||
-      (isTestEnv
-        ? path.resolve(os.tmpdir(), 'traderrank-test-storage')
-        : fs.existsSync(rootServerData)
-        ? rootServerData
-        : cwdData);
+    this.localBaseDir = isTestEnv
+      ? path.resolve(os.tmpdir(), 'traderrank-test-storage')
+      : process.env.DATA_DIR ||
+        (fs.existsSync(rootServerData) ? rootServerData : cwdData);
     try {
       if (!fs.existsSync(this.localBaseDir)) {
         fs.mkdirSync(this.localBaseDir, { recursive: true });
+      }
+      if (
+        !isTestEnv &&
+        process.env.DATA_DIR &&
+        fs.existsSync(rootServerData) &&
+        path.resolve(this.localBaseDir) !== path.resolve(rootServerData)
+      ) {
+        this.seedMissingFromRepo(rootServerData, this.localBaseDir);
       }
     } catch {
       // ignore
@@ -72,6 +77,26 @@ export class R2StorageService {
 
   public isConfigured(): boolean {
     return Boolean(this.client && this.config.accessKeyId && this.config.secretAccessKey);
+  }
+
+  /**
+   * Seed initial repo-tracked JSON files onto a freshly mounted persistent disk
+   * without overwriting any existing runtime files.
+   */
+  private seedMissingFromRepo(srcDir: string, destDir: string): void {
+    const entries = fs.readdirSync(srcDir, { withFileTypes: true });
+    for (const entry of entries) {
+      const srcPath = path.join(srcDir, entry.name);
+      const destPath = path.join(destDir, entry.name);
+      if (entry.isDirectory()) {
+        if (!fs.existsSync(destPath)) {
+          fs.mkdirSync(destPath, { recursive: true });
+        }
+        this.seedMissingFromRepo(srcPath, destPath);
+      } else if (entry.isFile() && !fs.existsSync(destPath)) {
+        fs.copyFileSync(srcPath, destPath);
+      }
+    }
   }
 
   public getBucketName(): string {
