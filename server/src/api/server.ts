@@ -722,6 +722,9 @@ export function createServer() {
   app.post('/api/connector/connect', connectorRateLimit, async (req: Request, res: Response) => {
     try {
       const authSession = extractAuthUser(req);
+      if (process.env.NODE_ENV === 'production' && !authSession) {
+        return res.status(401).json({ success: false, error: 'Authentication required to connect a trading account' });
+      }
       const { broker, credentials } = req.body as {
         broker: Broker;
         credentials: AccountCredentials;
@@ -1131,18 +1134,25 @@ export function createServer() {
 
   // 8e. One-Click Tournament Entry (PRD v2 §2 Pillar 2)
   app.post('/api/tournaments/:id/join', (req: Request, res: Response) => {
+    const authSession = extractAuthUser(req);
+    if (process.env.NODE_ENV === 'production' && !authSession) {
+      return res.status(401).json({ success: false, error: 'Authentication required to join tournament' });
+    }
+
     const tournamentId = req.params.id;
     const { userId, username, avatarSymbol, broker } = req.body || {};
+    const effectiveUserId = authSession?.userId || userId;
+    const effectiveUsername = authSession?.username || username;
 
-    if (!userId || !username) {
+    if (!effectiveUserId || !effectiveUsername) {
       return res.status(400).json({ success: false, error: 'userId and username are required to join tournament' });
     }
 
     const result = tournamentService.joinTournament({
       tournamentId,
-      userId,
-      username,
-      avatarSymbol: avatarSymbol || username.slice(0, 2).toUpperCase(),
+      userId: effectiveUserId,
+      username: effectiveUsername,
+      avatarSymbol: avatarSymbol || effectiveUsername.slice(0, 2).toUpperCase(),
       broker: (broker as Broker) || 'XM',
     });
 
@@ -1156,10 +1166,10 @@ export function createServer() {
       data: {
         id: `feed_${Date.now()}`,
         type: 'TOURNAMENT_JOIN',
-        userId,
-        username,
+        userId: effectiveUserId,
+        username: effectiveUsername,
         broker: (broker as Broker) || 'XM',
-        avatarSymbol: avatarSymbol || username.slice(0, 2).toUpperCase(),
+        avatarSymbol: avatarSymbol || effectiveUsername.slice(0, 2).toUpperCase(),
         timestamp: 'Just now',
         details: {
           tournamentName: tournamentService.getTournamentById(tournamentId)?.title || 'Tournament',
@@ -1441,7 +1451,20 @@ export function createServer() {
   // 21. Pro Subscription Activation / Registration
   app.post('/api/subscription/subscribe', (req: Request, res: Response) => {
     try {
+      const authSession = extractAuthUser(req);
       const { userId = 'global', tier = 'PRO_MONTHLY', paymentMethod = 'SIMULATED_CARD' } = req.body;
+      if (process.env.NODE_ENV === 'production') {
+        if (!authSession) {
+          return res.status(401).json({ success: false, error: 'Authentication required to manage subscriptions' });
+        }
+        if (paymentMethod === 'SIMULATED_CARD') {
+          return res.status(403).json({ success: false, error: 'Verified payment provider required in production' });
+        }
+      }
+      if (authSession && userId && userId !== 'global' && userId !== authSession.userId) {
+        return res.status(403).json({ success: false, error: 'Forbidden: Cannot modify another user subscription' });
+      }
+      const targetUserId = authSession?.userId || userId;
       const now = new Date();
       const isAnnual = tier === 'PRO_ANNUAL';
       const isInst = tier === 'INSTITUTIONAL';
@@ -1475,15 +1498,15 @@ export function createServer() {
         ],
       };
 
-      userSubscriptions.set(userId, subRecord);
+      userSubscriptions.set(targetUserId, subRecord);
       persistSubscriptionsToR2().catch(() => {});
 
       // Update user profile if exists
-      if (userId && userProfiles.has(userId)) {
-        const u = userProfiles.get(userId);
+      if (targetUserId && userProfiles.has(targetUserId)) {
+        const u = userProfiles.get(targetUserId);
         u.subscriptionTier = tier;
         u.isPro = true;
-        userProfiles.set(userId, u);
+        userProfiles.set(targetUserId, u);
         persistUserProfilesToR2().catch(() => {});
       }
 

@@ -123,9 +123,13 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
       const username = user?.username || (primaryAcc?.accountNumber ? `TraderRank-${primaryAcc.accountNumber}` : 'VerifiedTrader');
       const broker: Broker = primaryAcc?.broker || user?.primaryBroker || 'XM';
 
+      const token = localStorage.getItem('traderank_auth_token_v1');
       const res = await fetch(`/api/tournaments/${selectedTournamentId}/join`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           userId,
           username,
