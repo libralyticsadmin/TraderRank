@@ -329,7 +329,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
             <div>
               <div style={{ fontSize: '11px', color: '#848E9C', marginBottom: '4px', fontWeight: 600 }}>{t.arena.prizePool}</div>
-              <div style={{ fontSize: '22px', fontWeight: 900, color: '#F0B90B' }}>$31,500 USD</div>
+              <div style={{ fontSize: '22px', fontWeight: 900, color: '#F0B90B' }}>$500 – $2,500 USD</div>
             </div>
             <div>
               <div style={{ fontSize: '11px', color: '#848E9C', marginBottom: '4px', fontWeight: 600 }}>{t.landing.liveBrokersCount}</div>
@@ -722,7 +722,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
               <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(8, 11, 17, 0.7)', marginBottom: '20px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
                 <div style={{ fontSize: '12px', color: '#848E9C' }}>{t.arena.prizePool}</div>
-                <div style={{ fontSize: '24px', fontWeight: 900, color: '#F0B90B' }}>$5,000 USD <span style={{ fontSize: '14px', color: '#00F0FF' }}>+ 15,000 XP</span></div>
+                <div style={{ fontSize: '24px', fontWeight: 900, color: '#F0B90B' }}>$500 – $1,000 USD <span style={{ fontSize: '14px', color: '#00F0FF' }}>+ 50+ Players</span></div>
               </div>
 
               <div style={{ fontSize: '12px', color: '#848E9C', display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -753,7 +753,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
               <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(8, 11, 17, 0.7)', marginBottom: '20px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
                 <div style={{ fontSize: '12px', color: '#848E9C' }}>{t.arena.prizePool}</div>
-                <div style={{ fontSize: '24px', fontWeight: 900, color: '#F0B90B' }}>$25,000 USD <span style={{ fontSize: '14px', color: '#00F0FF' }}>+ 75,000 XP</span></div>
+                <div style={{ fontSize: '24px', fontWeight: 900, color: '#F0B90B' }}>$500 – $2,500 USD <span style={{ fontSize: '14px', color: '#00F0FF' }}>+ 50+ Players</span></div>
               </div>
 
               <div style={{ fontSize: '12px', color: '#848E9C', display: 'flex', flexDirection: 'column', gap: '6px' }}>
