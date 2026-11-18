@@ -178,11 +178,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       if (user) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-        fetch('/api/auth/profile', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(user),
-        }).catch(() => {});
+        const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+        if (token) {
+          fetch('/api/auth/profile', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(user),
+          }).catch(() => {});
+        }
       } else {
         localStorage.removeItem(STORAGE_KEY);
       }

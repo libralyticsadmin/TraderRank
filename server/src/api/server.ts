@@ -519,6 +519,12 @@ export function createServer() {
     }
 
     const cleanUsername = String(username).trim();
+    if (!/^[a-zA-Z0-9_.-]{3,40}$/.test(cleanUsername) || !/[a-zA-Z0-9]/.test(cleanUsername)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Username must be 3-40 characters using letters, numbers, underscores, dots, or hyphens',
+      });
+    }
     const cleanEmail = String(email).trim().toLowerCase();
     const cleanId = `u_${cleanUsername.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
 
@@ -632,7 +638,6 @@ export function createServer() {
     if (typeof profile.tradingStyle === 'string') safeUpdates.tradingStyle = profile.tradingStyle;
     if (typeof profile.avatarSymbol === 'string') safeUpdates.avatarSymbol = profile.avatarSymbol;
     if (typeof profile.avatarUrl === 'string') safeUpdates.avatarUrl = profile.avatarUrl;
-    if (typeof profile.accountNumber === 'string') safeUpdates.accountNumber = profile.accountNumber;
     if (typeof profile.bio === 'string') safeUpdates.bio = profile.bio;
 
     const updated = { ...existing, ...safeUpdates, id: profile.id };
@@ -640,20 +645,29 @@ export function createServer() {
     persistUserProfilesToR2().catch(() => {});
 
     if (safeUpdates.username) {
-      connector.updateUserAccountsName(profile.id, safeUpdates.username, safeUpdates.primaryBroker, safeUpdates.accountNumber, safeUpdates.avatarUrl);
+      connector.updateUserAccountsName(profile.id, safeUpdates.username, safeUpdates.primaryBroker, undefined, safeUpdates.avatarUrl);
     }
     return res.json({ success: true, user: updated });
   });
 
-  // Auth: Get Profile (No Unauthenticated User Spoofing)
+  // Auth: Get Profile (Sanitized for non-owners; full PII only for authenticated owner)
   app.get('/api/auth/profile', (req: Request, res: Response) => {
     const userId = req.query.userId as string | undefined;
     const username = req.query.username as string | undefined;
+    const authSession = extractAuthUser(req);
+
+    const sanitizeProfile = (u: any) => {
+      if (authSession && authSession.userId === u.id) {
+        return u;
+      }
+      const { email: _email, accountNumber: _accountNumber, ...publicProfile } = u;
+      return publicProfile;
+    };
 
     if (userId) {
       const cleanId = String(userId).trim().toLowerCase();
       const direct = userProfiles.get(userId) || userProfiles.get(cleanId) || userProfiles.get(`u_${cleanId.replace(/^u_/, '')}`);
-      if (direct) return res.json({ success: true, user: direct });
+      if (direct) return res.json({ success: true, user: sanitizeProfile(direct) });
     }
 
     if (username) {
@@ -661,7 +675,7 @@ export function createServer() {
       const found = Array.from(userProfiles.values()).find(
         (u: any) => u.username.toLowerCase() === needle || u.id === `u_${needle}`
       );
-      if (found) return res.json({ success: true, user: found });
+      if (found) return res.json({ success: true, user: sanitizeProfile(found) });
     }
 
     return res.status(404).json({ success: false, error: 'User profile not found' });
@@ -885,9 +899,16 @@ export function createServer() {
 
   // 4b. Account Summary (View-Only Metrics: balance, equity, margin, freeMargin, marginLevel)
   app.get('/api/accounts/:id/summary', async (req: Request, res: Response) => {
+    const authSession = extractAuthUser(req);
+    if (process.env.NODE_ENV === 'production' && !authSession) {
+      return res.status(401).json({ success: false, error: 'Authentication required to view account summary' });
+    }
     const account = connector.getAccount(req.params.id);
     if (!account) {
       return res.status(404).json({ success: false, error: 'Account not found' });
+    }
+    if (authSession && account.userId && account.userId !== authSession.userId) {
+      return res.status(403).json({ success: false, error: 'Forbidden: You can only view your own account summary' });
     }
     const positions = await connector.getActivePositions(req.params.id);
     const floatingProfit = positions.reduce((sum, p) => sum + (p.profitCurrency || 0), 0);
@@ -1277,12 +1298,19 @@ export function createServer() {
   });
 
   // 12d. MetaApi Cloud Account Sync
-  app.post('/api/brokers/metaapi/sync/:id', async (req: Request, res: Response) => {
+  app.post('/api/brokers/metaapi/sync/:id', connectorRateLimit, async (req: Request, res: Response) => {
     try {
+      const authSession = extractAuthUser(req);
+      if (process.env.NODE_ENV === 'production' && !authSession) {
+        return res.status(401).json({ success: false, error: 'Authentication required to sync broker account' });
+      }
       const accountId = req.params.id;
       const account = connector.getAccount(accountId);
       if (!account) {
         return res.status(404).json({ success: false, error: 'Account not found' });
+      }
+      if (authSession && account.userId && account.userId !== authSession.userId) {
+        return res.status(403).json({ success: false, error: 'Forbidden: You can only sync your own broker account' });
       }
 
       if (account.metaApiAccountId) {

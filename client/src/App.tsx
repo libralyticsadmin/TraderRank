@@ -389,7 +389,11 @@ export const App: React.FC = () => {
 
   const handleSyncAccount = async (accountId: string) => {
     try {
-      const res = await fetch(`/api/brokers/metaapi/sync/${accountId}`, { method: 'POST' });
+      const token = localStorage.getItem('traderank_auth_token_v1');
+      const res = await fetch(`/api/brokers/metaapi/sync/${accountId}`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (res.ok) {
         await fetchAccounts();
         await fetchLeaderboard();

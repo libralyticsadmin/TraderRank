@@ -69,7 +69,10 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
         setConnectedAccounts([]);
         return;
       }
-      const res = await fetch(`/api/accounts?userId=${encodeURIComponent(user.id)}`);
+      const token = localStorage.getItem('traderank_auth_token_v1');
+      const res = await fetch(`/api/accounts?userId=${encodeURIComponent(user.id)}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (res.ok) {
         const data = await res.json();
         setConnectedAccounts(Array.isArray(data) ? data : []);
@@ -112,8 +115,11 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
     setJoinSuccessMsg(null);
     try {
       // 2. Fetch fresh user accounts
+      const token = localStorage.getItem('traderank_auth_token_v1');
       const uidQuery = user?.id ? `?userId=${encodeURIComponent(user.id)}` : '';
-      const accRes = await fetch(`/api/accounts${uidQuery}`);
+      const accRes = await fetch(`/api/accounts${uidQuery}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       const accounts = accRes.ok ? await accRes.json() : [];
       setConnectedAccounts(accounts);
       const primaryAcc = accounts[0];
@@ -123,7 +129,6 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
       const username = user?.username || (primaryAcc?.accountNumber ? `TraderRank-${primaryAcc.accountNumber}` : 'VerifiedTrader');
       const broker: Broker = primaryAcc?.broker || user?.primaryBroker || 'XM';
 
-      const token = localStorage.getItem('traderank_auth_token_v1');
       const res = await fetch(`/api/tournaments/${selectedTournamentId}/join`, {
         method: 'POST',
         headers: {
