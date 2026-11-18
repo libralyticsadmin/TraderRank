@@ -30,13 +30,11 @@ import {
 
 interface DailyAnalysisHubProps {
   subscription: SubscriptionStatus;
-  onOpenSubscriptionModal?: () => void;
   onOpenAffiliateModal?: () => void;
 }
 
 export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
   subscription,
-  onOpenSubscriptionModal,
   onOpenAffiliateModal,
 }) => {
   const { t } = useTranslation();
@@ -87,8 +85,6 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
     if (!isCustomGeneratorUnlocked) {
       if (onOpenAffiliateModal) {
         onOpenAffiliateModal();
-      } else if (onOpenSubscriptionModal) {
-        onOpenSubscriptionModal();
       }
       return;
     }

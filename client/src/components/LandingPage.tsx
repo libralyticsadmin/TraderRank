@@ -28,7 +28,6 @@ import { useTraderStats } from '../hooks/useTraderStats.ts';
 interface LandingPageProps {
   onEnterApp: (tab?: string) => void;
   onOpenConnectWizard: () => void;
-  onOpenSubscriptionModal?: () => void;
   onOpenMyDashboard?: () => void;
   onSelectTrader?: (trader: { userId?: string; username: string; broker?: any; rank?: number; score?: number; winRate?: number; tradesCount?: number }) => void;
   leaderboard?: any[];
@@ -37,7 +36,6 @@ interface LandingPageProps {
 export const LandingPage: React.FC<LandingPageProps> = ({
   onEnterApp,
   onOpenConnectWizard,
-  onOpenSubscriptionModal,
   onOpenMyDashboard,
   onSelectTrader,
   leaderboard = [],
@@ -205,7 +203,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </button>
             <UserNavMenu
               onOpenConnectWizard={onOpenConnectWizard}
-              onOpenSubscriptionModal={onOpenSubscriptionModal}
               onOpenMyDashboard={onOpenMyDashboard}
             />
           </div>

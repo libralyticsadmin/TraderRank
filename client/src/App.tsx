@@ -22,7 +22,6 @@ import { BrandLogo, BrandMark } from './components/BrandLogo.tsx';
 import { LiveTradeBulletin } from './components/LiveTradeBulletin.tsx';
 import { LiveCandleChart } from './components/LiveCandleChart.tsx';
 import { DailyAnalysisHub } from './components/DailyAnalysisHub.tsx';
-import { SubscriptionModal } from './components/SubscriptionModal.tsx';
 import { AffiliateModal } from './components/AffiliateModal.tsx';
 import { LanguageSelector } from './components/LanguageSelector.tsx';
 import { useTranslation } from './context/LanguageContext.tsx';
@@ -65,7 +64,6 @@ export const App: React.FC = () => {
     'overview' | 'daily-analysis' | 'charts' | 'ranking' | 'tournaments' | 'rewards' | 'community' | 'positions' | 'security'
   >('overview');
   const [isWizardOpen, setIsWizardOpen] = useState(false);
-  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [isAffiliateModalOpen, setIsAffiliateModalOpen] = useState(false);
   const [pendingEnterTab, setPendingEnterTab] = useState<string | null>(null);
   const prevAuthRef = useRef(isAuthenticated);
@@ -105,7 +103,7 @@ export const App: React.FC = () => {
   }, []);
 
   // Pro Subscription State persisted in localStorage
-  const [subscription, setSubscription] = useState<SubscriptionStatus>(() => {
+  const [subscription] = useState<SubscriptionStatus>(() => {
     try {
       const saved = localStorage.getItem('traderrank_sub_status_v1');
       if (saved) {
@@ -564,7 +562,6 @@ export const App: React.FC = () => {
             setCurrentView('app');
             setIsWizardOpen(true);
           }}
-          onOpenSubscriptionModal={() => setIsSubscriptionModalOpen(true)}
         />
         {/* Connection Wizard Modal if triggered from landing page */}
         {isWizardOpen && (
@@ -674,7 +671,6 @@ export const App: React.FC = () => {
           {/* User Profile & Navigation Menu */}
           <UserNavMenu
             onOpenConnectWizard={() => setIsWizardOpen(true)}
-            onOpenSubscriptionModal={() => setIsSubscriptionModalOpen(true)}
             onOpenAffiliateModal={() => setIsAffiliateModalOpen(true)}
             onOpenMyDashboard={handleOpenMyDashboard}
           />
@@ -972,7 +968,6 @@ export const App: React.FC = () => {
       {activeTab === 'daily-analysis' && (
         <DailyAnalysisHub
           subscription={subscription}
-          onOpenSubscriptionModal={() => setIsSubscriptionModalOpen(true)}
           onOpenAffiliateModal={() => setIsAffiliateModalOpen(true)}
         />
       )}
@@ -1054,18 +1049,6 @@ export const App: React.FC = () => {
           onClose={() => setSelectedTrader(null)}
         />
       )}
-
-      {/* Pro Membership & Capabilities Modal */}
-      <SubscriptionModal
-        isOpen={isSubscriptionModalOpen}
-        onClose={() => setIsSubscriptionModalOpen(false)}
-        subscription={subscription}
-        onSubscriptionChange={setSubscription}
-        onNavigateToDailyIntel={() => {
-          setActiveTab('daily-analysis');
-          setIsSubscriptionModalOpen(false);
-        }}
-      />
 
       {/* Community Gamification Affiliate Program Modal */}
       <AffiliateModal

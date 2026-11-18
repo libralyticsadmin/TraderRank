@@ -7,7 +7,6 @@ import { useTraderStats } from '../hooks/useTraderStats.ts';
 
 interface UserNavMenuProps {
   onOpenConnectWizard?: () => void;
-  onOpenSubscriptionModal?: () => void;
   onOpenAffiliateModal?: () => void;
   onOpenMyDashboard?: () => void;
 }
