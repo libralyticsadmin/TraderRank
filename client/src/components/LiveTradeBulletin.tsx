@@ -533,6 +533,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                     flexDirection: 'column',
                     gap: '3px',
                     minWidth: 0,
+                    overflow: 'hidden',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '9px', fontWeight: 800, color: liveOpenCount > 0 ? '#34d399' : '#94a3b8', letterSpacing: '0.4px', textTransform: 'uppercase' }}>
@@ -582,6 +583,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                     flexDirection: 'column',
                     gap: '3px',
                     minWidth: 0,
+                    overflow: 'hidden',
                   }}
                 >
                   <div style={{ fontSize: '9px', fontWeight: 800, color: '#fbbf24', letterSpacing: '0.4px', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -609,19 +611,35 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                     flexDirection: 'column',
                     gap: '3px',
                     minWidth: 0,
+                    overflow: 'hidden',
                   }}
                 >
-                  <div style={{ fontSize: '9px', fontWeight: 800, color: '#00F0FF', letterSpacing: '0.4px', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div style={{ fontSize: '9px', fontWeight: 800, color: '#00F0FF', letterSpacing: '0.3px', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {language === 'ja' ? '本日の取引実績 (UTC)' : language === 'zh' ? '今日全场战绩 (UTC)' : "Today's Arena (UTC)"}
                   </div>
-                  <div className="tabular" style={{ fontSize: '13px', fontWeight: 900, color: '#ffffff', whiteSpace: 'nowrap' }}>
-                    {todayTotalTrades} {language === 'ja' ? '約定' : language === 'zh' ? '笔今日' : 'Today'} •{' '}
-                    <span style={{ color: todayNetPips >= 0 ? '#34d399' : '#f87171' }}>
+                  <div
+                    className="tabular"
+                    style={{
+                      fontSize: '11.5px',
+                      fontWeight: 900,
+                      color: '#ffffff',
+                      lineHeight: 1.2,
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      flexWrap: 'wrap',
+                      gap: '3px',
+                      minWidth: 0,
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <span>{todayTotalTrades} {language === 'ja' ? '約定' : language === 'zh' ? '笔' : 'Today'}</span>
+                    <span style={{ color: '#64748b' }}>•</span>
+                    <span style={{ color: todayNetPips >= 0 ? '#34d399' : '#f87171', whiteSpace: 'nowrap' }}>
                       {todayNetPips >= 0 ? '+' : ''}{todayNetPips.toFixed(1)}p
                     </span>
                   </div>
                   <div className="tabular" style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {totalFills.toLocaleString()} {language === 'ja' ? '累計認証約定' : language === 'zh' ? '累计认证成交' : 'Total Verified Fills'}
+                    {totalFills.toLocaleString()} {language === 'ja' ? '累計認証約定' : language === 'zh' ? '累计成交' : 'Verified Fills'}
                   </div>
                 </div>
               </div>
