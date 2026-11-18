@@ -80,8 +80,8 @@ export class TournamentService {
       status: 'UPCOMING',
       startDate: new Date(now.getTime() - 24 * 3600 * 1000).toISOString(),
       endDate: weeklyEndDate.toISOString(),
-      prizePoolPips: 2500,
-      prizeDetails: '$100,000 Funded Account Challenge + Pro Verified Crest',
+      prizePoolPips: 1000,
+      prizeDetails: '$1,000 Cash Prize Pool + Pro Verified Crest',
       minTradesRequired: 5,
       maxDailyLossPercent: 5.0,
       maxDrawdownPercent: 10.0,
@@ -102,8 +102,8 @@ export class TournamentService {
       status: 'UPCOMING',
       startDate: new Date(now.getTime() - 6 * 24 * 3600 * 1000).toISOString(),
       endDate: monthlyEndDate.toISOString(),
-      prizePoolPips: 10000,
-      prizeDetails: '$250,000 Master Tier Allocation + TraderRank Hall of Fame induction',
+      prizePoolPips: 2500,
+      prizeDetails: '$2,500 Cash Prize Pool + TraderRank Hall of Fame Induction',
       minTradesRequired: 15,
       maxDailyLossPercent: 5.0,
       maxDrawdownPercent: 10.0,
@@ -124,8 +124,8 @@ export class TournamentService {
       status: 'UPCOMING',
       startDate: now.toISOString(),
       endDate: goldRushEndDate.toISOString(),
-      prizePoolPips: 5000,
-      prizeDetails: '$50,000 Apex Allocation + Gold Rush Trophy Crest',
+      prizePoolPips: 1500,
+      prizeDetails: '$1,500 Cash Prize Pool + Gold Rush Trophy Crest',
       minTradesRequired: 8,
       maxDailyLossPercent: 4.5,
       maxDrawdownPercent: 9.0,
@@ -146,8 +146,8 @@ export class TournamentService {
       status: 'UPCOMING',
       startDate: now.toISOString(),
       endDate: dailyBlitzEndDate.toISOString(),
-      prizePoolPips: 1500,
-      prizeDetails: '$10,000 Scalper Challenge + 5,000 XP Boost',
+      prizePoolPips: 500,
+      prizeDetails: '$500 Cash Prize Pool + 500 XP Boost',
       minTradesRequired: 3,
       maxDailyLossPercent: 3.0,
       maxDrawdownPercent: 6.0,
@@ -236,6 +236,8 @@ export class TournamentService {
     } else {
       tournament.status = 'UPCOMING';
     }
+    // Scale prize pool dynamically from $500 (at 50 players) up to $2,500 max
+    tournament.prizePoolPips = Math.min(2500, 500 + Math.max(0, tournament.participantCount - minRequired) * 10);
 
     this.persistStateToR2();
 
@@ -293,7 +295,10 @@ export class TournamentService {
     standing.isDisqualified = risk.isDisqualified;
     standing.disqualificationReason = risk.disqualificationReason;
     standing.traderScore = traderScore;
-    standing.isEligibleForPrize = !risk.isDisqualified && params.tradesCount >= tournament.minTradesRequired;
+    standing.isEligibleForPrize =
+      tournament.status === 'ACTIVE' &&
+      !risk.isDisqualified &&
+      params.tradesCount >= tournament.minTradesRequired;
 
     // Recalculate ranks based on TraderScore descending
     tournament.standings.sort((a, b) => {

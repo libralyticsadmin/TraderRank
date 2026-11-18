@@ -164,8 +164,8 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
       title: t.arena.weeklySprint,
       subtitle: t.arena.weeklySprintDesc,
       type: 'WEEKLY_SPRINT',
-      prizePoolUsd: 5000,
-      prizePoolXp: 15000,
+      prizePoolUsd: 1000,
+      prizePoolXp: 2000,
       entrantsCount: 0,
       minParticipantsToStart: 50,
       startsAt: '2026-09-14T00:00:00Z',
@@ -183,8 +183,8 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
       title: t.arena.monthlyChampionship,
       subtitle: t.arena.monthlyChampionshipDesc,
       type: 'MONTHLY_PROP',
-      prizePoolUsd: 25000,
-      prizePoolXp: 75000,
+      prizePoolUsd: 2500,
+      prizePoolXp: 5000,
       entrantsCount: 0,
       minParticipantsToStart: 50,
       startsAt: '2026-09-01T00:00:00Z',
@@ -202,8 +202,8 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
       title: t.arena.globalGoldRushTitle,
       subtitle: t.arena.globalGoldRushSubtitle,
       type: 'WEEKLY_SPRINT',
-      prizePoolUsd: 10000,
-      prizePoolXp: 30000,
+      prizePoolUsd: 1500,
+      prizePoolXp: 3000,
       entrantsCount: 0,
       minParticipantsToStart: 50,
       startsAt: '2026-09-15T00:00:00Z',
@@ -235,8 +235,8 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
           title: st.title,
           subtitle: st.description,
           type: st.type,
-          prizePoolUsd: st.prizePoolPips * 2,
-          prizePoolXp: st.prizePoolPips * 5,
+          prizePoolUsd: Math.min(2500, Math.max(500, st.prizePoolPips || 1000)),
+          prizePoolXp: Math.min(5000, Math.max(500, (st.prizePoolPips || 1000) * 2)),
           entrantsCount: count,
           minParticipantsToStart: target,
           startsAt: st.startDate,
@@ -267,7 +267,16 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
     drawdownPct: s.maxDrawdownReached || s.currentDrawdownPercent || 0,
     winRate: s.winRate,
     status: s.isDisqualified ? 'DISQUALIFIED' : 'ACTIVE',
-    estimatedPrize: s.rank === 1 ? '$2,000 + 5,000 XP' : s.rank === 2 ? '$1,200 + 3,500 XP' : s.rank === 3 ? '$800 + 2,000 XP' : '$400 + 1,000 XP',
+    estimatedPrize: (() => {
+      if (currentTourney?.status !== 'ACTIVE') {
+        return 'Locked (50+ Players)';
+      }
+      const pool = Math.min(2500, Math.max(500, currentTourney?.prizePoolUsd || 500));
+      if (s.rank === 1) return `$${Math.min(2500, Math.max(500, Math.round(pool * 0.5))).toLocaleString()} + 500 XP`;
+      if (s.rank === 2) return `$${Math.round(pool * 0.3).toLocaleString()} + 300 XP`;
+      if (s.rank === 3) return `$${Math.round(pool * 0.2).toLocaleString()} + 150 XP`;
+      return '+50 XP';
+    })(),
   }));
 
   // Countdown timer tick simulation
