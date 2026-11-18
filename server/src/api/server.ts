@@ -1155,6 +1155,12 @@ export function createServer() {
   // 8. Live Leaderboard
   app.get('/api/leaderboard', (_req: Request, res: Response) => {
     const entries = leaderboard.getLeaderboard();
+    const avatarMap = getProfileAvatarMap();
+    entries.forEach(entry => {
+      const prof = avatarMap.get(entry.userId);
+      if (prof?.avatarUrl) entry.avatarUrl = prof.avatarUrl;
+      if (prof?.avatarSymbol) entry.avatarSymbol = prof.avatarSymbol;
+    });
     res.json(entries);
   });
 
