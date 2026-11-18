@@ -94,6 +94,20 @@ describe('Security & Loophole Remediation Tests', () => {
     expect(ownerRes.status).toBe(200);
     const ownerData = (await ownerRes.json()) as any;
     expect(ownerData.user.email).toBe(email);
+
+    // Passwordless login must be rejected
+    const noPwRes = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ emailOrUser: uname }),
+    });
+    expect(noPwRes.status).toBe(400);
+    const emptyPwRes = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ emailOrUser: uname, password: '' }),
+    });
+    expect(emptyPwRes.status).toBe(400);
   });
 
   it('requires authentication in production on GET /api/accounts/:id/summary and POST /api/brokers/metaapi/sync/:id', async () => {

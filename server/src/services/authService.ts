@@ -21,7 +21,13 @@ export class AuthService {
   private static instance: AuthService;
   private credentials = new Map<string, StoredCredential>(); // keyed by userId, email.toLowerCase(), username.toLowerCase()
   private readonly CREDENTIALS_KEY = 'auth/credentials.json';
-  private readonly SESSION_SECRET = process.env.SESSION_SECRET || 'traderrank_jwt_hmac_secret_key_2026_production';
+  private readonly SESSION_SECRET = (() => {
+    if (process.env.SESSION_SECRET) return process.env.SESSION_SECRET;
+    if (process.env.NODE_ENV === 'production') {
+      console.warn('[AuthService] WARNING: SESSION_SECRET env var not set; using ephemeral CSPRNG secret.');
+    }
+    return crypto.randomBytes(32).toString('hex');
+  })();
   private readonly TOKEN_EXPIRY_SECONDS = 7 * 24 * 60 * 60; // 7 days
 
   private constructor() {

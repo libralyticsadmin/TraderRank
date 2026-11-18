@@ -127,6 +127,7 @@ export function createServer() {
 
   const connectorRateLimit = createRateLimiter(60000, 60, 'connector');
   const aiRateLimit = createRateLimiter(60000, 30, 'ai_analysis');
+  const authRateLimit = createRateLimiter(60000, 30, 'auth');
 
   // 5. Admin Authorization Guard
   const requireAdminAuth = (req: Request, res: Response, next: () => void) => {
@@ -509,7 +510,7 @@ export function createServer() {
   loadUserProfilesFromR2().catch(() => {});
 
   // Auth: Register (Secure Password Hashing via Scrypt)
-  app.post('/api/auth/register', async (req: Request, res: Response) => {
+  app.post('/api/auth/register', authRateLimit, async (req: Request, res: Response) => {
     const { username, email, password, primaryBroker, tradingStyle, avatarUrl } = req.body || {};
     if (!username || !email) {
       return res.status(400).json({ success: false, error: 'Username and email are required' });
@@ -563,10 +564,13 @@ export function createServer() {
   });
 
   // Auth: Login (Password Verified with HMAC-SHA256 Session Token)
-  app.post('/api/auth/login', async (req: Request, res: Response) => {
+  app.post('/api/auth/login', authRateLimit, async (req: Request, res: Response) => {
     const { emailOrUser, password } = req.body || {};
     if (!emailOrUser) {
       return res.status(400).json({ success: false, error: 'Username or email required' });
+    }
+    if (!password || typeof password !== 'string') {
+      return res.status(400).json({ success: false, error: 'Password is required' });
     }
 
     const needle = String(emailOrUser).trim().toLowerCase();
@@ -581,26 +585,15 @@ export function createServer() {
       cred = authService.getCredential('u_zzzemzzz');
     }
 
-    if (password) {
-      if (!cred) {
-        return res.status(401).json({ success: false, error: 'Invalid username/email or password' });
-      }
-      const isValid = authService.verifyPassword(String(password), cred.salt, cred.hash);
-      if (!isValid) {
-        return res.status(401).json({ success: false, error: 'Invalid username/email or password' });
-      }
-    } else {
-      if (!cred) {
-        const found = Array.from(userProfiles.values()).find(
-          (u: any) => u.username.toLowerCase() === needle || u.email.toLowerCase() === needle || u.id === `u_${needle}`
-        );
-        if (!found) {
-          return res.status(401).json({ success: false, error: 'Invalid credentials or user not found' });
-        }
-      }
+    if (!cred) {
+      return res.status(401).json({ success: false, error: 'Invalid username/email or password' });
+    }
+    const isValid = authService.verifyPassword(String(password), cred.salt, cred.hash);
+    if (!isValid) {
+      return res.status(401).json({ success: false, error: 'Invalid username/email or password' });
     }
 
-    const targetUserId = cred ? cred.userId : (isZemLogin ? 'u_zzzemzzz' : `u_${needle}`);
+    const targetUserId = cred.userId;
     const user = userProfiles.get(targetUserId) || (isZemLogin ? userProfiles.get('u_zzzemzzz') : null);
 
     if (!user) {
