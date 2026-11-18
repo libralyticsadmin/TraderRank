@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 import { R2StorageService } from '../src/services/r2StorageService.js';
 
 describe('Cloudflare R2 Storage Service', () => {
@@ -52,5 +55,56 @@ describe('Cloudflare R2 Storage Service', () => {
     const result = await service.saveTradeArchive('acc_demo_01', mockDeals);
     expect(result.key).toContain('trades/acc_demo_01/deals_');
     expect(result.sizeBytes).toBeGreaterThan(0);
+  });
+
+  it('isolates test storage away from production server/data/storage even when DATA_DIR is set', () => {
+    const prevDataDir = process.env.DATA_DIR;
+    process.env.DATA_DIR = '/var/data/traderrank';
+    try {
+      const service = new R2StorageService();
+      const dbPath = path.resolve(service.getLocalDatabasePath());
+      const prodPath = path.resolve(process.cwd(), 'data/storage');
+      expect(dbPath.startsWith(path.resolve(os.tmpdir()))).toBe(true);
+      expect(dbPath).not.toBe(prodPath);
+    } finally {
+      if (prevDataDir === undefined) {
+        delete process.env.DATA_DIR;
+      } else {
+        process.env.DATA_DIR = prevDataDir;
+      }
+    }
+  });
+
+  it('keeps committed production storage free of test/mock pollution', () => {
+    const prodStorageDir = path.resolve(process.cwd(), 'data/storage');
+    if (!fs.existsSync(prodStorageDir)) return;
+
+    const forbiddenMarkers = [
+      '@test.com',
+      'mock_9921048',
+      'u_securetrader_',
+      'TestChallenger',
+      'PersistenceTester',
+    ];
+
+    const collectFiles = (dir: string): string[] => {
+      const results: string[] = [];
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          results.push(...collectFiles(fullPath));
+        } else if (entry.isFile() && entry.name.endsWith('.json')) {
+          results.push(fullPath);
+        }
+      }
+      return results;
+    };
+
+    for (const filePath of collectFiles(prodStorageDir)) {
+      const content = fs.readFileSync(filePath, 'utf8');
+      for (const marker of forbiddenMarkers) {
+        expect(content, `Unexpected test marker "${marker}" in ${filePath}`).not.toContain(marker);
+      }
+    }
   });
 });
