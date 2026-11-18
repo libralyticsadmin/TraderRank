@@ -758,16 +758,33 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
       });
   }, [methodology, copy]);
 
-  // Available months from May 2026 to Oct 2026 (plus any months present in realTrades)
+  const hasConnectedAccount = Boolean(
+    liveAccountNumber ||
+      (trader as any).accountNumber ||
+      realTrades.length > 0 ||
+      liveAccountBalance !== null
+  );
+
+  // Only show months that have real trades or verified cashflows (never fabricate 6 months for unconnected accounts)
   const availableMonths = useMemo(() => {
-    const monthSet = new Set<string>(['2026-05', '2026-06', '2026-07', '2026-08', '2026-09', '2026-10']);
+    if (!hasConnectedAccount) return [];
+    const monthSet = new Set<string>();
     for (const tr of realTrades) {
       if (tr.closeTime && tr.closeTime.length >= 7) {
         monthSet.add(tr.closeTime.slice(0, 7));
       }
     }
+    for (const ym of Object.keys(liveMonthlyCashflows)) {
+      if (/^\d{4}-\d{2}$/.test(ym)) {
+        monthSet.add(ym);
+      }
+    }
+    if (monthSet.size === 0 && (liveAccountNumber || (trader as any).accountNumber)) {
+      const now = new Date();
+      monthSet.add(`${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`);
+    }
     return Array.from(monthSet).sort();
-  }, [realTrades]);
+  }, [hasConnectedAccount, realTrades, liveMonthlyCashflows, liveAccountNumber, trader]);
 
   const currentMonthIdx = availableMonths.indexOf(selectedYearMonth);
 
@@ -789,12 +806,15 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
 
   // Monthly & Daily aggregation for Calendar & Historical Archive Table (derived 100% from real MT5 balance & deals)
   const monthlyArchives = useMemo(() => {
+    if (!hasConnectedAccount || availableMonths.length === 0) {
+      return { monthsDesc: [], byMonth: {} as Record<string, any> };
+    }
     const monthsDesc = [...availableMonths].reverse();
 
     // Compute exact starting capital backward from the real live MT5 balance + total realized trade P&L
     const totalRealizedPnl = realTrades.reduce((sum, tr) => sum + tr.pnlCurrency, 0);
-    const currentLiveEquity = liveAccountBalance !== null ? liveAccountBalance : 2.8;
-    const impliedInitialCapital = Math.max(100, Number((currentLiveEquity - totalRealizedPnl).toFixed(2)));
+    const currentLiveEquity = liveAccountBalance !== null ? liveAccountBalance : 0;
+    const impliedInitialCapital = Math.max(0, Number((currentLiveEquity - totalRealizedPnl).toFixed(2)));
 
     let runningCapital = impliedInitialCapital;
     const chronoMap: Record<
@@ -1183,20 +1203,10 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
 
   // Account currency is strictly resolved from verified broker connection:
   // XMTrading (Japan) is strictly JPY (¥); XMGlobal (XM) is strictly USD ($).
-  const isHomiesAcc =
-    trader.broker === 'XMTrading' ||
-    (trader as any).accountNumber === '72423906' ||
-    liveAccountNumber === '72423906' ||
-    trader.userId === 'u_homiesplant_th' ||
-    trader.userId === 'usr_meta_72423906' ||
-    trader.username.includes('72423906') ||
-    trader.username.toLowerCase().includes('homies') ||
-    trader.username.toLowerCase().includes('emanuel007');
+  const effectiveBroker: Broker = trader.broker;
+  const effectiveAccNum = liveAccountNumber || (trader as any).accountNumber;
 
-  const effectiveBroker: Broker = isHomiesAcc ? 'XMTrading' : trader.broker;
-  const effectiveAccNum = isHomiesAcc ? '72423906' : (liveAccountNumber || (trader as any).accountNumber);
-
-  const rawCurrency = isHomiesAcc || effectiveBroker === 'XMTrading' ? 'JPY' : resolveBrokerCurrency(
+  const rawCurrency = effectiveBroker === 'XMTrading' ? 'JPY' : resolveBrokerCurrency(
     effectiveBroker,
     liveServerName,
     liveCurrency || (trader as any).currency,
@@ -1278,10 +1288,10 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
           >
             {(() => {
               const modalIdentity = resolveTraderIdentity({
-                username: isHomiesAcc ? 'HomiesPlant' : trader.username,
-                accountHolderName: isHomiesAcc ? 'HomiesPlant' : liveHolderName,
+                username: trader.username,
+                accountHolderName: liveHolderName,
                 accountNumber: effectiveAccNum,
-                userId: isHomiesAcc ? 'u_homiesplant_th' : trader.userId,
+                userId: trader.userId,
                 avatarUrl: trader.avatarUrl,
               });
               return (
@@ -1533,12 +1543,10 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 {brokerSlots.map(slot => {
                   const isConnected =
-                    (isHomiesAcc && slot.id === 'XMTrading') ||
-                    (!isHomiesAcc && (
-                      connectedBrokers.includes(slot.id.toUpperCase()) ||
+                    hasConnectedAccount &&
+                    (connectedBrokers.includes(slot.id.toUpperCase()) ||
                       effectiveBroker.toUpperCase() === slot.id.toUpperCase() ||
-                      (Array.isArray(trader.brokers) && trader.brokers.some(b => b.toUpperCase() === slot.id.toUpperCase()))
-                    ));
+                      (Array.isArray(trader.brokers) && trader.brokers.some(b => b.toUpperCase() === slot.id.toUpperCase())));
                   return (
                     <div
                       key={slot.id}
@@ -1580,31 +1588,33 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
                 })}
               </div>
 
-              {/* Link to Historical Monthly Data Table */}
-              <button
-                type="button"
-                onClick={() => {
-                  setShowHistoricalArchive(true);
-                  setTimeout(() => {
-                    historicalTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }, 60);
-                }}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#ffffff',
-                  fontSize: '13px',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '6px 4px',
-                }}
-              >
-                <span>{copy.historicalDataLink}</span>
-                <ChevronRight size={16} />
-              </button>
+              {/* Link to Historical Monthly Data Table (only shown when account is connected) */}
+              {hasConnectedAccount && monthlyArchives.monthsDesc.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowHistoricalArchive(true);
+                    setTimeout(() => {
+                      historicalTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 60);
+                  }}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#ffffff',
+                    fontSize: '13px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '6px 4px',
+                  }}
+                >
+                  <span>{copy.historicalDataLink}</span>
+                  <ChevronRight size={16} />
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -2616,7 +2626,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
         {/* =====================================================================
             SECTION 3: HISTORICAL MONTHLY PERFORMANCE TABLE (過去データ - Ref 3)
            ===================================================================== */}
-        {showHistoricalArchive && (
+        {showHistoricalArchive && hasConnectedAccount && monthlyArchives.monthsDesc.length > 0 && (
           <div
             ref={historicalTableRef}
             style={{

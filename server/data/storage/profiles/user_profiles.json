@@ -17,24 +17,6 @@
     "rank": 1,
     "currency": "USD"
   },
-  "u_homiesplant_th": {
-    "id": "u_homiesplant_th",
-    "username": "homiesplant.th",
-    "email": "homiesplant.th@traderank.live",
-    "avatarSymbol": "bear_emerald",
-    "avatarUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%20fill%3D%22none%22%3E%20%3Cdefs%3E%20%3CradialGradient%20id%3D%22bg-bear_emerald%22%20cx%3D%2250%25%22%20cy%3D%2235%25%22%20r%3D%2275%25%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23064e3b%22%2F%3E%20%3Cstop%20offset%3D%2260%25%22%20stop-color%3D%22%23022c22%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%2301130e%22%2F%3E%20%3C%2FradialGradient%3E%20%3ClinearGradient%20id%3D%22main-bear_emerald%22%20x1%3D%2220%22%20y1%3D%2215%22%20x2%3D%22100%22%20y2%3D%22105%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23d1fae5%22%2F%3E%20%3Cstop%20offset%3D%2245%25%22%20stop-color%3D%22%2310b981%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23047857%22%2F%3E%20%3C%2FlinearGradient%3E%20%3ClinearGradient%20id%3D%22dark-bear_emerald%22%20x1%3D%2260%22%20y1%3D%2230%22%20x2%3D%2260%22%20y2%3D%22105%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23059669%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23064e3b%22%2F%3E%20%3C%2FlinearGradient%3E%20%3C%2Fdefs%3E%20%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2226%22%20fill%3D%22url(%23bg-bear_emerald)%22%2F%3E%20%3Ccircle%20cx%3D%2260%22%20cy%3D%2260%22%20r%3D%2250%22%20stroke%3D%22%2310b981%22%20stroke-opacity%3D%220.22%22%20stroke-width%3D%221.5%22%20stroke-dasharray%3D%226%204%22%2F%3E%20%3Cpolygon%20points%3D%2260%2C10%20104%2C35%20104%2C85%2060%2C110%2016%2C85%2016%2C35%22%20stroke%3D%22%2334d399%22%20stroke-opacity%3D%220.3%22%20stroke-width%3D%221.5%22%20fill%3D%22%2310b981%22%20fill-opacity%3D%220.04%22%2F%3E%20%3Ccircle%20cx%3D%2228%22%20cy%3D%2230%22%20r%3D%2213%22%20fill%3D%22url(%23main-bear_emerald)%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Ccircle%20cx%3D%2292%22%20cy%3D%2230%22%20r%3D%2213%22%20fill%3D%22url(%23main-bear_emerald)%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Ccircle%20cx%3D%2228%22%20cy%3D%2230%22%20r%3D%226%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Ccircle%20cx%3D%2292%22%20cy%3D%2230%22%20r%3D%226%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Cpolygon%20points%3D%2224%2C42%2060%2C24%2096%2C42%20104%2C72%2084%2C102%2060%2C108%2036%2C102%2016%2C72%22%20fill%3D%22url(%23dark-bear_emerald)%22%20stroke%3D%22%2334d399%22%20stroke-width%3D%221.5%22%2F%3E%20%3Cpolygon%20points%3D%2232%2C38%2060%2C28%2088%2C38%2094%2C68%2076%2C94%2044%2C94%2026%2C68%22%20fill%3D%22url(%23main-bear_emerald)%22%2F%3E%20%3Cpolygon%20points%3D%2240%2C46%2060%2C54%2080%2C46%2076%2C38%2060%2C44%2044%2C38%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Cpolygon%20points%3D%2234%2C54%2049%2C59%2038%2C63%22%20fill%3D%22%23f43f5e%22%2F%3E%20%3Cpolygon%20points%3D%2286%2C54%2071%2C59%2082%2C63%22%20fill%3D%22%23f43f5e%22%2F%3E%20%3Cpolygon%20points%3D%2242%2C66%2060%2C60%2078%2C66%2082%2C92%2060%2C102%2038%2C92%22%20fill%3D%22%2301130e%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Cpolygon%20points%3D%2251%2C70%2069%2C70%2060%2C81%22%20fill%3D%22%2310b981%22%2F%3E%20%3Cpolygon%20points%3D%2245%2C92%2050%2C83%2054%2C93%22%20fill%3D%22%23ffffff%22%2F%3E%20%3Cpolygon%20points%3D%2275%2C92%2070%2C83%2066%2C93%22%20fill%3D%22%23ffffff%22%2F%3E%20%3Cpath%20d%3D%22M46%2092%20H74%22%20stroke%3D%22%2310b981%22%20stroke-width%3D%222%22%2F%3E%20%3C%2Fsvg%3E",
-    "traderTitle": "Verified Scalper & Gold Trader",
-    "bio": "XMTrading MT5 Verified read-only execution.",
-    "tradingStyle": "SCALPER",
-    "primaryBroker": "XMTrading",
-    "accountNumber": "72423906",
-    "country": "Japan",
-    "joinedAt": "November 2026",
-    "level": 1,
-    "xp": 575,
-    "rank": 1,
-    "currency": "JPY"
-  },
   "u_alex_vanguard": {
     "id": "u_alex_vanguard",
     "username": "Alex_Vanguard",
@@ -69,41 +51,5 @@
     "xp": 0,
     "rank": 3,
     "currency": "USD"
-  },
-  "u_homiesplant": {
-    "id": "u_homiesplant_th",
-    "username": "homiesplant.th",
-    "email": "homiesplant.th@traderank.live",
-    "avatarSymbol": "bear_emerald",
-    "avatarUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%20fill%3D%22none%22%3E%20%3Cdefs%3E%20%3CradialGradient%20id%3D%22bg-bear_emerald%22%20cx%3D%2250%25%22%20cy%3D%2235%25%22%20r%3D%2275%25%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23064e3b%22%2F%3E%20%3Cstop%20offset%3D%2260%25%22%20stop-color%3D%22%23022c22%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%2301130e%22%2F%3E%20%3C%2FradialGradient%3E%20%3ClinearGradient%20id%3D%22main-bear_emerald%22%20x1%3D%2220%22%20y1%3D%2215%22%20x2%3D%22100%22%20y2%3D%22105%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23d1fae5%22%2F%3E%20%3Cstop%20offset%3D%2245%25%22%20stop-color%3D%22%2310b981%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23047857%22%2F%3E%20%3C%2FlinearGradient%3E%20%3ClinearGradient%20id%3D%22dark-bear_emerald%22%20x1%3D%2260%22%20y1%3D%2230%22%20x2%3D%2260%22%20y2%3D%22105%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23059669%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23064e3b%22%2F%3E%20%3C%2FlinearGradient%3E%20%3C%2Fdefs%3E%20%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2226%22%20fill%3D%22url(%23bg-bear_emerald)%22%2F%3E%20%3Ccircle%20cx%3D%2260%22%20cy%3D%2260%22%20r%3D%2250%22%20stroke%3D%22%2310b981%22%20stroke-opacity%3D%220.22%22%20stroke-width%3D%221.5%22%20stroke-dasharray%3D%226%204%22%2F%3E%20%3Cpolygon%20points%3D%2260%2C10%20104%2C35%20104%2C85%2060%2C110%2016%2C85%2016%2C35%22%20stroke%3D%22%2334d399%22%20stroke-opacity%3D%220.3%22%20stroke-width%3D%221.5%22%20fill%3D%22%2310b981%22%20fill-opacity%3D%220.04%22%2F%3E%20%3Ccircle%20cx%3D%2228%22%20cy%3D%2230%22%20r%3D%2213%22%20fill%3D%22url(%23main-bear_emerald)%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Ccircle%20cx%3D%2292%22%20cy%3D%2230%22%20r%3D%2213%22%20fill%3D%22url(%23main-bear_emerald)%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Ccircle%20cx%3D%2228%22%20cy%3D%2230%22%20r%3D%226%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Ccircle%20cx%3D%2292%22%20cy%3D%2230%22%20r%3D%226%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Cpolygon%20points%3D%2224%2C42%2060%2C24%2096%2C42%20104%2C72%2084%2C102%2060%2C108%2036%2C102%2016%2C72%22%20fill%3D%22url(%23dark-bear_emerald)%22%20stroke%3D%22%2334d399%22%20stroke-width%3D%221.5%22%2F%3E%20%3Cpolygon%20points%3D%2232%2C38%2060%2C28%2088%2C38%2094%2C68%2076%2C94%2044%2C94%2026%2C68%22%20fill%3D%22url(%23main-bear_emerald)%22%2F%3E%20%3Cpolygon%20points%3D%2240%2C46%2060%2C54%2080%2C46%2076%2C38%2060%2C44%2044%2C38%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Cpolygon%20points%3D%2234%2C54%2049%2C59%2038%2C63%22%20fill%3D%22%23f43f5e%22%2F%3E%20%3Cpolygon%20points%3D%2286%2C54%2071%2C59%2082%2C63%22%20fill%3D%22%23f43f5e%22%2F%3E%20%3Cpolygon%20points%3D%2242%2C66%2060%2C60%2078%2C66%2082%2C92%2060%2C102%2038%2C92%22%20fill%3D%22%2301130e%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Cpolygon%20points%3D%2251%2C70%2069%2C70%2060%2C81%22%20fill%3D%22%2310b981%22%2F%3E%20%3Cpolygon%20points%3D%2245%2C92%2050%2C83%2054%2C93%22%20fill%3D%22%23ffffff%22%2F%3E%20%3Cpolygon%20points%3D%2275%2C92%2070%2C83%2066%2C93%22%20fill%3D%22%23ffffff%22%2F%3E%20%3Cpath%20d%3D%22M46%2092%20H74%22%20stroke%3D%22%2310b981%22%20stroke-width%3D%222%22%2F%3E%20%3C%2Fsvg%3E",
-    "traderTitle": "Verified Scalper & Gold Trader",
-    "bio": "XMTrading MT5 Verified read-only execution.",
-    "tradingStyle": "SCALPER",
-    "primaryBroker": "XMTrading",
-    "accountNumber": "72423906",
-    "country": "Japan",
-    "joinedAt": "November 2026",
-    "level": 1,
-    "xp": 575,
-    "rank": 1,
-    "currency": "JPY"
-  },
-  "usr_meta_72423906": {
-    "id": "u_homiesplant_th",
-    "username": "homiesplant.th",
-    "email": "homiesplant.th@traderank.live",
-    "avatarSymbol": "bear_emerald",
-    "avatarUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%20fill%3D%22none%22%3E%20%3Cdefs%3E%20%3CradialGradient%20id%3D%22bg-bear_emerald%22%20cx%3D%2250%25%22%20cy%3D%2235%25%22%20r%3D%2275%25%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23064e3b%22%2F%3E%20%3Cstop%20offset%3D%2260%25%22%20stop-color%3D%22%23022c22%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%2301130e%22%2F%3E%20%3C%2FradialGradient%3E%20%3ClinearGradient%20id%3D%22main-bear_emerald%22%20x1%3D%2220%22%20y1%3D%2215%22%20x2%3D%22100%22%20y2%3D%22105%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23d1fae5%22%2F%3E%20%3Cstop%20offset%3D%2245%25%22%20stop-color%3D%22%2310b981%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23047857%22%2F%3E%20%3C%2FlinearGradient%3E%20%3ClinearGradient%20id%3D%22dark-bear_emerald%22%20x1%3D%2260%22%20y1%3D%2230%22%20x2%3D%2260%22%20y2%3D%22105%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23059669%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23064e3b%22%2F%3E%20%3C%2FlinearGradient%3E%20%3C%2Fdefs%3E%20%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2226%22%20fill%3D%22url(%23bg-bear_emerald)%22%2F%3E%20%3Ccircle%20cx%3D%2260%22%20cy%3D%2260%22%20r%3D%2250%22%20stroke%3D%22%2310b981%22%20stroke-opacity%3D%220.22%22%20stroke-width%3D%221.5%22%20stroke-dasharray%3D%226%204%22%2F%3E%20%3Cpolygon%20points%3D%2260%2C10%20104%2C35%20104%2C85%2060%2C110%2016%2C85%2016%2C35%22%20stroke%3D%22%2334d399%22%20stroke-opacity%3D%220.3%22%20stroke-width%3D%221.5%22%20fill%3D%22%2310b981%22%20fill-opacity%3D%220.04%22%2F%3E%20%3Ccircle%20cx%3D%2228%22%20cy%3D%2230%22%20r%3D%2213%22%20fill%3D%22url(%23main-bear_emerald)%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Ccircle%20cx%3D%2292%22%20cy%3D%2230%22%20r%3D%2213%22%20fill%3D%22url(%23main-bear_emerald)%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Ccircle%20cx%3D%2228%22%20cy%3D%2230%22%20r%3D%226%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Ccircle%20cx%3D%2292%22%20cy%3D%2230%22%20r%3D%226%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Cpolygon%20points%3D%2224%2C42%2060%2C24%2096%2C42%20104%2C72%2084%2C102%2060%2C108%2036%2C102%2016%2C72%22%20fill%3D%22url(%23dark-bear_emerald)%22%20stroke%3D%22%2334d399%22%20stroke-width%3D%221.5%22%2F%3E%20%3Cpolygon%20points%3D%2232%2C38%2060%2C28%2088%2C38%2094%2C68%2076%2C94%2044%2C94%2026%2C68%22%20fill%3D%22url(%23main-bear_emerald)%22%2F%3E%20%3Cpolygon%20points%3D%2240%2C46%2060%2C54%2080%2C46%2076%2C38%2060%2C44%2044%2C38%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Cpolygon%20points%3D%2234%2C54%2049%2C59%2038%2C63%22%20fill%3D%22%23f43f5e%22%2F%3E%20%3Cpolygon%20points%3D%2286%2C54%2071%2C59%2082%2C63%22%20fill%3D%22%23f43f5e%22%2F%3E%20%3Cpolygon%20points%3D%2242%2C66%2060%2C60%2078%2C66%2082%2C92%2060%2C102%2038%2C92%22%20fill%3D%22%2301130e%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Cpolygon%20points%3D%2251%2C70%2069%2C70%2060%2C81%22%20fill%3D%22%2310b981%22%2F%3E%20%3Cpolygon%20points%3D%2245%2C92%2050%2C83%2054%2C93%22%20fill%3D%22%23ffffff%22%2F%3E%20%3Cpolygon%20points%3D%2275%2C92%2070%2C83%2066%2C93%22%20fill%3D%22%23ffffff%22%2F%3E%20%3Cpath%20d%3D%22M46%2092%20H74%22%20stroke%3D%22%2310b981%22%20stroke-width%3D%222%22%2F%3E%20%3C%2Fsvg%3E",
-    "traderTitle": "Verified Scalper & Gold Trader",
-    "bio": "XMTrading MT5 Verified read-only execution.",
-    "tradingStyle": "SCALPER",
-    "primaryBroker": "XMTrading",
-    "accountNumber": "72423906",
-    "country": "Japan",
-    "joinedAt": "November 2026",
-    "level": 1,
-    "xp": 575,
-    "rank": 1,
-    "currency": "JPY"
   }
 }

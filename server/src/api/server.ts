@@ -401,27 +401,6 @@ export function createServer() {
       },
     ],
     [
-      'u_homiesplant_th',
-      {
-        id: 'u_homiesplant_th',
-        username: 'homiesplant.th',
-        email: 'homiesplant.th@traderank.live',
-        avatarSymbol: 'bear_emerald',
-        avatarUrl: EMERALD_BEAR_URL,
-        traderTitle: 'Verified Scalper & Gold Trader',
-        bio: 'XMTrading MT5 Verified read-only execution.',
-        tradingStyle: 'SCALPER',
-        primaryBroker: 'XMTrading',
-        accountNumber: '72423906',
-        country: 'Japan',
-        joinedAt: 'November 2026',
-        level: 1,
-        xp: 575,
-        rank: 1,
-        currency: 'JPY',
-      },
-    ],
-    [
       'u_alex_vanguard',
       {
         id: 'u_alex_vanguard',
@@ -492,28 +471,9 @@ export function createServer() {
       userProfiles.set('u_zzzemzzz', canonicalZem);
       userProfiles.delete('u_emanuel001');
       userProfiles.delete('u_emanuel007');
-
-      // Ensure authentic homiesplant.th profile is active and persisted
-      const hp = userProfiles.get('u_homiesplant_th') || userProfiles.get('u_homiesplant') || userProfiles.get('usr_meta_72423906') || {};
-      const canonicalHomies = {
-        ...hp,
-        id: 'u_homiesplant_th',
-        username: 'homiesplant.th',
-        email: hp.email || 'homiesplant.th@traderank.live',
-        accountNumber: '72423906',
-        avatarSymbol: 'bear_emerald',
-        avatarUrl: EMERALD_BEAR_URL,
-        primaryBroker: 'XMTrading',
-        currency: 'JPY',
-        traderTitle: 'Verified Scalper & Gold Trader',
-        bio: 'XMTrading MT5 Verified read-only execution.',
-        tradingStyle: 'SCALPER',
-        level: 1,
-        xp: 575,
-      };
-      userProfiles.set('u_homiesplant_th', canonicalHomies);
-      userProfiles.set('u_homiesplant', canonicalHomies);
-      userProfiles.set('usr_meta_72423906', canonicalHomies);
+      userProfiles.delete('u_homiesplant_th');
+      userProfiles.delete('u_homiesplant');
+      userProfiles.delete('usr_meta_72423906');
       await persistUserProfilesToR2();
     } catch (err) {
       console.warn('[server] Warning: Could not load user profiles from R2:', err);
@@ -771,7 +731,7 @@ export function createServer() {
       if (!effectiveUserId) {
         return res.status(401).json({ success: false, error: 'Authentication required to connect a trading account' });
       }
-      if (!authSession && (effectiveUserId === 'u_zzzemzzz' || effectiveUserId === 'u_homiesplant_th' || Boolean(authService.getCredential(effectiveUserId)))) {
+      if (!authSession && (effectiveUserId === 'u_zzzemzzz' || Boolean(authService.getCredential(effectiveUserId)))) {
         return res.status(401).json({ success: false, error: 'Authentication token required to bind accounts to this user' });
       }
 
@@ -809,30 +769,21 @@ export function createServer() {
       return res.json(
         accounts.map(acc => {
           const cleanAcc = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
-          const isHomies =
-            cleanAcc === '72423906' ||
-            acc.userId === 'u_homiesplant_th' ||
-            acc.userId === 'u_homiesplant' ||
-            acc.userId === 'usr_meta_72423906' ||
-            String(acc.id).includes('72423906');
           const isZem =
-            !isHomies &&
-            (cleanAcc === '342186831' ||
-              acc.userId === 'u_zzzemzzz' ||
-              String(acc.id).includes('342186831'));
+            cleanAcc === '342186831' ||
+            acc.userId === 'u_zzzemzzz' ||
+            String(acc.id).includes('342186831');
           const masked = maskAccountSecrets(acc);
-          const safeProfile = isHomies
-            ? 'HomiesPlant'
-            : isZem
+          const safeProfile = isZem
             ? 'zzZEMZzz'
             : (/emanuel/i.test(String(acc.profileUsername || '')) ? 'VerifiedTrader_' + cleanAcc : acc.profileUsername);
           return {
             ...masked,
-            userId: isHomies ? 'u_homiesplant_th' : isZem ? 'u_zzzemzzz' : acc.userId,
+            userId: isZem ? 'u_zzzemzzz' : acc.userId,
             profileUsername: safeProfile,
-            accountHolderName: isHomies ? 'HomiesPlant' : isZem ? 'zzZEMZzz' : safeProfile,
-            broker: isHomies ? 'XMTrading' : isZem ? 'XM' : acc.broker,
-            currency: isHomies ? 'JPY' : isZem ? 'USD' : (acc.currency || 'USD'),
+            accountHolderName: isZem ? 'zzZEMZzz' : safeProfile,
+            broker: isZem ? 'XM' : acc.broker,
+            currency: isZem ? 'USD' : (acc.currency || 'USD'),
           };
         })
       );
@@ -843,30 +794,21 @@ export function createServer() {
     return res.json(
       allAccounts.map(acc => {
         const cleanAcc = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
-        const isHomies =
-          cleanAcc === '72423906' ||
-          acc.userId === 'u_homiesplant_th' ||
-          acc.userId === 'u_homiesplant' ||
-          acc.userId === 'usr_meta_72423906' ||
-          String(acc.id).includes('72423906');
         const isZem =
-          !isHomies &&
-          (cleanAcc === '342186831' ||
-            acc.userId === 'u_zzzemzzz' ||
-            String(acc.id).includes('342186831'));
-        const safeProfile = isHomies
-          ? 'HomiesPlant'
-          : isZem
+          cleanAcc === '342186831' ||
+          acc.userId === 'u_zzzemzzz' ||
+          String(acc.id).includes('342186831');
+        const safeProfile = isZem
           ? 'zzZEMZzz'
           : (/emanuel/i.test(String(acc.profileUsername || '')) ? 'VerifiedTrader_' + cleanAcc : acc.profileUsername);
         return {
           id: acc.id,
-          userId: isHomies ? 'u_homiesplant_th' : isZem ? 'u_zzzemzzz' : acc.userId,
+          userId: isZem ? 'u_zzzemzzz' : acc.userId,
           accountNumber: acc.accountNumber,
           profileUsername: safeProfile,
-          currency: isHomies ? 'JPY' : isZem ? 'USD' : (acc.currency || 'USD'),
+          currency: isZem ? 'USD' : (acc.currency || 'USD'),
           vaultSecretRef: maskAccountSecrets(acc).vaultSecretRef,
-          broker: isHomies ? 'XMTrading' : isZem ? 'XM' : acc.broker,
+          broker: isZem ? 'XM' : acc.broker,
           platform: acc.platform,
           connectionStatus: acc.connectionStatus,
         };
