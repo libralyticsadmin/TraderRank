@@ -36,8 +36,12 @@ export class R2StorageService {
       bucketName,
     };
 
-    // Initialize local persistent disk storage directory (survives restarts)
-    this.localBaseDir = process.env.DATA_DIR || path.resolve(process.cwd(), 'data/storage');
+    // Initialize single canonical disk storage directory (works identically from repo root or server/ cwd)
+    const rootServerData = path.resolve(process.cwd(), 'server/data/storage');
+    const cwdData = path.resolve(process.cwd(), 'data/storage');
+    this.localBaseDir =
+      process.env.DATA_DIR ||
+      (fs.existsSync(rootServerData) ? rootServerData : cwdData);
     try {
       if (!fs.existsSync(this.localBaseDir)) {
         fs.mkdirSync(this.localBaseDir, { recursive: true });
