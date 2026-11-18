@@ -828,10 +828,9 @@ export function createServer() {
       const authSession = extractAuthUser(req);
       const effectiveUserId = authSession?.userId || userId;
       const isProtectedAccount =
-        account.accountNumber === '72423906' ||
+        process.env.NODE_ENV === 'production' ||
         account.accountNumber === '342186831' ||
-        account.userId === 'u_zzzemzzz' ||
-        account.userId === 'u_homiesplant_th';
+        account.userId === 'u_zzzemzzz';
 
       if (isProtectedAccount && (!authSession || authSession.userId !== account.userId)) {
         return res.status(403).json({ success: false, error: 'Forbidden: Valid owner session required to disconnect this account' });
@@ -854,8 +853,8 @@ export function createServer() {
     }
   });
 
-  // 4c. Trigger live cloud accounts sync
-  app.post('/api/accounts/sync-cloud', async (_req: Request, res: Response) => {
+  // 4c. Trigger live cloud accounts sync (Protected by Admin Auth)
+  app.post('/api/accounts/sync-cloud', requireAdminAuth, async (_req: Request, res: Response) => {
     const accounts = await connector.syncCloudProvisionedAccounts();
     res.json({
       success: true,
@@ -1179,7 +1178,7 @@ export function createServer() {
   });
 
   // 9. Secrets Vault Audit Logs (Infrastructure Design §6)
-  app.get('/api/vault/audit', (_req: Request, res: Response) => {
+  app.get('/api/vault/audit', requireAdminAuth, (_req: Request, res: Response) => {
     const rawLogs = vault.getAuditLogs();
     const sanitizedLogs = rawLogs.map(log => ({
       ...log,
@@ -1220,8 +1219,8 @@ export function createServer() {
     });
   });
 
-  // 12b. MetaApi Cloud Provisioned Accounts
-  app.get('/api/brokers/metaapi/accounts', async (_req: Request, res: Response) => {
+  // 12b. MetaApi Cloud Provisioned Accounts (Protected by Admin Auth)
+  app.get('/api/brokers/metaapi/accounts', requireAdminAuth, async (_req: Request, res: Response) => {
     try {
       const accounts = await metaApiClient.listProvisionedAccounts();
       res.json({ success: true, count: accounts.length, accounts });

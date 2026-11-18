@@ -483,11 +483,18 @@ export class AccountConnectorService {
       const saved = await r2Storage.getJson<Record<string, AccountOwnerRecord>>('profiles/account_owners.json');
       if (saved && typeof saved === 'object') {
         for (const [k, v] of Object.entries(saved)) {
-          if (v && v.userId && v.accountNumber) {
-            this.accountOwners.set(k, v);
-            this.accountOwners.set(String(v.accountNumber).trim(), v);
+          const accNum = String(v?.accountNumber || k || '').trim();
+          if (v && v.userId && accNum && accNum !== '72423906') {
+            const normalized: AccountOwnerRecord = {
+              ...v,
+              accountNumber: accNum,
+              broker: v.broker || 'XM',
+              platform: v.platform || 'MT5',
+            };
+            this.accountOwners.set(k, normalized);
+            this.accountOwners.set(accNum, normalized);
             if (v.accountId) {
-              this.accountOwners.set(v.accountId, v);
+              this.accountOwners.set(v.accountId, normalized);
             }
           }
         }
