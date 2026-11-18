@@ -491,6 +491,8 @@ export interface BulletinFeedItem {
 export interface BulletinFeedResponse {
   latest: BulletinFeedItem[];
   topWins: BulletinFeedItem[];
+  openOrders: BulletinFeedItem[];
+  liveOpenCount: number;
   generatedAt: string;
 }
 
@@ -618,6 +620,8 @@ export async function getBulletinFeed(
   return {
     latest,
     topWins,
+    openOrders: openItems.slice(0, 12),
+    liveOpenCount: openItems.length,
     generatedAt: new Date().toISOString(),
   };
 }

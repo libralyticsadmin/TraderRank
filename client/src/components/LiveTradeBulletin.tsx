@@ -53,6 +53,15 @@ interface LiveTradeBulletinProps {
 
 const DEFAULT_SPOTLIGHT_TRADES: BulletinTradeItem[] = [];
 
+function formatTradePrice(symbol: string, price: number): string {
+  const sym = String(symbol || '').toUpperCase();
+  if (sym.includes('JPY')) return price.toFixed(3);
+  if (sym.includes('XAU') || sym.includes('GOLD') || sym.includes('BTC') || price >= 20) {
+    return price.toFixed(2);
+  }
+  return price.toFixed(5);
+}
+
 export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
   onSelectTrader,
 }) => {
@@ -61,7 +70,9 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
   const { traders: canonicalTraders, platformTotals, getTraderStats } = useTraderStats();
   const [allRealTrades, setAllRealTrades] = useState<BulletinTradeItem[]>([]);
   const [winningRealTrades, setWinningRealTrades] = useState<BulletinTradeItem[]>([]);
-  const [deckMode, setDeckMode] = useState<'WINS' | 'LATEST'>('LATEST');
+  const [openRealTrades, setOpenRealTrades] = useState<BulletinTradeItem[]>([]);
+  const [liveOpenCount, setLiveOpenCount] = useState<number>(0);
+  const [deckMode, setDeckMode] = useState<'WINS' | 'LATEST' | 'OPEN'>('LATEST');
   const [summaryStats, setSummaryStats] = useState<{
     totalFills: number;
     winsCount: number;
@@ -75,7 +86,9 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
   const SPOTLIGHT_INTERVAL_MS = 4500;
 
   const activeDeck: BulletinTradeItem[] =
-    allRealTrades.length > 0
+    deckMode === 'OPEN'
+      ? openRealTrades
+      : allRealTrades.length > 0
       ? deckMode === 'WINS' && winningRealTrades.length > 0
         ? winningRealTrades
         : allRealTrades.slice(0, 12)
@@ -147,17 +160,23 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
 
         const latestItems: BulletinTradeItem[] = Array.isArray(data.latest) ? data.latest.map(mapItem) : [];
         const topWinItems: BulletinTradeItem[] = Array.isArray(data.topWins) ? data.topWins.map(mapItem) : [];
+        const openItems: BulletinTradeItem[] = Array.isArray(data.openOrders)
+          ? data.openOrders.map(mapItem)
+          : latestItems.filter(i => i.timeAgo === 'LIVE OPEN');
 
         setAllRealTrades(latestItems);
         setWinningRealTrades(topWinItems);
+        setOpenRealTrades(openItems);
+        setLiveOpenCount(typeof data.liveOpenCount === 'number' ? data.liveOpenCount : openItems.length);
 
         const first = latestItems[0] || topWinItems[0];
         if (first) {
-          const total = first.traderTradesCount || latestItems.length;
-          const wr = first.traderWinRate || 0;
+          const total = first.traderTradesCount ?? latestItems.length;
+          const wr = first.traderWinRate ?? 0;
+          const wins = first.traderWinningTrades ?? Math.round((total * wr) / 100);
           setSummaryStats({
             totalFills: total,
-            winsCount: Math.round((total * wr) / 100),
+            winsCount: wins,
             winRate: wr,
           });
         }
@@ -296,8 +315,8 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                     letterSpacing: '-0.2px',
                   }}
                 >
-                  {currentTrade.openPrice.toFixed(2)} →{' '}
-                  <strong style={{ color: '#e2e8f0' }}>{currentTrade.closePrice.toFixed(2)}</strong>
+                  {formatTradePrice(currentTrade.symbol, currentTrade.openPrice)} →{' '}
+                  <strong style={{ color: '#e2e8f0' }}>{formatTradePrice(currentTrade.symbol, currentTrade.closePrice)}</strong>
                 </div>
               ) : null}
             </div>
@@ -341,7 +360,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
               </span>
               <div className="spotlight-time-tag">
                 <ShieldCheck size={11} color="#0abab5" />
-                <span>{currentTrade.timeAgo} • MetaApi</span>
+                <span>{currentTrade.timeAgo === 'LIVE OPEN' ? 'LIVE FLOATING • MetaApi' : `${currentTrade.timeAgo} • MetaApi`}</span>
               </div>
             </div>
           </div>
@@ -349,7 +368,13 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '12px' }}>
             <Zap size={14} color="#0abab5" />
             <span>
-              {language === 'ja'
+              {deckMode === 'OPEN'
+                ? language === 'ja'
+                  ? '現在保有中のライブポジションはありません'
+                  : language === 'zh'
+                  ? '当前暂无实时持仓订单'
+                  : 'No active market orders open right now'
+                : language === 'ja'
                 ? '検証済み約定フィードを受信中...'
                 : language === 'zh'
                 ? '正在等待实盘交割推送...'
@@ -394,7 +419,18 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                   </>
                 );
               })()}
-                            <div className="bulletin-mode-toggle">
+              <div className="bulletin-mode-toggle">
+                <button
+                  type="button"
+                  className={`bulletin-mode-btn ${deckMode === 'OPEN' ? 'active' : ''}`}
+                  onClick={() => {
+                    setDeckMode('OPEN');
+                    setCurrentIndex(0);
+                    setProgress(0);
+                  }}
+                >
+                  {language === 'ja' ? `ライブ(${liveOpenCount})` : language === 'zh' ? `持仓(${liveOpenCount})` : `Live (${liveOpenCount})`}
+                </button>
                 <button
                   type="button"
                   className={`bulletin-mode-btn ${deckMode === 'WINS' ? 'active' : ''}`}
@@ -458,11 +494,11 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
 
           {/* Bottom Tier: Live Arena Pulse (Utilizing full panel width with accurate canonical metrics) */}
           {(() => {
-            const liveOpenCount = allRealTrades.filter(item => item.timeAgo === 'LIVE OPEN').length;
-            const activeTradersCount = canonicalTraders.filter(tr => tr.tradesCount > 0).length;
+            const activeTradersCount = canonicalTraders.filter(tr => tr.tradesCount > 0 || tr.liveOrders.length > 0).length;
             const dailyLeader = [...canonicalTraders].sort((a, b) => b.dailyNetPips - a.dailyNetPips)[0];
             const totalFills = platformTotals?.totalTrades ?? 0;
-            const totalHarvested = platformTotals?.totalWinningPips ?? 0;
+            const todayTotalTrades = canonicalTraders.reduce((sum, tr) => sum + (tr.dailyTradesCount || 0), 0);
+            const todayNetPips = Number(canonicalTraders.reduce((sum, tr) => sum + (tr.dailyNetPips || 0), 0).toFixed(1));
 
             return (
               <div
@@ -477,7 +513,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    setDeckMode('LATEST');
+                    setDeckMode(liveOpenCount > 0 ? 'OPEN' : 'LATEST');
                     setCurrentIndex(0);
                     setProgress(0);
                   }}
@@ -556,7 +592,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                   </div>
                 </button>
 
-                {/* Card 3: Verified Arena Fills */}
+                {/* Card 3: Today's Arena Pulse (UTC) */}
                 <div
                   style={{
                     textAlign: 'left',
@@ -571,13 +607,16 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                   }}
                 >
                   <div style={{ fontSize: '9px', fontWeight: 800, color: '#00F0FF', letterSpacing: '0.4px', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {language === 'ja' ? '累計認証約定' : language === 'zh' ? '全平台认证成交' : 'Verified Arena Fills'}
+                    {language === 'ja' ? '本日の取引実績 (UTC)' : language === 'zh' ? '今日全场战绩 (UTC)' : "Today's Arena (UTC)"}
                   </div>
                   <div className="tabular" style={{ fontSize: '13px', fontWeight: 900, color: '#ffffff', whiteSpace: 'nowrap' }}>
-                    {totalFills.toLocaleString()} {language === 'ja' ? '約定' : language === 'zh' ? '笔' : 'Fills'}
+                    {todayTotalTrades} {language === 'ja' ? '約定' : language === 'zh' ? '笔今日' : 'Today'} •{' '}
+                    <span style={{ color: todayNetPips >= 0 ? '#34d399' : '#f87171' }}>
+                      {todayNetPips >= 0 ? '+' : ''}{todayNetPips.toFixed(1)}p
+                    </span>
                   </div>
-                  <div className="tabular" style={{ fontSize: '10px', fontWeight: 700, color: '#10b981', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    +{totalHarvested.toLocaleString()}p {language === 'ja' ? '獲得' : language === 'zh' ? '总盈利点' : 'Harvested'}
+                  <div className="tabular" style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {totalFills.toLocaleString()} {language === 'ja' ? '累計認証約定' : language === 'zh' ? '累计认证成交' : 'Total Verified Fills'}
                   </div>
                 </div>
               </div>
