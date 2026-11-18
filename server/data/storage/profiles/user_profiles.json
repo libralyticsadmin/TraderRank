@@ -120,5 +120,20 @@
     "level": 1,
     "xp": 100,
     "rank": 99
+  },
+  "u_securetrader_1794985732426": {
+    "id": "u_securetrader_1794985732426",
+    "username": "SecureTrader_1794985732426",
+    "email": "securetrader_1794985732426@test.com",
+    "avatarSymbol": "zap",
+    "traderTitle": "Verified Market Trader",
+    "bio": "",
+    "tradingStyle": "SWING",
+    "primaryBroker": "XMTrading",
+    "country": "Global",
+    "joinedAt": "Today",
+    "level": 1,
+    "xp": 100,
+    "rank": 99
   }
 }

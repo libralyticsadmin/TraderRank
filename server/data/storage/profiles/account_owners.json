@@ -1,29 +1,7 @@
 {
-  "20938471": {
-    "userId": "u_demo_1",
-    "username": "TraderAlex",
-    "broker": "XM",
-    "accountNumber": "20938471",
-    "platform": "MT5",
-    "accountId": "acc_216ed685",
-    "serverName": "XMGlobal-Real 20",
-    "connectedAt": "2026-11-18T07:05:05.618Z",
-    "status": "CONNECTED"
-  },
-  "33445566": {
-    "userId": "u_demo_jp",
-    "username": "TokyoTrader",
-    "broker": "XMTrading",
-    "accountNumber": "33445566",
-    "platform": "MT5",
-    "accountId": "acc_f1b5a5fb",
-    "serverName": "XMTrading-MT5",
-    "connectedAt": "2026-11-16T08:57:31.364Z",
-    "status": "CONNECTED"
-  },
   "72423906": {
     "userId": "u_homiesplant_th",
-    "username": "homiesplant.th",
+    "username": "HomiesPlant",
     "broker": "XMTrading",
     "accountNumber": "72423906",
     "platform": "MT5",
@@ -31,39 +9,6 @@
     "serverName": "XMTrading-MT5 3",
     "currency": "JPY",
     "connectedAt": "2026-11-16T08:38:20.940Z",
-    "status": "CONNECTED"
-  },
-  "77221199": {
-    "userId": "u_real_trader_alpha",
-    "username": "AlphaQuant",
-    "broker": "IC_MARKETS",
-    "accountNumber": "77221199",
-    "platform": "MT5",
-    "accountId": "acc_4c229290",
-    "serverName": "ICMarketsSC-Live01",
-    "connectedAt": "2026-11-16T09:21:23.069Z",
-    "status": "CONNECTED"
-  },
-  "88229911": {
-    "userId": "u_persistence_tester",
-    "username": "PersistenceTester",
-    "broker": "Exness",
-    "accountNumber": "88229911",
-    "platform": "MT5",
-    "accountId": "acc_101efb0f",
-    "serverName": "Exness-Real15",
-    "connectedAt": "2026-11-16T08:38:20.946Z",
-    "status": "CONNECTED"
-  },
-  "99881122": {
-    "userId": "u_trader_axiory_scalper",
-    "username": "AxioryScalper",
-    "broker": "Axiory",
-    "accountNumber": "99881122",
-    "platform": "MT5",
-    "accountId": "acc_db896d6b",
-    "serverName": "Axiory-Live 01",
-    "connectedAt": "2026-11-16T09:21:28.376Z",
     "status": "CONNECTED"
   },
   "342186831": {
@@ -88,37 +33,6 @@
     "serverName": "XMGlobal-MT5 16",
     "currency": "USD",
     "connectedAt": "2026-11-18T06:58:00.000Z",
-    "status": "CONNECTED"
-  },
-  "EXN-554433": {
-    "userId": "u_demo_2",
-    "username": "ExnessSniper",
-    "broker": "Exness",
-    "accountNumber": "EXN-554433",
-    "platform": "NATIVE",
-    "accountId": "acc_53a2ed2c",
-    "connectedAt": "2026-11-16T08:57:31.357Z",
-    "status": "CONNECTED"
-  },
-  "mock_9921048": {
-    "userId": "u_tester_1",
-    "username": "TestChallenger",
-    "broker": "IC_MARKETS",
-    "accountNumber": "mock_9921048",
-    "platform": "MT5",
-    "accountId": "acc_b9d54455",
-    "serverName": "ICMarkets-Mock-Server",
-    "connectedAt": "2026-11-18T07:05:08.261Z",
-    "status": "CONNECTED"
-  },
-  "EXN-MULTI-01": {
-    "userId": "u_trader_exness_pro",
-    "username": "ExnessSniper",
-    "broker": "Exness",
-    "accountNumber": "EXN-MULTI-01",
-    "platform": "NATIVE",
-    "accountId": "acc_a561335a",
-    "connectedAt": "2026-11-16T09:21:28.372Z",
     "status": "CONNECTED"
   }
 }

@@ -1,5 +1,6 @@
 import { S3Client, PutObjectCommand, GetObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 
 export interface R2Config {
@@ -21,6 +22,7 @@ export class R2StorageService {
   private client: S3Client | null = null;
   private config: R2Config;
   private inMemoryFallback = new Map<string, string>();
+  private writeQueues = new Map<string, Promise<unknown>>();
   private localBaseDir: string;
 
   constructor(customConfig?: Partial<R2Config>) {
@@ -36,12 +38,17 @@ export class R2StorageService {
       bucketName,
     };
 
-    // Initialize single canonical disk storage directory (works identically from repo root or server/ cwd)
+    // Isolate test runs in /tmp so tests never pollute production server/data/storage
+    const isTestEnv = Boolean(process.env.VITEST || process.env.NODE_ENV === 'test');
     const rootServerData = path.resolve(process.cwd(), 'server/data/storage');
     const cwdData = path.resolve(process.cwd(), 'data/storage');
     this.localBaseDir =
       process.env.DATA_DIR ||
-      (fs.existsSync(rootServerData) ? rootServerData : cwdData);
+      (isTestEnv
+        ? path.resolve(os.tmpdir(), 'traderrank-test-storage')
+        : fs.existsSync(rootServerData)
+        ? rootServerData
+        : cwdData);
     try {
       if (!fs.existsSync(this.localBaseDir)) {
         fs.mkdirSync(this.localBaseDir, { recursive: true });
@@ -87,7 +94,9 @@ export class R2StorageService {
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
-      fs.writeFileSync(filePath, dataStr, 'utf-8');
+      const tmpPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
+      fs.writeFileSync(tmpPath, dataStr, 'utf-8');
+      fs.renameSync(tmpPath, filePath);
     } catch (err) {
       console.warn(`[R2StorageService] Local disk write warning for ${key}:`, err);
     }
@@ -150,12 +159,26 @@ export class R2StorageService {
     metadata?: Record<string, string>
   ): Promise<R2UploadResult> {
     const bodyStr = JSON.stringify(data, null, 2);
-    const sizeBytes = Buffer.byteLength(bodyStr, 'utf-8');
-    const uploadedAt = new Date().toISOString();
-
-    // 1. Always write to local persistent disk database first
+    // 1. Always write atomically to local disk & memory immediately
     this.saveToLocalDisk(key, bodyStr);
     this.inMemoryFallback.set(key, bodyStr);
+
+    // 2. Serialize async R2 cloud uploads per key
+    const prev = this.writeQueues.get(key) || Promise.resolve();
+    const next = prev
+      .catch(() => {})
+      .then(() => this.performCloudUpload(key, bodyStr, metadata));
+    this.writeQueues.set(key, next);
+    return next;
+  }
+
+  private async performCloudUpload(
+    key: string,
+    bodyStr: string,
+    metadata?: Record<string, string>
+  ): Promise<R2UploadResult> {
+    const sizeBytes = Buffer.byteLength(bodyStr, 'utf-8');
+    const uploadedAt = new Date().toISOString();
 
     // 2. Sync to Cloudflare R2 Cloud
     if (this.client) {
