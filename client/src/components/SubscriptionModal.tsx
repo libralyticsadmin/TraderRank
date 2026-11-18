@@ -213,7 +213,13 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 {language === 'ja' ? 'アカウント状態' : language === 'zh' ? '账户认证状态' : 'Membership Tier'}
               </div>
               <div style={{ fontSize: '16px', fontWeight: 900, color: '#FFFFFF' }}>
-                {user ? `${user.username} • Verified Pro Trader` : 'Verified TraderRank Contender'}
+                {user
+                  ? `${user.username} • ${
+                      user.accountNumber
+                        ? `${user.primaryBroker || 'Broker'} (#${user.accountNumber})`
+                        : 'No Broker Connected Yet'
+                    }`
+                  : 'Guest Preview • Sign In to Link Account'}
               </div>
             </div>
           </div>

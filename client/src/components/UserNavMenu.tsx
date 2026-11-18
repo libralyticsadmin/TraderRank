@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Settings, LogOut, ChevronDown, ShieldCheck, Crown, Users, LayoutDashboard } from 'lucide-react';
+import { User, Settings, LogOut, ChevronDown, ShieldCheck, Users, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { TraderAvatar } from './TraderAvatar.tsx';
@@ -14,7 +14,6 @@ interface UserNavMenuProps {
 
 export const UserNavMenu: React.FC<UserNavMenuProps> = ({
   onOpenConnectWizard,
-  onOpenSubscriptionModal,
   onOpenAffiliateModal,
   onOpenMyDashboard,
 }) => {
@@ -248,33 +247,6 @@ export const UserNavMenu: React.FC<UserNavMenuProps> = ({
             >
               <Users size={15} color="#00F0FF" />
               <span>Invite Friends (+500 XP)</span>
-            </button>
-          )}
-
-          {onOpenSubscriptionModal && (
-            <button
-              onClick={() => { setMenuOpen(false); onOpenSubscriptionModal(); }}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '9px 12px',
-                background: 'transparent',
-                border: 'none',
-                borderRadius: '8px',
-                color: '#fbbf24',
-                fontSize: '12px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                textAlign: 'left',
-                transition: 'background 0.15s',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(251, 191, 36, 0.15)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-            >
-              <Crown size={15} color="#fbbf24" />
-              <span>{(user as any)?.isPro || (user as any)?.subscriptionTier ? 'Membership & Tier Plans' : 'Register / Upgrade Tier'}</span>
             </button>
           )}
 
