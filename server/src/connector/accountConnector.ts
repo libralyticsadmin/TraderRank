@@ -113,8 +113,11 @@ export class AccountConnectorService {
     this.traderAvatars.set('u_homiesplant_th', EMERALD_BEAR_URL);
 
     this.initWorkerEventWiring();
-    this.loadAccountOwnersFromR2().catch(() => {});
-    this.syncCloudProvisionedAccounts().catch(() => {});
+    this.loadAccountOwnersFromR2()
+      .catch(() => {})
+      .finally(() => {
+        this.syncCloudProvisionedAccounts().catch(() => {});
+      });
   }
 
   public static getInstance(): AccountConnectorService {
@@ -543,10 +546,10 @@ export class AccountConnectorService {
               platform: v.platform || 'MT5',
               serverName: v.serverName || (isZem ? 'XMGlobal-MT5 10' : 'XMTrading-MT5 3'),
               connectionStatus: 'CONNECTED',
-              balance: isZem ? 3817 : 10000,
-              equity: isZem ? 3817 : 10000,
+              balance: isZem ? 3817 : 0,
+              equity: isZem ? 3817 : 0,
               margin: 0,
-              freeMargin: isZem ? 3817 : 10000,
+              freeMargin: isZem ? 3817 : 0,
               currency: (v as any).currency || (v.broker === 'XMTrading' || (v.serverName && v.serverName.toLowerCase().includes('xmtrading')) ? 'JPY' : 'USD'),
               leverage: 100,
               vaultSecretRef: `ref_restored_${accountId}`,

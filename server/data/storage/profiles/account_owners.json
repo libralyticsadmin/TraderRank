@@ -7,7 +7,7 @@
     "platform": "MT5",
     "accountId": "acc_216ed685",
     "serverName": "XMGlobal-Real 20",
-    "connectedAt": "2026-11-16T11:40:56.896Z",
+    "connectedAt": "2026-11-18T07:05:05.618Z",
     "status": "CONNECTED"
   },
   "33445566": {
@@ -78,6 +78,18 @@
     "connectedAt": "2026-11-16T09:00:00.000Z",
     "status": "CONNECTED"
   },
+  "411407722": {
+    "userId": "u_homeisplant",
+    "username": "HomeisPlant",
+    "broker": "XM",
+    "accountNumber": "411407722",
+    "platform": "MT5",
+    "accountId": "acc_meta_411407722",
+    "serverName": "XMGlobal-MT5 16",
+    "currency": "USD",
+    "connectedAt": "2026-11-18T06:58:00.000Z",
+    "status": "CONNECTED"
+  },
   "EXN-554433": {
     "userId": "u_demo_2",
     "username": "ExnessSniper",
@@ -96,7 +108,7 @@
     "platform": "MT5",
     "accountId": "acc_b9d54455",
     "serverName": "ICMarkets-Mock-Server",
-    "connectedAt": "2026-11-16T11:41:12.308Z",
+    "connectedAt": "2026-11-18T07:05:08.261Z",
     "status": "CONNECTED"
   },
   "EXN-MULTI-01": {

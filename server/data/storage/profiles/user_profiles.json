@@ -53,6 +53,23 @@
     "discordHandle": "vanguard_fx#1284",
     "twitterHandle": "@vanguard_fx"
   },
+  "u_homeisplant": {
+    "id": "u_homeisplant",
+    "username": "HomeisPlant",
+    "email": "homeisplant@traderank.live",
+    "avatarSymbol": "zap",
+    "traderTitle": "Verified Market Trader",
+    "bio": "XMGlobal MT5 Verified read-only execution.",
+    "tradingStyle": "DAY_TRADER",
+    "primaryBroker": "XM",
+    "accountNumber": "411407722",
+    "country": "Global",
+    "joinedAt": "November 2026",
+    "level": 1,
+    "xp": 0,
+    "rank": 3,
+    "currency": "USD"
+  },
   "u_homiesplant": {
     "id": "u_homiesplant_th",
     "username": "homiesplant.th",
@@ -89,10 +106,10 @@
     "rank": 1,
     "currency": "JPY"
   },
-  "u_securetrader_1794829256929": {
-    "id": "u_securetrader_1794829256929",
-    "username": "SecureTrader_1794829256929",
-    "email": "securetrader_1794829256929@test.com",
+  "u_securetrader_1794985505647": {
+    "id": "u_securetrader_1794985505647",
+    "username": "SecureTrader_1794985505647",
+    "email": "securetrader_1794985505647@test.com",
     "avatarSymbol": "zap",
     "traderTitle": "Verified Market Trader",
     "bio": "",
