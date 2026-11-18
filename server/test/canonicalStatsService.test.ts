@@ -172,5 +172,10 @@ describe('CanonicalStatsService (Single Source of Truth)', () => {
     const resOne = await computeCanonicalStats(mockConnector, mockLeaderboard, undefined, regMid);
     expect(resOne.traders[0].xp).toBe(25);
     expect(resOne.traders[0].level).toBe(1);
+
+    const streakMap = new Map([['u_homeisplant', 1000]]);
+    const resWithStreak = await computeCanonicalStats(mockConnector, mockLeaderboard, undefined, regMid, streakMap);
+    expect(resWithStreak.traders[0].xp).toBe(1025);
+    expect(resWithStreak.traders[0].level).toBe(2);
   });
 });

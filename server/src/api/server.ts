@@ -30,7 +30,7 @@ import { ForexFactoryService } from '../market/forexFactoryService.js';
 import { DailyIntelService } from '../market/dailyIntelService.js';
 import { TournamentService } from '../services/tournamentService.js';
 import { authService, SessionPayload } from '../services/authService.js';
-import { getCachedCanonicalStats, getBulletinFeed } from '../services/canonicalStatsService.js';
+import { getCachedCanonicalStats, getBulletinFeed, invalidateCanonicalStatsCache } from '../services/canonicalStatsService.js';
 import { getStreakStatus, isStreakBroken, XP_RULES, calculateTraderGamification } from '../../../shared/src/gamification.js';
 
 export function createServer() {
@@ -232,7 +232,7 @@ export function createServer() {
       }
     }
     if (clients.size > 0) {
-      getCachedCanonicalStats(connector, leaderboard, marketFeed, getRegisteredAtMap())
+      getCachedCanonicalStats(connector, leaderboard, marketFeed, getRegisteredAtMap(), getStreakXpMap())
         .then(canonical => {
           const canonicalPayload = JSON.stringify({
             type: 'CANONICAL_STATS_UPDATE',
@@ -449,6 +449,20 @@ export function createServer() {
     for (const [uid, prof] of userProfiles.entries()) {
       const reg = prof?.registeredAt || authService.getCredential(uid)?.createdAt;
       if (reg) map.set(uid, reg);
+    }
+    return map;
+  }
+
+  function getStreakXpMap(): Map<string, number> {
+    const map = new Map<string, number>();
+    const todayStr = new Date().toISOString().slice(0, 10);
+    for (const [uid, st] of userStreaks.entries()) {
+      if (isStreakBroken(st.lastClaimDate, todayStr)) continue;
+      const streakXp = st.claimedDays.reduce((sum, day) => {
+        const item = XP_RULES.STREAK_SCHEDULE.find(s => s.dayNum === day);
+        return sum + (item ? item.xp : 0);
+      }, 0);
+      if (streakXp > 0) map.set(uid, streakXp);
     }
     return map;
   }
@@ -1107,7 +1121,7 @@ export function createServer() {
   // 8a. Unified Canonical Trader Stats (Single Source of Truth)
   app.get('/api/traders/canonical', async (_req: Request, res: Response) => {
     try {
-      const canonical = await getCachedCanonicalStats(connector, leaderboard, marketFeed, getRegisteredAtMap());
+      const canonical = await getCachedCanonicalStats(connector, leaderboard, marketFeed, getRegisteredAtMap(), getStreakXpMap());
       res.json(canonical);
     } catch (err: any) {
       res.status(500).json({ error: err.message || 'Failed to compute canonical stats' });
@@ -1612,6 +1626,7 @@ export function createServer() {
     const nextClaimed = [...baseClaimed, activeDay.dayNum];
     userStreaks.set(authSession.userId, { claimedDays: nextClaimed, lastClaimDate: todayStr });
     persistStreaksToR2().catch(() => {});
+    invalidateCanonicalStatsCache();
 
     const profile = userProfiles.get(authSession.userId);
     if (profile) {

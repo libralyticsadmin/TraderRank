@@ -14,6 +14,7 @@ import { AccountConnectorService } from '../connector/accountConnector.js';
 import { LeaderboardService } from './leaderboardService.js';
 import { LiveMarketFeedService } from '../market/liveMarketFeed.js';
 import { resolveBrokerCurrency } from '../utils/currencyFlow.js';
+import { calculateTraderGamification } from '../../../shared/src/gamification.js';
 
 export interface CanonicalStatsResponse {
   traders: CanonicalTraderStats[];
@@ -121,11 +122,16 @@ const CANONICAL_CACHE_TTL_MS = 3000;
 let canonicalSnapshotCache: { data: CanonicalStatsResponse; fetchedAt: number } | null = null;
 let canonicalInFlight: Promise<CanonicalStatsResponse> | null = null;
 
+export function invalidateCanonicalStatsCache(): void {
+  canonicalSnapshotCache = null;
+}
+
 export async function getCachedCanonicalStats(
   connector: AccountConnectorService,
   leaderboard: LeaderboardService,
   marketFeed?: LiveMarketFeedService,
-  registeredAtByUserId?: Map<string, string>
+  registeredAtByUserId?: Map<string, string>,
+  streakXpByUserId?: Map<string, number>
 ): Promise<CanonicalStatsResponse> {
   if (canonicalSnapshotCache && Date.now() - canonicalSnapshotCache.fetchedAt < CANONICAL_CACHE_TTL_MS) {
     return canonicalSnapshotCache.data;
@@ -133,7 +139,7 @@ export async function getCachedCanonicalStats(
   if (canonicalInFlight) {
     return canonicalInFlight;
   }
-  canonicalInFlight = computeCanonicalStats(connector, leaderboard, marketFeed, registeredAtByUserId)
+  canonicalInFlight = computeCanonicalStats(connector, leaderboard, marketFeed, registeredAtByUserId, streakXpByUserId)
     .then(data => {
       canonicalSnapshotCache = { data, fetchedAt: Date.now() };
       return data;
@@ -148,7 +154,8 @@ export async function computeCanonicalStats(
   connector: AccountConnectorService,
   leaderboard: LeaderboardService,
   marketFeed?: LiveMarketFeedService,
-  registeredAtByUserId?: Map<string, string>
+  registeredAtByUserId?: Map<string, string>,
+  streakXpByUserId?: Map<string, number>
 ): Promise<CanonicalStatsResponse> {
   const usdJpyRate = getLiveUsdJpyRate(marketFeed);
   const todayUtc = new Date().toISOString().slice(0, 10);
@@ -309,8 +316,9 @@ export async function computeCanonicalStats(
           return Number.isFinite(ts) && ts >= regMs;
         })
       : validTrades;
-    const xp = tierEligibleTrades.length * 25;
-    const level = Math.max(1, Math.floor(xp / 500) + 1);
+    const streakXp = streakXpByUserId?.get(identity.userId) ?? 0;
+    const xp = tierEligibleTrades.length * 25 + streakXp;
+    const level = calculateTraderGamification(xp).level;
 
     const matchedLb = lbEntries.find(
       e =>
