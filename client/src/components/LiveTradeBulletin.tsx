@@ -115,12 +115,17 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
         username: item.trader,
       });
       const isWin = item.profitNative > 0 || (item.profitNative === 0 && item.pips > 0);
+      const isCurrentUser = Boolean(
+        user &&
+          (user.id === item.userId ||
+            (user.username && item.trader && user.username.toLowerCase() === String(item.trader).toLowerCase()))
+      );
       return {
         id: item.id,
         accountId: item.accountId,
         userId: item.userId,
         trader: canonical?.profileName || item.trader,
-        avatarUrl: canonical?.avatarUrl || item.avatarUrl,
+        avatarUrl: (isCurrentUser ? user?.avatarUrl : undefined) || canonical?.avatarUrl || item.avatarUrl,
         broker: item.broker,
         symbol: item.symbol,
         type: item.type,

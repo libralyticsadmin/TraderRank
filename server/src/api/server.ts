@@ -651,6 +651,13 @@ export function createServer() {
     if (typeof profile.avatarSymbol === 'string') safeUpdates.avatarSymbol = profile.avatarSymbol;
     if (typeof profile.avatarUrl === 'string') safeUpdates.avatarUrl = profile.avatarUrl;
     if (typeof profile.bio === 'string') safeUpdates.bio = profile.bio;
+    if (typeof profile.traderTitle === 'string') safeUpdates.traderTitle = profile.traderTitle;
+    if (typeof profile.country === 'string') safeUpdates.country = profile.country;
+    if (typeof profile.telegramHandle === 'string') safeUpdates.telegramHandle = profile.telegramHandle;
+    if (typeof profile.discordHandle === 'string') safeUpdates.discordHandle = profile.discordHandle;
+    if (typeof profile.twitterHandle === 'string') safeUpdates.twitterHandle = profile.twitterHandle;
+    if (typeof profile.instagramHandle === 'string') safeUpdates.instagramHandle = profile.instagramHandle;
+    if (profile.methodology && typeof profile.methodology === 'object') safeUpdates.methodology = profile.methodology;
 
     const updated = { ...existing, ...safeUpdates, id: profile.id };
     userProfiles.set(profile.id, updated);

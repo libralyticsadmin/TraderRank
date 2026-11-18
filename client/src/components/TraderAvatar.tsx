@@ -80,44 +80,44 @@ const TRADER_PRESET_MAP: Record<string, string> = {
 const resolveSavedUserAvatar = (username: string, explicitUrl?: string): string | undefined => {
   if (explicitUrl && explicitUrl.trim()) return explicitUrl.trim();
   const uNorm = (username || '').trim().toLowerCase();
+  if (typeof window !== 'undefined') {
+    try {
+      // Check account avatars map first
+      const avatarMapRaw = localStorage.getItem('traderank_account_avatars_v1');
+      if (avatarMapRaw) {
+        const map = JSON.parse(avatarMapRaw);
+        if (uNorm && map[uNorm]) return map[uNorm];
+        const match = uNorm.match(/(\d{6,})/);
+        if (match && map[match[1]]) return map[match[1]];
+        if (uNorm.includes('72423906') && map['72423906']) return map['72423906'];
+      }
+
+      // Check saved logged in user
+      const raw = localStorage.getItem('traderank_auth_user_v1');
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved?.avatarUrl) {
+          const savedNorm = (saved.username || '').trim().toLowerCase();
+          if (
+            savedNorm === uNorm ||
+            uNorm.includes('72423906') ||
+            (saved.accountNumber && uNorm.includes(String(saved.accountNumber))) ||
+            saved.id === username
+          ) {
+            return saved.avatarUrl;
+          }
+        }
+      }
+    } catch {
+      // ignore storage read errors
+    }
+  }
   if (
     uNorm === 'zzzemzzz' ||
     uNorm.includes('342186831') ||
     uNorm.includes('zzzemzzz')
   ) {
     return EMERALD_BEAR_URL;
-  }
-  if (typeof window === 'undefined') return undefined;
-  try {
-
-    // Check account avatars map first
-    const avatarMapRaw = localStorage.getItem('traderank_account_avatars_v1');
-    if (avatarMapRaw) {
-      const map = JSON.parse(avatarMapRaw);
-      if (uNorm && map[uNorm]) return map[uNorm];
-      const match = uNorm.match(/(\d{6,})/);
-      if (match && map[match[1]]) return map[match[1]];
-      if (uNorm.includes('72423906') && map['72423906']) return map['72423906'];
-    }
-
-    // Check saved logged in user
-    const raw = localStorage.getItem('traderank_auth_user_v1');
-    if (raw) {
-      const saved = JSON.parse(raw);
-      if (saved?.avatarUrl) {
-        const savedNorm = (saved.username || '').trim().toLowerCase();
-        if (
-          savedNorm === uNorm ||
-          uNorm.includes('72423906') ||
-          (saved.accountNumber && uNorm.includes(String(saved.accountNumber))) ||
-          saved.id === username
-        ) {
-          return saved.avatarUrl;
-        }
-      }
-    }
-  } catch {
-    // ignore storage read errors
   }
   return undefined;
 };
