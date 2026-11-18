@@ -611,11 +611,21 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
             const isTop3 = p.rank <= 3;
             const isDq = p.status === 'DISQUALIFIED';
             const canonical = getTraderStats({ userId: p.userId, username: p.username });
+            const isCurrentUser =
+              Boolean(user) &&
+              (user?.id === p.userId ||
+                (user?.username && p.username && user.username.toLowerCase() === p.username.toLowerCase()));
             const displayPips = canonical ? canonical.totalPips : p.netPips;
             const displayTrades = canonical ? canonical.tradesCount : p.tradesCount;
             const displayWinRate = canonical ? canonical.winRate : p.winRate;
-            const displayAvatarUrl = canonical?.avatarUrl;
-            const displayAvatarSymbol = canonical?.avatarSymbol || p.avatarSymbol;
+            const displayAvatarUrl =
+              (isCurrentUser ? user?.avatarUrl : undefined) ||
+              canonical?.avatarUrl ||
+              (p as any).avatarUrl;
+            const displayAvatarSymbol =
+              (isCurrentUser ? user?.avatarSymbol : undefined) ||
+              canonical?.avatarSymbol ||
+              p.avatarSymbol;
 
             return (
               <div

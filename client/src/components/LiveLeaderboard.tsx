@@ -157,13 +157,19 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             const xp = real ? real.xp : tradesCount > 0 ? tradesCount * 25 : e.xp || 0;
             const profitRate = real ? real.roiPct : winRate;
             const gamification = calculateTraderGamification(xp);
+            const isCurrentUser =
+              Boolean(user) &&
+              (user?.id === e.userId ||
+                (user?.accountNumber && cleanAcc && user.accountNumber === cleanAcc) ||
+                (user?.username && e.username && user.username.toLowerCase() === e.username.toLowerCase()));
+            const liveAvatarUrl = (isCurrentUser ? user?.avatarUrl : undefined) || real?.avatarUrl || e.avatarUrl;
             const identity = resolveTraderIdentity({
               username: isHomies ? 'HomiesPlant' : e.username,
               profileName: isHomies ? 'HomiesPlant' : e.profileName,
               accountHolderName: isHomies ? 'HomiesPlant' : real?.profileName,
               accountNumber: cleanAcc,
               userId: isHomies ? 'u_homiesplant_th' : e.userId,
-              avatarUrl: e.avatarUrl,
+              avatarUrl: liveAvatarUrl,
             });
 
             const accCurrency = isHomies || primaryBroker === 'XMTrading' ? 'JPY' : resolveBrokerCurrency(
@@ -179,7 +185,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               profileName: identity.profileName,
               accountTag: identity.accountTag,
               avatarSeed: identity.avatarSeed,
-              avatarUrl: identity.avatarUrl || e.avatarUrl,
+              avatarUrl: liveAvatarUrl || identity.avatarUrl,
               broker: primaryBroker,
               currency: accCurrency,
               avatarSymbol: isHomies ? 'bear_emerald' : e.avatarSymbol,
@@ -234,7 +240,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
       ...item,
       displayRank: index + 1,
     }));
-  }, [entries, canonicalTraders, dailyStandings, period, metric, brokerFilter, searchQuery, getTraderStats, t, user?.username]);
+  }, [entries, canonicalTraders, dailyStandings, period, metric, brokerFilter, searchQuery, getTraderStats, t, user?.id, user?.username, user?.avatarUrl]);
 
   const top3 = processedEntries.slice(0, 3);
 

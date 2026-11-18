@@ -1208,14 +1208,32 @@ export function createServer() {
   });
 
   // 8d. Tournaments & Challenges
+  const applyProfileAvatarsToTournament = (tourney: any) => {
+    if (!tourney || !Array.isArray(tourney.standings)) return tourney;
+    const avatarMap = getProfileAvatarMap();
+    return {
+      ...tourney,
+      standings: tourney.standings.map((s: any) => {
+        const prof = avatarMap.get(s.userId);
+        return prof
+          ? {
+              ...s,
+              avatarUrl: prof.avatarUrl || s.avatarUrl,
+              avatarSymbol: prof.avatarSymbol || s.avatarSymbol,
+            }
+          : s;
+      }),
+    };
+  };
+
   app.get('/api/tournaments', (_req: Request, res: Response) => {
-    res.json(tournamentService.getTournaments());
+    res.json(tournamentService.getTournaments().map(applyProfileAvatarsToTournament));
   });
 
   app.get('/api/tournaments/:id', (req: Request, res: Response) => {
     const tourney = tournamentService.getTournamentById(req.params.id);
     if (!tourney) return res.status(404).json({ success: false, error: 'Tournament not found' });
-    res.json(tourney);
+    res.json(applyProfileAvatarsToTournament(tourney));
   });
 
   // 8e. One-Click Tournament Entry (PRD v2 §2 Pillar 2)

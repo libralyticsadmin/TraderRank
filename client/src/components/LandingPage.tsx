@@ -20,6 +20,7 @@ import { LiveTradeBulletin } from './LiveTradeBulletin.tsx';
 import { MarketLivePricesTicker } from './MarketLivePricesTicker.tsx';
 import { LiveCandleChart } from './LiveCandleChart.tsx';
 import { useTranslation } from '../context/LanguageContext.tsx';
+import { useAuth } from '../context/AuthContext.tsx';
 import { LanguageSelector } from './LanguageSelector.tsx';
 import { UserNavMenu } from './UserNavMenu.tsx';
 import { calculateTraderGamification } from '../../../shared/src/gamification.ts';
@@ -41,6 +42,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   leaderboard = [],
 }) => {
   const { t, language } = useTranslation();
+  const { user } = useAuth();
   const [activeTabRanking, setActiveTabRanking] = useState<'pips' | 'profit' | 'rate'>('pips');
   const { traders: canonicalTraders, platformTotals, getTraderStats } = useTraderStats();
 
@@ -107,7 +109,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         profileName: identity.profileName,
         accountTag: identity.accountTag,
         avatarSeed: identity.avatarSeed,
-        avatarUrl: identity.avatarUrl || trader.avatarUrl,
+        avatarUrl:
+          (user &&
+          (user.id === trader.userId ||
+            (user.username && trader.username && user.username.toLowerCase() === String(trader.username).toLowerCase()))
+            ? user.avatarUrl
+            : undefined) ||
+          identity.avatarUrl ||
+          trader.avatarUrl,
         broker,
         currency,
         avatarSymbol: isHomies ? 'bear_emerald' : (trader.avatarSymbol || 'zap'),
