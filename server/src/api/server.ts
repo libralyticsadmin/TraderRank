@@ -1177,6 +1177,14 @@ export function createServer() {
       return res.status(400).json({ success: false, error: 'userId and username are required to join tournament' });
     }
 
+    const userAccounts = connector.getAccounts(effectiveUserId);
+    if (process.env.NODE_ENV === 'production' && userAccounts.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Connect a verified MT4/MT5 or Exness trading account before joining a tournament',
+      });
+    }
+
     const result = tournamentService.joinTournament({
       tournamentId,
       userId: effectiveUserId,

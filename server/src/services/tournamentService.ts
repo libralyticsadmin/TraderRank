@@ -7,8 +7,10 @@ import {
   Tournament,
   TournamentStanding,
   Broker,
+  CanonicalTrade,
 } from '../../../shared/src/types.js';
 import { RiskGovernor } from './riskGovernor.js';
+import { r2Storage } from './r2StorageService.js';
 
 export class TournamentService {
   private static instance: TournamentService;
@@ -22,9 +24,44 @@ export class TournamentService {
     return TournamentService.instance;
   }
 
+  private static readonly STATE_R2_KEY = 'tournaments/state.json';
+
   private constructor() {
     this.riskGovernor = RiskGovernor.getInstance();
     this.initializeDefaultTournaments();
+    this.loadStateFromR2().catch(() => {});
+  }
+
+  private async loadStateFromR2(): Promise<void> {
+    try {
+      const saved = await r2Storage.getJson<Record<string, { standings: TournamentStanding[]; status?: 'ACTIVE' | 'UPCOMING' | 'COMPLETED' }>>(
+        TournamentService.STATE_R2_KEY
+      );
+      if (!saved || typeof saved !== 'object') return;
+      for (const [tournId, state] of Object.entries(saved)) {
+        const t = this.tournaments.get(tournId);
+        if (!t || !state || !Array.isArray(state.standings)) continue;
+        const cleanStandings = state.standings.filter(
+          s => s && s.userId && s.userId !== 'u_homiesplant_th' && s.userId !== 'usr_meta_72423906'
+        );
+        t.standings = cleanStandings.map((s, idx) => ({ ...s, rank: idx + 1 }));
+        t.participantCount = t.standings.length;
+        const minReq = t.minParticipantsToStart ?? 50;
+        t.status = t.participantCount >= minReq ? 'ACTIVE' : (state.status === 'COMPLETED' ? 'COMPLETED' : 'UPCOMING');
+      }
+    } catch (err) {
+      console.warn('[TournamentService] Could not load persisted tournament state:', err);
+    }
+  }
+
+  private persistStateToR2(): void {
+    const payload: Record<string, { standings: TournamentStanding[]; status: string }> = {};
+    for (const [id, t] of this.tournaments.entries()) {
+      payload[id] = { standings: t.standings, status: t.status };
+    }
+    r2Storage
+      .uploadJson(TournamentService.STATE_R2_KEY, payload, { 'x-traderrank-type': 'tournament_state' })
+      .catch(() => {});
   }
 
   private initializeDefaultTournaments() {
@@ -200,6 +237,8 @@ export class TournamentService {
       tournament.status = 'UPCOMING';
     }
 
+    this.persistStateToR2();
+
     return {
       success: true,
       standing: newStanding,
@@ -267,6 +306,64 @@ export class TournamentService {
       s.rank = idx + 1;
     });
 
+    this.persistStateToR2();
+
     return standing;
+  }
+
+  /**
+   * Syncs verified trades & floating/equity metrics ONLY for tournaments the user has joined.
+   * Keeps UPCOMING tournaments at 0 until ACTIVE, and filters trades strictly to [startDate, endDate].
+   */
+  public syncUserTradesAcrossJoinedTournaments(params: {
+    userId: string;
+    trades: CanonicalTrade[];
+    floatingPips: number;
+    startingEquity: number;
+    highWaterMarkEquity: number;
+    currentEquity: number;
+  }): void {
+    for (const tournament of this.tournaments.values()) {
+      const isJoined = tournament.standings.some(s => s.userId === params.userId);
+      if (!isJoined) continue;
+
+      if (tournament.status !== 'ACTIVE') {
+        this.updateTraderTournamentStats({
+          tournamentId: tournament.id,
+          userId: params.userId,
+          closedPips: 0,
+          floatingPips: 0,
+          tradesCount: 0,
+          winRate: 0,
+          startingEquity: params.startingEquity,
+          highWaterMarkEquity: params.highWaterMarkEquity,
+          currentEquity: params.currentEquity,
+        });
+        continue;
+      }
+
+      const startMs = new Date(tournament.startDate).getTime();
+      const endMs = new Date(tournament.endDate).getTime();
+      const windowTrades = params.trades.filter(tr => {
+        const ts = new Date(tr.closeTime || tr.openTime || 0).getTime();
+        return Number.isFinite(ts) && ts >= startMs && ts <= endMs;
+      });
+
+      const wins = windowTrades.filter(t => t.pnlCurrency > 0 || (t.pnlCurrency === 0 && (t.pnlPips ?? 0) > 0)).length;
+      const closedPips = windowTrades.reduce((sum, t) => sum + (t.pnlPips ?? 0), 0);
+      const winRate = windowTrades.length > 0 ? Math.round((wins / windowTrades.length) * 100) : 0;
+
+      this.updateTraderTournamentStats({
+        tournamentId: tournament.id,
+        userId: params.userId,
+        closedPips: Number(closedPips.toFixed(1)),
+        floatingPips: Number(params.floatingPips.toFixed(1)),
+        tradesCount: windowTrades.length,
+        winRate,
+        startingEquity: params.startingEquity,
+        highWaterMarkEquity: params.highWaterMarkEquity,
+        currentEquity: params.currentEquity,
+      });
+    }
   }
 }

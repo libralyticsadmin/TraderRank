@@ -174,5 +174,57 @@ describe('Tiering System & Tournament Registration Readiness Suite', () => {
       expect(tourney!.participantCount).toBeGreaterThanOrEqual(50);
       expect(tourney!.status).toBe('ACTIVE');
     });
+
+    it('filters tournament trades strictly by tournament window and computes real drawdown', () => {
+      const tournId = 'tourney_daily_rush'; // already ACTIVE from 50-participant test above
+      const tourney = tournamentService.getTournamentById(tournId)!;
+      const beforeStart = new Date(new Date(tourney.startDate).getTime() - 48 * 3600 * 1000).toISOString();
+      const insideWindow = new Date(new Date(tourney.startDate).getTime() + 60_000).toISOString();
+
+      tournamentService.syncUserTradesAcrossJoinedTournaments({
+        userId: 'u_sim_trader_1',
+        trades: [
+          {
+            id: 'old_trade',
+            accountId: 'acc_1',
+            symbol: 'XAUUSD',
+            type: 'BUY',
+            lotSize: 0.1,
+            openPrice: 2600,
+            closePrice: 2610,
+            pnlPips: 100,
+            pnlCurrency: 100,
+            openTime: beforeStart,
+            closeTime: beforeStart,
+            broker: 'XM',
+          },
+          {
+            id: 'window_trade',
+            accountId: 'acc_1',
+            symbol: 'XAUUSD',
+            type: 'BUY',
+            lotSize: 0.1,
+            openPrice: 2610,
+            closePrice: 2615,
+            pnlPips: 50,
+            pnlCurrency: 50,
+            openTime: insideWindow,
+            closeTime: insideWindow,
+            broker: 'XM',
+          },
+        ],
+        floatingPips: 10,
+        startingEquity: 1000,
+        highWaterMarkEquity: 1000,
+        currentEquity: 950,
+      });
+
+      const standing = tournamentService.getTournamentById(tournId)!.standings.find(s => s.userId === 'u_sim_trader_1')!;
+      expect(standing.tradesCount).toBe(1);
+      expect(standing.closedPips).toBe(50);
+      expect(standing.floatingPips).toBe(10);
+      expect(standing.netPips).toBe(60);
+      expect(standing.currentDrawdownPercent).toBe(5);
+    });
   });
 });

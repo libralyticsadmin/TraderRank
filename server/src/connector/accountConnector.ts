@@ -853,32 +853,19 @@ export class AccountConnectorService {
             await this.eventBus.publish('stream:trade.closed.normalized', 'trade.closed.normalized', accountId, trade);
           }
 
-          // Register real account in active tournament
+          // Update stats only for tournaments this user has actually joined (window-filtered, real equity/drawdown)
           const tournamentService = TournamentService.getInstance();
-          tournamentService.joinTournament({
-            tournamentId: 'tourn_weekly_fx_blitz_01',
+          const balance = Number(tradingAccount.balance || 0);
+          const equity = Number(tradingAccount.equity ?? balance);
+          const activePositions = await this.getActivePositions(accountId).catch(() => []);
+          const floatingPips = activePositions.reduce((sum, p) => sum + Number(p.profitPips || 0), 0);
+          tournamentService.syncUserTradesAcrossJoinedTournaments({
             userId,
-            username,
-            avatarSymbol: brokerName.slice(0, 2).toUpperCase(),
-            broker: brokerName,
-          });
-
-          const winningTrades = normalizedTrades.filter(t => t.pnlCurrency > 0);
-          const closedPips = normalizedTrades.reduce((sum, t) => sum + (t.pnlPips || (t.pnlCurrency * 10)), 0);
-          const winRate = normalizedTrades.length > 0
-            ? Math.round((winningTrades.length / normalizedTrades.length) * 100)
-            : 0;
-
-          tournamentService.updateTraderTournamentStats({
-            tournamentId: 'tourn_weekly_fx_blitz_01',
-            userId,
-            closedPips: Number(closedPips.toFixed(1)),
-            floatingPips: 0,
-            tradesCount: normalizedTrades.length,
-            winRate,
-            startingEquity: Number(tradingAccount.equity || 2.8),
-            highWaterMarkEquity: Number(tradingAccount.equity || 2.8),
-            currentEquity: Number(tradingAccount.equity || 2.8),
+            trades: normalizedTrades,
+            floatingPips,
+            startingEquity: balance > 0 ? balance : equity,
+            highWaterMarkEquity: Math.max(balance, equity),
+            currentEquity: equity,
           });
         }
       }
