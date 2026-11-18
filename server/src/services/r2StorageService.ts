@@ -50,13 +50,18 @@ export class R2StorageService {
       if (!fs.existsSync(this.localBaseDir)) {
         fs.mkdirSync(this.localBaseDir, { recursive: true });
       }
+      const seedSourceDir = fs.existsSync(rootServerData)
+        ? rootServerData
+        : fs.existsSync(cwdData)
+        ? cwdData
+        : null;
       if (
         !isTestEnv &&
         process.env.DATA_DIR &&
-        fs.existsSync(rootServerData) &&
-        path.resolve(this.localBaseDir) !== path.resolve(rootServerData)
+        seedSourceDir &&
+        path.resolve(this.localBaseDir) !== path.resolve(seedSourceDir)
       ) {
-        this.seedMissingFromRepo(rootServerData, this.localBaseDir);
+        this.seedMissingFromRepo(seedSourceDir, this.localBaseDir);
       }
     } catch {
       // ignore
