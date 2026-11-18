@@ -51,11 +51,12 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
   const [customTimeframe, setCustomTimeframe] = useState<StrategicTimeframe>('15m');
   const [customStyle, setCustomStyle] = useState<TradingStyle>('INTRADAY');
   const [customModel, setCustomModel] = useState<StrategyModel>('SMC_ORDER_BLOCK');
-  const [customRisk, setCustomRisk] = useState<RiskTolerance>('MODERATE');
+  const [customRisk, setCustomRisk] = useState<RiskTolerance>('RR_1_5');
   const [customSession, setCustomSession] = useState<SessionFocus>('LONDON');
   const [accountSize, setAccountSize] = useState<number>(10000);
 
   const [isGeneratingStrategy, setIsGeneratingStrategy] = useState(false);
+  const [strategyError, setStrategyError] = useState<string | null>(null);
   const [generatedPlan, setGeneratedPlan] = useState<CustomStrategyOutput | null>(null);
 
   // Fetch Daily Report on mount
@@ -95,6 +96,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
     }
 
     setIsGeneratingStrategy(true);
+    setStrategyError(null);
     try {
       const input: CustomStrategyInput = {
         symbol: targetSymbol,
@@ -103,7 +105,7 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
         strategyModel: customModel,
         riskTolerance: customRisk,
         sessionFocus: customSession,
-        accountSize,
+        accountSize: Number(accountSize) > 0 ? Number(accountSize) : 10000,
       };
 
       const res = await fetch('/api/market/custom-daily-analysis', {
@@ -112,12 +114,15 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
         body: JSON.stringify(input),
       });
 
-      if (res.ok) {
-        const data = await res.json();
+      const data = await res.json().catch(() => null);
+      if (res.ok && data) {
         setGeneratedPlan(data);
+      } else {
+        setStrategyError(data?.error || `Failed to generate strategy (HTTP ${res.status})`);
       }
     } catch (err) {
       console.error('Failed to generate custom strategy', err);
+      setStrategyError('Network error while generating custom strategy. Please try again.');
     } finally {
       setIsGeneratingStrategy(false);
     }
@@ -626,6 +631,11 @@ export const DailyAnalysisHub: React.FC<DailyAnalysisHubProps> = ({
               {isGeneratingStrategy ? t.intel.synthesizingConfluence : t.intel.generateCustomStrategy}
             </button>
           </div>
+          {strategyError && (
+            <div style={{ marginTop: '12px', padding: '10px 14px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.14)', border: '1px solid rgba(239, 68, 68, 0.35)', color: '#fca5a5', fontSize: '12px', fontWeight: 600 }}>
+              {strategyError}
+            </div>
+          )}
         </form>
 
         {/* Gamified Referral Unlock Overlay (Requires 3 friends or Pro subscription) */}

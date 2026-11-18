@@ -103,26 +103,16 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  // Pro Subscription State persisted in localStorage
-  const [subscription] = useState<SubscriptionStatus>(() => {
-    try {
-      const saved = localStorage.getItem('traderrank_sub_status_v1');
-      if (saved) {
-        return JSON.parse(saved);
-      }
-    } catch (e) {
-      console.error('Failed to parse subscription from localStorage', e);
-    }
-    return {
-      isActive: true,
-      tier: 'PRO_ANNUAL',
-      planName: 'Pro All-Access',
-      priceMonthly: 0,
-      startedAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 365 * 86400000).toISOString(),
-      features: ['Full Leaderboard Access', 'Daily Intelligence', 'SMC Analysis', 'Tournament Eligibility'],
-    };
-  });
+  // Pro Subscription State (All-Access enabled; ignore any stale inactive localStorage snapshot)
+  const [subscription] = useState<SubscriptionStatus>(() => ({
+    isActive: true,
+    tier: 'PRO_ANNUAL',
+    planName: 'Pro All-Access',
+    priceMonthly: 0,
+    startedAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 365 * 86400000).toISOString(),
+    features: ['Full Leaderboard Access', 'Daily Intelligence', 'SMC Analysis', 'Tournament Eligibility'],
+  }));
 
   const [accounts, setAccounts] = useState<TradingAccount[]>([]);
   const [positions, setPositions] = useState<CanonicalPosition[]>([]);
