@@ -124,7 +124,8 @@ let canonicalInFlight: Promise<CanonicalStatsResponse> | null = null;
 export async function getCachedCanonicalStats(
   connector: AccountConnectorService,
   leaderboard: LeaderboardService,
-  marketFeed?: LiveMarketFeedService
+  marketFeed?: LiveMarketFeedService,
+  registeredAtByUserId?: Map<string, string>
 ): Promise<CanonicalStatsResponse> {
   if (canonicalSnapshotCache && Date.now() - canonicalSnapshotCache.fetchedAt < CANONICAL_CACHE_TTL_MS) {
     return canonicalSnapshotCache.data;
@@ -132,7 +133,7 @@ export async function getCachedCanonicalStats(
   if (canonicalInFlight) {
     return canonicalInFlight;
   }
-  canonicalInFlight = computeCanonicalStats(connector, leaderboard, marketFeed)
+  canonicalInFlight = computeCanonicalStats(connector, leaderboard, marketFeed, registeredAtByUserId)
     .then(data => {
       canonicalSnapshotCache = { data, fetchedAt: Date.now() };
       return data;
@@ -146,7 +147,8 @@ export async function getCachedCanonicalStats(
 export async function computeCanonicalStats(
   connector: AccountConnectorService,
   leaderboard: LeaderboardService,
-  marketFeed?: LiveMarketFeedService
+  marketFeed?: LiveMarketFeedService,
+  registeredAtByUserId?: Map<string, string>
 ): Promise<CanonicalStatsResponse> {
   const usdJpyRate = getLiveUsdJpyRate(marketFeed);
   const todayUtc = new Date().toISOString().slice(0, 10);
@@ -299,7 +301,15 @@ export async function computeCanonicalStats(
     const impliedStartCap = Math.max(100, currentBal - netProfitNative);
     const roiPct = Number(((netProfitNative / impliedStartCap) * 100).toFixed(1));
     const totalPips = Number((closedPips + floatingPips).toFixed(1));
-    const xp = validTrades.length * 25;
+    const regIso = registeredAtByUserId?.get(identity.userId);
+    const regMs = regIso ? new Date(regIso).getTime() : NaN;
+    const tierEligibleTrades = Number.isFinite(regMs)
+      ? validTrades.filter(tr => {
+          const ts = new Date((tr as any).closeTime || (tr as any).openTime || (tr as any).timestamp || 0).getTime();
+          return Number.isFinite(ts) && ts >= regMs;
+        })
+      : validTrades;
+    const xp = tierEligibleTrades.length * 25;
     const level = Math.max(1, Math.floor(xp / 500) + 1);
 
     const matchedLb = lbEntries.find(

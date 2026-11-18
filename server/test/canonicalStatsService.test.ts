@@ -124,4 +124,53 @@ describe('CanonicalStatsService (Single Source of Truth)', () => {
     expect(homies?.liveOrders.length).toBe(1);
     expect(homies?.liveOrders[0].isLivePosition).toBe(true);
   });
+
+  it('starts tiering XP at 0 from registration date without counting pre-registration trades', async () => {
+    const mockConnector: any = {
+      getAccounts: () => [
+        {
+          id: 'acc_meta_411407722',
+          userId: 'u_homeisplant',
+          accountNumber: '411407722',
+          profileUsername: 'HomeisPlant',
+          broker: 'XM',
+          currency: 'USD',
+          balance: 500,
+          equity: 500,
+        },
+      ],
+      getAccountTrades: () => [
+        {
+          id: 'old_1',
+          symbol: 'XAUUSD',
+          type: 'BUY',
+          lotSize: 0.1,
+          pnlPips: 30,
+          pnlCurrency: 30,
+          closeTime: '2026-10-01T10:00:00.000Z',
+        },
+        {
+          id: 'new_1',
+          symbol: 'XAUUSD',
+          type: 'BUY',
+          lotSize: 0.1,
+          pnlPips: 10,
+          pnlCurrency: 10,
+          closeTime: '2026-11-18T12:00:00.000Z',
+        },
+      ],
+      getActivePositions: async () => [],
+    };
+    const mockLeaderboard: any = { getLeaderboard: () => [] };
+
+    const regFuture = new Map([['u_homeisplant', '2026-11-19T00:00:00.000Z']]);
+    const resZero = await computeCanonicalStats(mockConnector, mockLeaderboard, undefined, regFuture);
+    expect(resZero.traders[0].xp).toBe(0);
+    expect(resZero.traders[0].level).toBe(1);
+
+    const regMid = new Map([['u_homeisplant', '2026-11-18T00:00:00.000Z']]);
+    const resOne = await computeCanonicalStats(mockConnector, mockLeaderboard, undefined, regMid);
+    expect(resOne.traders[0].xp).toBe(25);
+    expect(resOne.traders[0].level).toBe(1);
+  });
 });

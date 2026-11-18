@@ -107,7 +107,34 @@ export const RewardsBadges: React.FC<RewardsBadgesProps> = ({ onOpenAffiliateMod
       const uName = (user.username || '').toLowerCase();
 
       try {
-        const accRes = await fetch('/api/accounts');
+        const token = localStorage.getItem('traderank_auth_token_v1');
+        if (token) {
+          try {
+            const streakRes = await fetch('/api/gamification/streak', {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (streakRes.ok && isMounted) {
+              const streakData = await streakRes.json();
+              if (Array.isArray(streakData.claimedDays)) {
+                const synced = {
+                  claimedDays: streakData.claimedDays,
+                  lastClaimDate: streakData.lastClaimDate || null,
+                };
+                setStreakState(synced);
+                localStorage.setItem(streakStorageKey, JSON.stringify(synced));
+              }
+            }
+          } catch {
+            // fallback to local cache
+          }
+        }
+
+        const accUrl = token && user.id
+          ? `/api/accounts?userId=${encodeURIComponent(user.id)}`
+          : '/api/accounts';
+        const accRes = await fetch(accUrl, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
         if (!accRes.ok) throw new Error('Failed to load accounts');
         const allAccounts = await accRes.json();
 
@@ -308,7 +335,7 @@ export const RewardsBadges: React.FC<RewardsBadgesProps> = ({ onOpenAffiliateMod
     },
   ];
 
-  const handleClaimStreak = () => {
+  const handleClaimStreak = async () => {
     if (!user) {
       setToastMessage('Please sign in to claim Daily Trading Streak Rewards.');
       setTimeout(() => setToastMessage(null), 4000);
@@ -319,7 +346,33 @@ export const RewardsBadges: React.FC<RewardsBadgesProps> = ({ onOpenAffiliateMod
     const activeDay = streakDays.find(s => s.current);
     if (!activeDay) return;
 
-    const nextClaimed = [...claimedStreakDays, activeDay.dayNum];
+    let nextClaimed = [...claimedStreakDays, activeDay.dayNum];
+    let xpEarned = activeDay.xpAmount;
+
+    const token = localStorage.getItem('traderank_auth_token_v1');
+    if (token) {
+      try {
+        const res = await fetch('/api/gamification/streak/claim', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.claimedDays)) nextClaimed = data.claimedDays;
+          if (typeof data.xpEarned === 'number') xpEarned = data.xpEarned;
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          if (errData.error) {
+            setToastMessage(errData.error);
+            setTimeout(() => setToastMessage(null), 4000);
+            return;
+          }
+        }
+      } catch {
+        // ignore network error and update locally
+      }
+    }
+
     const nextState = { claimedDays: nextClaimed, lastClaimDate: todayStr };
     setStreakState(nextState);
     try {
@@ -328,7 +381,6 @@ export const RewardsBadges: React.FC<RewardsBadgesProps> = ({ onOpenAffiliateMod
       // ignore
     }
 
-    const xpEarned = activeDay.xpAmount;
     const newXp = currentXp + xpEarned;
     setCurrentXp(newXp);
     if (user) {

@@ -155,15 +155,28 @@ export interface StreakDayStatus {
 }
 
 /**
+ * Returns true if more than 1 calendar day has passed since lastClaimDate (streak broken).
+ */
+export function isStreakBroken(lastClaimDate?: string | null, todayDate?: string): boolean {
+  if (!lastClaimDate || !todayDate) return false;
+  const lastMs = Date.parse(`${lastClaimDate}T00:00:00Z`);
+  const todayMs = Date.parse(`${todayDate}T00:00:00Z`);
+  if (!Number.isFinite(lastMs) || !Number.isFinite(todayMs)) return false;
+  const diffDays = Math.floor((todayMs - lastMs) / 86_400_000);
+  return diffDays > 1;
+}
+
+/**
  * Returns streak day status based on claimed day numbers and last claim calendar date (YYYY-MM-DD).
- * Enforces at most 1 claim per calendar day so users cannot claim all 7 days in one session.
+ * Enforces at most 1 claim per calendar day and resets to Day 1 if a full day is missed.
  */
 export function getStreakStatus(
   claimedDays: number[] = [],
   lastClaimDate?: string | null,
   todayDate?: string
 ): StreakDayStatus[] {
-  const claimedSet = new Set(claimedDays);
+  const effectiveClaimed = isStreakBroken(lastClaimDate, todayDate) ? [] : claimedDays;
+  const claimedSet = new Set(effectiveClaimed);
   const alreadyClaimedToday = Boolean(lastClaimDate && todayDate && lastClaimDate === todayDate);
 
   // Next active day is the lowest day not claimed (starting at 1), or none if all 7 claimed

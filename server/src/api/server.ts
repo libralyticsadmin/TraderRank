@@ -31,6 +31,7 @@ import { DailyIntelService } from '../market/dailyIntelService.js';
 import { TournamentService } from '../services/tournamentService.js';
 import { authService, SessionPayload } from '../services/authService.js';
 import { getCachedCanonicalStats, getBulletinFeed } from '../services/canonicalStatsService.js';
+import { getStreakStatus, isStreakBroken, XP_RULES, calculateTraderGamification } from '../../../shared/src/gamification.js';
 
 export function createServer() {
   const app = express();
@@ -231,7 +232,7 @@ export function createServer() {
       }
     }
     if (clients.size > 0) {
-      getCachedCanonicalStats(connector, leaderboard, marketFeed)
+      getCachedCanonicalStats(connector, leaderboard, marketFeed, getRegisteredAtMap())
         .then(canonical => {
           const canonicalPayload = JSON.stringify({
             type: 'CANONICAL_STATS_UPDATE',
@@ -441,6 +442,15 @@ export function createServer() {
     const match = authHeader.match(/^Bearer\s+(.+)$/i);
     if (!match) return null;
     return authService.verifySessionToken(match[1]);
+  }
+
+  function getRegisteredAtMap(): Map<string, string> {
+    const map = new Map<string, string>();
+    for (const [uid, prof] of userProfiles.entries()) {
+      const reg = prof?.registeredAt || authService.getCredential(uid)?.createdAt;
+      if (reg) map.set(uid, reg);
+    }
+    return map;
   }
 
   const loadUserProfilesFromR2 = async () => {
@@ -1097,7 +1107,7 @@ export function createServer() {
   // 8a. Unified Canonical Trader Stats (Single Source of Truth)
   app.get('/api/traders/canonical', async (_req: Request, res: Response) => {
     try {
-      const canonical = await getCachedCanonicalStats(connector, leaderboard, marketFeed);
+      const canonical = await getCachedCanonicalStats(connector, leaderboard, marketFeed, getRegisteredAtMap());
       res.json(canonical);
     } catch (err: any) {
       res.status(500).json({ error: err.message || 'Failed to compute canonical stats' });
@@ -1523,6 +1533,103 @@ export function createServer() {
       const msg = err instanceof Error ? err.message : String(err);
       res.status(400).json({ success: false, error: msg });
     }
+  });
+
+  const STREAKS_R2_KEY = 'gamification/streaks.json';
+  const userStreaks = new Map<string, { claimedDays: number[]; lastClaimDate: string | null }>();
+
+  const loadStreaksFromR2 = async () => {
+    try {
+      const saved = await r2Storage.getJson<Record<string, { claimedDays: number[]; lastClaimDate: string | null }>>(STREAKS_R2_KEY);
+      if (saved && typeof saved === 'object') {
+        for (const [k, v] of Object.entries(saved)) {
+          if (v && Array.isArray(v.claimedDays)) {
+            userStreaks.set(k, { claimedDays: v.claimedDays, lastClaimDate: v.lastClaimDate || null });
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[server] Warning: Could not load streaks from R2:', err);
+    }
+  };
+  loadStreaksFromR2().catch(() => {});
+
+  const persistStreaksToR2 = async () => {
+    try {
+      const obj: Record<string, { claimedDays: number[]; lastClaimDate: string | null }> = {};
+      for (const [k, v] of userStreaks.entries()) obj[k] = v;
+      await r2Storage.uploadJson(STREAKS_R2_KEY, obj, { 'x-traderrank-type': 'gamification_streaks' });
+    } catch (err) {
+      console.warn('[server] Warning: Could not persist streaks to R2:', err);
+    }
+  };
+
+  app.get('/api/gamification/streak', (req: Request, res: Response) => {
+    const authSession = extractAuthUser(req);
+    if (!authSession) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const current = userStreaks.get(authSession.userId) || { claimedDays: [], lastClaimDate: null };
+    const effectiveClaimed = isStreakBroken(current.lastClaimDate, todayStr) ? [] : current.claimedDays;
+    if (effectiveClaimed.length !== current.claimedDays.length) {
+      userStreaks.set(authSession.userId, { claimedDays: [], lastClaimDate: null });
+      persistStreaksToR2().catch(() => {});
+    }
+    const streakDays = getStreakStatus(effectiveClaimed, current.lastClaimDate, todayStr);
+    const streakXp = effectiveClaimed.reduce((sum, day) => {
+      const item = XP_RULES.STREAK_SCHEDULE.find(s => s.dayNum === day);
+      return sum + (item ? item.xp : 0);
+    }, 0);
+    return res.json({
+      success: true,
+      claimedDays: effectiveClaimed,
+      lastClaimDate: current.lastClaimDate,
+      streakDays,
+      streakXp,
+    });
+  });
+
+  app.post('/api/gamification/streak/claim', (req: Request, res: Response) => {
+    const authSession = extractAuthUser(req);
+    if (!authSession) {
+      return res.status(401).json({ success: false, error: 'Authentication required to claim streak' });
+    }
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const prev = userStreaks.get(authSession.userId) || { claimedDays: [], lastClaimDate: null };
+    const baseClaimed = isStreakBroken(prev.lastClaimDate, todayStr) ? [] : prev.claimedDays;
+
+    if (prev.lastClaimDate === todayStr) {
+      return res.status(400).json({ success: false, error: 'Daily streak already claimed today' });
+    }
+
+    const status = getStreakStatus(baseClaimed, prev.lastClaimDate, todayStr);
+    const activeDay = status.find(s => s.current);
+    if (!activeDay) {
+      return res.status(400).json({ success: false, error: 'No streak day available to claim today' });
+    }
+
+    const nextClaimed = [...baseClaimed, activeDay.dayNum];
+    userStreaks.set(authSession.userId, { claimedDays: nextClaimed, lastClaimDate: todayStr });
+    persistStreaksToR2().catch(() => {});
+
+    const profile = userProfiles.get(authSession.userId);
+    if (profile) {
+      const nextXp = Number(profile.xp || 0) + activeDay.xpAmount;
+      profile.xp = nextXp;
+      profile.level = calculateTraderGamification(nextXp).level;
+      userProfiles.set(authSession.userId, profile);
+      persistUserProfilesToR2().catch(() => {});
+    }
+
+    return res.json({
+      success: true,
+      dayNum: activeDay.dayNum,
+      xpEarned: activeDay.xpAmount,
+      claimedDays: nextClaimed,
+      lastClaimDate: todayStr,
+      streakDays: getStreakStatus(nextClaimed, todayStr, todayStr),
+    });
   });
 
   // 17. Cloudflare R2 Cloud Storage Endpoints
