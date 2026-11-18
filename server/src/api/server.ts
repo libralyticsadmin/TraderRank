@@ -521,8 +521,9 @@ export function createServer() {
       accountNumber: isZem ? '342186831' : undefined,
       country: 'Global',
       joinedAt: 'Today',
+      registeredAt: new Date().toISOString(),
       level: 1,
-      xp: 100,
+      xp: 0,
       rank: 99,
     };
     userProfiles.set(cleanId, newUser);
@@ -586,6 +587,10 @@ export function createServer() {
 
     if (!user) {
       return res.status(401).json({ success: false, error: 'User profile not found' });
+    }
+
+    if (!user.registeredAt) {
+      user.registeredAt = cred?.createdAt || new Date().toISOString();
     }
 
     const token = authService.createSessionToken(user.id, user.username);

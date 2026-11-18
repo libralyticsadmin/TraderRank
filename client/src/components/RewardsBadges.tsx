@@ -44,20 +44,31 @@ export const RewardsBadges: React.FC<RewardsBadgesProps> = ({ onOpenAffiliateMod
   const { t, language } = useTranslation();
   const { user, updateProfile } = useAuth();
 
-  // Streak state stored in localStorage per user/browser (starts clean at Day 1 from zero)
+  // Streak state stored in localStorage per user/browser (starts clean at Day 1 from zero, max 1 claim/day)
   const streakStorageKey = user?.id ? `traderrank_streak_v2_${user.id}` : 'traderrank_streak_v2_guest';
+  const todayStr = new Date().toISOString().slice(0, 10);
 
-  const [claimedStreakDays, setClaimedStreakDays] = useState<number[]>(() => {
+  const [streakState, setStreakState] = useState<{ claimedDays: number[]; lastClaimDate: string | null }>(() => {
     try {
-      // Purge legacy dirty mock streak days
       localStorage.removeItem('traderrank_claimed_streak_days_v1');
       const saved = localStorage.getItem(streakStorageKey);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return { claimedDays: parsed, lastClaimDate: null };
+        }
+        if (parsed && Array.isArray(parsed.claimedDays)) {
+          return { claimedDays: parsed.claimedDays, lastClaimDate: parsed.lastClaimDate || null };
+        }
+      }
     } catch {
       // ignore
     }
-    return [];
+    return { claimedDays: [], lastClaimDate: null };
   });
+
+  const claimedStreakDays = streakState.claimedDays;
+  const lastClaimDate = streakState.lastClaimDate;
 
   const [tradeCount, setTradeCount] = useState<number>(0);
   const [userAccountsCount, setUserAccountsCount] = useState<number>(0);
@@ -65,7 +76,7 @@ export const RewardsBadges: React.FC<RewardsBadgesProps> = ({ onOpenAffiliateMod
   const [userWinRate, setUserWinRate] = useState<number>(0);
   const [currentXp, setCurrentXp] = useState<number>(0);
 
-  const streakDays = getStreakStatus(claimedStreakDays);
+  const streakDays = getStreakStatus(claimedStreakDays, lastClaimDate, todayStr);
   const gamification = calculateTraderGamification(currentXp);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -134,7 +145,19 @@ export const RewardsBadges: React.FC<RewardsBadgesProps> = ({ onOpenAffiliateMod
           return;
         }
 
-        // Fetch real trades for user's own connected accounts
+        // Fetch real trades for user's own connected accounts, counting ONLY trades after registration date
+        let regIso = (user as any).registeredAt || (user as any).createdAt;
+        if (!regIso) {
+          const regKey = `traderrank_reg_ts_${user.id}`;
+          try {
+            regIso = localStorage.getItem(regKey) || new Date().toISOString();
+            localStorage.setItem(regKey, regIso);
+          } catch {
+            regIso = new Date().toISOString();
+          }
+        }
+        const registeredAtMs = new Date(regIso).getTime();
+
         let allMyTrades: any[] = [];
         for (const acc of myAccounts) {
           try {
@@ -142,7 +165,11 @@ export const RewardsBadges: React.FC<RewardsBadgesProps> = ({ onOpenAffiliateMod
             if (tradesRes.ok) {
               const trades = await tradesRes.json();
               if (Array.isArray(trades)) {
-                allMyTrades = allMyTrades.concat(trades);
+                const postRegTrades = trades.filter(tr => {
+                  const ts = new Date(tr.closeTime || tr.openTime || tr.timestamp || 0).getTime();
+                  return Number.isFinite(ts) && ts >= registeredAtMs;
+                });
+                allMyTrades = allMyTrades.concat(postRegTrades);
               }
             }
           } catch (e) {
@@ -282,13 +309,21 @@ export const RewardsBadges: React.FC<RewardsBadgesProps> = ({ onOpenAffiliateMod
   ];
 
   const handleClaimStreak = () => {
+    if (!user) {
+      setToastMessage('Please sign in to claim Daily Trading Streak Rewards.');
+      setTimeout(() => setToastMessage(null), 4000);
+      return;
+    }
+    if (lastClaimDate === todayStr) return;
+
     const activeDay = streakDays.find(s => s.current);
     if (!activeDay) return;
 
     const nextClaimed = [...claimedStreakDays, activeDay.dayNum];
-    setClaimedStreakDays(nextClaimed);
+    const nextState = { claimedDays: nextClaimed, lastClaimDate: todayStr };
+    setStreakState(nextState);
     try {
-      localStorage.setItem(streakStorageKey, JSON.stringify(nextClaimed));
+      localStorage.setItem(streakStorageKey, JSON.stringify(nextState));
     } catch {
       // ignore
     }
