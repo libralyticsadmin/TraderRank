@@ -4,6 +4,8 @@ import { TraderAvatar } from './TraderAvatar.tsx';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { resolveTraderIdentity } from './avatarCatalog.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
+import { useAuth } from '../context/AuthContext.tsx';
+import { useTraderStats } from '../hooks/useTraderStats.ts';
 import { Trophy, Award, Clock, History } from 'lucide-react';
 
 interface DailyBestTraderCardProps {
@@ -18,6 +20,8 @@ export const DailyBestTraderCard: React.FC<DailyBestTraderCardProps> = ({
   activeTradersToday,
 }) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const { getTraderStats } = useTraderStats();
   const [timeLeft, setTimeLeft] = useState('');
   const [showHistory, setShowHistory] = useState(false);
   const [championsHistory, setChampionsHistory] = useState<DailyChampionRecord[]>([]);
@@ -154,20 +158,34 @@ export const DailyBestTraderCard: React.FC<DailyBestTraderCardProps> = ({
 
       {champion ? (
         (() => {
+          const canonical = getTraderStats({
+            accountNumber: champion.accountNumber,
+            userId: champion.userId,
+            username: champion.username,
+          });
+          const isCurrentUser =
+            Boolean(user) &&
+            (user?.id === champion.userId ||
+              (user?.accountNumber && champion.accountNumber && user.accountNumber === champion.accountNumber) ||
+              (user?.username && champion.username && user.username.toLowerCase() === champion.username.toLowerCase()));
+          const syncedAvatarUrl =
+            (isCurrentUser ? user?.avatarUrl : undefined) ||
+            canonical?.avatarUrl ||
+            champion.avatarUrl;
           const champIdentity = resolveTraderIdentity({
             username: champion.username,
             profileName: champion.profileName,
             accountNumber: champion.accountNumber,
             userId: champion.userId,
-            avatarUrl: champion.avatarUrl,
+            avatarUrl: syncedAvatarUrl,
           });
           return (
             <div className="daily-best-champion-grid">
               <div style={{ position: 'relative' }}>
                 <TraderAvatar
                   username={champIdentity.profileName || champion.username}
-                  symbol={champion.avatarSymbol}
-                  avatarUrl={champIdentity.avatarUrl || champion.avatarUrl}
+                  symbol={canonical?.avatarSymbol || champion.avatarSymbol}
+                  avatarUrl={syncedAvatarUrl || champIdentity.avatarUrl}
                   size={54}
                 />
                 <div

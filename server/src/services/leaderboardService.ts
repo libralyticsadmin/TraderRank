@@ -299,6 +299,31 @@ export class LeaderboardService {
     this.emitLeaderboardUpdate(true);
   }
 
+  public updateTraderProfile(
+    userId: string,
+    updates: { username?: string; avatarUrl?: string; avatarSymbol?: string }
+  ): void {
+    let changed = false;
+    for (const trader of this.traders.values()) {
+      if (trader.userId === userId) {
+        if (updates.username) {
+          trader.username = updates.username;
+          trader.profileName = updates.username;
+        }
+        if (updates.avatarUrl !== undefined) {
+          trader.avatarUrl = updates.avatarUrl;
+        }
+        if (updates.avatarSymbol !== undefined) {
+          trader.avatarSymbol = updates.avatarSymbol;
+        }
+        changed = true;
+      }
+    }
+    if (changed) {
+      this.emitLeaderboardUpdate(true);
+    }
+  }
+
   /**
    * Sorts traders by all-time total pips (closed + floating) in descending order.
    */

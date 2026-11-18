@@ -644,8 +644,20 @@ export function createServer() {
     userProfiles.set(profile.id, updated);
     persistUserProfilesToR2().catch(() => {});
 
-    if (safeUpdates.username) {
-      connector.updateUserAccountsName(profile.id, safeUpdates.username, safeUpdates.primaryBroker, undefined, safeUpdates.avatarUrl);
+    if (safeUpdates.username || safeUpdates.avatarUrl || safeUpdates.avatarSymbol || safeUpdates.primaryBroker) {
+      connector.updateUserAccountsName(
+        profile.id,
+        safeUpdates.username || existing.username || 'Trader',
+        safeUpdates.primaryBroker,
+        undefined,
+        safeUpdates.avatarUrl
+      );
+      leaderboard.updateTraderProfile(profile.id, {
+        username: safeUpdates.username,
+        avatarUrl: safeUpdates.avatarUrl,
+        avatarSymbol: safeUpdates.avatarSymbol,
+      });
+      invalidateCanonicalStatsCache();
     }
     return res.json({ success: true, user: updated });
   });
