@@ -161,6 +161,11 @@ export class AuthService {
     return this.credentials.get(clean) || null;
   }
 
+  public async resetAll(): Promise<void> {
+    this.credentials.clear();
+    await this.persistCredentials();
+  }
+
   public async register(
     userId: string,
     username: string,

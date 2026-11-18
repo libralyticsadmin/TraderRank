@@ -379,50 +379,55 @@ export function createServer() {
   const EMERALD_BEAR_URL =
     'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%20fill%3D%22none%22%3E%20%3Cdefs%3E%20%3CradialGradient%20id%3D%22bg-bear_emerald%22%20cx%3D%2250%25%22%20cy%3D%2235%25%22%20r%3D%2275%25%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23064e3b%22%2F%3E%20%3Cstop%20offset%3D%2260%25%22%20stop-color%3D%22%23022c22%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%2301130e%22%2F%3E%20%3C%2FradialGradient%3E%20%3ClinearGradient%20id%3D%22main-bear_emerald%22%20x1%3D%2220%22%20y1%3D%2215%22%20x2%3D%22100%22%20y2%3D%22105%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23d1fae5%22%2F%3E%20%3Cstop%20offset%3D%2245%25%22%20stop-color%3D%22%2310b981%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23047857%22%2F%3E%20%3C%2FlinearGradient%3E%20%3ClinearGradient%20id%3D%22dark-bear_emerald%22%20x1%3D%2260%22%20y1%3D%2230%22%20x2%3D%2260%22%20y2%3D%22105%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23059669%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23064e3b%22%2F%3E%20%3C%2FlinearGradient%3E%20%3C%2Fdefs%3E%20%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2226%22%20fill%3D%22url(%23bg-bear_emerald)%22%2F%3E%20%3Ccircle%20cx%3D%2260%22%20cy%3D%2260%22%20r%3D%2250%22%20stroke%3D%22%2310b981%22%20stroke-opacity%3D%220.22%22%20stroke-width%3D%221.5%22%20stroke-dasharray%3D%226%204%22%2F%3E%20%3Cpolygon%20points%3D%2260%2C10%20104%2C35%20104%2C85%2060%2C110%2016%2C85%2016%2C35%22%20stroke%3D%22%2334d399%22%20stroke-opacity%3D%220.3%22%20stroke-width%3D%221.5%22%20fill%3D%22%2310b981%22%20fill-opacity%3D%220.04%22%2F%3E%20%3Ccircle%20cx%3D%2228%22%20cy%3D%2230%22%20r%3D%2213%22%20fill%3D%22url(%23main-bear_emerald)%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Ccircle%20cx%3D%2292%22%20cy%3D%2230%22%20r%3D%2213%22%20fill%3D%22url(%23main-bear_emerald)%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Ccircle%20cx%3D%2228%22%20cy%3D%2230%22%20r%3D%226%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Ccircle%20cx%3D%2292%22%20cy%3D%2230%22%20r%3D%226%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Cpolygon%20points%3D%2224%2C42%2060%2C24%2096%2C42%20104%2C72%2084%2C102%2060%2C108%2036%2C102%2016%2C72%22%20fill%3D%22url(%23dark-bear_emerald)%22%20stroke%3D%22%2334d399%22%20stroke-width%3D%221.5%22%2F%3E%20%3Cpolygon%20points%3D%2232%2C38%2060%2C28%2088%2C38%2094%2C68%2076%2C94%2044%2C94%2026%2C68%22%20fill%3D%22url(%23main-bear_emerald)%22%2F%3E%20%3Cpolygon%20points%3D%2240%2C46%2060%2C54%2080%2C46%2076%2C38%2060%2C44%2044%2C38%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Cpolygon%20points%3D%2234%2C54%2049%2C59%2038%2C63%22%20fill%3D%22%23f43f5e%22%2F%3E%20%3Cpolygon%20points%3D%2286%2C54%2071%2C59%2082%2C63%22%20fill%3D%22%23f43f5e%22%2F%3E%20%3Cpolygon%20points%3D%2242%2C66%2060%2C60%2078%2C66%2082%2C92%2060%2C102%2038%2C92%22%20fill%3D%22%2301130e%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Cpolygon%20points%3D%2251%2C70%2069%2C70%2060%2C81%22%20fill%3D%22%2310b981%22%2F%3E%20%3Cpolygon%20points%3D%2245%2C92%2050%2C83%2054%2C93%22%20fill%3D%22%23ffffff%22%2F%3E%20%3Cpolygon%20points%3D%2275%2C92%2070%2C83%2066%2C93%22%20fill%3D%22%23ffffff%22%2F%3E%20%3Cpath%20d%3D%22M46%2092%20H74%22%20stroke%3D%22%2310b981%22%20stroke-width%3D%222%22%2F%3E%20%3C%2Fsvg%3E';
 
-  const userProfiles = new Map<string, any>([
-    [
-      'u_zzzemzzz',
-      {
-        id: 'u_zzzemzzz',
-        username: 'zzZEMZzz',
-        email: 'libralytics.data@gmail.com',
-        avatarSymbol: 'bear_emerald',
-        avatarUrl: EMERALD_BEAR_URL,
-        traderTitle: 'Verified Gold & FX Master',
-        bio: 'Disciplined price action & high R:R execution. 100% MetaApi verified read-only MT5 account.',
-        tradingStyle: 'SCALPER',
-        primaryBroker: 'XM',
-        accountNumber: '342186831',
-        country: 'Global',
-        joinedAt: 'November 2026',
-        level: 1,
-        xp: 575,
-        rank: 1,
-        currency: 'USD',
-      },
-    ],
-    [
-      'u_alex_vanguard',
-      {
-        id: 'u_alex_vanguard',
-        username: 'Alex_Vanguard',
-        email: 'alex.vanguard@traderank.live',
-        avatarSymbol: 'zap',
-        traderTitle: 'Institutional Gold & FX Scalper',
-        bio: 'Disciplined price-action scalper specializing in London/NY overlaps. Zero-write verified execution across XM and Exness.',
-        tradingStyle: 'SCALPER',
-        primaryBroker: 'Exness',
-        country: 'United States',
-        joinedAt: 'October 2026',
-        level: 5,
-        xp: 3420,
-        rank: 12,
-        telegramHandle: '@alex_trades',
-        discordHandle: 'vanguard_fx#1284',
-        twitterHandle: '@vanguard_fx',
-      },
-    ],
-  ]);
+  const isTestEnv = Boolean(process.env.VITEST || process.env.NODE_ENV === 'test');
+  const userProfiles = new Map<string, any>(
+    isTestEnv
+      ? [
+          [
+            'u_zzzemzzz',
+            {
+              id: 'u_zzzemzzz',
+              username: 'zzZEMZzz',
+              email: 'libralytics.data@gmail.com',
+              avatarSymbol: 'bear_emerald',
+              avatarUrl: EMERALD_BEAR_URL,
+              traderTitle: 'Verified Gold & FX Master',
+              bio: 'Disciplined price action & high R:R execution. 100% MetaApi verified read-only MT5 account.',
+              tradingStyle: 'SCALPER',
+              primaryBroker: 'XM',
+              accountNumber: '342186831',
+              country: 'Global',
+              joinedAt: 'November 2026',
+              level: 1,
+              xp: 575,
+              rank: 1,
+              currency: 'USD',
+            },
+          ],
+          [
+            'u_alex_vanguard',
+            {
+              id: 'u_alex_vanguard',
+              username: 'Alex_Vanguard',
+              email: 'alex.vanguard@traderank.live',
+              avatarSymbol: 'zap',
+              traderTitle: 'Institutional Gold & FX Scalper',
+              bio: 'Disciplined price-action scalper specializing in London/NY overlaps. Zero-write verified execution across XM and Exness.',
+              tradingStyle: 'SCALPER',
+              primaryBroker: 'Exness',
+              country: 'United States',
+              joinedAt: 'October 2026',
+              level: 5,
+              xp: 3420,
+              rank: 12,
+              telegramHandle: '@alex_trades',
+              discordHandle: 'vanguard_fx#1284',
+              twitterHandle: '@vanguard_fx',
+            },
+          ],
+        ]
+      : []
+  );
 
   const persistUserProfilesToR2 = async () => {
     try {
@@ -477,28 +482,25 @@ export function createServer() {
           }
         }
       }
-      // Ensure canonical zzZEMZzz profile is active and persisted
-      const em = userProfiles.get('u_zzzemzzz') || {};
-      const canonicalZem = {
-        ...em,
-        id: 'u_zzzemzzz',
-        username: 'zzZEMZzz',
-        email: em.email || 'libralytics.data@gmail.com',
-        accountNumber: '342186831',
-        avatarSymbol: 'bear_emerald',
-        avatarUrl: EMERALD_BEAR_URL,
-        primaryBroker: 'XM',
-        currency: 'USD',
-        xp: 575,
-        rank: 1,
-      };
-      userProfiles.set('u_zzzemzzz', canonicalZem);
-      userProfiles.delete('u_emanuel001');
-      userProfiles.delete('u_emanuel007');
-      userProfiles.delete('u_homiesplant_th');
-      userProfiles.delete('u_homiesplant');
-      userProfiles.delete('usr_meta_72423906');
-      await persistUserProfilesToR2();
+      if (isTestEnv) {
+        // Ensure canonical zzZEMZzz profile is active in test mode
+        const em = userProfiles.get('u_zzzemzzz') || {};
+        const canonicalZem = {
+          ...em,
+          id: 'u_zzzemzzz',
+          username: 'zzZEMZzz',
+          email: em.email || 'libralytics.data@gmail.com',
+          accountNumber: '342186831',
+          avatarSymbol: 'bear_emerald',
+          avatarUrl: EMERALD_BEAR_URL,
+          primaryBroker: 'XM',
+          currency: 'USD',
+          xp: 575,
+          rank: 1,
+        };
+        userProfiles.set('u_zzzemzzz', canonicalZem);
+        await persistUserProfilesToR2();
+      }
     } catch (err) {
       console.warn('[server] Warning: Could not load user profiles from R2:', err);
     }
@@ -1527,6 +1529,29 @@ export function createServer() {
       lastClaimDate: todayStr,
       streakDays: getStreakStatus(nextClaimed, todayStr, todayStr),
     });
+  });
+
+  app.post('/api/admin/reset-all', requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      userProfiles.clear();
+      await persistUserProfilesToR2();
+      userStreaks.clear();
+      await persistStreaksToR2();
+      await authService.resetAll();
+      await connector.resetAll();
+      tournamentService.resetAll();
+      await r2Storage.uploadJson('leaderboards/daily_champions.json', [], { 'x-traderrank-type': 'daily_champions' });
+      invalidateCanonicalStatsCache();
+      return res.json({
+        success: true,
+        message: 'All users, credentials, accounts, streaks, and tournaments reset to 0',
+        userCount: userProfiles.size,
+        accountCount: connector.getAccounts().length,
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return res.status(500).json({ success: false, error: msg });
+    }
   });
 
   // 17. Cloudflare R2 Cloud Storage Endpoints

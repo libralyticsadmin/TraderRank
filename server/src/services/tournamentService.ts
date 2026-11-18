@@ -162,6 +162,12 @@ export class TournamentService {
     this.tournaments.set(dailyBlitz.id, dailyBlitz);
   }
 
+  public resetAll(): void {
+    this.tournaments.clear();
+    this.initializeDefaultTournaments();
+    this.persistStateToR2();
+  }
+
   public getTournaments(): Tournament[] {
     return Array.from(this.tournaments.values());
   }

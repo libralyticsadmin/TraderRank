@@ -274,6 +274,18 @@ export class AccountConnectorService {
     return { account, validation };
   }
 
+  public async resetAll(): Promise<void> {
+    this.accounts.clear();
+    this.accountOwners.clear();
+    this.traderUsernames.clear();
+    this.tradesStorage.clear();
+    this.rawDealsCache.clear();
+    this.lastDealSyncAt.clear();
+    this.lastDealCursorTime.clear();
+    await r2Storage.uploadJson('profiles/account_owners.json', {}, { 'x-traderrank-type': 'account_owners' });
+    await r2Storage.uploadJson('profiles/account_usernames.json', {}, { 'x-traderrank-type': 'account_usernames' });
+  }
+
   public getAccounts(userId?: string): TradingAccount[] {
     const all = Array.from(this.accounts.values())
       .filter(acc => {
@@ -738,6 +750,10 @@ export class AccountConnectorService {
         const savedOwner =
           this.accountOwners.get(cleanLogin) ||
           (existingAcc ? this.accountOwners.get(existingAcc.id) : null);
+
+        if (process.env.NODE_ENV === 'production' && !existingAcc && !savedOwner) {
+          continue;
+        }
 
         const userId = isZemAccount
           ? 'u_zzzemzzz'
