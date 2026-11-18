@@ -4,18 +4,6 @@ import { DailyIntelService } from '../src/market/dailyIntelService.js';
 describe('DailyIntelService - Daily Trading Intelligence & Custom Strategy Plans', () => {
   const service = DailyIntelService.getInstance();
 
-  it('should return subscription plan options with the $9/mo Pro tier', () => {
-    const plans = service.getSubscriptionPlans();
-    expect(plans).toBeInstanceOf(Array);
-    expect(plans.length).toBeGreaterThanOrEqual(2);
-
-    const monthlyPlan = plans.find(p => p.id === 'PRO_MONTHLY');
-    expect(monthlyPlan).toBeDefined();
-    expect(monthlyPlan?.price).toBe(9);
-    expect(monthlyPlan?.period).toBe('month');
-    expect(monthlyPlan?.features.length).toBeGreaterThan(3);
-  });
-
   it('should generate a comprehensive daily market intelligence report', async () => {
     const report = await service.getDailyReport('2026-10-06', true);
     expect(report).toBeDefined();

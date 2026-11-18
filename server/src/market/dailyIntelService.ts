@@ -28,46 +28,6 @@ export class DailyIntelService {
   }
 
   /**
-   * Subscription plan options ($9/month Pro tier)
-   */
-  public getSubscriptionPlans(): SubscriptionPlanOption[] {
-    return [
-      {
-        id: 'PRO_MONTHLY',
-        name: 'Pro Daily Intelligence',
-        price: 9,
-        period: 'month',
-        badge: 'POPULAR',
-        features: [
-          'Full Daily Technical & Fundamental Summaries',
-          'ForexFactory High-Impact News Breakdown & Impact Notes',
-          'Custom Strategic Timeframe Generator (1m, 5m, 15m, 1H, 4H, 1D, 1W)',
-          'SMC Institutional Order Block & Demand/Supply Key Levels',
-          'Tactical Stop Loss, Entry Zones & Multi-Take Profit Targets',
-          'Optimal Trading Session Windows (London, NY, Asian)',
-          'Automated 1% Risk Lot Size Calculator',
-        ],
-      },
-      {
-        id: 'PRO_ANNUAL',
-        name: 'Pro Annual All-Access',
-        price: 79,
-        period: 'year',
-        savingsText: 'Save 27% ($6.58/mo)',
-        badge: 'BEST VALUE',
-        features: [
-          'All Pro Monthly Features Included',
-          'Priority AI Multi-Timeframe Deep Confluence Engine',
-          'Daily Champions Trade Setups Archive',
-          'Instant Real-Time WebSocket Alerts',
-          'Verified Pro Arena Badge on Leaderboards',
-          '24/7 Priority Discord Alpha Channel Access',
-        ],
-      },
-    ];
-  }
-
-  /**
    * Generates or retrieves Daily Market Highlight Intelligence Report
    */
   public async getDailyReport(targetDate?: string, isSubscriber: boolean = true): Promise<DailyIntelReport> {
