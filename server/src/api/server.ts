@@ -233,7 +233,7 @@ export function createServer() {
       }
     }
     if (clients.size > 0) {
-      getCachedCanonicalStats(connector, leaderboard, marketFeed, getRegisteredAtMap(), getStreakXpMap())
+      getCachedCanonicalStats(connector, leaderboard, marketFeed, getRegisteredAtMap(), getStreakXpMap(), getProfileAvatarMap())
         .then(canonical => {
           const canonicalPayload = JSON.stringify({
             type: 'CANONICAL_STATS_UPDATE',
@@ -473,6 +473,16 @@ export function createServer() {
     return map;
   }
 
+  function getProfileAvatarMap(): Map<string, { avatarUrl?: string; avatarSymbol?: string }> {
+    const map = new Map<string, { avatarUrl?: string; avatarSymbol?: string }>();
+    for (const [uid, prof] of userProfiles.entries()) {
+      if (prof?.avatarUrl || prof?.avatarSymbol) {
+        map.set(uid, { avatarUrl: prof.avatarUrl, avatarSymbol: prof.avatarSymbol });
+      }
+    }
+    return map;
+  }
+
   const loadUserProfilesFromR2 = async () => {
     try {
       const saved = await r2Storage.getJson<Record<string, any>>(USER_PROFILES_R2_KEY);
@@ -480,8 +490,17 @@ export function createServer() {
         for (const [k, v] of Object.entries(saved)) {
           if (v && v.id) {
             userProfiles.set(k, v);
+            if (v.avatarUrl || v.avatarSymbol) {
+              connector.updateUserAccountsName(v.id, v.username || 'Trader', v.primaryBroker, undefined, v.avatarUrl);
+              leaderboard.updateTraderProfile(v.id, {
+                username: v.username,
+                avatarUrl: v.avatarUrl,
+                avatarSymbol: v.avatarSymbol,
+              });
+            }
           }
         }
+        invalidateCanonicalStatsCache();
       }
       if (isTestEnv) {
         // Ensure canonical zzZEMZzz profile is active in test mode
@@ -1135,7 +1154,7 @@ export function createServer() {
   // 8a. Unified Canonical Trader Stats (Single Source of Truth)
   app.get('/api/traders/canonical', async (_req: Request, res: Response) => {
     try {
-      const canonical = await getCachedCanonicalStats(connector, leaderboard, marketFeed, getRegisteredAtMap(), getStreakXpMap());
+      const canonical = await getCachedCanonicalStats(connector, leaderboard, marketFeed, getRegisteredAtMap(), getStreakXpMap(), getProfileAvatarMap());
       res.json(canonical);
     } catch (err: any) {
       res.status(500).json({ error: err.message || 'Failed to compute canonical stats' });
@@ -1145,7 +1164,7 @@ export function createServer() {
   // 8a-2. Live Trade Bulletin Feed (Single Fast Request: Latest Open + Closed + Top Wins)
   app.get('/api/bulletin', async (_req: Request, res: Response) => {
     try {
-      const feed = await getBulletinFeed(connector, leaderboard, marketFeed);
+      const feed = await getBulletinFeed(connector, leaderboard, marketFeed, getProfileAvatarMap());
       res.json(feed);
     } catch (err: any) {
       res.status(500).json({ error: err.message || 'Failed to build bulletin feed' });
@@ -1155,6 +1174,17 @@ export function createServer() {
   // 8b. Daily Winning Pips & Daily Best Trader
   app.get('/api/leaderboard/daily', (_req: Request, res: Response) => {
     const daily = leaderboard.getDailyLeaderboard();
+    const avatarMap = getProfileAvatarMap();
+    if (daily.dailyBestTrader) {
+      const prof = avatarMap.get(daily.dailyBestTrader.userId);
+      if (prof?.avatarUrl) daily.dailyBestTrader.avatarUrl = prof.avatarUrl;
+      if (prof?.avatarSymbol) daily.dailyBestTrader.avatarSymbol = prof.avatarSymbol;
+    }
+    daily.standings.forEach(s => {
+      const prof = avatarMap.get(s.userId);
+      if (prof?.avatarUrl) s.avatarUrl = prof.avatarUrl;
+      if (prof?.avatarSymbol) s.avatarSymbol = prof.avatarSymbol;
+    });
     res.json(daily);
   });
 

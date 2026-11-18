@@ -79,8 +79,8 @@ export const UserNavMenu: React.FC<UserNavMenuProps> = ({
           username: user.username,
         });
         const effectiveLevel = canonical ? canonical.level : user.level;
-        const effectiveAvatarUrl = canonical?.avatarUrl || user.avatarUrl;
-        const effectiveAvatarSymbol = canonical?.avatarSymbol || user.avatarSymbol;
+        const effectiveAvatarUrl = user.avatarUrl || canonical?.avatarUrl;
+        const effectiveAvatarSymbol = user.avatarSymbol || canonical?.avatarSymbol;
         return (
           <button
             onClick={() => setMenuOpen(!menuOpen)}

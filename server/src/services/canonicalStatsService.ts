@@ -126,12 +126,15 @@ export function invalidateCanonicalStatsCache(): void {
   canonicalSnapshotCache = null;
 }
 
+export type ProfileAvatarMap = Map<string, { avatarUrl?: string; avatarSymbol?: string }>;
+
 export async function getCachedCanonicalStats(
   connector: AccountConnectorService,
   leaderboard: LeaderboardService,
   marketFeed?: LiveMarketFeedService,
   registeredAtByUserId?: Map<string, string>,
-  streakXpByUserId?: Map<string, number>
+  streakXpByUserId?: Map<string, number>,
+  avatarByUserId?: ProfileAvatarMap
 ): Promise<CanonicalStatsResponse> {
   if (canonicalSnapshotCache && Date.now() - canonicalSnapshotCache.fetchedAt < CANONICAL_CACHE_TTL_MS) {
     return canonicalSnapshotCache.data;
@@ -139,7 +142,7 @@ export async function getCachedCanonicalStats(
   if (canonicalInFlight) {
     return canonicalInFlight;
   }
-  canonicalInFlight = computeCanonicalStats(connector, leaderboard, marketFeed, registeredAtByUserId, streakXpByUserId)
+  canonicalInFlight = computeCanonicalStats(connector, leaderboard, marketFeed, registeredAtByUserId, streakXpByUserId, avatarByUserId)
     .then(data => {
       canonicalSnapshotCache = { data, fetchedAt: Date.now() };
       return data;
@@ -155,7 +158,8 @@ export async function computeCanonicalStats(
   leaderboard: LeaderboardService,
   marketFeed?: LiveMarketFeedService,
   registeredAtByUserId?: Map<string, string>,
-  streakXpByUserId?: Map<string, number>
+  streakXpByUserId?: Map<string, number>,
+  avatarByUserId?: ProfileAvatarMap
 ): Promise<CanonicalStatsResponse> {
   const usdJpyRate = getLiveUsdJpyRate(marketFeed);
   const todayUtc = new Date().toISOString().slice(0, 10);
@@ -326,6 +330,7 @@ export async function computeCanonicalStats(
         e.userId === identity.userId
     );
 
+    const profileAvatar = avatarByUserId?.get(identity.userId);
     const stats: CanonicalTraderStats = {
       rank: 0,
       userId: identity.userId,
@@ -336,8 +341,8 @@ export async function computeCanonicalStats(
       broker: identity.broker,
       brokers: [identity.broker],
       currency,
-      avatarUrl: acc.avatarUrl || matchedLb?.avatarUrl,
-      avatarSymbol: matchedLb?.avatarSymbol || identity.avatarSymbol,
+      avatarUrl: profileAvatar?.avatarUrl || acc.avatarUrl || matchedLb?.avatarUrl,
+      avatarSymbol: profileAvatar?.avatarSymbol || matchedLb?.avatarSymbol || identity.avatarSymbol,
       accountCount: 1,
       closedPips: Number(closedPips.toFixed(1)),
       floatingPips: Number(floatingPips.toFixed(1)),
@@ -393,6 +398,7 @@ export async function computeCanonicalStats(
     const grossNative = Number(lb.grossProfitUsd ?? 0);
     const grossUsd = isJpy ? Number((grossNative / usdJpyRate).toFixed(2)) : Number(grossNative.toFixed(2));
 
+    const profileAvatar = avatarByUserId?.get(identity.userId);
     byKey.set(key, {
       rank: 0,
       userId: identity.userId,
@@ -402,8 +408,8 @@ export async function computeCanonicalStats(
       broker: identity.broker,
       brokers: lb.brokers?.length ? lb.brokers : [identity.broker],
       currency,
-      avatarUrl: lb.avatarUrl,
-      avatarSymbol: lb.avatarSymbol || identity.avatarSymbol,
+      avatarUrl: profileAvatar?.avatarUrl || lb.avatarUrl,
+      avatarSymbol: profileAvatar?.avatarSymbol || lb.avatarSymbol || identity.avatarSymbol,
       accountCount: lb.accountCount || 1,
       closedPips: Number((lb.closedPips ?? 0).toFixed(1)),
       floatingPips: Number((lb.floatingPips ?? 0).toFixed(1)),
@@ -499,9 +505,10 @@ export interface BulletinFeedResponse {
 export async function getBulletinFeed(
   connector: AccountConnectorService,
   leaderboard: LeaderboardService,
-  marketFeed?: LiveMarketFeedService
+  marketFeed?: LiveMarketFeedService,
+  avatarByUserId?: ProfileAvatarMap
 ): Promise<BulletinFeedResponse> {
-  const canonical = await getCachedCanonicalStats(connector, leaderboard, marketFeed);
+  const canonical = await getCachedCanonicalStats(connector, leaderboard, marketFeed, undefined, undefined, avatarByUserId);
   const accounts = connector.getAccounts();
 
   const statsByAcc = new Map<string, CanonicalTraderStats>();
