@@ -531,20 +531,17 @@ export function createServer() {
       return res.status(400).json({ success: false, error: regResult.error || 'Registration failed' });
     }
 
-    const isZem = cleanUsername.toLowerCase() === 'zzzemzzz';
-    const finalAvatar = isZem ? (avatarUrl || EMERALD_BEAR_URL) : avatarUrl;
-
     const newUser = {
       id: cleanId,
       username: cleanUsername,
       email: cleanEmail,
-      avatarSymbol: isZem ? 'bear_emerald' : 'zap',
-      avatarUrl: finalAvatar,
+      avatarSymbol: 'zap',
+      avatarUrl: avatarUrl || undefined,
       traderTitle: 'Verified Market Trader',
       bio: '',
       tradingStyle: tradingStyle || 'SCALPER',
-      primaryBroker: isZem ? 'XM' : (primaryBroker || 'Exness'),
-      accountNumber: isZem ? '342186831' : undefined,
+      primaryBroker: primaryBroker || 'Exness',
+      accountNumber: undefined,
       country: 'Global',
       joinedAt: 'Today',
       registeredAt: new Date().toISOString(),
@@ -554,17 +551,6 @@ export function createServer() {
     };
     userProfiles.set(cleanId, newUser);
     await persistUserProfilesToR2();
-
-    leaderboard.registerAccountMapping(
-      isZem ? 'acc_meta_342186831' : `acc_${cleanId}`,
-      cleanId,
-      newUser.username,
-      newUser.primaryBroker as Broker,
-      newUser.username,
-      isZem ? '342186831' : undefined,
-      finalAvatar,
-      'USD'
-    );
 
     const token = authService.createSessionToken(cleanId, cleanUsername);
     return res.status(201).json({ success: true, token, user: newUser });
@@ -1539,6 +1525,7 @@ export function createServer() {
       await persistStreaksToR2();
       await authService.resetAll();
       await connector.resetAll();
+      leaderboard.resetAll();
       tournamentService.resetAll();
       await r2Storage.uploadJson('leaderboards/daily_champions.json', [], { 'x-traderrank-type': 'daily_champions' });
       invalidateCanonicalStatsCache();

@@ -292,6 +292,13 @@ export class LeaderboardService {
     );
   }
 
+  public resetAll(): void {
+    this.traders.clear();
+    this.accountToUser.clear();
+    this.historicalChampions = [];
+    this.emitLeaderboardUpdate(true);
+  }
+
   /**
    * Sorts traders by all-time total pips (closed + floating) in descending order.
    */
