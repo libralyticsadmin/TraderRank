@@ -398,6 +398,7 @@ export const AuthModal: React.FC = () => {
                 >
                   <option value="Exness">Exness</option>
                   <option value="XM">XM Global</option>
+                  <option value="XMTrading">XMTrading (Japan)</option>
                   <option value="Axiory">Axiory</option>
                   <option value="Vantage">Vantage</option>
                   <option value="IC_MARKETS">IC Markets</option>
