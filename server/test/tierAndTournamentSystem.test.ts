@@ -226,5 +226,58 @@ describe('Tiering System & Tournament Registration Readiness Suite', () => {
       expect(standing.netPips).toBe(60);
       expect(standing.currentDrawdownPercent).toBe(5);
     });
+
+    it('runs full fresh-user flow: register (0 XP) -> claim Day 1 streak (+50 XP) -> join UPCOMING tournament (0 pips)', async () => {
+      const uniqueName = `FreshTrader_${Date.now()}`;
+      const regRes = await fetch(`${baseUrl}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: uniqueName,
+          email: `${uniqueName.toLowerCase()}@example.com`,
+          password: 'StrongPassword123!',
+        }),
+      });
+      expect(regRes.status).toBe(201);
+      const regData = await regRes.json();
+      expect(regData.user.xp).toBe(0);
+      expect(regData.user.level).toBe(1);
+      expect(regData.user.registeredAt).toBeDefined();
+
+      // Claim Day 1 Daily Streak (+50 XP) and verify second claim same day is blocked
+      const claim1 = await fetch(`${baseUrl}/api/gamification/streak/claim`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${regData.token}` },
+      });
+      expect(claim1.status).toBe(200);
+      const claim1Data = await claim1.json();
+      expect(claim1Data.dayNum).toBe(1);
+      expect(claim1Data.xpEarned).toBe(50);
+
+      const claim2 = await fetch(`${baseUrl}/api/gamification/streak/claim`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${regData.token}` },
+      });
+      expect(claim2.status).toBe(400);
+
+      // Join UPCOMING tournament and verify pre-launch stats stay at 0
+      const joinRes = await fetch(`${baseUrl}/api/tournaments/tourn_monthly_prop_01/join`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${regData.token}`,
+        },
+        body: JSON.stringify({
+          userId: regData.user.id,
+          username: regData.user.username,
+          broker: 'XM',
+        }),
+      });
+      expect(joinRes.status).toBe(200);
+      const joinData = await joinRes.json();
+      expect(joinData.status).toBe('UPCOMING');
+      expect(joinData.standing.tradesCount).toBe(0);
+      expect(joinData.standing.netPips).toBe(0);
+    });
   });
 });

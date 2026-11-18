@@ -7,6 +7,7 @@ import {
   Broker,
   SubscriptionStatus,
 } from '../../shared/src/types.ts';
+import { calculateTraderGamification } from '../../shared/src/gamification.ts';
 import { ConnectionWizard } from './components/ConnectionWizard.tsx';
 import { AccountsList } from './components/AccountsList.tsx';
 import { LivePositionsTicker } from './components/LivePositionsTicker.tsx';
@@ -433,8 +434,8 @@ export const App: React.FC = () => {
     const tradesCount = t.tradesCount ?? matchedLb?.tradesCount ?? 0;
     const netPips = t.score ?? matchedLb?.totalPips ?? 0;
     const winRate = t.winRate ?? matchedLb?.winRate ?? 0;
-    const xp = matchedLb?.xp ?? (tradesCount > 0 ? tradesCount * 25 : 0);
-    const level = matchedLb?.level ?? Math.max(1, Math.floor(tradesCount / 40) + 1);
+    const xp = matchedLb?.xp ?? 0;
+    const gamif = calculateTraderGamification(xp);
 
     setSelectedTrader({
       userId: resolvedId,
@@ -442,9 +443,9 @@ export const App: React.FC = () => {
       broker: safeBroker,
       avatarSymbol,
       avatarUrl,
-      tier: level >= 10 ? 'Market Veteran' : level >= 5 ? 'Pro Scalper' : 'Novice Trader',
-      level,
-      xp,
+      tier: gamif.tierName,
+      level: gamif.level,
+      xp: gamif.currentXp,
       rank: t.rank || matchedLb?.rank || 1,
       netPips,
       winRate,
