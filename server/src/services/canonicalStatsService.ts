@@ -245,7 +245,7 @@ export async function computeCanonicalStats(
     totalPlatformWinningPips += winningPips;
 
     const openOrders: CanonicalLiveOrder[] = Array.isArray(rawPositions)
-      ? rawPositions.slice(0, 2).map(pos => ({
+      ? rawPositions.map(pos => ({
           id: String(pos.id || pos.ticket || Math.random()),
           ticket: String(pos.ticket || pos.id || '').slice(-6),
           symbol: String(pos.symbol || 'XAUUSD'),
@@ -264,7 +264,7 @@ export async function computeCanonicalStats(
       openOrders.length === 0 && validTrades.length > 0
         ? [...validTrades]
             .sort((a, b) => new Date(b.closeTime || 0).getTime() - new Date(a.closeTime || 0).getTime())
-            .slice(0, 2)
+            .slice(0, 10)
             .map(tr => ({
               id: String(tr.id || tr.ticket || Math.random()),
               ticket: String(tr.ticket || tr.id || '').slice(-6),
