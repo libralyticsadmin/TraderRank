@@ -106,6 +106,11 @@ export function createServer() {
       const entry = rateLimitStore.get(key);
 
       if (!entry || entry.resetAt <= now) {
+        if (rateLimitStore.size > 1000) {
+          for (const [k, v] of rateLimitStore.entries()) {
+            if (v.resetAt <= now) rateLimitStore.delete(k);
+          }
+        }
         rateLimitStore.set(key, { count: 1, resetAt: now + windowMs });
         return next();
       }
@@ -316,24 +321,42 @@ export function createServer() {
   );
 
   // Periodically stream live position updates to WS clients
+  let isStreamingPositions = false;
   const streamInterval = setInterval(async () => {
-    const accounts = connector.getAccounts();
-    for (const acc of accounts) {
-      if (acc.connectionStatus === 'CONNECTED') {
-        const positions = await connector.getActivePositions(acc.id);
-        const payload = JSON.stringify({
-          type: 'POSITIONS_UPDATE',
-          accountId: acc.id,
-          positions,
-        });
-        for (const client of clients) {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(payload);
+    if (isStreamingPositions || clients.size === 0) return;
+    let hasOpenClient = false;
+    for (const client of clients) {
+      if (client.readyState === WebSocket.OPEN) {
+        hasOpenClient = true;
+        break;
+      }
+    }
+    if (!hasOpenClient) return;
+
+    isStreamingPositions = true;
+    try {
+      const accounts = connector.getAccounts();
+      for (const acc of accounts) {
+        if (acc.connectionStatus === 'CONNECTED') {
+          const positions = await connector.getActivePositions(acc.id);
+          const payload = JSON.stringify({
+            type: 'POSITIONS_UPDATE',
+            accountId: acc.id,
+            positions,
+          });
+          for (const client of clients) {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(payload);
+            }
           }
         }
       }
+    } catch (err) {
+      console.warn('[WS] Position stream tick error:', err instanceof Error ? err.message : String(err));
+    } finally {
+      isStreamingPositions = false;
     }
-  }, 500); // 500ms broadcast interval (matching low-latency SLA)
+  }, 2000); // 2s broadcast interval, only when WS clients are connected
   if (streamInterval && typeof streamInterval.unref === 'function') {
     streamInterval.unref();
   }

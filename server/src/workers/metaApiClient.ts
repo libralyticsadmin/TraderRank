@@ -71,6 +71,7 @@ export class MetaApiClient {
   private accountRegions = new Map<string, string>();
   private positionsCache = new Map<string, { positions: MetaApiPosition[]; fetchedAt: number }>();
   private positionsInFlight = new Map<string, Promise<MetaApiPosition[]>>();
+  private positionsBackoff = new Map<string, { failures: number; retryAfter: number }>();
 
   constructor(token?: string) {
     this.token = token || process.env.META_API_TOKEN || '';
@@ -407,10 +408,23 @@ export class MetaApiClient {
       return cached.positions;
     }
 
+    const backoff = this.positionsBackoff.get(metaApiAccountId);
+    if (backoff && Date.now() < backoff.retryAfter) {
+      return cached?.positions ?? [];
+    }
+
     const inFlight = this.positionsInFlight.get(metaApiAccountId);
     if (inFlight) {
       return inFlight;
     }
+
+    const recordFailure = (reason: string) => {
+      const prev = this.positionsBackoff.get(metaApiAccountId);
+      const failures = (prev?.failures ?? 0) + 1;
+      const delayMs = Math.min(120_000, 15_000 * Math.pow(2, failures - 1));
+      this.positionsBackoff.set(metaApiAccountId, { failures, retryAfter: Date.now() + delayMs });
+      console.warn(`[MetaApiClient] getPositions ${reason} for ${metaApiAccountId} (backoff ${Math.round(delayMs / 1000)}s)`);
+    };
 
     const promise = (async (): Promise<MetaApiPosition[]> => {
       try {
@@ -420,16 +434,18 @@ export class MetaApiClient {
             'auth-token': this.token,
             'Accept': 'application/json',
           },
+          signal: AbortSignal.timeout(8000),
         });
 
         if (!res.ok) {
-          console.warn(`[MetaApiClient] getPositions HTTP ${res.status} for ${metaApiAccountId}`);
+          recordFailure(`HTTP ${res.status}`);
           return cached?.positions ?? [];
         }
         const data = await res.json();
         if (!Array.isArray(data)) {
           return cached?.positions ?? [];
         }
+        this.positionsBackoff.delete(metaApiAccountId);
         const parsed: MetaApiPosition[] = data.map((p: any) => ({
           id: String(p.id || p._id || p.positionId),
           symbol: p.symbol,
@@ -446,7 +462,7 @@ export class MetaApiClient {
         this.positionsCache.set(metaApiAccountId, { positions: parsed, fetchedAt: Date.now() });
         return parsed;
       } catch (err) {
-        console.warn(`[MetaApiClient] getPositions error for ${metaApiAccountId}:`, err);
+        recordFailure(err instanceof Error ? err.message : String(err));
         return cached?.positions ?? [];
       } finally {
         this.positionsInFlight.delete(metaApiAccountId);

@@ -21,6 +21,7 @@ export interface IEventBus {
  */
 export class RedisStreamsBus implements IEventBus {
   private static instance: RedisStreamsBus;
+  private static readonly MAX_STREAM_LENGTH = 500;
   private streams = new Map<string, EventBusEnvelope<unknown>[]>();
   private consumerGroups = new Map<string, Map<string, EventHandler<unknown>>>();
 
@@ -49,7 +50,11 @@ export class RedisStreamsBus implements IEventBus {
     if (!this.streams.has(stream)) {
       this.streams.set(stream, []);
     }
-    this.streams.get(stream)!.push(envelope as EventBusEnvelope<unknown>);
+    const streamList = this.streams.get(stream)!;
+    streamList.push(envelope as EventBusEnvelope<unknown>);
+    if (streamList.length > RedisStreamsBus.MAX_STREAM_LENGTH) {
+      streamList.splice(0, streamList.length - RedisStreamsBus.MAX_STREAM_LENGTH);
+    }
 
     // Fan-out to consumer groups on this stream
     const groups = this.consumerGroups.get(stream);
