@@ -365,7 +365,7 @@ export async function computeCanonicalStats(
       xp,
       level,
       badges: matchedLb?.badges ?? ['First Connect'],
-      liveOrders: openOrders.length > 0 ? openOrders : recentClosedOrders,
+      liveOrders: openOrders,
       usdJpyRate,
       lastUpdated: new Date().toISOString(),
     };

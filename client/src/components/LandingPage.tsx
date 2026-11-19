@@ -605,12 +605,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       </span>
                     </div>
 
-                    {trader.liveOrders && trader.liveOrders.length > 0 ? (
+                    {trader.liveOrders && trader.liveOrders.filter((o: any) => o.isLivePosition !== false).length > 0 ? (
                       <div
                         style={{ display: 'flex', flexDirection: 'column', gap: '5px', maxHeight: '140px', overflowY: 'auto', paddingRight: '4px' }}
                         onClick={(e) => e.stopPropagation()}
                       >
-                        {trader.liveOrders.map((ord: any) => {
+                        {trader.liveOrders.filter((o: any) => o.isLivePosition !== false).map((ord: any) => {
                           const isPos = ord.profitPips >= 0;
                           return (
                             <div
