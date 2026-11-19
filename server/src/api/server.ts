@@ -648,6 +648,9 @@ export function createServer() {
     if (typeof profile.avatarSymbol === 'string') safeUpdates.avatarSymbol = profile.avatarSymbol;
     if (typeof profile.avatarUrl === 'string') safeUpdates.avatarUrl = profile.avatarUrl;
     if (typeof profile.bio === 'string') safeUpdates.bio = profile.bio;
+    if (profile.currencyPreference === 'AUTO' || profile.currencyPreference === 'USD' || profile.currencyPreference === 'JPY') {
+      safeUpdates.currencyPreference = profile.currencyPreference;
+    }
     if (typeof profile.traderTitle === 'string') safeUpdates.traderTitle = profile.traderTitle;
     if (typeof profile.country === 'string') safeUpdates.country = profile.country;
     if (typeof profile.telegramHandle === 'string') safeUpdates.telegramHandle = profile.telegramHandle;

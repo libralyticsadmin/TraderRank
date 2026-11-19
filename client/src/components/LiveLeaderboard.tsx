@@ -4,7 +4,7 @@ import { calculateTraderGamification } from '../../../shared/src/gamification.ts
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { resolveTraderIdentity } from './avatarCatalog.ts';
-import { resolveBrokerCurrency, formatCurrency } from '../utils/currencyFlow.ts';
+import { resolveBrokerCurrency, formatDisplayCurrency } from '../utils/currencyFlow.ts';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useTraderStats } from '../hooks/useTraderStats.ts';
@@ -42,7 +42,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
   const [period, setPeriod] = useState<RankingPeriod>('all_time');
   const [brokerFilter, setBrokerFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-  const { traders: canonicalTraders, getTraderStats } = useTraderStats();
+  const { traders: canonicalTraders, getTraderStats, usdJpyRate } = useTraderStats();
 
   // Daily standings from server
   const dailyStandings = dailyResult?.standings || [];
@@ -246,7 +246,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
 
   const formatTraderProfit = (amount: number, broker?: Broker, currency?: string) => {
     const effCur = currency || (broker === 'XMTrading' ? 'JPY' : 'USD');
-    return formatCurrency(amount, effCur, { showSign: true });
+    return formatDisplayCurrency(amount, effCur, user?.currencyPreference || 'AUTO', usdJpyRate, { showSign: true });
   };
 
   return (

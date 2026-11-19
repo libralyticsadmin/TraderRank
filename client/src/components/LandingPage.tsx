@@ -14,7 +14,7 @@ import {
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { TraderAvatar } from './TraderAvatar.tsx';
 import { resolveTraderIdentity } from './avatarCatalog.ts';
-import { resolveBrokerCurrency, formatCurrency } from '../utils/currencyFlow.ts';
+import { resolveBrokerCurrency, formatDisplayCurrency } from '../utils/currencyFlow.ts';
 import { BrandLogo, BrandMark } from './BrandLogo.tsx';
 import { LiveTradeBulletin } from './LiveTradeBulletin.tsx';
 import { MarketLivePricesTicker } from './MarketLivePricesTicker.tsx';
@@ -44,7 +44,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const { t, language } = useTranslation();
   const { user } = useAuth();
   const [activeTabRanking, setActiveTabRanking] = useState<'pips' | 'profit' | 'rate'>('pips');
-  const { traders: canonicalTraders, platformTotals, getTraderStats } = useTraderStats();
+  const { traders: canonicalTraders, platformTotals, getTraderStats, usdJpyRate } = useTraderStats();
 
   // Derive top 3 exclusively from the unified Canonical Stats source of truth
   const baseSource = canonicalTraders.length > 0 ? canonicalTraders : leaderboard;
@@ -154,7 +154,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   const formatPodiumProfit = (amount: number, broker?: string, currency?: string) => {
     const effCur = currency || (broker === 'XMTrading' ? 'JPY' : 'USD');
-    return formatCurrency(amount, effCur, { showSign: true });
+    return formatDisplayCurrency(amount, effCur, user?.currencyPreference || 'AUTO', usdJpyRate, { showSign: true });
   };
 
   return (

@@ -4,6 +4,7 @@ import { AuthService } from '../src/services/authService.js';
 import { createServer } from '../src/api/server.js';
 import { TournamentService } from '../src/services/tournamentService.js';
 import { getStreakStatus } from '../../shared/src/gamification.js';
+import { resolveBrokerCurrency } from '../src/utils/currencyFlow.js';
 
 describe('Security & Loophole Remediation Tests', () => {
   const auth = AuthService.getInstance();
@@ -263,5 +264,37 @@ describe('Security & Loophole Remediation Tests', () => {
     expect(nextDay[0].current).toBe(true);
     expect(nextDay[0].claimed).toBe(false);
     expect(nextDay.slice(1).every(d => d.locked)).toBe(true);
+  });
+
+  it('respects explicit broker currency first and persists valid currencyPreference on PUT /api/auth/profile', async () => {
+    expect(resolveBrokerCurrency('XMTrading', 'XMTrading-MT5', 'USD')).toBe('USD');
+    expect(resolveBrokerCurrency('XM', 'XMGlobal-MT5', 'JPY')).toBe('JPY');
+    expect(resolveBrokerCurrency('XMTrading', 'XMTrading-MT5', undefined)).toBe('JPY');
+    expect(resolveBrokerCurrency('Exness', 'Exness-Real', undefined)).toBe('USD');
+
+    const name = `curpref_${Date.now().toString(36)}`;
+    const reg = await fetch(`${baseUrl}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: name, email: `${name}@example.com`, password: 'Password123!' }),
+    });
+    expect(reg.status).toBe(201);
+    const { token, user } = (await reg.json()) as any;
+
+    const putJpy = await fetch(`${baseUrl}/api/auth/profile`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id: user.id, currencyPreference: 'JPY' }),
+    });
+    expect(putJpy.status).toBe(200);
+    expect(((await putJpy.json()) as any).user.currencyPreference).toBe('JPY');
+
+    const putInvalid = await fetch(`${baseUrl}/api/auth/profile`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id: user.id, currencyPreference: 'BTC' }),
+    });
+    expect(putInvalid.status).toBe(200);
+    expect(((await putInvalid.json()) as any).user.currencyPreference).toBe('JPY');
   });
 });

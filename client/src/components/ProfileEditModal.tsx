@@ -49,6 +49,7 @@ export const ProfileEditModal: React.FC = () => {
   const [bio, setBio] = useState(user?.bio || '');
   const [tradingStyle, setTradingStyle] = useState<UserProfile['tradingStyle']>(user?.tradingStyle || 'SCALPER');
   const [primaryBroker, setPrimaryBroker] = useState<Broker>(user?.primaryBroker || 'Exness');
+  const [currencyPreference, setCurrencyPreference] = useState<'AUTO' | 'USD' | 'JPY'>(user?.currencyPreference || 'AUTO');
   const [avatarSymbol, setAvatarSymbol] = useState(user?.avatarSymbol || 'zap');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
   const [country, setCountry] = useState(user?.country || 'United States');
@@ -98,6 +99,7 @@ export const ProfileEditModal: React.FC = () => {
       setBio(user.bio || '');
       setTradingStyle(user.tradingStyle || 'SCALPER');
       setPrimaryBroker(user.primaryBroker || 'Exness');
+      setCurrencyPreference(user.currencyPreference || 'AUTO');
       setAvatarSymbol(user.avatarSymbol || 'zap');
       setAvatarUrl(user.avatarUrl || '');
       setCountry(user.country || 'United States');
@@ -186,6 +188,7 @@ export const ProfileEditModal: React.FC = () => {
       bio: bio.trim(),
       tradingStyle,
       primaryBroker,
+      currencyPreference,
       avatarSymbol,
       avatarUrl: finalAvatar,
       country: country.trim(),
@@ -910,6 +913,41 @@ export const ProfileEditModal: React.FC = () => {
                 </option>
               </select>
             </div>
+          </div>
+
+          {/* Display Currency Preference (Auto-Align with Broker or Override USD/JPY) */}
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#94a3b8', marginBottom: '6px' }}>
+              {language === 'ja'
+                ? '表示通貨（ブローカー口座に自動連動 / USD / JPY）'
+                : language === 'zh'
+                ? '显示货币（自动匹配经纪商账户 / USD / JPY）'
+                : 'Display Currency (Auto-Align with Broker / USD / JPY)'}
+            </label>
+            <select
+              value={currencyPreference}
+              onChange={(e) => setCurrencyPreference(e.target.value as 'AUTO' | 'USD' | 'JPY')}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                background: '#131e2d',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                color: '#ffffff',
+                fontSize: '13px',
+                outline: 'none',
+              }}
+            >
+              <option value="AUTO">
+                {language === 'ja'
+                  ? '自動（接続ブローカー口座の通貨に合わせる・推奨）'
+                  : language === 'zh'
+                  ? '自动（与已连接经纪商账户货币一致・推荐）'
+                  : 'Auto — Align with Connected Broker Account (Recommended)'}
+              </option>
+              <option value="USD">USD ($ — US Dollar)</option>
+              <option value="JPY">JPY (¥ — Japanese Yen)</option>
+            </select>
           </div>
 
           {/* Bio */}

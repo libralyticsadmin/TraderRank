@@ -15,30 +15,30 @@ export const resolveBrokerCurrency = (
 ): string => {
   const b = (broker || '').toUpperCase();
   const s = (serverName || '').toUpperCase();
-  const c = (explicitCurrency || '').toUpperCase();
+  const c = (explicitCurrency || '').trim().toUpperCase();
   const acc = String(accountNumber || '').replace(/^TraderRank-/i, '').trim();
 
-  // 1. XMTrading (Japan JPY) or account 72423906 is strictly JPY
+  // 1. Explicit real currency from broker / MetaApi always takes priority
+  if (c === 'JPY' || c === '¥') {
+    return 'JPY';
+  }
+  if (c === 'USD' || c === 'EUR' || c === 'GBP') {
+    return c;
+  }
+
+  // 2. Fallback to broker/server convention when explicit currency is unavailable
   if (
     b === 'XMTRADING' ||
     s.includes('XMTRADING') ||
     s.includes('JAPAN') ||
     s.includes('JPY') ||
-    acc === '72423906' ||
-    c === 'JPY' ||
-    c === '¥'
+    acc === '72423906'
   ) {
     return 'JPY';
   }
 
-  // 2. XMGlobal is strictly USD ($)
   if (b === 'XM' || b.includes('XMGLOBAL') || s.includes('XMGLOBAL') || acc === '342186831') {
     return 'USD';
-  }
-
-  // 3. Explicit currency if provided
-  if (c === 'USD' || c === 'EUR' || c === 'GBP') {
-    return c;
   }
 
   return 'USD';

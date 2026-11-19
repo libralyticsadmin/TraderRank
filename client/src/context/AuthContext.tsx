@@ -14,6 +14,7 @@ export interface UserProfile {
   bio: string;
   tradingStyle: 'SCALPER' | 'DAY_TRADER' | 'SWING_TRADER' | 'ALGORITHMIC';
   primaryBroker: Broker;
+  currencyPreference?: 'AUTO' | 'USD' | 'JPY';
   country: string;
   joinedAt: string;
   level: number;

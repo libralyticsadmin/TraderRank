@@ -5,12 +5,14 @@
  */
 
 export type SupportedCurrency = 'JPY' | 'USD' | 'EUR' | 'GBP';
+export type DisplayCurrencyPreference = 'AUTO' | 'USD' | 'JPY';
 
 /**
- * Resolves currency strictly according to broker and server conventions:
- * - XMTrading / Japan servers -> strictly JPY (¥)
- * - XMGlobal / XM -> strictly USD ($)
- * - Other brokers -> explicit currency or USD ($)
+ * Resolves currency with real broker/MetaApi explicit currency first,
+ * falling back to broker/server conventions when explicit currency is absent:
+ * - Explicit broker currency (JPY/USD/EUR/GBP) -> trusted first
+ * - XMTrading / Japan servers -> JPY (¥)
+ * - XMGlobal / XM / others -> USD ($)
  */
 export const resolveBrokerCurrency = (
   broker?: string | null,
@@ -20,33 +22,67 @@ export const resolveBrokerCurrency = (
 ): string => {
   const b = (broker || '').toUpperCase();
   const s = (serverName || '').toUpperCase();
-  const c = (explicitCurrency || '').toUpperCase();
+  const c = (explicitCurrency || '').trim().toUpperCase();
   const acc = String(accountNumber || '').replace(/^TraderRank-/i, '').trim();
 
-  // 1. XMTrading (Japan JPY) or account 72423906 is strictly JPY
+  // 1. Explicit currency from broker / MetaApi always takes priority
+  if (c === 'JPY' || c === '¥') {
+    return 'JPY';
+  }
+  if (c === 'USD' || c === 'EUR' || c === 'GBP') {
+    return c;
+  }
+
+  // 2. Fallback to broker/server convention
   if (
     b === 'XMTRADING' ||
     s.includes('XMTRADING') ||
     s.includes('JAPAN') ||
     s.includes('JPY') ||
-    acc === '72423906' ||
-    c === 'JPY' ||
-    c === '¥'
+    acc === '72423906'
   ) {
     return 'JPY';
   }
 
-  // 2. XMGlobal is strictly USD ($)
   if (b === 'XM' || b.includes('XMGLOBAL') || s.includes('XMGLOBAL') || acc === '342186831') {
     return 'USD';
   }
 
-  // 3. Explicit currency if provided
-  if (c === 'USD' || c === 'EUR' || c === 'GBP') {
-    return c;
+  return 'USD';
+};
+
+/**
+ * Converts and formats an amount from its native broker currency into the user's
+ * chosen display preference ('AUTO' keeps native broker currency; 'USD'/'JPY' converts via live usdJpyRate).
+ */
+export const formatDisplayCurrency = (
+  amountNative: number,
+  nativeCurrency: string | null | undefined,
+  preference: DisplayCurrencyPreference = 'AUTO',
+  usdJpyRate: number = 155,
+  options?: {
+    showSign?: boolean;
+    showCode?: boolean;
+    spaceBeforeCode?: boolean;
+  }
+): string => {
+  const safeAmount = Number.isFinite(amountNative) ? amountNative : 0;
+  const safeRate = Number.isFinite(usdJpyRate) && usdJpyRate > 0 ? usdJpyRate : 155;
+  const nativeCode = resolveCurrency(nativeCurrency, 'USD');
+
+  if (!preference || preference === 'AUTO' || preference === nativeCode) {
+    return formatCurrency(safeAmount, nativeCode, options);
   }
 
-  return 'USD';
+  if (preference === 'USD' && nativeCode === 'JPY') {
+    return formatCurrency(safeAmount / safeRate, 'USD', options);
+  }
+
+  if (preference === 'JPY' && nativeCode === 'USD') {
+    return formatCurrency(safeAmount * safeRate, 'JPY', options);
+  }
+
+  return formatCurrency(safeAmount, nativeCode, options);
 };
 
 /**
@@ -106,7 +142,7 @@ export const formatCurrency = (
   }
 ): string => {
   const safeAmount = Number.isFinite(amount) ? amount : 0;
-  const code = resolveCurrency(currency, 'JPY');
+  const code = resolveCurrency(currency, 'USD');
   const isJpy = isJpyCurrency(code);
   const symbol = getCurrencySymbol(code);
 

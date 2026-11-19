@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
-import { formatCurrency } from '../utils/currencyFlow.ts';
+import { formatDisplayCurrency } from '../utils/currencyFlow.ts';
 import { useTraderStats } from '../hooks/useTraderStats.ts';
 
 export interface BulletinTradeItem {
@@ -67,7 +67,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
 }) => {
   const { t, language } = useTranslation();
   const { user } = useAuth();
-  const { traders: canonicalTraders, platformTotals, getTraderStats } = useTraderStats();
+  const { traders: canonicalTraders, platformTotals, getTraderStats, usdJpyRate } = useTraderStats();
   const [allRealTrades, setAllRealTrades] = useState<BulletinTradeItem[]>([]);
   const [winningRealTrades, setWinningRealTrades] = useState<BulletinTradeItem[]>([]);
   const [openRealTrades, setOpenRealTrades] = useState<BulletinTradeItem[]>([]);
@@ -343,7 +343,7 @@ export const LiveTradeBulletin: React.FC<LiveTradeBulletinProps> = ({
                   fontWeight: 800,
                 }}
               >
-                {formatCurrency(currentTrade.profitUsd, currentTrade.currency, { showSign: true, showCode: true })}
+                {formatDisplayCurrency(currentTrade.profitUsd, currentTrade.currency, user?.currencyPreference || 'AUTO', usdJpyRate, { showSign: true, showCode: true })}
               </div>
             </div>
 
