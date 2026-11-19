@@ -29,9 +29,16 @@ export class AuthService {
     return crypto.randomBytes(32).toString('hex');
   })();
   private readonly TOKEN_EXPIRY_SECONDS = 7 * 24 * 60 * 60; // 7 days
+  private loadPromise: Promise<void> | null = null;
 
   private constructor() {
-    this.loadCredentials().catch(() => {});
+    this.loadPromise = this.loadCredentials().catch(() => {});
+  }
+
+  public async ensureLoaded(): Promise<void> {
+    if (this.loadPromise) {
+      await this.loadPromise;
+    }
   }
 
   public static getInstance(): AuthService {
@@ -119,8 +126,11 @@ export class AuthService {
         }
       }
 
-      // Ensure default verified credentials for zzZEMZzz (libralytics.data@gmail.com)
-      if (!this.credentials.has('u_zzzemzzz')) {
+      // Seed default test credentials ONLY in test or explicit dev seed mode (never in production)
+      const shouldSeedDefault =
+        Boolean(process.env.VITEST || process.env.NODE_ENV === 'test') ||
+        process.env.SEED_DEFAULT_USERS === 'true';
+      if (shouldSeedDefault && !this.credentials.has('u_zzzemzzz')) {
         const salt = this.generateSalt();
         const hash = this.hashPassword('TraderRank2026!', salt);
         const defaultCred: StoredCredential = {
@@ -178,6 +188,7 @@ export class AuthService {
     email: string,
     passwordPlain: string
   ): Promise<{ success: boolean; error?: string }> {
+    await this.ensureLoaded();
     if (!passwordPlain || passwordPlain.length < 6) {
       return { success: false, error: 'Password must be at least 6 characters long' };
     }

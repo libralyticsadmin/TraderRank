@@ -305,33 +305,40 @@ export class DailyIntelService {
    * Generates a tailored custom strategic trade plan based on user's timeframe and model
    */
   public generateCustomStrategy(input: CustomStrategyInput): CustomStrategyOutput {
-    const symbol = (input.symbol || 'XAUUSD').toUpperCase();
+    const rawSymbol = String(input.symbol || 'XAUUSD').trim().toUpperCase();
+    const symbol = /^[A-Z0-9_!.-]{1,16}$/.test(rawSymbol) ? rawSymbol : 'XAUUSD';
     const timeframe = input.timeframe || '15m';
     const tradingStyle = input.tradingStyle || 'INTRADAY';
     const strategyModel = input.strategyModel || 'SMC_ORDER_BLOCK';
     const riskTolerance = input.riskTolerance || 'MODERATE';
     const sessionFocus = input.sessionFocus || 'LONDON';
-    const accountSize = input.accountSize || 10000;
+    const rawAccountSize = Number(input.accountSize);
+    const accountSize = Number.isFinite(rawAccountSize)
+      ? Math.min(10_000_000, Math.max(500, rawAccountSize))
+      : 10000;
 
     // Determine Anchor Price
     const marketStatus = this.marketFeed.getStatus();
     const quote = marketStatus.quotes?.[symbol];
-    let basePrice = quote ? quote.bid : 4038.50;
+    let basePrice = quote && Number.isFinite(quote.bid) && quote.bid > 0 ? quote.bid : 4038.50;
 
-    if (!quote) {
+    if (!quote || !Number.isFinite(quote.bid) || quote.bid <= 0) {
       if (symbol.includes('EUR')) basePrice = 1.1140;
       else if (symbol.includes('GBP')) basePrice = 1.3307;
       else if (symbol.includes('AUD')) basePrice = 0.7037;
       else if (symbol.includes('CAD')) basePrice = 1.4039;
       else if (symbol.includes('JPY')) basePrice = 158.24;
       else if (symbol.includes('BTC')) basePrice = 80720.00;
+      else if (symbol.includes('ETH')) basePrice = 3150.00;
       else if (symbol.includes('XAU') || symbol.includes('GOLD')) basePrice = 4038.50;
       else if (symbol.includes('MCL') || symbol.includes('OIL') || symbol.includes('WTI') || symbol.includes('WTICO')) basePrice = 102.85;
     }
 
     const isGold = symbol.includes('XAU') || symbol.includes('GOLD');
     const isOil = symbol.includes('MCL') || symbol.includes('OIL') || symbol.includes('WTI');
-    const isCrypto = symbol.includes('BTC') || symbol.includes('ETH');
+    const isBtc = symbol.includes('BTC');
+    const isEth = symbol.includes('ETH');
+    const isCrypto = isBtc || isEth;
     const isJpy = symbol.includes('JPY');
 
     // Determine scale buffer depending on timeframe & asset
@@ -354,26 +361,35 @@ export class DailyIntelService {
       baseDelta = 4.5 * scaleMultiplier; // Dollars on Gold
     } else if (isOil) {
       baseDelta = 0.65 * scaleMultiplier; // Dollars on Crude Oil
-    } else if (isCrypto) {
+    } else if (isBtc) {
+      pipsUnit = 10;
       baseDelta = 350 * scaleMultiplier; // Dollars on BTC
+    } else if (isEth) {
+      pipsUnit = 1;
+      baseDelta = 25 * scaleMultiplier; // Dollars on ETH (proportional to ETH price)
     } else if (isJpy) {
       pipsUnit = 0.01;
       baseDelta = 25 * pipsUnit * scaleMultiplier;
     }
 
-    // Determine Directional Bias & Confluence
-    let bias: 'STRONG_BULLISH' | 'BULLISH' | 'NEUTRAL' | 'BEARISH' | 'STRONG_BEARISH' = 'BULLISH';
-    let confluenceScore = 88;
+    // Dynamic Directional Bias & Confluence from live quote momentum + model/session alignment
+    const anchorRef = isGold ? 4038.5 : isBtc ? 80720 : isEth ? 3150 : isOil ? 102.85 : isJpy ? 158.24 : 1.114;
+    const pctMove = quote && quote.bid > 0 ? ((quote.bid - anchorRef) / anchorRef) * 100 : 0;
+    const modelBoost = strategyModel === 'SMC_ORDER_BLOCK' || strategyModel === 'BREAKOUT_MOMENTUM' ? 4 : 1;
+    const sessionBoost = sessionFocus === 'LONDON' || sessionFocus === 'NEW_YORK' ? 2 : 0;
 
-    if (symbol.includes('USDJPY')) {
-      bias = 'BEARISH';
-      confluenceScore = 84;
-    } else if (isGold || symbol.includes('BTC')) {
+    let bias: 'STRONG_BULLISH' | 'BULLISH' | 'NEUTRAL' | 'BEARISH' | 'STRONG_BEARISH' = 'BULLISH';
+    let confluenceScore = 84 + modelBoost + sessionBoost;
+
+    if (symbol.includes('USDJPY') || pctMove <= -0.35) {
+      bias = pctMove <= -1.2 ? 'STRONG_BEARISH' : 'BEARISH';
+      confluenceScore = Math.min(95, 81 + modelBoost + sessionBoost);
+    } else if (isGold || isBtc || pctMove >= 0.35) {
       bias = 'STRONG_BULLISH';
-      confluenceScore = 93;
+      confluenceScore = Math.min(96, 87 + modelBoost + sessionBoost);
     } else {
       bias = 'BULLISH';
-      confluenceScore = 86;
+      confluenceScore = Math.min(94, 83 + modelBoost + sessionBoost);
     }
 
     // Calculate Entry, Stop Loss, and Take Profits
@@ -418,16 +434,27 @@ export class DailyIntelService {
       tp3 = basePrice - riskDistance * 7.0; // 1:7 Target Runner
     }
 
+    // Clamp levels strictly positive so no asset/timeframe can produce <= 0 levels
+    entryLow = Math.max(pipsUnit, entryLow);
+    entryHigh = Math.max(pipsUnit, entryHigh);
+    stopLoss = Math.max(pipsUnit, stopLoss);
+    tp1 = Math.max(pipsUnit, tp1);
+    tp2 = Math.max(pipsUnit, tp2);
+    tp3 = Math.max(pipsUnit, tp3);
+
     // Format helper for rounding
     const decimals = isCrypto ? 0 : isGold || isOil ? 2 : isJpy ? 3 : 5;
     const round = (val: number) => Number(val.toFixed(decimals));
 
     // Calculate suggested lot size based on 1% risk of accountSize
     const riskAmount = accountSize * 0.01;
-    const stopDistancePips = Math.abs(basePrice - stopLoss) / (isGold ? 0.1 : isOil ? 0.01 : isJpy ? 0.01 : isCrypto ? 10 : 0.0001);
-    const pipValuePerStandardLot = isGold ? 10 : isOil ? 10 : 10;
-    let suggestedLot = (riskAmount / (stopDistancePips * pipValuePerStandardLot));
-    if (suggestedLot < 0.01) suggestedLot = 0.01;
+    const stopDistancePips = Math.max(
+      1,
+      Math.abs(basePrice - stopLoss) / (isGold ? 0.1 : isOil ? 0.01 : isJpy ? 0.01 : isBtc ? 10 : isEth ? 1 : 0.0001)
+    );
+    const pipValuePerStandardLot = 10;
+    let suggestedLot = riskAmount / (stopDistancePips * pipValuePerStandardLot);
+    if (!Number.isFinite(suggestedLot) || suggestedLot < 0.01) suggestedLot = 0.01;
     if (suggestedLot > 10.0) suggestedLot = 10.0;
     suggestedLot = Number(suggestedLot.toFixed(2));
 

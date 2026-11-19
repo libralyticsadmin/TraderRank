@@ -526,10 +526,11 @@ export function createServer() {
     }
   };
 
-  loadUserProfilesFromR2().catch(() => {});
+  const profilesReadyPromise = loadUserProfilesFromR2().catch(() => {});
 
   // Auth: Register (Secure Password Hashing via Scrypt)
   app.post('/api/auth/register', authRateLimit, async (req: Request, res: Response) => {
+    await Promise.all([profilesReadyPromise, authService.ensureLoaded()]);
     const { username, email, password, primaryBroker, tradingStyle, avatarUrl } = req.body || {};
     if (!username || !email) {
       return res.status(400).json({ success: false, error: 'Username and email are required' });
@@ -584,6 +585,7 @@ export function createServer() {
 
   // Auth: Login (Password Verified with HMAC-SHA256 Session Token)
   app.post('/api/auth/login', authRateLimit, async (req: Request, res: Response) => {
+    await Promise.all([profilesReadyPromise, authService.ensureLoaded()]);
     const { emailOrUser, password } = req.body || {};
     if (!emailOrUser) {
       return res.status(400).json({ success: false, error: 'Username or email required' });
@@ -593,14 +595,8 @@ export function createServer() {
     }
 
     const needle = String(emailOrUser).trim().toLowerCase();
-    const isZemLogin =
-      needle === 'zzzemzzz' ||
-      needle === 'u_zzzemzzz' ||
-      needle === 'libralytics.data@gmail.com' ||
-      needle === '342186831';
-
     let cred = authService.getCredential(needle);
-    if (!cred && isZemLogin) {
+    if (!cred && isTestEnv && (needle === 'zzzemzzz' || needle === 'u_zzzemzzz' || needle === 'libralytics.data@gmail.com' || needle === '342186831')) {
       cred = authService.getCredential('u_zzzemzzz');
     }
 
@@ -613,7 +609,7 @@ export function createServer() {
     }
 
     const targetUserId = cred.userId;
-    const user = userProfiles.get(targetUserId) || (isZemLogin ? userProfiles.get('u_zzzemzzz') : null);
+    const user = userProfiles.get(targetUserId) || (isTestEnv && targetUserId === 'u_zzzemzzz' ? userProfiles.get('u_zzzemzzz') : null);
 
     if (!user) {
       return res.status(401).json({ success: false, error: 'User profile not found' });
@@ -628,7 +624,8 @@ export function createServer() {
   });
 
   // Auth: Update Profile (Strict Authorization Guard)
-  app.put('/api/auth/profile', (req: Request, res: Response) => {
+  app.put('/api/auth/profile', async (req: Request, res: Response) => {
+    await profilesReadyPromise;
     const profile = req.body || {};
     if (!profile.id) {
       return res.status(400).json({ success: false, error: 'Profile ID required' });
@@ -661,7 +658,7 @@ export function createServer() {
 
     const updated = { ...existing, ...safeUpdates, id: profile.id };
     userProfiles.set(profile.id, updated);
-    persistUserProfilesToR2().catch(() => {});
+    await persistUserProfilesToR2();
 
     if (safeUpdates.username || safeUpdates.avatarUrl || safeUpdates.avatarSymbol || safeUpdates.primaryBroker) {
       connector.updateUserAccountsName(
@@ -682,7 +679,8 @@ export function createServer() {
   });
 
   // Auth: Get Profile (Sanitized for non-owners; full PII only for authenticated owner)
-  app.get('/api/auth/profile', (req: Request, res: Response) => {
+  app.get('/api/auth/profile', async (req: Request, res: Response) => {
+    await profilesReadyPromise;
     const userId = req.query.userId as string | undefined;
     const username = req.query.username as string | undefined;
     const authSession = extractAuthUser(req);
@@ -1498,13 +1496,13 @@ export function createServer() {
       res.status(500).json({ success: false, error: msg });
     }
   };
-  app.get('/api/market/daily-intel', handleDailyIntel);
-  app.get('/api/market/intel', handleDailyIntel);
+  app.get('/api/market/daily-intel', aiRateLimit, handleDailyIntel);
+  app.get('/api/market/intel', aiRateLimit, handleDailyIntel);
 
   // 19. Custom Trading Strategic Timeframe & Analysis Generator
-  app.post('/api/market/custom-daily-analysis', (req: Request, res: Response) => {
+  app.post('/api/market/custom-daily-analysis', aiRateLimit, (req: Request, res: Response) => {
     try {
-      const input = req.body;
+      const input = req.body && typeof req.body === 'object' ? req.body : {};
       const result = dailyIntel.generateCustomStrategy(input);
       res.json(result);
     } catch (err: unknown) {

@@ -118,4 +118,35 @@ describe('DailyIntelService - Daily Trading Intelligence & Custom Strategy Plans
     expect(output.tradeQualification.targetRR).toBe('1:5');
     expect(output.tradeQualification.directive).toContain('TRADE SETUP QUALIFIED');
   });
+
+  it('keeps ETHUSD 1W stopLoss positive and sanitizes invalid symbol & accountSize', () => {
+    const ethPlan = service.generateCustomStrategy({
+      symbol: 'ETHUSD',
+      timeframe: '1W',
+      tradingStyle: 'POSITION',
+      strategyModel: 'TREND_FOLLOWING',
+      riskTolerance: 'RR_1_5',
+      sessionFocus: 'ALL_SESSIONS',
+      accountSize: -500,
+    });
+
+    expect(ethPlan.symbol).toBe('ETHUSD');
+    expect(ethPlan.tacticalLevels.currentPrice).toBeGreaterThan(1500);
+    expect(ethPlan.tacticalLevels.currentPrice).toBeLessThan(10000);
+    expect(ethPlan.tacticalLevels.stopLoss).toBeGreaterThan(0);
+    expect(ethPlan.tacticalLevels.takeProfit1).toBeGreaterThan(ethPlan.tacticalLevels.currentPrice);
+    expect(ethPlan.tacticalLevels.suggestedLotSize).toBeGreaterThanOrEqual(0.01);
+
+    const sanitizedPlan = service.generateCustomStrategy({
+      symbol: '<script>alert(1)</script>',
+      timeframe: '15m',
+      tradingStyle: 'INTRADAY',
+      strategyModel: 'SMC_ORDER_BLOCK',
+      riskTolerance: 'RR_1_5',
+      sessionFocus: 'LONDON',
+      accountSize: Number.NaN,
+    });
+    expect(sanitizedPlan.symbol).toBe('XAUUSD');
+    expect(Number.isFinite(sanitizedPlan.tacticalLevels.suggestedLotSize)).toBe(true);
+  });
 });

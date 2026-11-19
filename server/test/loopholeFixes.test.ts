@@ -125,4 +125,21 @@ describe('Security & Loophole Remediation Tests', () => {
       process.env.NODE_ENV = prevEnv;
     }
   });
+
+  it('sanitizes custom-daily-analysis input and keeps ETHUSD 1W levels positive', async () => {
+    const res = await fetch(`${baseUrl}/api/market/custom-daily-analysis`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        symbol: 'ETHUSD',
+        timeframe: '1W',
+        accountSize: -100,
+      }),
+    });
+    expect(res.status).toBe(200);
+    const data = (await res.json()) as any;
+    expect(data.symbol).toBe('ETHUSD');
+    expect(data.tacticalLevels.stopLoss).toBeGreaterThan(0);
+    expect(data.tacticalLevels.suggestedLotSize).toBeGreaterThanOrEqual(0.01);
+  });
 });
