@@ -711,7 +711,8 @@ export function createServer() {
   });
 
   // Public Community Contenders List (Sanitized: email and account number stripped)
-  app.get('/api/users', (_req: Request, res: Response) => {
+  app.get('/api/users', async (_req: Request, res: Response) => {
+    await profilesReadyPromise;
     const list = Array.from(userProfiles.values()).map(u => ({
       id: u.id,
       username: u.username,
@@ -1528,7 +1529,7 @@ export function createServer() {
       console.warn('[server] Warning: Could not load streaks from R2:', err);
     }
   };
-  loadStreaksFromR2().catch(() => {});
+  const streaksReadyPromise = loadStreaksFromR2().catch(() => {});
 
   const persistStreaksToR2 = async () => {
     try {
@@ -1540,7 +1541,8 @@ export function createServer() {
     }
   };
 
-  app.get('/api/gamification/streak', (req: Request, res: Response) => {
+  app.get('/api/gamification/streak', async (req: Request, res: Response) => {
+    await streaksReadyPromise;
     const authSession = extractAuthUser(req);
     if (!authSession) {
       return res.status(401).json({ success: false, error: 'Authentication required' });
@@ -1550,7 +1552,7 @@ export function createServer() {
     const effectiveClaimed = isStreakBroken(current.lastClaimDate, todayStr) ? [] : current.claimedDays;
     if (effectiveClaimed.length !== current.claimedDays.length) {
       userStreaks.set(authSession.userId, { claimedDays: [], lastClaimDate: null });
-      persistStreaksToR2().catch(() => {});
+      await persistStreaksToR2();
     }
     const streakDays = getStreakStatus(effectiveClaimed, current.lastClaimDate, todayStr);
     const streakXp = effectiveClaimed.reduce((sum, day) => {
@@ -1566,7 +1568,8 @@ export function createServer() {
     });
   });
 
-  app.post('/api/gamification/streak/claim', (req: Request, res: Response) => {
+  app.post('/api/gamification/streak/claim', async (req: Request, res: Response) => {
+    await Promise.all([streaksReadyPromise, profilesReadyPromise]);
     const authSession = extractAuthUser(req);
     if (!authSession) {
       return res.status(401).json({ success: false, error: 'Authentication required to claim streak' });
@@ -1587,7 +1590,7 @@ export function createServer() {
 
     const nextClaimed = [...baseClaimed, activeDay.dayNum];
     userStreaks.set(authSession.userId, { claimedDays: nextClaimed, lastClaimDate: todayStr });
-    persistStreaksToR2().catch(() => {});
+    await persistStreaksToR2();
     invalidateCanonicalStatsCache();
 
     const profile = userProfiles.get(authSession.userId);
@@ -1596,7 +1599,7 @@ export function createServer() {
       profile.xp = nextXp;
       profile.level = calculateTraderGamification(nextXp).level;
       userProfiles.set(authSession.userId, profile);
-      persistUserProfilesToR2().catch(() => {});
+      await persistUserProfilesToR2();
     }
 
     return res.json({
