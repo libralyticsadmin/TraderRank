@@ -200,6 +200,13 @@ export class TournamentService {
     if (!tournament) {
       return { success: false, error: 'Tournament not found' };
     }
+    if (tournament.status === 'COMPLETED') {
+      return { success: false, error: 'Tournament has already completed and is closed to new entries' };
+    }
+    const endMs = tournament.endDate ? Date.parse(tournament.endDate) : NaN;
+    if (Number.isFinite(endMs) && Date.now() > endMs) {
+      return { success: false, error: 'Tournament has ended and is closed to new entries' };
+    }
 
     const minRequired = tournament.minParticipantsToStart ?? 50;
 

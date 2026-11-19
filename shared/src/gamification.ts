@@ -167,15 +167,34 @@ export function isStreakBroken(lastClaimDate?: string | null, todayDate?: string
 }
 
 /**
+ * Returns the effective claimed days for the current 7-day cycle:
+ * - Resets to [] if a full calendar day was missed (streak broken).
+ * - Starts a fresh cycle ([]) on the next calendar day after all 7 days are claimed.
+ */
+export function getEffectiveClaimedDays(
+  claimedDays: number[] = [],
+  lastClaimDate?: string | null,
+  todayDate?: string
+): number[] {
+  if (isStreakBroken(lastClaimDate, todayDate)) return [];
+  const uniqueDays = Array.from(new Set(claimedDays)).filter(d => d >= 1 && d <= 7);
+  if (uniqueDays.length >= 7 && lastClaimDate && todayDate && lastClaimDate !== todayDate) {
+    return [];
+  }
+  return uniqueDays;
+}
+
+/**
  * Returns streak day status based on claimed day numbers and last claim calendar date (YYYY-MM-DD).
- * Enforces at most 1 claim per calendar day and resets to Day 1 if a full day is missed.
+ * Enforces at most 1 claim per calendar day, resets to Day 1 if a full day is missed,
+ * and starts a new 7-day cycle on the day after Day 7 is claimed.
  */
 export function getStreakStatus(
   claimedDays: number[] = [],
   lastClaimDate?: string | null,
   todayDate?: string
 ): StreakDayStatus[] {
-  const effectiveClaimed = isStreakBroken(lastClaimDate, todayDate) ? [] : claimedDays;
+  const effectiveClaimed = getEffectiveClaimedDays(claimedDays, lastClaimDate, todayDate);
   const claimedSet = new Set(effectiveClaimed);
   const alreadyClaimedToday = Boolean(lastClaimDate && todayDate && lastClaimDate === todayDate);
 

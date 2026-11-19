@@ -31,7 +31,7 @@ import { DailyIntelService } from '../market/dailyIntelService.js';
 import { TournamentService } from '../services/tournamentService.js';
 import { authService, SessionPayload } from '../services/authService.js';
 import { getCachedCanonicalStats, getBulletinFeed, invalidateCanonicalStatsCache } from '../services/canonicalStatsService.js';
-import { getStreakStatus, isStreakBroken, XP_RULES, calculateTraderGamification } from '../../../shared/src/gamification.js';
+import { getStreakStatus, getEffectiveClaimedDays, isStreakBroken, XP_RULES, calculateTraderGamification } from '../../../shared/src/gamification.js';
 
 export function createServer() {
   const app = express();
@@ -813,7 +813,8 @@ export function createServer() {
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      return res.status(400).json({ success: false, error: msg });
+      const code = err instanceof Error ? (err as Error & { code?: string }).code : undefined;
+      return res.status(code === 'ACCOUNT_OWNED_BY_OTHER' ? 409 : 400).json({ success: false, error: msg });
     }
   });
 
@@ -1259,12 +1260,26 @@ export function createServer() {
       });
     }
 
+    const ALLOWED_BROKERS = new Set<string>(['XM', 'XMTrading', 'Exness', 'Axiory', 'Vantage', 'IC_MARKETS', 'Vanguard', 'OTHER']);
+    const requestedBroker = typeof broker === 'string' ? broker.trim() : '';
+    let safeBroker: Broker = 'XM';
+    if (userAccounts.length > 0) {
+      const matchedAcc = userAccounts.find(a => a.broker === requestedBroker);
+      safeBroker = (matchedAcc ? matchedAcc.broker : userAccounts[0].broker) as Broker;
+    } else if (ALLOWED_BROKERS.has(requestedBroker)) {
+      safeBroker = requestedBroker as Broker;
+    }
+
+    const rawAvatarSymbol = typeof avatarSymbol === 'string' ? avatarSymbol.trim() : '';
+    const fallbackSymbol = effectiveUsername.replace(/[^a-zA-Z0-9]/g, '').slice(0, 2).toUpperCase() || 'TR';
+    const safeAvatarSymbol = /^[a-zA-Z0-9_-]{1,24}$/.test(rawAvatarSymbol) ? rawAvatarSymbol : fallbackSymbol;
+
     const result = tournamentService.joinTournament({
       tournamentId,
       userId: effectiveUserId,
       username: effectiveUsername,
-      avatarSymbol: avatarSymbol || effectiveUsername.slice(0, 2).toUpperCase(),
-      broker: (broker as Broker) || 'XM',
+      avatarSymbol: safeAvatarSymbol,
+      broker: safeBroker,
     });
 
     if (!result.success) {
@@ -1279,8 +1294,8 @@ export function createServer() {
         type: 'TOURNAMENT_JOIN',
         userId: effectiveUserId,
         username: effectiveUsername,
-        broker: (broker as Broker) || 'XM',
-        avatarSymbol: avatarSymbol || effectiveUsername.slice(0, 2).toUpperCase(),
+        broker: safeBroker,
+        avatarSymbol: safeAvatarSymbol,
         timestamp: 'Just now',
         details: {
           tournamentName: tournamentService.getTournamentById(tournamentId)?.title || 'Tournament',
@@ -1549,7 +1564,7 @@ export function createServer() {
     }
     const todayStr = new Date().toISOString().slice(0, 10);
     const current = userStreaks.get(authSession.userId) || { claimedDays: [], lastClaimDate: null };
-    const effectiveClaimed = isStreakBroken(current.lastClaimDate, todayStr) ? [] : current.claimedDays;
+    const effectiveClaimed = getEffectiveClaimedDays(current.claimedDays, current.lastClaimDate, todayStr);
     if (effectiveClaimed.length !== current.claimedDays.length) {
       userStreaks.set(authSession.userId, { claimedDays: [], lastClaimDate: null });
       await persistStreaksToR2();
@@ -1576,7 +1591,7 @@ export function createServer() {
     }
     const todayStr = new Date().toISOString().slice(0, 10);
     const prev = userStreaks.get(authSession.userId) || { claimedDays: [], lastClaimDate: null };
-    const baseClaimed = isStreakBroken(prev.lastClaimDate, todayStr) ? [] : prev.claimedDays;
+    const baseClaimed = getEffectiveClaimedDays(prev.claimedDays, prev.lastClaimDate, todayStr);
 
     if (prev.lastClaimDate === todayStr) {
       return res.status(400).json({ success: false, error: 'Daily streak already claimed today' });

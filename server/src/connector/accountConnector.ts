@@ -169,10 +169,6 @@ export class AccountConnectorService {
       throw new Error(validation.error || 'Connection validation failed');
     }
 
-    // 2. Encrypt in Secrets Vault
-    const vaultSecretRef = await this.vault.storeSecret('AccountConnectorService', creds);
-
-    // 3. Create sanitized TradingAccount metadata record (no credentials!)
     const accountNumber = validation.accountDetails?.accountNumber || (creds.type === 'mt_gateway' ? creds.login : 'NATIVE-ACC');
     const existingAcc = Array.from(this.accounts.values()).find(
       a =>
@@ -180,6 +176,22 @@ export class AccountConnectorService {
         (validation.accountDetails?.metaApiAccountId &&
           a.metaApiAccountId === validation.accountDetails.metaApiAccountId)
     );
+
+    // 1b. Ownership guard: a broker account may only be (re)connected by its current owner
+    if (accountNumber !== 'NATIVE-ACC') {
+      const persistedOwner = this.accountOwners.get(accountNumber);
+      const currentOwnerId = existingAcc?.userId || persistedOwner?.userId;
+      if (currentOwnerId && currentOwnerId !== userId) {
+        const err = new Error('This broker account is already connected to another TraderRank user');
+        (err as Error & { code?: string }).code = 'ACCOUNT_OWNED_BY_OTHER';
+        throw err;
+      }
+    }
+
+    // 2. Encrypt in Secrets Vault
+    const vaultSecretRef = await this.vault.storeSecret('AccountConnectorService', creds);
+
+    // 3. Create sanitized TradingAccount metadata record (no credentials!)
     const accountId = existingAcc?.id || `acc_${crypto.randomUUID().slice(0, 8)}`;
     const platform: Platform = creds.type === 'mt_gateway' ? creds.platform : 'NATIVE';
     const serverName = creds.type === 'mt_gateway' ? creds.serverName : undefined;

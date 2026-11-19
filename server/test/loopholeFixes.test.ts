@@ -2,6 +2,8 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import http from 'http';
 import { AuthService } from '../src/services/authService.js';
 import { createServer } from '../src/api/server.js';
+import { TournamentService } from '../src/services/tournamentService.js';
+import { getStreakStatus } from '../../shared/src/gamification.js';
 
 describe('Security & Loophole Remediation Tests', () => {
   const auth = AuthService.getInstance();
@@ -126,6 +128,48 @@ describe('Security & Loophole Remediation Tests', () => {
     }
   });
 
+  it('rejects connecting a broker account that already belongs to another user (409) but allows owner reconnect', async () => {
+    const register = async (prefix: string) => {
+      const name = `${prefix}_${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
+      const r = await fetch(`${baseUrl}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: name, email: `${name}@example.com`, password: 'Password123!' }),
+      });
+      expect(r.status).toBe(201);
+      const d = (await r.json()) as any;
+      return { token: d.token as string, userId: d.user.id as string, username: name };
+    };
+    const connect = (u: { token: string; username: string }, login: string) =>
+      fetch(`${baseUrl}/api/connector/connect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${u.token}` },
+        body: JSON.stringify({
+          username: u.username,
+          broker: 'XM',
+          credentials: {
+            type: 'mt_gateway',
+            broker: 'XM',
+            platform: 'MT5',
+            serverName: 'XMGlobal-Real 55',
+            login,
+            investorPassword: 'ReadOnlyPass123',
+          },
+        }),
+      });
+
+    const owner = await register('own');
+    const attacker = await register('atk');
+    const login = String(8000000 + Math.floor(Math.random() * 999999));
+
+    expect((await connect(owner, login)).status).toBe(201);
+
+    const hijack = await connect(attacker, login);
+    expect(hijack.status).toBe(409);
+
+    expect((await connect(owner, login)).status).toBe(201);
+  });
+
   it('sanitizes custom-daily-analysis input and keeps ETHUSD 1W levels positive', async () => {
     const res = await fetch(`${baseUrl}/api/market/custom-daily-analysis`, {
       method: 'POST',
@@ -141,5 +185,83 @@ describe('Security & Loophole Remediation Tests', () => {
     expect(data.symbol).toBe('ETHUSD');
     expect(data.tacticalLevels.stopLoss).toBeGreaterThan(0);
     expect(data.tacticalLevels.suggestedLotSize).toBeGreaterThanOrEqual(0.01);
+  });
+
+  it('rejects joining COMPLETED or expired tournaments without altering status or prize pool', () => {
+    const svc = TournamentService.getInstance();
+    const t = svc.getTournamentById('tourn_weekly_fx_blitz_01')!;
+    const origStatus = t.status;
+    const origEnd = t.endDate;
+    const origPrize = t.prizePoolPips;
+
+    try {
+      t.status = 'COMPLETED';
+      const completedRes = svc.joinTournament({
+        tournamentId: t.id,
+        userId: 'u_late_joiner_1',
+        username: 'LateJoiner1',
+        avatarSymbol: 'LJ',
+        broker: 'XM',
+      });
+      expect(completedRes.success).toBe(false);
+      expect(t.status).toBe('COMPLETED');
+      expect(t.prizePoolPips).toBe(origPrize);
+
+      t.status = 'ACTIVE';
+      t.endDate = new Date(Date.now() - 3600_000).toISOString();
+      const expiredRes = svc.joinTournament({
+        tournamentId: t.id,
+        userId: 'u_late_joiner_2',
+        username: 'LateJoiner2',
+        avatarSymbol: 'LJ',
+        broker: 'XM',
+      });
+      expect(expiredRes.success).toBe(false);
+    } finally {
+      t.status = origStatus;
+      t.endDate = origEnd;
+      t.prizePoolPips = origPrize;
+    }
+  });
+
+  it('sanitizes invalid broker and oversized avatarSymbol on POST /api/tournaments/:id/join', async () => {
+    const name = `tournsec_${Date.now().toString(36)}`;
+    const reg = await fetch(`${baseUrl}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: name, email: `${name}@example.com`, password: 'Password123!' }),
+    });
+    expect(reg.status).toBe(201);
+    const { token, user } = (await reg.json()) as any;
+
+    const joinRes = await fetch(`${baseUrl}/api/tournaments/tourn_weekly_fx_blitz_01/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        userId: user.id,
+        username: name,
+        broker: 'FAKE_SCAM_BROKER',
+        avatarSymbol: '<script>alert(1)</script>'.repeat(5),
+      }),
+    });
+    expect(joinRes.status).toBe(200);
+    const joinData = (await joinRes.json()) as any;
+    expect(joinData.standing.brokers).toEqual(['XM']);
+    expect(joinData.standing.avatarSymbol).toMatch(/^[a-zA-Z0-9_-]{1,24}$/);
+  });
+
+  it('starts a new 7-day streak cycle on the day after Day 7 is claimed', () => {
+    const allSeven = [1, 2, 3, 4, 5, 6, 7];
+    // Same day: no day claimable
+    const sameDay = getStreakStatus(allSeven, '2026-11-18', '2026-11-18');
+    expect(sameDay.some(d => d.current)).toBe(false);
+    expect(sameDay.every(d => d.claimed)).toBe(true);
+
+    // Next calendar day: fresh cycle unlocks Day 1
+    const nextDay = getStreakStatus(allSeven, '2026-11-18', '2026-11-19');
+    expect(nextDay[0].dayNum).toBe(1);
+    expect(nextDay[0].current).toBe(true);
+    expect(nextDay[0].claimed).toBe(false);
+    expect(nextDay.slice(1).every(d => d.locked)).toBe(true);
   });
 });
