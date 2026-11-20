@@ -19,28 +19,19 @@ export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconne
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [syncedId, setSyncedId] = useState<string | null>(null);
 
-  // Multi-tenant privacy safeguard: each player only sees their own accounts
+  // Multi-tenant privacy safeguard: each player only sees their own accounts (strict immutable userId matching)
   const visibleAccounts = accounts.filter(acc => {
     if (!user) return false;
-    const uid = (user.id || '').toLowerCase();
-    const accUid = (acc.userId || '').toLowerCase();
-    const uEmail = (user.email || '').toLowerCase();
-    const uName = (user.username || '').toLowerCase();
-    const accProfile = (acc.profileUsername || '').toLowerCase();
-    const uAcc = String(user.accountNumber || '').trim();
-    const aAcc = String(acc.accountNumber || '').trim();
-
-    const isHomiesUser = uid === 'u_homiesplant' || uid === 'u_homiesplant_th' || uName === 'homiesplant' || uName === 'homiesplant.th';
-    const isHomiesAcc = accUid === 'u_homiesplant' || accUid === 'u_homiesplant_th' || accProfile === 'homiesplant' || accProfile === 'homiesplant.th';
+    const uid = (user.id || '').trim().toLowerCase();
+    const accUid = (acc.userId || '').trim().toLowerCase();
+    const isHomiesUser = uid === 'u_homiesplant' || uid === 'u_homiesplant_th';
+    const isHomiesAcc = accUid === 'u_homiesplant' || accUid === 'u_homiesplant_th';
 
     return (
       accUid === uid ||
       accUid === `u_${uid.replace(/^u_/, '')}` ||
       `u_${accUid.replace(/^u_/, '')}` === uid ||
-      (isHomiesUser && isHomiesAcc) ||
-      (uAcc && aAcc && uAcc === aAcc) ||
-      (accProfile && uName && accProfile === uName) ||
-      (uEmail && (accUid === uEmail || accUid === `u_${uEmail.replace(/[^a-z0-9]/g, '_')}`))
+      (isHomiesUser && isHomiesAcc)
     );
   });
 

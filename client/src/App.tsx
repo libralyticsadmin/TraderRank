@@ -59,7 +59,7 @@ interface MarketStatus {
 
 export const App: React.FC = () => {
   const { t } = useTranslation();
-  const { user, isAuthenticated, openAuthModal } = useAuth();
+  const { user, isAuthenticated, openAuthModal, logout } = useAuth();
   const [currentView, setCurrentView] = useState<'landing' | 'app'>('landing');
   const [activeTab, setActiveTab] = useState<
     'overview' | 'daily-analysis' | 'charts' | 'ranking' | 'tournaments' | 'rewards' | 'community' | 'positions' | 'security'
@@ -141,7 +141,14 @@ export const App: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         setAccounts(Array.isArray(data) ? data : []);
-      } else if (res.status !== 401 && res.status !== 403) {
+      } else if (res.status === 401 || res.status === 403) {
+        // Session token expired or invalid — clear stale session & prompt sign-in instead of silently showing 0 accounts
+        setAccounts([]);
+        if (token) {
+          logout();
+          openAuthModal('signin');
+        }
+      } else {
         setAccounts([]);
       }
     } catch (err) {

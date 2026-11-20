@@ -385,12 +385,16 @@ export function createServer() {
     });
   });
 
-  // Helper: Mask vault secret references in public DTOs
+  // Helper: Mask vault secret references (vault_sec_*, ref_meta_*, ref_restored_*) in DTOs
   const maskAccountSecrets = <T extends { vaultSecretRef?: string }>(account: T): T => {
     if (!account) return account;
     const rawRef = account.vaultSecretRef || '';
     const maskedRef = rawRef.startsWith('vault_sec_')
       ? `vault_sec_***${rawRef.slice(-4)}`
+      : rawRef.startsWith('ref_meta_')
+      ? `ref_meta_***${rawRef.slice(-4)}`
+      : rawRef.startsWith('ref_')
+      ? `ref_***${rawRef.slice(-4)}`
       : rawRef;
     return {
       ...account,
@@ -786,13 +790,30 @@ export function createServer() {
     });
   });
 
-  // 2. Pre-flight Validate Credentials (PRD §6 step 4)
+  // 2. Pre-flight Validate Credentials (PRD §6 step 4 - Session & Ownership Protected)
   app.post('/api/connector/validate', connectorRateLimit, async (req: Request, res: Response) => {
     try {
+      const authSession = extractAuthUser(req);
+      if (process.env.NODE_ENV === 'production' && !authSession) {
+        return res.status(401).json({ success: false, error: 'Authentication required to validate trading account credentials' });
+      }
       const { broker, credentials } = req.body as { broker: Broker; credentials: AccountCredentials };
-      console.log(`[CONNECTOR] Incoming validate request for broker: ${broker}, server: ${(credentials as any)?.serverName || 'N/A'}, login: ${(credentials as any)?.login || (credentials as any)?.accountId || 'N/A'}`);
+      const targetLogin = String((credentials as any)?.login || (credentials as any)?.accountId || '').trim();
+      console.log(`[CONNECTOR] Incoming validate request for broker: ${broker}, server: ${(credentials as any)?.serverName || 'N/A'}, login: ${targetLogin || 'N/A'}`);
       if (!broker || !credentials) {
         return res.status(400).json({ success: false, error: 'Missing broker or credentials payload' });
+      }
+
+      // Prevent cross-user credential overwrite / DoS on already-bound broker accounts
+      if (authSession && targetLogin) {
+        const existingOwnerId = connector.findOwnerUserIdByLogin(targetLogin);
+        if (existingOwnerId && !AccountConnectorService.isSameOwner(existingOwnerId, authSession.userId)) {
+          return res.status(409).json({
+            success: false,
+            error: `Trading account ${targetLogin} is already bound to another TradeRank player.`,
+            errorCode: 'ACCOUNT_OWNED_BY_OTHER',
+          });
+        }
       }
 
       const result = await connector.validateCredentials(broker, credentials);
@@ -852,11 +873,11 @@ export function createServer() {
     // 1. Authenticated user isolation: strictly return accounts belonging to this user
     if (userId && userId !== 'none') {
       const authSession = extractAuthUser(req);
-      if (!authSession || authSession.userId !== userId) {
+      if (!authSession || !AccountConnectorService.isSameOwner(authSession.userId, userId)) {
         return res.status(403).json({ success: false, error: 'Unauthorized: Valid session token required to access user accounts' });
       }
 
-      const accounts = connector.getAccounts(userId, authSession.username);
+      const accounts = connector.getAccounts(authSession.userId);
       return res.json(
         accounts.map(acc => {
           const cleanAcc = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
@@ -923,10 +944,10 @@ export function createServer() {
         account.accountNumber === '342186831' ||
         account.userId === 'u_zzzemzzz';
 
-      if (isProtectedAccount && (!authSession || authSession.userId !== account.userId)) {
+      if (isProtectedAccount && (!authSession || !AccountConnectorService.isSameOwner(account.userId, authSession.userId))) {
         return res.status(403).json({ success: false, error: 'Forbidden: Valid owner session required to disconnect this account' });
       }
-      if (effectiveUserId && account.userId && account.userId !== effectiveUserId) {
+      if (effectiveUserId && account.userId && !AccountConnectorService.isSameOwner(account.userId, effectiveUserId)) {
         return res.status(403).json({ success: false, error: 'Forbidden: You do not have permission to disconnect this account' });
       }
       const purge = req.query.purge !== 'false';
@@ -964,7 +985,7 @@ export function createServer() {
     if (!account) {
       return res.status(404).json({ success: false, error: 'Account not found' });
     }
-    if (authSession && account.userId && account.userId !== authSession.userId) {
+    if (authSession && account.userId && !AccountConnectorService.isSameOwner(account.userId, authSession.userId)) {
       return res.status(403).json({ success: false, error: 'Forbidden: You can only view your own account summary' });
     }
     const positions = await connector.getActivePositions(req.params.id);
@@ -1415,7 +1436,7 @@ export function createServer() {
       if (!account) {
         return res.status(404).json({ success: false, error: 'Account not found' });
       }
-      if (authSession && account.userId && account.userId !== authSession.userId) {
+      if (authSession && account.userId && !AccountConnectorService.isSameOwner(account.userId, authSession.userId)) {
         return res.status(403).json({ success: false, error: 'Forbidden: You can only sync your own broker account' });
       }
 

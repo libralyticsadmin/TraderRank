@@ -178,7 +178,9 @@ export class MetaApiClient {
     const existing = await this.listProvisionedAccounts();
     const found = existing.find(a => a.login === login && a.server.toLowerCase() === server.toLowerCase());
     if (found) {
-      if (!this.isTestRuntime() && investorPassword) {
+      // Only update credentials & redeploy if the account is NOT currently connected,
+      // preventing accidental disruption of already-healthy broker connections.
+      if (!this.isTestRuntime() && investorPassword && found.connectionStatus !== 'CONNECTED') {
         const updated = await this.updateAccountCredentials(
           found.id,
           found.name || `TraderRank-${login}`,

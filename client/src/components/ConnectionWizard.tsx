@@ -127,9 +127,13 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
         } as ExnessNativeCredentials);
 
     try {
+      const token = localStorage.getItem('traderank_auth_token_v1');
       const res = await fetch('/api/connector/validate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           broker: selectedBroker,
           credentials: payloadCreds,

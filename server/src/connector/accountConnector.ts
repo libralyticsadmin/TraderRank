@@ -298,7 +298,40 @@ export class AccountConnectorService {
     await r2Storage.uploadJson('profiles/account_usernames.json', {}, { 'x-traderrank-type': 'account_usernames' });
   }
 
-  public getAccounts(userId?: string, username?: string): TradingAccount[] {
+  /**
+   * Canonical immutable owner comparison (handles exact userId match + explicit legacy alias u_homiesplant <-> u_homiesplant_th).
+   */
+  public static isSameOwner(ownerA?: string | null, ownerB?: string | null): boolean {
+    if (!ownerA || !ownerB) return false;
+    const a = ownerA.trim().toLowerCase();
+    const b = ownerB.trim().toLowerCase();
+    if (a === b) return true;
+    const aNorm = a.replace(/^u_/, '');
+    const bNorm = b.replace(/^u_/, '');
+    if (aNorm === bNorm) return true;
+    const homiesSet = new Set(['u_homiesplant', 'u_homiesplant_th', 'homiesplant', 'homiesplant_th']);
+    if (homiesSet.has(a) && homiesSet.has(b)) return true;
+    return false;
+  }
+
+  /**
+   * Finds the owning userId for a given broker login/account number, if already bound.
+   */
+  public findOwnerUserIdByLogin(login?: string): string | null {
+    const clean = String(login || '').replace(/^TraderRank-/i, '').trim();
+    if (!clean) return null;
+    const ownerRec = this.accountOwners.get(clean);
+    if (ownerRec?.userId) return ownerRec.userId;
+    for (const acc of this.accounts.values()) {
+      const accNum = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
+      if (accNum === clean && acc.userId) {
+        return acc.userId;
+      }
+    }
+    return null;
+  }
+
+  public getAccounts(userId?: string): TradingAccount[] {
     const all = Array.from(this.accounts.values())
       .filter(acc => {
         const cleanAcc = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
@@ -338,66 +371,14 @@ export class AccountConnectorService {
 
     if (userId) {
       const cleanId = userId.trim().toLowerCase();
-      const cleanHandle = cleanId.replace(/^u_/, '');
-      const cleanUsername = (username || '').trim().toLowerCase();
-      const mappedUsername = (this.traderUsernames.get(userId) || this.traderUsernames.get(cleanId) || '').toLowerCase();
-      const isHomiesQuery =
-        cleanId === 'u_homiesplant' ||
-        cleanId === 'u_homiesplant_th' ||
-        cleanHandle === 'homiesplant' ||
-        cleanHandle === 'homiesplant_th' ||
-        cleanUsername === 'homiesplant' ||
-        cleanUsername === 'homiesplant.th';
       return all.filter(a => {
-        const aUid = (a.userId || '').trim().toLowerCase();
-        const aProfile = (a.profileUsername || '').trim().toLowerCase();
+        if (AccountConnectorService.isSameOwner(a.userId, userId)) {
+          return true;
+        }
         const aAccNum = String(a.accountNumber || '').trim();
-        const defaultNameForAcc = (DEFAULT_TRADER_USERNAMES[aAccNum] || '').toLowerCase();
-
-        // Exact ID or handle match
-        if (
-          aUid === cleanId ||
-          aUid === `u_${cleanHandle}` ||
-          `u_${aUid.replace(/^u_/, '')}` === cleanId
-        ) {
+        if ((cleanId === 'u_zzzemzzz' || cleanId === 'zzzemzzz') && aAccNum === '342186831') {
           return true;
         }
-
-        // Profile handle or authenticated username match
-        if (
-          aProfile &&
-          (aProfile === cleanHandle ||
-           aProfile === mappedUsername ||
-           (cleanUsername && aProfile === cleanUsername) ||
-           `u_${aProfile.replace(/[^a-z0-9]/g, '_')}` === cleanId)
-        ) {
-          return true;
-        }
-
-        // HomiesPlant alias normalization (u_homiesplant <-> u_homiesplant_th)
-        if (
-          isHomiesQuery &&
-          (aUid === 'u_homiesplant' ||
-            aUid === 'u_homiesplant_th' ||
-            aProfile === 'homiesplant' ||
-            aProfile === 'homiesplant.th')
-        ) {
-          return true;
-        }
-
-        // Default trader mapping match (e.g. 342186831 mapped to zzZEMZzz)
-        if (defaultNameForAcc && (defaultNameForAcc === cleanHandle || `u_${defaultNameForAcc}` === cleanId)) {
-          return true;
-        }
-
-        // Special verified account alias matching
-        if (
-          (cleanHandle === 'zzzemzzz' || cleanId.includes('342186831') || cleanId === 'u_zzzemzzz') &&
-          aAccNum === '342186831'
-        ) {
-          return true;
-        }
-
         return false;
       });
     }
