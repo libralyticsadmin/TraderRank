@@ -298,11 +298,11 @@ export class AccountConnectorService {
     await r2Storage.uploadJson('profiles/account_usernames.json', {}, { 'x-traderrank-type': 'account_usernames' });
   }
 
-  public getAccounts(userId?: string): TradingAccount[] {
+  public getAccounts(userId?: string, username?: string): TradingAccount[] {
     const all = Array.from(this.accounts.values())
       .filter(acc => {
         const cleanAcc = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
-        return cleanAcc !== '72423906' && acc.userId !== 'u_homiesplant_th' && acc.userId !== 'usr_meta_72423906';
+        return cleanAcc !== '72423906' && acc.userId !== 'usr_meta_72423906';
       })
       .map(acc => {
         const cleanAcc = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
@@ -339,7 +339,15 @@ export class AccountConnectorService {
     if (userId) {
       const cleanId = userId.trim().toLowerCase();
       const cleanHandle = cleanId.replace(/^u_/, '');
+      const cleanUsername = (username || '').trim().toLowerCase();
       const mappedUsername = (this.traderUsernames.get(userId) || this.traderUsernames.get(cleanId) || '').toLowerCase();
+      const isHomiesQuery =
+        cleanId === 'u_homiesplant' ||
+        cleanId === 'u_homiesplant_th' ||
+        cleanHandle === 'homiesplant' ||
+        cleanHandle === 'homiesplant_th' ||
+        cleanUsername === 'homiesplant' ||
+        cleanUsername === 'homiesplant.th';
       return all.filter(a => {
         const aUid = (a.userId || '').trim().toLowerCase();
         const aProfile = (a.profileUsername || '').trim().toLowerCase();
@@ -355,12 +363,24 @@ export class AccountConnectorService {
           return true;
         }
 
-        // Profile handle match
+        // Profile handle or authenticated username match
         if (
           aProfile &&
           (aProfile === cleanHandle ||
            aProfile === mappedUsername ||
+           (cleanUsername && aProfile === cleanUsername) ||
            `u_${aProfile.replace(/[^a-z0-9]/g, '_')}` === cleanId)
+        ) {
+          return true;
+        }
+
+        // HomiesPlant alias normalization (u_homiesplant <-> u_homiesplant_th)
+        if (
+          isHomiesQuery &&
+          (aUid === 'u_homiesplant' ||
+            aUid === 'u_homiesplant_th' ||
+            aProfile === 'homiesplant' ||
+            aProfile === 'homiesplant.th')
         ) {
           return true;
         }
@@ -388,7 +408,7 @@ export class AccountConnectorService {
     const acc = this.accounts.get(accountId) || null;
     if (acc) {
       const cleanAcc = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
-      if (cleanAcc === '72423906' || acc.userId === 'u_homiesplant_th' || acc.userId === 'usr_meta_72423906') {
+      if (cleanAcc === '72423906' || acc.userId === 'usr_meta_72423906') {
         return null;
       }
       const isZem =

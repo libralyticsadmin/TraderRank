@@ -141,7 +141,7 @@ export const App: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         setAccounts(Array.isArray(data) ? data : []);
-      } else {
+      } else if (res.status !== 401 && res.status !== 403) {
         setAccounts([]);
       }
     } catch (err) {
@@ -372,7 +372,7 @@ export const App: React.FC = () => {
   };
 
   const handleAccountConnected = (newAcc: TradingAccount) => {
-    setAccounts(prev => [...prev, newAcc]);
+    setAccounts(prev => [newAcc, ...prev.filter(a => a.id !== newAcc.id)]);
     fetchAccounts();
     fetchMetaApiHealth();
   };

@@ -856,7 +856,7 @@ export function createServer() {
         return res.status(403).json({ success: false, error: 'Unauthorized: Valid session token required to access user accounts' });
       }
 
-      const accounts = connector.getAccounts(userId);
+      const accounts = connector.getAccounts(userId, authSession.username);
       return res.json(
         accounts.map(acc => {
           const cleanAcc = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();

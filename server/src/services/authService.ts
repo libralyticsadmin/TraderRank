@@ -23,6 +23,16 @@ export class AuthService {
   private readonly CREDENTIALS_KEY = 'auth/credentials.json';
   private readonly SESSION_SECRET = (() => {
     if (process.env.SESSION_SECRET) return process.env.SESSION_SECRET;
+    const stableSeed =
+      process.env.VAULT_MASTER_KEY ||
+      process.env.ADMIN_API_KEY ||
+      process.env.R2_SECRET_ACCESS_KEY;
+    if (stableSeed) {
+      return crypto
+        .createHmac('sha256', stableSeed)
+        .update('traderrank-session-secret-v1')
+        .digest('hex');
+    }
     if (process.env.NODE_ENV === 'production') {
       console.warn('[AuthService] WARNING: SESSION_SECRET env var not set; using ephemeral CSPRNG secret.');
     }

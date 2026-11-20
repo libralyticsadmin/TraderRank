@@ -30,10 +30,14 @@ export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconne
     const uAcc = String(user.accountNumber || '').trim();
     const aAcc = String(acc.accountNumber || '').trim();
 
+    const isHomiesUser = uid === 'u_homiesplant' || uid === 'u_homiesplant_th' || uName === 'homiesplant' || uName === 'homiesplant.th';
+    const isHomiesAcc = accUid === 'u_homiesplant' || accUid === 'u_homiesplant_th' || accProfile === 'homiesplant' || accProfile === 'homiesplant.th';
+
     return (
       accUid === uid ||
       accUid === `u_${uid.replace(/^u_/, '')}` ||
       `u_${accUid.replace(/^u_/, '')}` === uid ||
+      (isHomiesUser && isHomiesAcc) ||
       (uAcc && aAcc && uAcc === aAcc) ||
       (accProfile && uName && accProfile === uName) ||
       (uEmail && (accUid === uEmail || accUid === `u_${uEmail.replace(/[^a-z0-9]/g, '_')}`))
@@ -80,7 +84,7 @@ export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconne
           </span>
         </h3>
         <button className="btn-secondary" onClick={onOpenWizard} style={{ padding: '6px 12px', fontSize: '13px' }}>
-          + {t.accounts.addAccount}
+          {t.accounts.addAccount.trim().startsWith('+') ? t.accounts.addAccount : `+ ${t.accounts.addAccount}`}
         </button>
       </div>
 
