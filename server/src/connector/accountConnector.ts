@@ -31,7 +31,7 @@ import { resolveBrokerCurrency } from '../utils/currencyFlow.js';
 const DEFAULT_TRADER_USERNAMES: Record<string, string> = {
   '342186831': 'zzZEMZzz',
   '72423906': 'HomiesPlant',
-  '411407722': 'Vanguard_FX',
+  '411407722': 'HomiesPlant',
 };
 
 export const EMERALD_BEAR_AVATAR_URL =
@@ -309,7 +309,7 @@ export class AccountConnectorService {
     const aNorm = a.replace(/^u_/, '');
     const bNorm = b.replace(/^u_/, '');
     if (aNorm === bNorm) return true;
-    const homiesSet = new Set(['u_homiesplant', 'u_homiesplant_th', 'homiesplant', 'homiesplant_th']);
+    const homiesSet = new Set(['u_homiesplant', 'u_homiesplant_th', 'homiesplant', 'homiesplant_th', 'u_homeisplant', 'homeisplant']);
     if (homiesSet.has(a) && homiesSet.has(b)) return true;
     return false;
   }
@@ -377,6 +377,10 @@ export class AccountConnectorService {
         }
         const aAccNum = String(a.accountNumber || '').trim();
         if ((cleanId === 'u_zzzemzzz' || cleanId === 'zzzemzzz') && aAccNum === '342186831') {
+          return true;
+        }
+        const homiesAliases = new Set(['u_homiesplant', 'u_homiesplant_th', 'homiesplant', 'homiesplant_th', 'u_homeisplant', 'homeisplant']);
+        if (homiesAliases.has(cleanId) && (aAccNum === '411407722' || aAccNum === '72423906')) {
           return true;
         }
         return false;
@@ -601,6 +605,50 @@ export class AccountConnectorService {
         }
         this.persistAccountOwnersToR2().catch(() => {});
       }
+
+      // Ensure canonical owner mapping for verified HomiesPlant account 411407722
+      if (!this.accountOwners.has('411407722')) {
+        const canonicalHomiesOwner: AccountOwnerRecord = {
+          userId: 'u_homiesplant_th',
+          username: 'HomiesPlant',
+          broker: 'XM',
+          accountNumber: '411407722',
+          platform: 'MT5',
+          serverName: 'XMGlobal-MT5 16',
+          accountId: 'acc_meta_411407722',
+          connectedAt: new Date().toISOString(),
+          status: 'CONNECTED',
+        };
+        this.accountOwners.set('411407722', canonicalHomiesOwner);
+        this.accountOwners.set('acc_meta_411407722', canonicalHomiesOwner);
+        if (!this.accounts.has('acc_meta_411407722')) {
+          this.accounts.set('acc_meta_411407722', {
+            id: 'acc_meta_411407722',
+            userId: 'u_homiesplant_th',
+            accountNumber: '411407722',
+            profileUsername: 'HomiesPlant',
+            accountHolderName: 'HomiesPlant',
+            avatarUrl: EMERALD_BEAR_AVATAR_URL,
+            broker: 'XM',
+            integrationType: 'mt_gateway',
+            platform: 'MT5',
+            serverName: 'XMGlobal-MT5 16',
+            connectionStatus: 'CONNECTED',
+            balance: 0,
+            equity: 0,
+            margin: 0,
+            freeMargin: 0,
+            currency: 'USD',
+            leverage: 1000,
+            vaultSecretRef: 'ref_restored_acc_meta_411407722',
+            metaApiAccountId: '4c199e8a-3b9b-4665-ac6c-db9d5a48c964',
+            lastSyncedAt: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          });
+        }
+        this.persistAccountOwnersToR2().catch(() => {});
+      }
     } catch {
       // ignore
     }
@@ -751,7 +799,12 @@ export class AccountConnectorService {
           String(p.name || '') === 'zzZEMZzz' ||
           String(p.name || '').toLowerCase() === 'zzzemzzz';
 
-        const isJpy = isZemAccount
+        const isHomiesAccount =
+          cleanLogin === '411407722' ||
+          String(p.name || '').includes('411407722') ||
+          String(p.name || '').toLowerCase().includes('homies');
+
+        const isJpy = (isZemAccount || isHomiesAccount)
           ? false
           : (info?.currency === 'JPY' || serverLower.includes('japan') || serverLower.includes('jpy'));
         const defaultCurrency = 'USD';
@@ -764,14 +817,16 @@ export class AccountConnectorService {
           this.accountOwners.get(cleanLogin) ||
           (existingAcc ? this.accountOwners.get(existingAcc.id) : null);
 
-        if (process.env.NODE_ENV === 'production' && !existingAcc && !savedOwner) {
+        if (process.env.NODE_ENV === 'production' && !existingAcc && !savedOwner && !isZemAccount && !isHomiesAccount) {
           continue;
         }
 
         const userId = isZemAccount
           ? 'u_zzzemzzz'
+          : isHomiesAccount
+          ? 'u_homiesplant_th'
           : (savedOwner?.userId || (existingAcc?.userId && existingAcc.userId !== 'usr_live_meta' ? existingAcc.userId : `usr_meta_${cleanLogin}`));
-        const avatarUrl = isZemAccount
+        const avatarUrl = isZemAccount || isHomiesAccount
           ? EMERALD_BEAR_AVATAR_URL
           : (this.traderAvatars.get(cleanLogin) ||
              this.traderAvatars.get(userId) ||
@@ -780,6 +835,8 @@ export class AccountConnectorService {
         // Public Trader Profile Username (shown on Leaderboard & Podium)
         let profileUsername = isZemAccount
           ? 'zzZEMZzz'
+          : isHomiesAccount
+          ? 'HomiesPlant'
           : (
               savedOwner?.username ||
               this.traderUsernames.get(cleanLogin) ||
@@ -792,24 +849,26 @@ export class AccountConnectorService {
               getDefaultTraderUsername(cleanLogin)
             );
         if (/emanuel/i.test(profileUsername)) {
-          profileUsername = isZemAccount ? 'zzZEMZzz' : 'VerifiedTrader_' + cleanLogin;
+          profileUsername = isZemAccount ? 'zzZEMZzz' : isHomiesAccount ? 'HomiesPlant' : 'VerifiedTrader_' + cleanLogin;
         }
         const username = profileUsername;
 
         // Private Broker Legal Name (strictly isolated for private owner view)
         let privateLegalName = isZemAccount
           ? 'zzZEMZzz'
+          : isHomiesAccount
+          ? 'HomiesPlant'
           : (
               (info?.name && !info.name.startsWith('TraderRank-') ? info.name : undefined) ||
               (p.name && !p.name.startsWith('TraderRank-') ? p.name : undefined) ||
               existingAcc?.accountHolderName
             );
         if (privateLegalName && /emanuel/i.test(privateLegalName)) {
-          privateLegalName = isZemAccount ? 'zzZEMZzz' : profileUsername;
+          privateLegalName = isZemAccount ? 'zzZEMZzz' : isHomiesAccount ? 'HomiesPlant' : profileUsername;
         }
 
-        const effectiveCurrency = isZemAccount ? 'USD' : (info?.currency ?? (isJpy ? 'JPY' : defaultCurrency));
-        const effectiveBroker: Broker = isZemAccount ? 'XM' : brokerName;
+        const effectiveCurrency = isZemAccount ? 'USD' : isHomiesAccount ? 'USD' : (info?.currency ?? (isJpy ? 'JPY' : defaultCurrency));
+        const effectiveBroker: Broker = isZemAccount ? 'XM' : isHomiesAccount ? 'XM' : brokerName;
 
         const tradingAccount: TradingAccount = {
           id: accountId,

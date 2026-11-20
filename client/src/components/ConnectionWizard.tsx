@@ -70,6 +70,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
 
   // Validation states
   const [isValidating, setIsValidating] = useState(false);
+  const [validationStage, setValidationStage] = useState(0);
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -106,8 +107,12 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
 
   const handleRunPreflightCheck = async () => {
     setIsValidating(true);
+    setValidationStage(1);
     setErrorMessage(null);
     setValidationResult(null);
+
+    const timer1 = setTimeout(() => setValidationStage(2), 2000);
+    const timer2 = setTimeout(() => setValidationStage(3), 5000);
 
     const payloadCreds = selectedPath === 'mt_gateway'
       ? ({
@@ -148,7 +153,10 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Network error during validation');
     } finally {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
       setIsValidating(false);
+      setValidationStage(0);
     }
   };
 
@@ -670,7 +678,15 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
               {isValidating ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 0', gap: '12px' }}>
                   <Loader2 size={36} color="#0abab5" className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
-                  <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{t.connector.pingingBroker}</p>
+                  <p style={{ fontSize: '14px', color: '#81d8d0', fontWeight: 600 }}>
+                    {validationStage === 1 && '1/3 Connecting to broker gateway...'}
+                    {validationStage === 2 && '2/3 Pinging broker server & verifying Investor Password...'}
+                    {validationStage >= 3 && '3/3 Testing read-only zero-write permissions & balance...'}
+                    {validationStage === 0 && (t.connector.pingingBroker || 'Pinging broker server & testing read permissions...')}
+                  </p>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    Enterprise SSL • Read-Only Zero-Write Bridge
+                  </span>
                 </div>
               ) : validationResult?.success ? (
                 <div>
@@ -715,7 +731,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                           alignItems: 'center',
                           gap: '6px',
                         }}>
-                          <Zap size={13} color="#0abab5" /> MetaApi Cloud Active: {validationResult.accountDetails.metaApiAccountId}
+                          <Zap size={13} color="#0abab5" /> MetaApi Cloud Bridge Active (Encrypted)
                         </span>
                       </div>
                     )}

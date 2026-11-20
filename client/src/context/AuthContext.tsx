@@ -107,16 +107,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           parsed.id === 'u_homiesplant_th' ||
           parsed.id === 'u_homiesplant' ||
           parsed.id === 'usr_meta_72423906' ||
-          parsed.accountNumber === '72423906';
+          parsed.accountNumber === '72423906' ||
+          parsed.accountNumber === '411407722';
 
         if (isHomies) {
           parsed.id = 'u_homiesplant_th';
           parsed.username = parsed.username === 'HomiesPlant' ? 'HomiesPlant' : 'homiesplant.th';
           parsed.avatarSymbol = 'bear_emerald';
-          parsed.avatarUrl = parsed.avatarUrl || DEFAULT_TRADER_AVATARS['72423906'];
-          parsed.primaryBroker = 'XMTrading';
-          parsed.accountNumber = '72423906';
-          parsed.currency = 'JPY';
+          parsed.avatarUrl = parsed.avatarUrl || DEFAULT_TRADER_AVATARS['72423906'] || DEFAULT_TRADER_AVATARS['342186831'];
+          parsed.primaryBroker = parsed.accountNumber === '72423906' ? 'XMTrading' : 'XM';
+          parsed.accountNumber = parsed.accountNumber || '411407722';
+          parsed.currency = parsed.accountNumber === '72423906' ? 'JPY' : 'USD';
         } else if (
           parsed.username === 'zzZEMZzz' ||
           parsed.username?.toLowerCase() === 'zzzemzzz' ||

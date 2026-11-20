@@ -24,14 +24,18 @@ export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconne
     if (!user) return false;
     const uid = (user.id || '').trim().toLowerCase();
     const accUid = (acc.userId || '').trim().toLowerCase();
-    const isHomiesUser = uid === 'u_homiesplant' || uid === 'u_homiesplant_th';
-    const isHomiesAcc = accUid === 'u_homiesplant' || accUid === 'u_homiesplant_th';
+    const homiesSet = new Set(['u_homiesplant', 'u_homiesplant_th', 'homiesplant', 'homiesplant_th', 'u_homeisplant', 'homeisplant']);
+    const isHomiesUser = homiesSet.has(uid);
+    const isHomiesAcc = homiesSet.has(accUid) || (isHomiesUser && (String(acc.accountNumber).trim() === '411407722' || String(acc.accountNumber).trim() === '72423906'));
+    const isZemUser = uid === 'u_zzzemzzz' || uid === 'zzzemzzz';
+    const isZemAcc = accUid === 'u_zzzemzzz' || (isZemUser && String(acc.accountNumber).trim() === '342186831');
 
     return (
       accUid === uid ||
       accUid === `u_${uid.replace(/^u_/, '')}` ||
       `u_${accUid.replace(/^u_/, '')}` === uid ||
-      (isHomiesUser && isHomiesAcc)
+      (isHomiesUser && isHomiesAcc) ||
+      (isZemUser && isZemAcc)
     );
   });
 

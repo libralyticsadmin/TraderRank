@@ -106,12 +106,13 @@ export class LeaderboardService {
     const cleanAcc = extractedNumber || '';
     const isHomies =
       cleanAcc === '72423906' ||
+      cleanAcc === '411407722' ||
       userId === 'u_homiesplant_th' ||
       userId === 'u_homiesplant' ||
       userId === 'usr_meta_72423906' ||
       String(username).toLowerCase().includes('homies') ||
       String(profileName).toLowerCase().includes('homies') ||
-      (cleanAcc === '72423906' && (/emanuel/i.test(String(username)) || /emanuel/i.test(String(profileName))));
+      ((cleanAcc === '72423906' || cleanAcc === '411407722') && (/emanuel/i.test(String(username)) || /emanuel/i.test(String(profileName))));
 
     const isZem =
       !isHomies &&
@@ -123,7 +124,7 @@ export class LeaderboardService {
 
     if (isHomies) {
       cleanProfileName = username === 'homiesplant.th' ? 'homiesplant.th' : 'HomiesPlant';
-      broker = 'XMTrading';
+      broker = cleanAcc === '411407722' ? 'XM' : 'XMTrading';
     } else if (isZem) {
       cleanProfileName = 'zzZEMZzz';
       broker = 'XM';
@@ -132,6 +133,7 @@ export class LeaderboardService {
     }
 
     const resolvedCurrency = (
+      cleanAcc === '411407722' ? 'USD' :
       isHomies || broker === 'XMTrading' || cleanAcc === '72423906' ? 'JPY' :
       isZem || broker === 'XM' ? 'USD' :
       (currency || 'USD')
@@ -343,12 +345,13 @@ export class LeaderboardService {
       const cleanAcc = String(t.accountNumber || '').trim();
       const isHomies =
         cleanAcc === '72423906' ||
+        cleanAcc === '411407722' ||
         t.userId === 'u_homiesplant_th' ||
         t.userId === 'u_homiesplant' ||
         t.userId === 'usr_meta_72423906' ||
         String(t.username).toLowerCase().includes('homies') ||
         String(t.profileName).toLowerCase().includes('homies') ||
-        (cleanAcc === '72423906' && (/emanuel/i.test(String(t.username)) || /emanuel/i.test(String(t.profileName))));
+        ((cleanAcc === '72423906' || cleanAcc === '411407722') && (/emanuel/i.test(String(t.username)) || /emanuel/i.test(String(t.profileName))));
 
       const isZem =
         !isHomies &&
@@ -366,15 +369,15 @@ export class LeaderboardService {
       if (/emanuel/i.test(resolvedUsername)) {
         resolvedUsername = resolvedProfileName;
       }
-      const resolvedCurrency = isHomies || cleanAcc === '72423906' || t.brokers.has('XMTrading' as any) ? 'JPY' : (isZem ? 'USD' : (t.currency || 'USD'));
-      const resolvedBrokers = isHomies ? ['XMTrading' as Broker] : isZem ? ['XM' as Broker] : Array.from(t.brokers);
+      const resolvedCurrency = cleanAcc === '411407722' ? 'USD' : (isHomies || cleanAcc === '72423906' || t.brokers.has('XMTrading' as any) ? 'JPY' : (isZem ? 'USD' : (t.currency || 'USD')));
+      const resolvedBrokers = cleanAcc === '411407722' ? ['XM' as Broker] : (isHomies ? ['XMTrading' as Broker] : isZem ? ['XM' as Broker] : Array.from(t.brokers));
 
       return {
         rank: 0,
         userId: isHomies ? 'u_homiesplant_th' : isZem ? 'u_zzzemzzz' : t.userId,
         username: resolvedUsername,
         profileName: resolvedProfileName,
-        accountNumber: t.accountNumber || (isHomies ? '72423906' : isZem ? '342186831' : undefined),
+        accountNumber: t.accountNumber || (isHomies ? (cleanAcc === '411407722' ? '411407722' : '72423906') : isZem ? '342186831' : undefined),
         avatarUrl: t.avatarUrl,
         avatarSymbol: isHomies || isZem ? 'bear_emerald' : t.avatarSymbol,
         currency: resolvedCurrency,
@@ -428,12 +431,13 @@ export class LeaderboardService {
       const cleanAcc = String(t.accountNumber || '').trim();
       const isHomies =
         cleanAcc === '72423906' ||
+        cleanAcc === '411407722' ||
         t.userId === 'u_homiesplant_th' ||
         t.userId === 'u_homiesplant' ||
         t.userId === 'usr_meta_72423906' ||
         String(t.username).toLowerCase().includes('homies') ||
         String(t.profileName).toLowerCase().includes('homies') ||
-        (cleanAcc === '72423906' && (/emanuel/i.test(String(t.username)) || /emanuel/i.test(String(t.profileName))));
+        ((cleanAcc === '72423906' || cleanAcc === '411407722') && (/emanuel/i.test(String(t.username)) || /emanuel/i.test(String(t.profileName))));
 
       const isZem =
         !isHomies &&
@@ -451,15 +455,15 @@ export class LeaderboardService {
       if (/emanuel/i.test(resolvedUsername)) {
         resolvedUsername = resolvedProfileName;
       }
-      const resolvedCurrency = isHomies || cleanAcc === '72423906' || t.brokers.has('XMTrading' as any) ? 'JPY' : (isZem ? 'USD' : (t.currency || 'USD'));
-      const resolvedBrokers = isHomies ? ['XMTrading' as Broker] : isZem ? ['XM' as Broker] : Array.from(t.brokers);
+      const resolvedCurrency = cleanAcc === '411407722' ? 'USD' : (isHomies || cleanAcc === '72423906' || t.brokers.has('XMTrading' as any) ? 'JPY' : (isZem ? 'USD' : (t.currency || 'USD')));
+      const resolvedBrokers = cleanAcc === '411407722' ? ['XM' as Broker] : (isHomies ? ['XMTrading' as Broker] : isZem ? ['XM' as Broker] : Array.from(t.brokers));
 
       return {
         rank: 0,
         userId: isHomies ? 'u_homiesplant_th' : isZem ? 'u_zzzemzzz' : t.userId,
         username: resolvedUsername,
         profileName: resolvedProfileName,
-        accountNumber: t.accountNumber || (isHomies ? '72423906' : isZem ? '342186831' : undefined),
+        accountNumber: t.accountNumber || (isHomies ? (cleanAcc === '411407722' ? '411407722' : '72423906') : isZem ? '342186831' : undefined),
         avatarUrl: t.avatarUrl,
         avatarSymbol: isHomies || isZem ? 'bear_emerald' : t.avatarSymbol,
         currency: resolvedCurrency,
