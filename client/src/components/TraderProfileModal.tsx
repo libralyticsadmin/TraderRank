@@ -266,7 +266,10 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
 
   // Calendar & Ranking Mode ("AMOUNT" = 収益額 / Net P&L $, "RATE" = 収益率 / Return % & Pips)
   const [metricTab, setMetricTab] = useState<'AMOUNT' | 'RATE'>('AMOUNT');
-  const [selectedYearMonth, setSelectedYearMonth] = useState<string>('2026-10');
+  const [selectedYearMonth, setSelectedYearMonth] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+  });
   const [showHistoricalArchive, setShowHistoricalArchive] = useState<boolean>(true);
 
   // Localized UI copy matching the TradeRank reference layout across EN / JA / ZH
@@ -787,6 +790,13 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
   }, [hasConnectedAccount, realTrades, liveMonthlyCashflows, liveAccountNumber, trader]);
 
   const currentMonthIdx = availableMonths.indexOf(selectedYearMonth);
+
+  useEffect(() => {
+    if (availableMonths.length > 0 && !availableMonths.includes(selectedYearMonth)) {
+      setSelectedYearMonth(availableMonths[availableMonths.length - 1]);
+      setSelectedDayKey(null);
+    }
+  }, [availableMonths, selectedYearMonth]);
 
   const handlePrevMonth = () => {
     if (currentMonthIdx > 0) {
