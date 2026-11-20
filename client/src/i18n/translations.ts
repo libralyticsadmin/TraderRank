@@ -1757,7 +1757,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       heroTitleAccent: '公式トレーダーランキングサイト・トレーダーランク',
       heroTitleSuffix: '',
       heroSubtitle: 'トレーダーランクは全ユーザーのブローカー口座を安全に接続・連携、検証し、公式に有益なトレード履歴や戦略を公開、そして全プロトレーダーにリワード報酬獲得の機会を提供します。',
-      enterArenaBtn: 'ログインする',
+      enterArenaBtn: 'トレーディングアリーナに入る',
       connectBrokerBtn: 'ブローカー口座を連携する',
       exploreChartsBtn: 'SMC ライブチャート',
       verifiedPnlBadge: 'ゼロライト実盤検証済',
