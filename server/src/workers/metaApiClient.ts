@@ -189,6 +189,9 @@ export class MetaApiClient {
         );
         if (!updated.ok) {
           console.warn(`[MetaApiClient] Credential update warning for ${found.id}: ${updated.error}`);
+          if (updated.status && updated.status >= 400 && updated.status < 500) {
+            throw new Error(`MetaApi rejected credentials (${updated.status}): ${updated.error}`);
+          }
         }
         if (found.state === 'DRAFT' || found.state === 'UNDEPLOYED') {
           await this.deployAccount(found.id);
@@ -240,7 +243,7 @@ export class MetaApiClient {
     name: string,
     server: string,
     investorPassword: string
-  ): Promise<{ ok: boolean; error?: string }> {
+  ): Promise<{ ok: boolean; status?: number; error?: string }> {
     if (!this.hasToken() || !metaApiAccountId || metaApiAccountId.startsWith('mock_')) {
       return { ok: true };
     }
@@ -256,13 +259,13 @@ export class MetaApiClient {
           server,
           password: investorPassword,
         }),
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(35000),
       });
       if (!res.ok) {
         const text = await res.text().catch(() => '');
-        return { ok: false, error: `HTTP ${res.status}: ${text.slice(0, 200)}` };
+        return { ok: false, status: res.status, error: `HTTP ${res.status}: ${text.slice(0, 200)}` };
       }
-      return { ok: true };
+      return { ok: true, status: res.status };
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : String(err) };
     }
@@ -318,6 +321,7 @@ export class MetaApiClient {
           'auth-token': this.token,
           'Accept': 'application/json',
         },
+        signal: AbortSignal.timeout(5000),
       });
       if (!res.ok) return null;
       const data = await res.json() as any;
@@ -355,6 +359,7 @@ export class MetaApiClient {
           'auth-token': this.token,
           'Accept': 'application/json',
         },
+        signal: AbortSignal.timeout(6000),
       });
       if (!res.ok) return null;
       const info = await res.json() as any;
@@ -421,15 +426,20 @@ export class MetaApiClient {
           await this.deployAccount(id);
         }
 
-        // Poll briefly for real broker connection & live account info (up to ~12s)
-        let liveInfo = await this.getAccountInformation(id);
-        for (let attempt = 0; attempt < 4 && !liveInfo; attempt++) {
-          await new Promise(resolve => setTimeout(resolve, 2500));
-          liveInfo = await this.getAccountInformation(id);
+        // Poll fast provisioning state (~300ms each) until MetaApi reports CONNECTED (max ~10s),
+        // then fetch real account-information once instead of hammering slow 504 endpoints.
+        let accState = await this.getAccountState(id);
+        for (let attempt = 0; attempt < 5 && accState?.connectionStatus !== 'CONNECTED'; attempt++) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          accState = await this.getAccountState(id);
         }
 
+        const liveInfo =
+          accState?.connectionStatus === 'CONNECTED'
+            ? await this.getAccountInformation(id)
+            : null;
+
         if (!liveInfo) {
-          const accState = await this.getAccountState(id);
           const connStatus = accState?.connectionStatus || 'DISCONNECTED';
           return {
             success: false,
