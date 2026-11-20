@@ -86,6 +86,10 @@ export class MetaApiClient {
     return Boolean(this.token && this.token.length > 10 && !this.token.startsWith('mock_'));
   }
 
+  private isTestRuntime(): boolean {
+    return process.env.NODE_ENV === 'test' || Boolean(process.env.VITEST);
+  }
+
   public setToken(token: string): void {
     this.token = token;
   }
@@ -174,6 +178,23 @@ export class MetaApiClient {
     const existing = await this.listProvisionedAccounts();
     const found = existing.find(a => a.login === login && a.server.toLowerCase() === server.toLowerCase());
     if (found) {
+      if (!this.isTestRuntime() && investorPassword) {
+        const updated = await this.updateAccountCredentials(
+          found.id,
+          found.name || `TraderRank-${login}`,
+          server,
+          investorPassword
+        );
+        if (!updated.ok) {
+          console.warn(`[MetaApiClient] Credential update warning for ${found.id}: ${updated.error}`);
+        }
+        if (found.state === 'DRAFT' || found.state === 'UNDEPLOYED') {
+          await this.deployAccount(found.id);
+        } else {
+          await this.redeployAccount(found.id);
+        }
+        this.positionsBackoff.delete(found.id);
+      }
       return { id: found.id, isNew: false, state: found.state };
     }
 
@@ -207,6 +228,61 @@ export class MetaApiClient {
       this.accountRegions.set(id, String(created.region));
     }
     return { id, isNew: true, state: created?.state || 'DRAFT' };
+  }
+
+  /**
+   * Updates an existing MetaApi account's credentials (e.g., new investor password)
+   */
+  public async updateAccountCredentials(
+    metaApiAccountId: string,
+    name: string,
+    server: string,
+    investorPassword: string
+  ): Promise<{ ok: boolean; error?: string }> {
+    if (!this.hasToken() || !metaApiAccountId || metaApiAccountId.startsWith('mock_')) {
+      return { ok: true };
+    }
+    try {
+      const res = await fetch(`${this.provisioningBaseUrl}/users/current/accounts/${metaApiAccountId}`, {
+        method: 'PUT',
+        headers: {
+          'auth-token': this.token,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          server,
+          password: investorPassword,
+        }),
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        return { ok: false, error: `HTTP ${res.status}: ${text.slice(0, 200)}` };
+      }
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    }
+  }
+
+  /**
+   * Redeploys an existing MetaApi account so updated credentials take effect
+   */
+  public async redeployAccount(metaApiAccountId: string): Promise<boolean> {
+    if (!this.hasToken() || !metaApiAccountId || typeof metaApiAccountId !== 'string' || metaApiAccountId.startsWith('mock_')) return true;
+    try {
+      const res = await fetch(`${this.provisioningBaseUrl}/users/current/accounts/${metaApiAccountId}/redeploy`, {
+        method: 'POST',
+        headers: {
+          'auth-token': this.token,
+        },
+        signal: AbortSignal.timeout(10000),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -334,35 +410,37 @@ export class MetaApiClient {
     const isMockAccount = server.toLowerCase().includes('mock') || login.startsWith('mock_');
 
     // When real token is configured and not a mock test account, perform live account verification & provisioning
-    if (this.hasToken() && !isMockAccount) {
+    if (this.hasToken() && !isMockAccount && !this.isTestRuntime()) {
       try {
-        const { id, isNew, state } = await this.createOrGetAccount(server, login, investorPassword, platform);
-        
+        const { id, state } = await this.createOrGetAccount(server, login, investorPassword, platform);
+
         // Auto-deploy if needed so broker connection initiates
         if (state === 'DRAFT' || state === 'UNDEPLOYED') {
           await this.deployAccount(id);
         }
 
-        // Fetch live account info if available, or return clean baseline
-        const liveInfo = await this.getAccountInformation(id);
+        // Poll briefly for real broker connection & live account info (up to ~12s)
+        let liveInfo = await this.getAccountInformation(id);
+        for (let attempt = 0; attempt < 4 && !liveInfo; attempt++) {
+          await new Promise(resolve => setTimeout(resolve, 2500));
+          liveInfo = await this.getAccountInformation(id);
+        }
 
-        const sLower = server.toLowerCase();
-        const isJpyAccount = sLower.includes('xmtrading') || sLower.includes('japan') || sLower.includes('jpy');
+        if (!liveInfo) {
+          const accState = await this.getAccountState(id);
+          const connStatus = accState?.connectionStatus || 'DISCONNECTED';
+          return {
+            success: false,
+            metaApiAccountId: id,
+            error: `Broker connection failed for account ${login} on ${server} (MetaApi status: ${connStatus}). Please verify your read-only Investor Password and confirm the MT4/MT5 account is still active (not archived by your broker).`,
+            errorCode: 'INVALID_CREDENTIALS',
+          };
+        }
 
         return {
           success: true,
           metaApiAccountId: id,
-          accountInfo: liveInfo || {
-            platform,
-            broker: server.split('-')[0] || (isJpyAccount ? 'XMTrading' : 'XM'),
-            currency: isJpyAccount ? 'JPY' : 'USD',
-            server,
-            balance: isJpyAccount ? 1500000.00 : 10000.00,
-            equity: isJpyAccount ? 1500000.00 : 10000.00,
-            margin: 0,
-            freeMargin: isJpyAccount ? 1500000.00 : 10000.00,
-            leverage: 100,
-          },
+          accountInfo: liveInfo,
         };
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);

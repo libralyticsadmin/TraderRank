@@ -234,7 +234,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
           </div>
           <div className="stepper-step">
             <div className={`step-bubble ${step === 2 ? 'active' : step > 2 ? 'completed' : ''}`}>2</div>
-            <span className="step-label">{t.connector.routeTitle}</span>
+            <span className="step-label">{t.connector.routeTitle.replace('{broker}', selectedBroker || 'Broker')}</span>
           </div>
           <div className="stepper-step">
             <div className={`step-bubble ${step === 3 ? 'active' : step > 3 ? 'completed' : ''}`}>3</div>
@@ -675,9 +675,9 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                     <strong style={{ fontSize: '16px' }}>{t.connector.preflightPassedTitle}</strong>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '13px' }}>
-                    <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.brokerLabel}:</span> <strong>{selectedBroker}</strong></div>
-                    <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.integrationLabel}:</span> <strong>{selectedPath === 'mt_gateway' ? 'MT Gateway' : 'Exness Native'}</strong></div>
-                    <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.accountLabel}:</span> <span className="tabular">{validationResult.accountDetails?.accountNumber}</span></div>
+                    <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.brokerLabel}</span> <strong>{selectedBroker}</strong></div>
+                    <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.integrationLabel}</span> <strong>{selectedPath === 'mt_gateway' ? 'MT Gateway' : 'Exness Native'}</strong></div>
+                    <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.accountLabel}</span> <span className="tabular">{validationResult.accountDetails?.accountNumber}</span></div>
                     {(() => {
                       const cur = (validationResult.accountDetails?.currency || 'USD').toUpperCase();
                       const isJpy = cur === 'JPY';
@@ -691,12 +691,12 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
 
                       return (
                         <>
-                          <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.balanceLabel}:</span> <span className="tabular">{balStr}</span></div>
-                          <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.equityLabel}:</span> <span className="tabular">{eqStr}</span></div>
+                          <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.balanceLabel}</span> <span className="tabular">{balStr}</span></div>
+                          <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.equityLabel}</span> <span className="tabular">{eqStr}</span></div>
                         </>
                       );
                     })()}
-                    <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.leverageLabel}:</span> <span className="tabular">1:{validationResult.accountDetails?.leverage}</span></div>
+                    <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.leverageLabel}</span> <span className="tabular">1:{validationResult.accountDetails?.leverage}</span></div>
                     {validationResult.accountDetails?.metaApiAccountId && (
                       <div style={{ gridColumn: 'span 2', marginTop: '4px' }}>
                         <span style={{

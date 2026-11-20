@@ -863,8 +863,16 @@ export class AccountConnectorService {
           effectiveCurrency
         );
 
-        // Fetch real historical deals directly from MetaApi
-        const rawDeals = await this.metaApiClient.getHistoricalDeals(p.id);
+        // Fetch real historical deals directly from MetaApi (with R2 cache fallback if MetaApi is temporarily disconnected)
+        let rawDeals = await this.metaApiClient.getHistoricalDeals(p.id);
+        if (rawDeals && rawDeals.length > 0) {
+          this.persistRawDealsToR2(cleanLogin, rawDeals).catch(() => {});
+        } else {
+          const cachedFromR2 = await this.loadRawDealsFromR2(cleanLogin);
+          if (cachedFromR2.length > 0) {
+            rawDeals = cachedFromR2;
+          }
+        }
         if (rawDeals && rawDeals.length > 0) {
           this.rawDealsCache.set(accountId, rawDeals);
           this.lastDealSyncAt.set(accountId, Date.now());
@@ -941,6 +949,27 @@ export class AccountConnectorService {
     if (!worker) return [];
     const raw = await worker.getPositions(accountId);
     return this.normalizer.normalizePositions(raw);
+  }
+
+  private async persistRawDealsToR2(accountNumber: string, deals: MetaApiDeal[]): Promise<void> {
+    if (!accountNumber || !deals.length || process.env.NODE_ENV === 'test' || process.env.VITEST) return;
+    try {
+      await r2Storage.uploadJson(`trades/raw_deals_${accountNumber}.json`, deals, {
+        'x-traderrank-type': 'raw_deals_cache',
+      });
+    } catch {
+      // Non-fatal
+    }
+  }
+
+  private async loadRawDealsFromR2(accountNumber: string): Promise<MetaApiDeal[]> {
+    if (!accountNumber || process.env.NODE_ENV === 'test' || process.env.VITEST) return [];
+    try {
+      const saved = await r2Storage.getJson<MetaApiDeal[]>(`trades/raw_deals_${accountNumber}.json`);
+      return Array.isArray(saved) ? saved : [];
+    } catch {
+      return [];
+    }
   }
 
   public getAccountTrades(accountId: string): CanonicalTrade[] {
@@ -1104,12 +1133,24 @@ export class AccountConnectorService {
             this.lastDealCursorTime.set(accountId, latestDealTime);
           }
 
+          if (account.accountNumber) {
+            this.persistRawDealsToR2(String(account.accountNumber).trim(), mergedDeals).catch(() => {});
+          }
+
           const trades = this.processRawDealsToTrades(accountId, mergedDeals);
           this.tradesStorage.set(accountId, trades);
           for (const trade of trades) {
             await this.eventBus.publish('stream:trade.closed.normalized', 'trade.closed.normalized', accountId, trade);
           }
           return trades;
+        } else if ((!existingTrades || existingTrades.length === 0) && account.accountNumber) {
+          const cachedFromR2 = await this.loadRawDealsFromR2(String(account.accountNumber).trim());
+          if (cachedFromR2.length > 0) {
+            this.rawDealsCache.set(accountId, cachedFromR2);
+            const trades = this.processRawDealsToTrades(accountId, cachedFromR2);
+            this.tradesStorage.set(accountId, trades);
+            return trades;
+          }
         }
       } catch (err) {
         console.warn(`[AccountConnectorService] Live deal sync warning for ${accountId}:`, err);
