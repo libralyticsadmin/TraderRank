@@ -853,7 +853,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 0', gap: '12px', textAlign: 'center' }}>
                   <Loader2 size={36} color="#0abab5" className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
                   <p style={{ fontSize: '14px', color: '#81d8d0', fontWeight: 600 }}>
-                    {onboarding?.status === 'PROVISIONING' || onboardingSeconds < 20
+                    {onboarding?.status === 'PROVISIONING'
                       ? `1/2 Registering account with broker bridge (${onboardingSeconds}s)...`
                       : `2/2 Authenticating with ${onboarding?.serverName || serverName} (${onboardingSeconds}s)...`}
                   </p>

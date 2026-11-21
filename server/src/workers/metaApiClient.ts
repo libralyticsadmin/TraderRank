@@ -392,10 +392,13 @@ export class MetaApiClient {
       if (data?.region) {
         this.accountRegions.set(metaApiAccountId, String(data.region));
       }
+      const replica = Array.isArray(data.accountReplicas) && data.accountReplicas.length > 0 ? data.accountReplicas[0] : null;
+      const connStatus = data.connectionStatus || replica?.connectionStatus;
+      const disconnectedReason = data.disconnectedReason || data.disconnectReason || replica?.disconnectedReason || replica?.disconnectReason;
       return {
         state: data.state,
-        connectionStatus: data.connectionStatus,
-        disconnectedReason: data.disconnectedReason || (data.connectionStatus === 'DISCONNECTED' ? data.disconnectReason : undefined),
+        connectionStatus: connStatus,
+        disconnectedReason: disconnectedReason,
       };
     } catch {
       return null;

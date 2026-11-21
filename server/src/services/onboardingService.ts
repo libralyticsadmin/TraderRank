@@ -297,6 +297,7 @@ export class OnboardingService {
     }
     job.status = 'CONNECTING';
     job.error = undefined;
+    job.attempts = 0; // Reset attempts so broker connection check has a clean counter
     job.nextCheckAt = Date.now() + 2000;
   }
 
@@ -323,11 +324,10 @@ export class OnboardingService {
           return;
         }
       }
-      // If disconnected after 4 attempts and not currently deploying, broker rejected the credentials
-      if (job.attempts >= 4 && state.state !== 'DEPLOYING') {
-        await this.fail(job, 'INVALID_CREDENTIALS', 'Broker rejected login credentials or investor password.');
-        return;
-      }
+      // Note: Do NOT assume invalid credentials purely based on attempt count or DISCONNECTED status,
+      // as MetaTrader 4/5 cloud containers take 30-60+ seconds to complete broker handshakes.
+      // MetaApi populates disconnectedReason when credentials or server are actually rejected by the broker.
+      // If no reason is reported, connection check retries until deadlineAt.
     }
 
     if (state.state === 'FAILED') {
