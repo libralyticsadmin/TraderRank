@@ -32,7 +32,6 @@ import { publishCanonicalStatsSnapshot } from './hooks/useTraderStats.ts';
 import { ProfileEditModal } from './components/ProfileEditModal.tsx';
 import { UserNavMenu } from './components/UserNavMenu.tsx';
 import { FeatureSymbol, FeatureSymbolType } from './components/FeatureSymbol.tsx';
-import { DEFAULT_TRADER_AVATARS } from './components/avatarCatalog.ts';
 import {
   Plus,
   RefreshCw,
@@ -401,23 +400,8 @@ export const App: React.FC = () => {
   };
 
   const handleSelectTrader = (t: { userId?: string; username: string; broker?: Broker; rank?: number; score?: number; winRate?: number; tradesCount?: number; avatarUrl?: string }) => {
-    const isHomies =
-      t.username === 'HomiesPlant' ||
-      t.username === 'homiesplant.th' ||
-      t.username.toLowerCase().includes('homies') ||
-      t.username.includes('72423906') ||
-      t.username.toLowerCase().includes('emanuel007') ||
-      (t.userId && (t.userId === 'u_homiesplant_th' || t.userId === 'u_homiesplant' || t.userId.includes('72423906') || t.userId.includes('emanuel007')));
-
-    const isZem =
-      !isHomies &&
-      (t.username === 'zzZEMZzz' ||
-        t.username.toLowerCase() === 'zzzemzzz' ||
-        t.username.toLowerCase().includes('emanuel001') ||
-        (t.userId && (t.userId === 'u_zzzemzzz' || t.userId.includes('342186831') || t.userId.includes('emanuel001'))));
-
-    const cleanUsername = isHomies ? (t.username === 'homiesplant.th' ? 'homiesplant.th' : 'HomiesPlant') : isZem ? 'zzZEMZzz' : t.username;
-    const safeBroker: Broker = isHomies ? 'XMTrading' : isZem ? 'XM' : (t.broker || 'Exness');
+    const cleanUsername = t.username;
+    const safeBroker: Broker = t.broker || 'Exness';
 
     const matchedLb = leaderboard.find(
       e => (t.userId && e.userId === t.userId) || e.username.toLowerCase() === cleanUsername.toLowerCase()
@@ -425,12 +409,12 @@ export const App: React.FC = () => {
     const matchedAcc = accounts.find(
       a =>
         (t.userId && (a.id === t.userId || a.userId === t.userId)) ||
-        (a.accountNumber && (cleanUsername.includes(a.accountNumber) || (isZem && a.accountNumber === '342186831')))
+        (a.accountNumber && cleanUsername.includes(a.accountNumber))
     );
-    const resolvedId = isZem ? 'u_zzzemzzz' : (t.userId || matchedAcc?.id || matchedLb?.userId || `u_${cleanUsername.toLowerCase()}`);
+    const resolvedId = t.userId || matchedAcc?.id || matchedLb?.userId || `u_${cleanUsername.toLowerCase()}`;
 
-    const avatarUrl = t.avatarUrl || matchedLb?.avatarUrl || (isZem ? (DEFAULT_TRADER_AVATARS['342186831'] || DEFAULT_TRADER_AVATARS['zzZEMZzz']) : undefined);
-    const avatarSymbol = isZem ? 'bear_emerald' : (matchedLb?.avatarSymbol || 'zap');
+    const avatarUrl = t.avatarUrl || matchedLb?.avatarUrl;
+    const avatarSymbol = matchedLb?.avatarSymbol || 'zap';
 
     const tradesCount = t.tradesCount ?? matchedLb?.tradesCount ?? 0;
     const netPips = t.score ?? matchedLb?.totalPips ?? 0;
@@ -453,12 +437,12 @@ export const App: React.FC = () => {
       profitFactor: winRate >= 50 ? 1.4 : 0.8,
       maxDrawdown: 0,
       totalTrades: tradesCount,
-      bestTradePips: isZem ? 97.7 : 1933.0,
+      bestTradePips: 1933.0,
       avgHoldingTime: '1h 12m',
       verifiedSince: 'May 2026',
       isFollowing: false,
-      currency: isHomies ? 'JPY' : isZem ? 'USD' : (safeBroker === 'XMTrading' ? 'JPY' : 'USD'),
-      accountNumber: isHomies ? '72423906' : isZem ? '342186831' : undefined,
+      currency: matchedLb?.currency || matchedAcc?.currency || (safeBroker === 'XMTrading' ? 'JPY' : 'USD'),
+      accountNumber: matchedLb?.accountNumber || matchedAcc?.accountNumber,
     } as any);
   };
 

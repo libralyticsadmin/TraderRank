@@ -146,9 +146,10 @@ describe('Session Security & Loophole Regression Suite', () => {
     });
   });
 
-  it('4. AccountConnectorService.isSameOwner handles legacy alias consistently without cross-user bleed', () => {
-    expect(AccountConnectorService.isSameOwner('u_homiesplant', 'u_homiesplant_th')).toBe(true);
-    expect(AccountConnectorService.isSameOwner('u_homiesplant_th', 'u_homiesplant')).toBe(true);
+  it('4. AccountConnectorService.isSameOwner matches userIds only (legacy aliases are migrated in data, not special-cased)', () => {
+    // Legacy aliases are rewritten to canonical userIds by legacyIdentityMigration; at runtime they are distinct users.
+    expect(AccountConnectorService.isSameOwner('u_homiesplant', 'u_homiesplant_th')).toBe(false);
+    expect(AccountConnectorService.isSameOwner('u_homiesplant_th', 'u_homiesplant_th')).toBe(true);
     expect(AccountConnectorService.isSameOwner('u_alice', 'alice')).toBe(true);
     expect(AccountConnectorService.isSameOwner('u_alice', 'u_bob')).toBe(false);
     expect(AccountConnectorService.isSameOwner('u_homiesplant', 'u_zzzemzzz')).toBe(false);

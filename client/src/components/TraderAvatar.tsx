@@ -31,27 +31,12 @@ interface TraderAvatarProps {
 }
 
 // Deterministic mapping for featured leaderboard & community traders across unique indices
-const EMERALD_BEAR_URL =
-  INSTITUTIONAL_ANIMAL_PRESETS.find(p => p.id === 'bear_emerald')?.url ||
-  INSTITUTIONAL_ANIMAL_PRESETS[2].url;
 
 const TRADER_PRESET_MAP: Record<string, string> = {
-  'zzZEMZzz': EMERALD_BEAR_URL,
-  'zzzemzzz': EMERALD_BEAR_URL,
-  '342186831': EMERALD_BEAR_URL,
-  'TraderRank-342186831': EMERALD_BEAR_URL,
-  'HomiesPlant': EMERALD_BEAR_URL,                        // Emerald Quant Bear (Green Bear)
-  'homiesplant': EMERALD_BEAR_URL,
-  'homiesplant.th': EMERALD_BEAR_URL,
-  'u_homiesplant_th': EMERALD_BEAR_URL,
-  '72423906': EMERALD_BEAR_URL,
-  'TraderRank-72423906': EMERALD_BEAR_URL,
   'ApexTrader_FX': INSTITUTIONAL_ANIMAL_PRESETS[3].url,   // Imperial Violet Lion
   'apextrader_fx': INSTITUTIONAL_ANIMAL_PRESETS[3].url,
   'Vanguard_FX': INSTITUTIONAL_ANIMAL_PRESETS[0].url,     // Cyber Tiffany Wolf
   'vanguard_fx': INSTITUTIONAL_ANIMAL_PRESETS[0].url,
-  '411407722': INSTITUTIONAL_ANIMAL_PRESETS[0].url,
-  'TraderRank-411407722': INSTITUTIONAL_ANIMAL_PRESETS[0].url,
   'FX_Sniper': INSTITUTIONAL_ANIMAL_PRESETS[0].url,       // Golden Bull
   'GoldBug_JP': INSTITUTIONAL_ANIMAL_PRESETS[10].url,     // Emerald Quant Dragon
   'AlphaWave': INSTITUTIONAL_ANIMAL_PRESETS[1].url,       // Cyber Tiffany Wolf
@@ -89,7 +74,6 @@ const resolveSavedUserAvatar = (username: string, explicitUrl?: string): string 
         if (uNorm && map[uNorm]) return map[uNorm];
         const match = uNorm.match(/(\d{6,})/);
         if (match && map[match[1]]) return map[match[1]];
-        if (uNorm.includes('72423906') && map['72423906']) return map['72423906'];
       }
 
       // Check saved logged in user
@@ -100,7 +84,6 @@ const resolveSavedUserAvatar = (username: string, explicitUrl?: string): string 
           const savedNorm = (saved.username || '').trim().toLowerCase();
           if (
             savedNorm === uNorm ||
-            uNorm.includes('72423906') ||
             (saved.accountNumber && uNorm.includes(String(saved.accountNumber))) ||
             saved.id === username
           ) {
@@ -111,13 +94,6 @@ const resolveSavedUserAvatar = (username: string, explicitUrl?: string): string 
     } catch {
       // ignore storage read errors
     }
-  }
-  if (
-    uNorm === 'zzzemzzz' ||
-    uNorm.includes('342186831') ||
-    uNorm.includes('zzzemzzz')
-  ) {
-    return EMERALD_BEAR_URL;
   }
   return undefined;
 };

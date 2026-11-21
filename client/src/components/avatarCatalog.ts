@@ -1214,32 +1214,9 @@ export const CURATED_12_AVATARS: AnimalAvatarPreset[] = [
   INSTITUTIONAL_ANIMAL_PRESETS[11],  // Royal Stag
 ];
 
-const EMERALD_BEAR_URL =
-  INSTITUTIONAL_ANIMAL_PRESETS.find(p => p.id === 'bear_emerald')?.url ||
-  INSTITUTIONAL_ANIMAL_PRESETS[2].url;
-
 export const VIOLET_LION_URL =
   INSTITUTIONAL_ANIMAL_PRESETS.find(p => p.id === 'lion')?.url ||
   INSTITUTIONAL_ANIMAL_PRESETS[3].url;
-
-const TIFFANY_WOLF_URL =
-  INSTITUTIONAL_ANIMAL_PRESETS.find(p => p.id === 'wolf_cyber')?.url ||
-  INSTITUTIONAL_ANIMAL_PRESETS[0].url;
-
-export const DEFAULT_TRADER_AVATARS: Record<string, string> = {
-  '342186831': EMERALD_BEAR_URL,
-  'zzzemzzz': EMERALD_BEAR_URL,
-  'zzZEMZzz': EMERALD_BEAR_URL,
-  'u_zzzemzzz': EMERALD_BEAR_URL,
-  '72423906': EMERALD_BEAR_URL,
-  'homiesplant.th': EMERALD_BEAR_URL,
-  'u_homiesplant_th': EMERALD_BEAR_URL,
-  'homiesplant': EMERALD_BEAR_URL,
-  'HomiesPlant': EMERALD_BEAR_URL,
-  '411407722': TIFFANY_WOLF_URL,
-  'vanguard_fx': TIFFANY_WOLF_URL,
-  'Vanguard_FX': TIFFANY_WOLF_URL,
-};
 
 const isRawAccountTag = (val?: string | null): boolean => {
   if (!val) return true;
@@ -1249,12 +1226,6 @@ const isRawAccountTag = (val?: string | null): boolean => {
   if (/^(acc_meta_|usr_meta_)/i.test(trimmed)) return true;
   if (/^\d+$/.test(trimmed)) return true;
   return false;
-};
-
-const DEFAULT_TRADER_USERNAMES: Record<string, string> = {
-  '342186831': 'zzZEMZzz',
-  '72423906': 'HomiesPlant',
-  '411407722': 'Vanguard_FX',
 };
 
 const TRADER_HANDLE_POOL = [
@@ -1274,9 +1245,6 @@ const TRADER_HANDLE_POOL = [
 
 const getDefaultTraderHandle = (accountNumber?: string | null, seed?: string): string => {
   const clean = String(accountNumber || '').replace(/^TraderRank-/i, '').trim();
-  if (clean && DEFAULT_TRADER_USERNAMES[clean]) {
-    return DEFAULT_TRADER_USERNAMES[clean];
-  }
   const str = clean || seed || 'trader';
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -1290,29 +1258,13 @@ const getLocalTraderUsername = (accountNumber?: string | null, userId?: string |
   if (typeof window === 'undefined') return null;
   try {
     const cleanAcc = accountNumber ? String(accountNumber).replace(/^TraderRank-/i, '').trim() : '';
-    if (cleanAcc === '342186831') return 'zzZEMZzz';
-    if (cleanAcc === '72423906') return 'HomiesPlant';
-
     const mapRaw = localStorage.getItem('traderank_account_usernames_v1');
     if (mapRaw) {
       const map = JSON.parse(mapRaw);
-      // Clean stale overrides & purge any legacy Emanuel handles
-      if (map['72423906'] === 'Emanuel007' || map['72423906'] === 'zzZEMZzz') {
-        map['72423906'] = 'HomiesPlant';
-      }
-      if (map['342186831'] === 'Emanuel007' || map['342186831'] === 'Emanuel001') {
-        map['342186831'] = 'zzZEMZzz';
-      }
-      for (const k of Object.keys(map)) {
-        if (typeof map[k] === 'string' && map[k].toLowerCase().includes('emanuel')) {
-          delete map[k];
-        }
-      }
-      try { localStorage.setItem('traderank_account_usernames_v1', JSON.stringify(map)); } catch {}
-      if (cleanAcc && map[cleanAcc] && !isRawAccountTag(map[cleanAcc]) && !String(map[cleanAcc]).toLowerCase().includes('emanuel')) {
+      if (cleanAcc && map[cleanAcc] && !isRawAccountTag(map[cleanAcc])) {
         return String(map[cleanAcc]).trim();
       }
-      if (userId && map[userId] && !isRawAccountTag(map[userId]) && !String(map[userId]).toLowerCase().includes('emanuel')) {
+      if (userId && map[userId] && !isRawAccountTag(map[userId])) {
         return String(map[userId]).trim();
       }
     }
@@ -1322,10 +1274,7 @@ const getLocalTraderUsername = (accountNumber?: string | null, userId?: string |
       const savedUser = JSON.parse(userRaw);
       if (savedUser?.username && !isRawAccountTag(savedUser.username)) {
         const sName = String(savedUser.username).trim();
-        if (
-          (userId && (savedUser.id === userId || userId === 'usr_live_meta')) ||
-          cleanAcc === '342186831'
-        ) {
+        if (userId && (savedUser.id === userId || userId === 'usr_live_meta')) {
           return sName;
         }
       }
@@ -1361,7 +1310,7 @@ export const getLocalTraderAvatar = (
         const savedName = (savedUser.username || '').trim().toLowerCase();
         if (
           (cleanUser && savedName === cleanUser) ||
-          (cleanAcc && (cleanAcc === '342186831' || savedUser.accountNumber === cleanAcc)) ||
+          (cleanAcc && savedUser.accountNumber === cleanAcc) ||
           (userId && (savedUser.id === userId || userId === 'usr_live_meta'))
         ) {
           return savedUser.avatarUrl;
@@ -1411,66 +1360,29 @@ export const resolveTraderIdentity = (params: {
     ? rawUser
     : null;
 
-  // 2. Resolve Trader Profile Username (Priority: local user profile username -> default mapped username for verified real accounts -> server profile -> default handle)
+  // 2. Resolve Trader Profile Username (Priority: local user profile username -> server profile -> default handle)
   const cleanAcc = accountNumber ? String(accountNumber).replace(/^TraderRank-/i, '').trim() : '';
 
-  const isHomiesAcc =
-    cleanAcc === '72423906' ||
-    rawUid.includes('72423906') ||
-    rawProfile.toLowerCase().includes('homies') ||
-    rawUser.toLowerCase().includes('homies') ||
-    rawProfile.toLowerCase().includes('emanuel007') ||
-    rawUser.toLowerCase().includes('emanuel007');
-
-  const isZem =
-    !isHomiesAcc &&
-    (cleanAcc === '342186831' ||
-      rawUid.includes('342186831') ||
-      rawProfile === 'zzZEMZzz' ||
-      rawUser === 'zzZEMZzz' ||
-      rawProfile.toLowerCase() === 'zzzemzzz' ||
-      rawUser.toLowerCase() === 'zzzemzzz' ||
-      rawProfile.toLowerCase().includes('emanuel001') ||
-      rawUser.toLowerCase().includes('emanuel001'));
-
+  // Only the public profile username is used; the broker legal name is never shown here.
   let profileName = '';
   const localUsername = getLocalTraderUsername(accountNumber, rawUid);
-  const defaultMappedUser =
-    (cleanAcc && DEFAULT_TRADER_USERNAMES[cleanAcc]) ||
-    (isHomiesAcc ? 'HomiesPlant' : isZem ? 'zzZEMZzz' : null);
 
-  if (isHomiesAcc) {
-    profileName = (localUsername && !/emanuel/i.test(localUsername)) ? localUsername : 'HomiesPlant';
-  } else if (isZem) {
-    profileName = 'zzZEMZzz';
-  } else if (localUsername && !/emanuel/i.test(localUsername)) {
+  if (localUsername) {
     profileName = localUsername;
-  } else if (defaultMappedUser) {
-    profileName = defaultMappedUser;
-  } else if (!isRawAccountTag(rawProfile) && !/emanuel/i.test(rawProfile)) {
+  } else if (!isRawAccountTag(rawProfile)) {
     profileName = rawProfile;
-  } else if (!isRawAccountTag(rawUser) && !/emanuel/i.test(rawUser)) {
+  } else if (!isRawAccountTag(rawUser)) {
     profileName = rawUser;
   } else {
-    profileName = defaultMappedUser || getDefaultTraderHandle(accountNumber, accountTag || rawUser || rawUid);
+    profileName = getDefaultTraderHandle(accountNumber, accountTag || rawUser || rawUid);
   }
 
-  if (/emanuel/i.test(profileName)) {
-    profileName = isHomiesAcc ? 'HomiesPlant' : isZem ? 'zzZEMZzz' : 'VerifiedTrader_' + (cleanAcc || '72423906');
-  }
-
-  // 3. Resolve avatar (explicit parameter -> local saved avatar -> default mapped avatar)
+  // 3. Resolve avatar (explicit parameter -> local saved avatar)
   const localAvatar = getLocalTraderAvatar(cleanAcc, rawUid, profileName);
-  const defaultMappedAvatar =
-    (cleanAcc && DEFAULT_TRADER_AVATARS[cleanAcc]) ||
-    (profileName && DEFAULT_TRADER_AVATARS[profileName]) ||
-    (profileName && DEFAULT_TRADER_AVATARS[profileName.toLowerCase()]);
-  const avatarUrl = isZem
-    ? (params.avatarUrl || localAvatar || DEFAULT_TRADER_AVATARS['342186831'])
-    : (params.avatarUrl || localAvatar || defaultMappedAvatar || undefined);
+  const avatarUrl = params.avatarUrl || localAvatar || undefined;
 
   // 4. Guaranteed deterministic avatar seed:
-  // Using profileName.toLowerCase() ensures that "HomiesPlant" will NEVER hash to different animals
+  // Using profileName.toLowerCase() ensures that a given trader will NEVER hash to different animals
   // across the navbar, podium cards, leaderboard rows, daily champion, or profile modal!
   const avatarSeed = (profileName || accountTag || rawUser || rawUid || 'trader').trim().toLowerCase();
 

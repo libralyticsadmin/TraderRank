@@ -27,15 +27,9 @@ import { TournamentService } from '../services/tournamentService.js';
 import { PipCalculator } from '../core/pipCalculator.js';
 import { r2Storage } from '../services/r2StorageService.js';
 import { resolveBrokerCurrency } from '../utils/currencyFlow.js';
+import { ensureLegacyIdentityMigration } from '../services/legacyIdentityMigration.js';
 
-const DEFAULT_TRADER_USERNAMES: Record<string, string> = {
-  '342186831': 'zzZEMZzz',
-  '72423906': 'HomiesPlant',
-  '411407722': 'HomiesPlant',
-};
-
-export const EMERALD_BEAR_AVATAR_URL =
-  'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%20fill%3D%22none%22%3E%20%3Cdefs%3E%20%3CradialGradient%20id%3D%22bg-bear_emerald%22%20cx%3D%2250%25%22%20cy%3D%2235%25%22%20r%3D%2275%25%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23064e3b%22%2F%3E%20%3Cstop%20offset%3D%2260%25%22%20stop-color%3D%22%23022c22%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%2301130e%22%2F%3E%20%3C%2FradialGradient%3E%20%3ClinearGradient%20id%3D%22main-bear_emerald%22%20x1%3D%2220%22%20y1%3D%2215%22%20x2%3D%22100%22%20y2%3D%22105%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23d1fae5%22%2F%3E%20%3Cstop%20offset%3D%2245%25%22%20stop-color%3D%22%2310b981%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23047857%22%2F%3E%20%3C%2FlinearGradient%3E%20%3ClinearGradient%20id%3D%22dark-bear_emerald%22%20x1%3D%2260%22%20y1%3D%2230%22%20x2%3D%2260%22%20y2%3D%22105%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23059669%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23064e3b%22%2F%3E%20%3C%2FlinearGradient%3E%20%3C%2Fdefs%3E%20%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2226%22%20fill%3D%22url(%23bg-bear_emerald)%22%2F%3E%20%3Ccircle%20cx%3D%2260%22%20cy%3D%2260%22%20r%3D%2250%22%20stroke%3D%22%2310b981%22%20stroke-opacity%3D%220.22%22%20stroke-width%3D%221.5%22%20stroke-dasharray%3D%226%204%22%2F%3E%20%3Cpolygon%20points%3D%2260%2C10%20104%2C35%20104%2C85%2060%2C110%2016%2C85%2016%2C35%22%20stroke%3D%22%2334d399%22%20stroke-opacity%3D%220.3%22%20stroke-width%3D%221.5%22%20fill%3D%22%2310b981%22%20fill-opacity%3D%220.04%22%2F%3E%20%3Ccircle%20cx%3D%2228%22%20cy%3D%2230%22%20r%3D%2213%22%20fill%3D%22url(%23main-bear_emerald)%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Ccircle%20cx%3D%2292%22%20cy%3D%2230%22%20r%3D%2213%22%20fill%3D%22url(%23main-bear_emerald)%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Ccircle%20cx%3D%2228%22%20cy%3D%2230%22%20r%3D%226%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Ccircle%20cx%3D%2292%22%20cy%3D%2230%22%20r%3D%226%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Cpolygon%20points%3D%2224%2C42%2060%2C24%2096%2C42%20104%2C72%2084%2C102%2060%2C108%2036%2C102%2016%2C72%22%20fill%3D%22url(%23dark-bear_emerald)%22%20stroke%3D%22%2334d399%22%20stroke-width%3D%221.5%22%2F%3E%20%3Cpolygon%20points%3D%2232%2C38%2060%2C28%2088%2C38%2094%2C68%2076%2C94%2044%2C94%2026%2C68%22%20fill%3D%22url(%23main-bear_emerald)%22%2F%3E%20%3Cpolygon%20points%3D%2240%2C46%2060%2C54%2080%2C46%2076%2C38%2060%2C44%2044%2C38%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Cpolygon%20points%3D%2234%2C54%2049%2C59%2038%2C63%22%20fill%3D%22%23f43f5e%22%2F%3E%20%3Cpolygon%20points%3D%2286%2C54%2071%2C59%2082%2C63%22%20fill%3D%22%23f43f5e%22%2F%3E%20%3Cpolygon%20points%3D%2242%2C66%2060%2C60%2078%2C66%2082%2C92%2060%2C102%2038%2C92%22%20fill%3D%22%2301130e%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Cpolygon%20points%3D%2251%2C70%2069%2C70%2060%2C81%22%20fill%3D%22%2310b981%22%2F%3E%20%3Cpolygon%20points%3D%2245%2C92%2050%2C83%2054%2C93%22%20fill%3D%22%23ffffff%22%2F%3E%20%3Cpolygon%20points%3D%2275%2C92%2070%2C83%2066%2C93%22%20fill%3D%22%23ffffff%22%2F%3E%20%3Cpath%20d%3D%22M46%2092%20H74%22%20stroke%3D%22%2310b981%22%20stroke-width%3D%222%22%2F%3E%20%3C%2Fsvg%3E';
+export { EMERALD_BEAR_AVATAR_URL } from '../core/avatarPresets.js';
 
 const TRADER_HANDLE_POOL = [
   'AlphaTrader_FX',
@@ -54,9 +48,6 @@ const TRADER_HANDLE_POOL = [
 
 function getDefaultTraderUsername(accountNumber?: string): string {
   const clean = String(accountNumber || '').replace(/^TraderRank-/i, '').trim();
-  if (clean && DEFAULT_TRADER_USERNAMES[clean]) {
-    return DEFAULT_TRADER_USERNAMES[clean];
-  }
   let hash = 0;
   const seed = clean || 'trader';
   for (let i = 0; i < seed.length; i++) {
@@ -65,6 +56,11 @@ function getDefaultTraderUsername(accountNumber?: string): string {
   }
   return TRADER_HANDLE_POOL[Math.abs(hash) % TRADER_HANDLE_POOL.length];
 }
+
+const maskId = (id?: string) => {
+  const v = String(id || '');
+  return v.length > 6 ? `${v.slice(0, 3)}…${v.slice(-3)}` : '***';
+};
 
 export interface AccountOwnerRecord {
   userId: string;
@@ -99,21 +95,11 @@ export class AccountConnectorService {
   private static readonly DEAL_SYNC_TTL_MS = 15_000;
 
   constructor() {
-    // Pre-populate verified default avatars so they remain 100% consistent across server & client
-    const EMERALD_BEAR_URL =
-      'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%20fill%3D%22none%22%3E%20%3Cdefs%3E%20%3CradialGradient%20id%3D%22bg-bear_emerald%22%20cx%3D%2250%25%22%20cy%3D%2235%25%22%20r%3D%2275%25%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23064e3b%22%2F%3E%20%3Cstop%20offset%3D%2260%25%22%20stop-color%3D%22%23022c22%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%2301130e%22%2F%3E%20%3C%2FradialGradient%3E%20%3ClinearGradient%20id%3D%22main-bear_emerald%22%20x1%3D%2220%22%20y1%3D%2215%22%20x2%3D%22100%22%20y2%3D%22105%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23d1fae5%22%2F%3E%20%3Cstop%20offset%3D%2245%25%22%20stop-color%3D%22%2310b981%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23047857%22%2F%3E%20%3C%2FlinearGradient%3E%20%3ClinearGradient%20id%3D%22dark-bear_emerald%22%20x1%3D%2260%22%20y1%3D%2230%22%20x2%3D%2260%22%20y2%3D%22105%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23059669%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23064e3b%22%2F%3E%20%3C%2FlinearGradient%3E%20%3C%2Fdefs%3E%20%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2226%22%20fill%3D%22url(%23bg-bear_emerald)%22%2F%3E%20%3Ccircle%20cx%3D%2260%22%20cy%3D%2260%22%20r%3D%2250%22%20stroke%3D%22%2310b981%22%20stroke-opacity%3D%220.22%22%20stroke-width%3D%221.5%22%20stroke-dasharray%3D%226%204%22%2F%3E%20%3Cpolygon%20points%3D%2260%2C10%20104%2C35%20104%2C85%2060%2C110%2016%2C85%2016%2C35%22%20stroke%3D%22%2334d399%22%20stroke-opacity%3D%220.3%22%20stroke-width%3D%221.5%22%20fill%3D%22%2310b981%22%20fill-opacity%3D%220.04%22%2F%3E%20%3Ccircle%20cx%3D%2228%22%20cy%3D%2230%22%20r%3D%2213%22%20fill%3D%22url(%23main-bear_emerald)%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Ccircle%20cx%3D%2292%22%20cy%3D%2230%22%20r%3D%2213%22%20fill%3D%22url(%23main-bear_emerald)%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Ccircle%20cx%3D%2228%22%20cy%3D%2230%22%20r%3D%226%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Ccircle%20cx%3D%2292%22%20cy%3D%2230%22%20r%3D%226%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Cpolygon%20points%3D%2224%2C42%2060%2C24%2096%2C42%20104%2C72%2084%2C102%2060%2C108%2036%2C102%2016%2C72%22%20fill%3D%22url(%23dark-bear_emerald)%22%20stroke%3D%22%2334d399%22%20stroke-width%3D%221.5%22%2F%3E%20%3Cpolygon%20points%3D%2232%2C38%2060%2C28%2088%2C38%2094%2C68%2076%2C94%2044%2C94%2026%2C68%22%20fill%3D%22url(%23main-bear_emerald)%22%2F%3E%20%3Cpolygon%20points%3D%2240%2C46%2060%2C54%2080%2C46%2076%2C38%2060%2C44%2044%2C38%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Cpolygon%20points%3D%2234%2C54%2049%2C59%2038%2C63%22%20fill%3D%22%23f43f5e%22%2F%3E%20%3Cpolygon%20points%3D%2286%2C54%2071%2C59%2082%2C63%22%20fill%3D%22%23f43f5e%22%2F%3E%20%3Cpolygon%20points%3D%2242%2C66%2060%2C60%2078%2C66%2082%2C92%2060%2C102%2038%2C92%22%20fill%3D%22%2301130e%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Cpolygon%20points%3D%2251%2C70%2069%2C70%2060%2C81%22%20fill%3D%22%2310b981%22%2F%3E%20%3Cpolygon%20points%3D%2245%2C92%2050%2C83%2054%2C93%22%20fill%3D%22%23ffffff%22%2F%3E%20%3Cpolygon%20points%3D%2275%2C92%2070%2C83%2066%2C93%22%20fill%3D%22%23ffffff%22%2F%3E%20%3Cpath%20d%3D%22M46%2092%20H74%22%20stroke%3D%22%2310b981%22%20stroke-width%3D%222%22%2F%3E%20%3C%2Fsvg%3E';
-    this.traderAvatars.set('342186831', EMERALD_BEAR_URL);
-    this.traderAvatars.set('zzZEMZzz', EMERALD_BEAR_URL);
-    this.traderAvatars.set('zzzemzzz', EMERALD_BEAR_URL);
-    this.traderAvatars.set('u_zzzemzzz', EMERALD_BEAR_URL);
-    this.traderAvatars.set('72423906', EMERALD_BEAR_URL);
-    this.traderAvatars.set('HomiesPlant', EMERALD_BEAR_URL);
-    this.traderAvatars.set('homiesplant', EMERALD_BEAR_URL);
-    this.traderAvatars.set('homiesplant.th', EMERALD_BEAR_URL);
-    this.traderAvatars.set('u_homiesplant_th', EMERALD_BEAR_URL);
-
     this.initWorkerEventWiring();
-    this.loadAccountOwnersFromR2()
+    // Identity stores are loaded only after the one-off legacy identity migration has run,
+    // so in-memory state never overwrites migrated records.
+    ensureLegacyIdentityMigration()
+      .then(() => this.reloadIdentityStores())
       .catch(() => {})
       .finally(() => {
         this.syncCloudProvisionedAccounts().catch(() => {});
@@ -322,7 +308,8 @@ export class AccountConnectorService {
   }
 
   /**
-   * Canonical immutable owner comparison (handles exact userId match + explicit legacy alias u_homiesplant <-> u_homiesplant_th).
+   * Canonical owner comparison: exact userId match (case-insensitive, optional `u_` prefix).
+   * Legacy aliases are resolved in stored data by the identity migration, never here.
    */
   public static isSameOwner(ownerA?: string | null, ownerB?: string | null): boolean {
     if (!ownerA || !ownerB) return false;
@@ -332,9 +319,13 @@ export class AccountConnectorService {
     const aNorm = a.replace(/^u_/, '');
     const bNorm = b.replace(/^u_/, '');
     if (aNorm === bNorm) return true;
-    const homiesSet = new Set(['u_homiesplant', 'u_homiesplant_th', 'homiesplant', 'homiesplant_th', 'u_homeisplant', 'homeisplant']);
-    if (homiesSet.has(a) && homiesSet.has(b)) return true;
     return false;
+  }
+
+  /** Placeholder owner ids minted by older cloud-sync code; they do not belong to a real user. */
+  public static isSyntheticOwnerId(userId?: string | null): boolean {
+    const id = String(userId || '').trim().toLowerCase();
+    return !id || id === 'usr_live_meta' || id.startsWith('usr_meta_');
   }
 
   /**
@@ -359,101 +350,25 @@ export class AccountConnectorService {
     return Array.from(this.accounts.values());
   }
 
+  /**
+   * Account records. With a userId, only that owner's accounts (isSameOwner).
+   * Records may include the private broker legal name (accountHolderName); public
+   * callers must strip it (see the public branch of GET /api/accounts in api/server.ts).
+   */
   public getAccounts(userId?: string): TradingAccount[] {
-    const all = Array.from(this.accounts.values())
-      .filter(acc => {
-        const cleanAcc = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
-        return cleanAcc !== '72423906' && acc.userId !== 'usr_meta_72423906';
-      })
-      .map(acc => {
-        const cleanAcc = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
-        const isZem =
-          cleanAcc === '342186831' ||
-          acc.userId === 'u_zzzemzzz' ||
-          String(acc.profileUsername || '').toLowerCase() === 'zzzemzzz' ||
-          (cleanAcc === '342186831' && (/emanuel/i.test(String(acc.profileUsername || '')) || /emanuel/i.test(String(acc.accountHolderName || ''))));
-
-        if (isZem) {
-        return {
-          ...acc,
-          userId: 'u_zzzemzzz',
-          profileUsername: 'zzZEMZzz',
-          accountHolderName: 'zzZEMZzz',
-          broker: 'XM' as Broker,
-          currency: 'USD',
-          avatarUrl: EMERALD_BEAR_AVATAR_URL,
-        };
-      }
-      const cleanProfile = /emanuel/i.test(String(acc.profileUsername || ''))
-        ? 'VerifiedTrader_' + cleanAcc
-        : acc.profileUsername;
-      const cleanHolder = /emanuel/i.test(String(acc.accountHolderName || ''))
-        ? cleanProfile
-        : acc.accountHolderName;
-      return {
-        ...acc,
-        profileUsername: cleanProfile,
-        accountHolderName: cleanHolder,
-      };
-    });
-
-    if (userId) {
-      const cleanId = userId.trim().toLowerCase();
-      return all.filter(a => {
-        if (AccountConnectorService.isSameOwner(a.userId, userId)) {
-          return true;
-        }
-        const aAccNum = String(a.accountNumber || '').trim();
-        if ((cleanId === 'u_zzzemzzz' || cleanId === 'zzzemzzz') && aAccNum === '342186831') {
-          return true;
-        }
-        const homiesAliases = new Set(['u_homiesplant', 'u_homiesplant_th', 'homiesplant', 'homiesplant_th', 'u_homeisplant', 'homeisplant']);
-        if (homiesAliases.has(cleanId) && (aAccNum === '411407722' || aAccNum === '72423906')) {
-          return true;
-        }
-        return false;
-      });
-    }
-    return all;
+    const all = Array.from(this.accounts.values());
+    return userId ? all.filter(a => AccountConnectorService.isSameOwner(a.userId, userId)) : all;
   }
 
   public getAccount(accountId: string): TradingAccount | null {
-    const acc = this.accounts.get(accountId) || null;
-    if (acc) {
-      const cleanAcc = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
-      if (cleanAcc === '72423906' || acc.userId === 'usr_meta_72423906') {
-        return null;
-      }
-      const isZem =
-        cleanAcc === '342186831' ||
-        acc.userId === 'u_zzzemzzz' ||
-        String(acc.profileUsername || '').toLowerCase() === 'zzzemzzz' ||
-        (cleanAcc === '342186831' && (/emanuel/i.test(String(acc.profileUsername || '')) || /emanuel/i.test(String(acc.accountHolderName || ''))));
+    return this.accounts.get(accountId) || null;
+  }
 
-      if (isZem) {
-        return {
-          ...acc,
-          userId: 'u_zzzemzzz',
-          profileUsername: 'zzZEMZzz',
-          accountHolderName: 'zzZEMZzz',
-          broker: 'XM' as Broker,
-          currency: 'USD',
-          avatarUrl: EMERALD_BEAR_AVATAR_URL,
-        };
-      }
-      const cleanProfile = /emanuel/i.test(String(acc.profileUsername || ''))
-        ? 'VerifiedTrader_' + cleanAcc
-        : acc.profileUsername;
-      const cleanHolder = /emanuel/i.test(String(acc.accountHolderName || ''))
-        ? cleanProfile
-        : acc.accountHolderName;
-      return {
-        ...acc,
-        profileUsername: cleanProfile,
-        accountHolderName: cleanHolder,
-      };
-    }
-    return acc;
+  /** (Re)loads usernames, avatars and owner records from persisted storage. */
+  public async reloadIdentityStores(): Promise<void> {
+    await this.loadTraderUsernamesFromR2();
+    await this.loadTraderAvatarsFromR2();
+    await this.loadAccountOwnersFromR2();
   }
 
   private async loadTraderUsernamesFromR2(): Promise<void> {
@@ -466,14 +381,6 @@ export class AccountConnectorService {
           }
         }
       }
-      this.traderUsernames.set('342186831', 'zzZEMZzz');
-      this.traderUsernames.set('u_zzzemzzz', 'zzZEMZzz');
-      this.traderUsernames.set('72423906', 'HomiesPlant');
-      this.traderUsernames.set('u_homiesplant_th', 'homiesplant.th');
-      this.traderUsernames.set('u_homiesplant', 'homiesplant.th');
-      this.traderUsernames.delete('u_emanuel001');
-      this.traderUsernames.delete('u_emanuel007');
-      this.persistTraderUsernamesToR2().catch(() => {});
     } catch {
       // ignore
     }
@@ -484,9 +391,6 @@ export class AccountConnectorService {
       const obj: Record<string, string> = {};
       for (const [k, v] of this.traderUsernames.entries()) {
         obj[k] = v;
-      }
-      if (!obj['342186831']) {
-        obj['342186831'] = 'zzZEMZzz';
       }
       await r2Storage.uploadJson('profiles/account_usernames.json', obj);
     } catch {
@@ -503,20 +407,6 @@ export class AccountConnectorService {
             this.traderAvatars.set(k, v);
           }
         }
-      }
-      const EMERALD_BEAR_URL =
-        'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%20fill%3D%22none%22%3E%20%3Cdefs%3E%20%3CradialGradient%20id%3D%22bg-bear_emerald%22%20cx%3D%2250%25%22%20cy%3D%2235%25%22%20r%3D%2275%25%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23064e3b%22%2F%3E%20%3Cstop%20offset%3D%2260%25%22%20stop-color%3D%22%23022c22%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%2301130e%22%2F%3E%20%3C%2FradialGradient%3E%20%3ClinearGradient%20id%3D%22main-bear_emerald%22%20x1%3D%2220%22%20y1%3D%2215%22%20x2%3D%22100%22%20y2%3D%22105%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23d1fae5%22%2F%3E%20%3Cstop%20offset%3D%2245%25%22%20stop-color%3D%22%2310b981%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23047857%22%2F%3E%20%3C%2FlinearGradient%3E%20%3ClinearGradient%20id%3D%22dark-bear_emerald%22%20x1%3D%2260%22%20y1%3D%2230%22%20x2%3D%2260%22%20y2%3D%22105%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23059669%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23064e3b%22%2F%3E%20%3C%2FlinearGradient%3E%20%3C%2Fdefs%3E%20%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2226%22%20fill%3D%22url(%23bg-bear_emerald)%22%2F%3E%20%3Ccircle%20cx%3D%2260%22%20cy%3D%2260%22%20r%3D%2250%22%20stroke%3D%22%2310b981%22%20stroke-opacity%3D%220.22%22%20stroke-width%3D%221.5%22%20stroke-dasharray%3D%226%204%22%2F%3E%20%3Cpolygon%20points%3D%2260%2C10%20104%2C35%20104%2C85%2060%2C110%2016%2C85%2016%2C35%22%20stroke%3D%22%2334d399%22%20stroke-opacity%3D%220.3%22%20stroke-width%3D%221.5%22%20fill%3D%22%2310b981%22%20fill-opacity%3D%220.04%22%2F%3E%20%3Ccircle%20cx%3D%2228%22%20cy%3D%2230%22%20r%3D%2213%22%20fill%3D%22url(%23main-bear_emerald)%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Ccircle%20cx%3D%2292%22%20cy%3D%2230%22%20r%3D%2213%22%20fill%3D%22url(%23main-bear_emerald)%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Ccircle%20cx%3D%2228%22%20cy%3D%2230%22%20r%3D%226%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Ccircle%20cx%3D%2292%22%20cy%3D%2230%22%20r%3D%226%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Cpolygon%20points%3D%2224%2C42%2060%2C24%2096%2C42%20104%2C72%2084%2C102%2060%2C108%2036%2C102%2016%2C72%22%20fill%3D%22url(%23dark-bear_emerald)%22%20stroke%3D%22%2334d399%22%20stroke-width%3D%221.5%22%2F%3E%20%3Cpolygon%20points%3D%2232%2C38%2060%2C28%2088%2C38%2094%2C68%2076%2C94%2044%2C94%2026%2C68%22%20fill%3D%22url(%23main-bear_emerald)%22%2F%3E%20%3Cpolygon%20points%3D%2240%2C46%2060%2C54%2080%2C46%2076%2C38%2060%2C44%2044%2C38%22%20fill%3D%22%23064e3b%22%2F%3E%20%3Cpolygon%20points%3D%2234%2C54%2049%2C59%2038%2C63%22%20fill%3D%22%23f43f5e%22%2F%3E%20%3Cpolygon%20points%3D%2286%2C54%2071%2C59%2082%2C63%22%20fill%3D%22%23f43f5e%22%2F%3E%20%3Cpolygon%20points%3D%2242%2C66%2060%2C60%2078%2C66%2082%2C92%2060%2C102%2038%2C92%22%20fill%3D%22%2301130e%22%20stroke%3D%22%23d1fae5%22%20stroke-width%3D%221.5%22%2F%3E%20%3Cpolygon%20points%3D%2251%2C70%2069%2C70%2060%2C81%22%20fill%3D%22%2310b981%22%2F%3E%20%3Cpolygon%20points%3D%2245%2C92%2050%2C83%2054%2C93%22%20fill%3D%22%23ffffff%22%2F%3E%20%3Cpolygon%20points%3D%2275%2C92%2070%2C83%2066%2C93%22%20fill%3D%22%23ffffff%22%2F%3E%20%3Cpath%20d%3D%22M46%2092%20H74%22%20stroke%3D%22%2310b981%22%20stroke-width%3D%222%22%2F%3E%20%3C%2Fsvg%3E';
-      if (!this.traderAvatars.has('342186831')) {
-        this.traderAvatars.set('342186831', EMERALD_BEAR_URL);
-        this.traderAvatars.set('zzZEMZzz', EMERALD_BEAR_URL);
-        this.traderAvatars.set('zzzemzzz', EMERALD_BEAR_URL);
-        this.traderAvatars.set('u_zzzemzzz', EMERALD_BEAR_URL);
-        this.traderAvatars.set('72423906', EMERALD_BEAR_URL);
-        this.traderAvatars.set('HomiesPlant', EMERALD_BEAR_URL);
-        this.traderAvatars.set('homiesplant', EMERALD_BEAR_URL);
-        this.traderAvatars.set('homiesplant.th', EMERALD_BEAR_URL);
-        this.traderAvatars.set('u_homiesplant_th', EMERALD_BEAR_URL);
-        this.persistTraderAvatarsToR2().catch(() => {});
       }
     } catch {
       // ignore
@@ -541,7 +431,7 @@ export class AccountConnectorService {
       if (saved && typeof saved === 'object') {
         for (const [k, v] of Object.entries(saved)) {
           const accNum = String(v?.accountNumber || k || '').trim();
-          if (v && v.userId && accNum && accNum !== '72423906') {
+          if (v && v.userId && accNum) {
             const normalized: AccountOwnerRecord = {
               ...v,
               accountNumber: accNum,
@@ -557,126 +447,6 @@ export class AccountConnectorService {
         }
       }
 
-      // Guarantee all account owners are present in this.accounts memory
-      for (const [, v] of this.accountOwners.entries()) {
-        if (v && v.accountNumber) {
-          const cleanAcc = String(v.accountNumber).trim();
-          const accountId = v.accountId || `acc_meta_${cleanAcc}`;
-          if (!this.accounts.has(accountId)) {
-            const isZem = cleanAcc === '342186831' || v.userId === 'u_zzzemzzz';
-            this.accounts.set(accountId, {
-              id: accountId,
-              userId: isZem ? 'u_zzzemzzz' : v.userId,
-              accountNumber: cleanAcc,
-              profileUsername: isZem ? 'zzZEMZzz' : (v.username || getDefaultTraderUsername(cleanAcc)),
-              accountHolderName: isZem ? 'zzZEMZzz' : (v.username || cleanAcc),
-              avatarUrl: isZem ? EMERALD_BEAR_AVATAR_URL : this.traderAvatars.get(cleanAcc),
-              broker: v.broker,
-              integrationType: 'mt_gateway',
-              platform: v.platform || 'MT5',
-              serverName: v.serverName || (isZem ? 'XMGlobal-MT5 10' : 'XMTrading-MT5 3'),
-              connectionStatus: 'CONNECTED',
-              balance: isZem ? 3817 : 0,
-              equity: isZem ? 3817 : 0,
-              margin: 0,
-              freeMargin: isZem ? 3817 : 0,
-              currency: (v as any).currency || (v.broker === 'XMTrading' || (v.serverName && v.serverName.toLowerCase().includes('xmtrading')) ? 'JPY' : 'USD'),
-              leverage: 100,
-              vaultSecretRef: `ref_restored_${accountId}`,
-              lastSyncedAt: new Date().toISOString(),
-              createdAt: v.connectedAt || new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            });
-          }
-        }
-      }
-
-      // Ensure canonical owner mapping for verified zzZEMZzz account 342186831
-      if (!this.accountOwners.has('342186831')) {
-        const canonicalZemOwner: AccountOwnerRecord = {
-          userId: 'u_zzzemzzz',
-          username: 'zzZEMZzz',
-          broker: 'XM',
-          accountNumber: '342186831',
-          platform: 'MT5',
-          serverName: 'XMGlobal-MT5 10',
-          accountId: 'acc_meta_342186831',
-          connectedAt: new Date().toISOString(),
-          status: 'CONNECTED',
-        };
-        this.accountOwners.set('342186831', canonicalZemOwner);
-        this.accountOwners.set('acc_meta_342186831', canonicalZemOwner);
-        if (!this.accounts.has('acc_meta_342186831')) {
-          this.accounts.set('acc_meta_342186831', {
-            id: 'acc_meta_342186831',
-            userId: 'u_zzzemzzz',
-            accountNumber: '342186831',
-            profileUsername: 'zzZEMZzz',
-            accountHolderName: 'zzZEMZzz',
-            avatarUrl: EMERALD_BEAR_AVATAR_URL,
-            broker: 'XM',
-            integrationType: 'mt_gateway',
-            platform: 'MT5',
-            serverName: 'XMGlobal-MT5 10',
-            connectionStatus: 'CONNECTED',
-            balance: 3817,
-            equity: 3817,
-            margin: 0,
-            freeMargin: 3817,
-            currency: 'USD',
-            leverage: 100,
-            vaultSecretRef: 'ref_restored_acc_meta_342186831',
-            lastSyncedAt: new Date().toISOString(),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          });
-        }
-        this.persistAccountOwnersToR2().catch(() => {});
-      }
-
-      // Ensure canonical owner mapping for verified HomiesPlant account 411407722
-      if (!this.accountOwners.has('411407722')) {
-        const canonicalHomiesOwner: AccountOwnerRecord = {
-          userId: 'u_homiesplant_th',
-          username: 'HomiesPlant',
-          broker: 'XM',
-          accountNumber: '411407722',
-          platform: 'MT5',
-          serverName: 'XMGlobal-MT5 16',
-          accountId: 'acc_meta_411407722',
-          connectedAt: new Date().toISOString(),
-          status: 'CONNECTED',
-        };
-        this.accountOwners.set('411407722', canonicalHomiesOwner);
-        this.accountOwners.set('acc_meta_411407722', canonicalHomiesOwner);
-        if (!this.accounts.has('acc_meta_411407722')) {
-          this.accounts.set('acc_meta_411407722', {
-            id: 'acc_meta_411407722',
-            userId: 'u_homiesplant_th',
-            accountNumber: '411407722',
-            profileUsername: 'HomiesPlant',
-            accountHolderName: 'HomiesPlant',
-            avatarUrl: EMERALD_BEAR_AVATAR_URL,
-            broker: 'XM',
-            integrationType: 'mt_gateway',
-            platform: 'MT5',
-            serverName: 'XMGlobal-MT5 16',
-            connectionStatus: 'CONNECTED',
-            balance: 0,
-            equity: 0,
-            margin: 0,
-            freeMargin: 0,
-            currency: 'USD',
-            leverage: 1000,
-            vaultSecretRef: 'ref_restored_acc_meta_411407722',
-            metaApiAccountId: '4c199e8a-3b9b-4665-ac6c-db9d5a48c964',
-            lastSyncedAt: new Date().toISOString(),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          });
-        }
-        this.persistAccountOwnersToR2().catch(() => {});
-      }
     } catch {
       // ignore
     }
@@ -689,19 +459,6 @@ export class AccountConnectorService {
         if (v && v.accountNumber) {
           records[String(v.accountNumber).trim()] = v;
         }
-      }
-      if (!records['342186831']) {
-        records['342186831'] = {
-          userId: 'u_zzzemzzz',
-          username: 'zzZEMZzz',
-          broker: 'XM',
-          accountNumber: '342186831',
-          platform: 'MT5',
-          serverName: 'XMGlobal-MT5 10',
-          accountId: 'acc_meta_342186831',
-          connectedAt: new Date().toISOString(),
-          status: 'CONNECTED',
-        };
       }
       await r2Storage.uploadJson('profiles/account_owners.json', records, { 'x-traderrank-type': 'account_owners' });
     } catch {
@@ -727,11 +484,11 @@ export class AccountConnectorService {
   public updateUserAccountsName(
     userId: string,
     newUsername: string,
-    primaryBroker?: string,
+    _primaryBroker?: string,
     accountNumber?: string,
     avatarUrl?: string
   ): void {
-    let cleanName = (newUsername || '').trim();
+    const cleanName = (newUsername || '').trim();
     if (!cleanName || cleanName.startsWith('TraderRank-')) return;
 
     this.traderUsernames.set(userId, cleanName);
@@ -739,40 +496,13 @@ export class AccountConnectorService {
       this.traderUsernames.set(String(accountNumber).replace(/^TraderRank-/i, '').trim(), cleanName);
     }
 
-    let matchedAny = false;
+    // Only the user's own accounts (by owner userId) are renamed.
     for (const acc of this.accounts.values()) {
-      const isDirectMatch =
-        acc.userId === userId ||
-        (accountNumber && acc.accountNumber === String(accountNumber).replace(/^TraderRank-/i, '').trim());
-      if (isDirectMatch) {
+      if (AccountConnectorService.isSameOwner(acc.userId, userId)) {
         acc.profileUsername = cleanName;
         if (avatarUrl) acc.avatarUrl = avatarUrl;
         this.traderUsernames.set(acc.accountNumber, cleanName);
-        this.leaderboard.registerAccountMapping(acc.id, acc.userId, cleanName, acc.broker, cleanName, acc.accountNumber, avatarUrl);
-        matchedAny = true;
-      }
-    }
-
-    // If user updated their profile username and hasn't explicitly bound userId yet, bind to their primary account (e.g. 342186831 or matching broker)
-    if (!matchedAny) {
-      const allAccs = Array.from(this.accounts.values());
-      const targetAcc =
-        allAccs.find(a => a.accountNumber === '342186831') ||
-        (accountNumber ? allAccs.find(a => a.accountNumber === String(accountNumber).replace(/^TraderRank-/i, '').trim()) : undefined) ||
-        (primaryBroker ? allAccs.find(a => a.broker.toLowerCase() === primaryBroker.toLowerCase()) : undefined);
-      if (targetAcc) {
-        targetAcc.profileUsername = cleanName;
-        if (avatarUrl) targetAcc.avatarUrl = avatarUrl;
-        this.traderUsernames.set(targetAcc.accountNumber, cleanName);
-        this.leaderboard.registerAccountMapping(
-          targetAcc.id,
-          targetAcc.userId,
-          cleanName,
-          targetAcc.broker,
-          cleanName,
-          targetAcc.accountNumber,
-          avatarUrl
-        );
+        this.leaderboard.registerAccountMapping(acc.id, acc.userId, cleanName, acc.broker, cleanName, acc.accountNumber, avatarUrl, acc.currency);
       }
     }
 
@@ -850,25 +580,6 @@ export class AccountConnectorService {
           serverLower.includes('vantage') ? 'Vantage' : 'OTHER'
         );
         const cleanLogin = String(p.login || '').trim();
-        if (cleanLogin === '72423906' || String(p.name || '').includes('72423906')) {
-          continue;
-        }
-
-        const isZemAccount =
-          cleanLogin === '342186831' ||
-          String(p.name || '').includes('342186831') ||
-          String(p.name || '') === 'zzZEMZzz' ||
-          String(p.name || '').toLowerCase() === 'zzzemzzz';
-
-        const isHomiesAccount =
-          cleanLogin === '411407722' ||
-          String(p.name || '').includes('411407722') ||
-          String(p.name || '').toLowerCase().includes('homies');
-
-        const isJpy = (isZemAccount || isHomiesAccount)
-          ? false
-          : (info?.currency === 'JPY' || serverLower.includes('japan') || serverLower.includes('jpy'));
-        const defaultCurrency = 'USD';
 
         const existingAcc = Array.from(this.accounts.values()).find(
           a => String(a.accountNumber).trim() === cleanLogin || a.metaApiAccountId === p.id
@@ -878,63 +589,48 @@ export class AccountConnectorService {
           this.accountOwners.get(cleanLogin) ||
           (existingAcc ? this.accountOwners.get(existingAcc.id) : null);
 
-        if (process.env.NODE_ENV === 'production' && !existingAcc && !savedOwner && !isZemAccount && !isHomiesAccount) {
+        // Ownership comes only from persisted owner records (or an account registered by its owner).
+        // Accounts with no owner are never shown publicly.
+        const ownerUserId = [savedOwner?.userId, existingAcc?.userId].find(
+          (id): id is string => Boolean(id) && !AccountConnectorService.isSyntheticOwnerId(id)
+        );
+        if (!ownerUserId) {
+          console.warn(
+            `[CloudSync] MetaApi account ${maskId(p.id)} (login ${maskId(cleanLogin)}) has no owner record; not listed on the leaderboard`
+          );
           continue;
         }
+        const userId = ownerUserId;
+        const avatarUrl =
+          this.traderAvatars.get(userId) ||
+          this.traderAvatars.get(cleanLogin) ||
+          existingAcc?.avatarUrl;
 
-        const userId = isZemAccount
-          ? 'u_zzzemzzz'
-          : isHomiesAccount
-          ? 'u_homiesplant_th'
-          : (savedOwner?.userId || (existingAcc?.userId && existingAcc.userId !== 'usr_live_meta' ? existingAcc.userId : `usr_meta_${cleanLogin}`));
-        const avatarUrl = isZemAccount || isHomiesAccount
-          ? EMERALD_BEAR_AVATAR_URL
-          : (this.traderAvatars.get(cleanLogin) ||
-             this.traderAvatars.get(userId) ||
-             existingAcc?.avatarUrl);
-
-        // Public Trader Profile Username (shown on Leaderboard & Podium)
-        let profileUsername = isZemAccount
-          ? 'zzZEMZzz'
-          : isHomiesAccount
-          ? 'HomiesPlant'
-          : (
-              savedOwner?.username ||
-              this.traderUsernames.get(cleanLogin) ||
-              this.traderUsernames.get(userId) ||
-              DEFAULT_TRADER_USERNAMES[cleanLogin] ||
-              (existingAcc?.profileUsername && !existingAcc.profileUsername.startsWith('TraderRank-')
-                ? existingAcc.profileUsername
-                : undefined) ||
-              (p.name && !p.name.startsWith('TraderRank-') ? p.name : undefined) ||
-              getDefaultTraderUsername(cleanLogin)
-            );
-        if (/emanuel/i.test(profileUsername)) {
-          profileUsername = isZemAccount ? 'zzZEMZzz' : isHomiesAccount ? 'HomiesPlant' : 'VerifiedTrader_' + cleanLogin;
-        }
+        // Public profile username (leaderboard, bulletin, tournaments). Never the broker legal name.
+        const profileUsername =
+          this.traderUsernames.get(userId) ||
+          savedOwner?.username ||
+          this.traderUsernames.get(cleanLogin) ||
+          (existingAcc?.profileUsername && !existingAcc.profileUsername.startsWith('TraderRank-')
+            ? existingAcc.profileUsername
+            : undefined) ||
+          getDefaultTraderUsername(cleanLogin);
         const username = profileUsername;
 
-        // Private Broker Legal Name (strictly isolated for private owner view)
-        let privateLegalName = isZemAccount
-          ? 'zzZEMZzz'
-          : isHomiesAccount
-          ? 'HomiesPlant'
-          : (
-              (info?.name && !info.name.startsWith('TraderRank-') ? info.name : undefined) ||
-              (p.name && !p.name.startsWith('TraderRank-') ? p.name : undefined) ||
-              existingAcc?.accountHolderName
-            );
-        if (privateLegalName && /emanuel/i.test(privateLegalName)) {
-          privateLegalName = isZemAccount ? 'zzZEMZzz' : isHomiesAccount ? 'HomiesPlant' : profileUsername;
-        }
+        // Private broker legal name: only ever returned to the owner's private view.
+        const privateLegalName =
+          (info?.name && !info.name.startsWith('TraderRank-') ? info.name : undefined) ||
+          existingAcc?.accountHolderName;
 
-        // Broker-reported currency always wins; fall back only to previously synced values.
-        const effectiveCurrency =
-          info?.currency ??
-          existingAcc?.currency ??
-          ((isZemAccount || isHomiesAccount) ? 'USD' : isJpy ? 'JPY' : defaultCurrency);
+        // Broker-reported currency always wins; otherwise the last synced value, then the
+        // broker/server convention.
+        const effectiveCurrency = resolveBrokerCurrency(
+          brokerName,
+          p.server,
+          info?.currency ?? existingAcc?.currency
+        );
         const isLiveConnected = p.connectionStatus === 'CONNECTED' && Boolean(info);
-        const effectiveBroker: Broker = isZemAccount ? 'XM' : isHomiesAccount ? 'XM' : brokerName;
+        const effectiveBroker: Broker = brokerName;
 
         const tradingAccount: TradingAccount = {
           id: accountId,
@@ -1140,8 +836,7 @@ export class AccountConnectorService {
 
     const acc = this.accounts.get(accountId);
     const isBrokerJpy =
-      (acc?.serverName && (acc.serverName.toLowerCase().includes('xmtrading') || acc.serverName.toLowerCase().includes('japan') || acc.serverName.toLowerCase().includes('jpy'))) ||
-      accountId.includes('72423906');
+      (acc?.serverName && (acc.serverName.toLowerCase().includes('xmtrading') || acc.serverName.toLowerCase().includes('japan') || acc.serverName.toLowerCase().includes('jpy')));
     const rate = (acc?.currency === 'USD' && isBrokerJpy) ? 155.0 : 1.0;
 
     const sorted = [...rawDeals].sort(
@@ -1356,7 +1051,7 @@ export class AccountConnectorService {
     const tradeCurrency = resolveBrokerCurrency(
       acc?.broker,
       acc?.serverName,
-      acc?.currency || (accountId.includes('72423906') ? 'JPY' : undefined)
+      acc?.currency
     );
 
     for (const [posId, deals] of groups.entries()) {
@@ -1420,8 +1115,7 @@ export class AccountConnectorService {
         const closePrice = Number(weightedClose.toFixed(digits));
 
         const isBrokerJpy =
-          (acc?.serverName && (acc.serverName.toLowerCase().includes('xmtrading') || acc.serverName.toLowerCase().includes('japan') || acc.serverName.toLowerCase().includes('jpy'))) ||
-          accountId.includes('72423906');
+          (acc?.serverName && (acc.serverName.toLowerCase().includes('xmtrading') || acc.serverName.toLowerCase().includes('japan') || acc.serverName.toLowerCase().includes('jpy')));
         const conversionRate = (tradeCurrency === 'USD' && isBrokerJpy) ? 155.0 : 1.0;
 
         const rawProfit = Number(outDeals.reduce((sum, d) => sum + Number(d.profit ?? 0), 0).toFixed(2));
@@ -1476,8 +1170,7 @@ export class AccountConnectorService {
         const closePrice = Number(weightedClose.toFixed(digits));
 
         const isBrokerJpy =
-          (acc?.serverName && (acc.serverName.toLowerCase().includes('xmtrading') || acc.serverName.toLowerCase().includes('japan') || acc.serverName.toLowerCase().includes('jpy'))) ||
-          accountId.includes('72423906');
+          (acc?.serverName && (acc.serverName.toLowerCase().includes('xmtrading') || acc.serverName.toLowerCase().includes('japan') || acc.serverName.toLowerCase().includes('jpy')));
         const conversionRate = (tradeCurrency === 'USD' && isBrokerJpy) ? 155.0 : 1.0;
 
         const rawProfit = Number(outDeals.reduce((sum, d) => sum + Number(d.profit ?? 0), 0).toFixed(2));

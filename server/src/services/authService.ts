@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { ensureLegacyIdentityMigration } from './legacyIdentityMigration.js';
 import { r2Storage } from './r2StorageService.js';
 
 export interface StoredCredential {
@@ -124,6 +125,7 @@ export class AuthService {
 
   public async loadCredentials(): Promise<void> {
     try {
+      await ensureLegacyIdentityMigration();
       const saved = await r2Storage.getJson<Record<string, StoredCredential>>(this.CREDENTIALS_KEY);
       if (saved && typeof saved === 'object') {
         for (const [k, v] of Object.entries(saved)) {
@@ -136,25 +138,6 @@ export class AuthService {
         }
       }
 
-      // Seed default test credentials ONLY in test or explicit dev seed mode (never in production)
-      const shouldSeedDefault =
-        Boolean(process.env.VITEST || process.env.NODE_ENV === 'test') ||
-        process.env.SEED_DEFAULT_USERS === 'true';
-      if (shouldSeedDefault && !this.credentials.has('u_zzzemzzz')) {
-        const salt = this.generateSalt();
-        const hash = this.hashPassword('TraderRank2026!', salt);
-        const defaultCred: StoredCredential = {
-          userId: 'u_zzzemzzz',
-          email: 'libralytics.data@gmail.com',
-          username: 'zzZEMZzz',
-          salt,
-          hash,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-        this.saveCredential(defaultCred);
-        await this.persistCredentials();
-      }
     } catch (err) {
       console.warn('[AuthService] Could not load credentials:', err);
     }

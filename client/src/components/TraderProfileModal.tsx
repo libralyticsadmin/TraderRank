@@ -1219,8 +1219,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
   const rawCurrency = effectiveBroker === 'XMTrading' ? 'JPY' : resolveBrokerCurrency(
     effectiveBroker,
     liveServerName,
-    liveCurrency || (trader as any).currency,
-    effectiveAccNum
+    liveCurrency || (trader as any).currency
   );
   const isJpy = isJpyCurrency(rawCurrency);
   const curSymbol = getCurrencySymbol(rawCurrency);

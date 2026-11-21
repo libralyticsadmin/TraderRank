@@ -56,17 +56,8 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             const rawAcc = d.accountNumber
               ? String(d.accountNumber).replace(/^TraderRank-/i, '').trim()
               : (d.username.match(/(\d{6,})/)?.[1] || '');
-            const isHomies =
-              rawAcc === '72423906' ||
-              d.userId === 'u_homiesplant_th' ||
-              d.userId === 'usr_meta_72423906' ||
-              d.username === 'HomiesPlant' ||
-              d.username === 'homiesplant.th' ||
-              d.username.toLowerCase().includes('homies') ||
-              d.username.toLowerCase().includes('emanuel007') ||
-              (d.accountNumber && String(d.accountNumber).includes('72423906'));
-            const cleanAcc = isHomies ? '72423906' : rawAcc;
-            const primaryBroker: Broker = isHomies ? 'XMTrading' : (d.brokers && d.brokers.length > 0 ? d.brokers[0] : 'XM');
+            const cleanAcc = rawAcc;
+            const primaryBroker: Broker = (d.brokers && d.brokers.length > 0 ? d.brokers[0] : 'XM');
             const real = getTraderStats({
               accountNumber: cleanAcc,
               userId: d.userId,
@@ -82,23 +73,22 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                 : real.winRate
               : d.dailyWinRate || 0;
             const identity = resolveTraderIdentity({
-              username: isHomies ? 'HomiesPlant' : d.username,
-              profileName: isHomies ? 'HomiesPlant' : d.profileName,
-              accountHolderName: isHomies ? 'HomiesPlant' : real?.profileName,
+              username: d.username,
+              profileName: d.profileName,
+              accountHolderName: real?.profileName,
               accountNumber: cleanAcc,
-              userId: isHomies ? 'u_homiesplant_th' : d.userId,
+              userId: d.userId,
               avatarUrl: d.avatarUrl,
             });
 
-            const accCurrency = isHomies || primaryBroker === 'XMTrading' ? 'JPY' : resolveBrokerCurrency(
+            const accCurrency = resolveBrokerCurrency(
               primaryBroker,
-              cleanAcc === '72423906' ? 'XMTrading-MT5' : undefined,
-              real?.currency || (d as any).currency,
-              cleanAcc
+              undefined,
+              real?.currency || (d as any).currency
             );
 
             return {
-              userId: isHomies ? 'u_homiesplant_th' : d.userId,
+              userId: d.userId,
               username: identity.profileName || d.username,
               profileName: identity.profileName,
               accountTag: identity.accountTag,
@@ -106,7 +96,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               avatarUrl: identity.avatarUrl || d.avatarUrl,
               broker: primaryBroker,
               currency: accCurrency,
-              avatarSymbol: isHomies ? 'bear_emerald' : d.avatarSymbol,
+              avatarSymbol: d.avatarSymbol,
               winningPips: pips,
               profitAmount: profitNative,
               profitUsd,
@@ -123,17 +113,8 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
             const rawAcc = e.accountNumber
               ? String(e.accountNumber).replace(/^TraderRank-/i, '').trim()
               : (String(e.username || '').match(/(\d{6,})/)?.[1] || '');
-            const isHomies =
-              rawAcc === '72423906' ||
-              e.userId === 'u_homiesplant_th' ||
-              e.userId === 'usr_meta_72423906' ||
-              e.username === 'HomiesPlant' ||
-              e.username === 'homiesplant.th' ||
-              String(e.username || '').toLowerCase().includes('homies') ||
-              String(e.username || '').toLowerCase().includes('emanuel007') ||
-              (e.accountNumber && String(e.accountNumber).includes('72423906'));
-            const cleanAcc = isHomies ? '72423906' : rawAcc;
-            const primaryBroker: Broker = isHomies ? 'XMTrading' : (e.broker || (e.brokers && e.brokers.length > 0 ? e.brokers[0] : 'XM'));
+            const cleanAcc = rawAcc;
+            const primaryBroker: Broker = (e.broker || (e.brokers && e.brokers.length > 0 ? e.brokers[0] : 'XM'));
             const real = getTraderStats({
               accountNumber: cleanAcc,
               userId: e.userId,
@@ -164,23 +145,22 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                 (user?.username && e.username && user.username.toLowerCase() === e.username.toLowerCase()));
             const liveAvatarUrl = (isCurrentUser ? user?.avatarUrl : undefined) || real?.avatarUrl || e.avatarUrl;
             const identity = resolveTraderIdentity({
-              username: isHomies ? 'HomiesPlant' : e.username,
-              profileName: isHomies ? 'HomiesPlant' : e.profileName,
-              accountHolderName: isHomies ? 'HomiesPlant' : real?.profileName,
+              username: e.username,
+              profileName: e.profileName,
+              accountHolderName: real?.profileName,
               accountNumber: cleanAcc,
-              userId: isHomies ? 'u_homiesplant_th' : e.userId,
+              userId: e.userId,
               avatarUrl: liveAvatarUrl,
             });
 
-            const accCurrency = isHomies || primaryBroker === 'XMTrading' ? 'JPY' : resolveBrokerCurrency(
+            const accCurrency = resolveBrokerCurrency(
               primaryBroker,
-              cleanAcc === '72423906' ? 'XMTrading-MT5' : undefined,
-              real?.currency || (e as any).currency,
-              cleanAcc
+              undefined,
+              real?.currency || (e as any).currency
             );
 
             return {
-              userId: isHomies ? 'u_homiesplant_th' : e.userId,
+              userId: e.userId,
               username: identity.profileName || e.username,
               profileName: identity.profileName,
               accountTag: identity.accountTag,
@@ -189,7 +169,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               stale: e.stale === true,
               broker: primaryBroker,
               currency: accCurrency,
-              avatarSymbol: isHomies ? 'bear_emerald' : e.avatarSymbol,
+              avatarSymbol: e.avatarSymbol,
               winningPips: netPips,
               profitAmount: profitNative,
               profitUsd,

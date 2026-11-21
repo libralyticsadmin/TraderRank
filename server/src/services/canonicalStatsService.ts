@@ -48,6 +48,10 @@ export function getLiveUsdJpyRate(marketFeed?: LiveMarketFeedService): number {
   return DEFAULT_USDJPY_RATE;
 }
 
+/**
+ * Public identity for an account/leaderboard row. Uses only the stored profile username
+ * (never the broker legal name / accountHolderName, which callers must not pass here).
+ */
 function resolveCanonicalIdentity(params: {
   accountNumber?: string;
   userId?: string;
@@ -60,58 +64,13 @@ function resolveCanonicalIdentity(params: {
   const rawUser = String(params.username || '').trim();
   const rawProfile = String(params.profileName || '').trim();
 
-  const isHomies =
-    cleanAcc === '72423906' ||
-    rawUid === 'u_homiesplant_th' ||
-    rawUid === 'u_homiesplant' ||
-    rawUid === 'usr_meta_72423906' ||
-    rawUser.toLowerCase().includes('homies') ||
-    rawProfile.toLowerCase().includes('homies') ||
-    (cleanAcc === '72423906' && (/emanuel/i.test(rawUser) || /emanuel/i.test(rawProfile)));
-
-  const isZem =
-    !isHomies &&
-    (cleanAcc === '342186831' ||
-      rawUid === 'u_zzzemzzz' ||
-      rawUser.toLowerCase() === 'zzzemzzz' ||
-      rawProfile.toLowerCase() === 'zzzemzzz' ||
-      (cleanAcc === '342186831' && (/emanuel/i.test(rawUser) || /emanuel/i.test(rawProfile))));
-
-  if (isHomies) {
-    return {
-      userId: 'u_homiesplant_th',
-      username: 'HomiesPlant',
-      profileName: 'HomiesPlant',
-      accountNumber: '72423906',
-      broker: 'XMTrading' as Broker,
-      avatarSymbol: 'bear_emerald',
-    };
-  }
-
-  if (isZem) {
-    return {
-      userId: 'u_zzzemzzz',
-      username: 'zzZEMZzz',
-      profileName: 'zzZEMZzz',
-      accountNumber: '342186831',
-      broker: 'XM' as Broker,
-      avatarSymbol: 'bear_emerald',
-    };
-  }
-
-  const fallbackName =
-    rawProfile && !/emanuel/i.test(rawProfile)
-      ? rawProfile
-      : rawUser && !/emanuel/i.test(rawUser)
-      ? rawUser
-      : cleanAcc
-      ? `TraderRank-${cleanAcc}`
-      : 'VerifiedTrader';
+  const publicName =
+    rawProfile || rawUser || (cleanAcc ? `TraderRank-${cleanAcc}` : 'VerifiedTrader');
 
   return {
     userId: rawUid || `usr_${cleanAcc || 'unknown'}`,
-    username: fallbackName,
-    profileName: fallbackName,
+    username: publicName,
+    profileName: publicName,
     accountNumber: cleanAcc || undefined,
     broker: params.broker || ('XM' as Broker),
     avatarSymbol: 'zap',
@@ -293,8 +252,7 @@ export async function computeCanonicalStats(
     const currency = resolveBrokerCurrency(
       identity.broker,
       acc.serverName,
-      acc.currency,
-      identity.accountNumber
+      acc.currency
     );
 
     const isJpy = currency === 'JPY';
@@ -389,8 +347,7 @@ export async function computeCanonicalStats(
     const currency = resolveBrokerCurrency(
       identity.broker,
       undefined,
-      lb.currency,
-      identity.accountNumber
+      lb.currency
     );
     const isJpy = currency === 'JPY';
     const netNative = Number(lb.closedProfitUsd ?? 0);
@@ -538,7 +495,7 @@ export async function getBulletinFeed(
       });
 
       const traderName = matched?.profileName || identity.profileName;
-      const currency = matched?.currency || resolveBrokerCurrency(identity.broker, acc.serverName, acc.currency, cleanAcc);
+      const currency = matched?.currency || resolveBrokerCurrency(identity.broker, acc.serverName, acc.currency);
       const rank = matched?.rank ?? 99;
       const traderTradesCount = matched?.tradesCount ?? 0;
       const traderWinRate = matched?.winRate ?? 0;

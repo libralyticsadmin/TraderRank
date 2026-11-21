@@ -172,13 +172,17 @@ describe('TraderRank Protection Suite: Currency, Account Isolation & Contender I
   describe('4. Zero-Mock & Real Account Number Enforcement Guard', () => {
     it('strictly guarantees that all leaderboard entries are real accounts with real account numbers', () => {
       // Register real verified accounts
+      // Register real verified accounts. Identity and currency are data (owner records +
+      // broker-reported currency), passed in exactly as the connector does after cloud sync.
       leaderboard.registerAccountMapping(
         'acc_meta_72423906',
-        'usr_meta_72423906',
+        'u_homiesplant_th',
         'HomiesPlant',
         'XMTrading' as Broker,
         'HomiesPlant',
-        '72423906'
+        '72423906',
+        undefined,
+        'JPY'
       );
       leaderboard.registerAccountMapping(
         'acc_meta_342186831',
@@ -186,7 +190,9 @@ describe('TraderRank Protection Suite: Currency, Account Isolation & Contender I
         'zzZEMZzz',
         'XM' as Broker,
         'zzZEMZzz',
-        '342186831'
+        '342186831',
+        undefined,
+        'USD'
       );
       leaderboard.registerAccountMapping(
         'acc_meta_411407722',
@@ -194,7 +200,9 @@ describe('TraderRank Protection Suite: Currency, Account Isolation & Contender I
         'Vanguard_FX',
         'XM' as Broker,
         'Vanguard_FX',
-        '411407722'
+        '411407722',
+        undefined,
+        'USD'
       );
 
       const entries = leaderboard.getLeaderboard(20);
@@ -235,7 +243,6 @@ describe('TraderRank Protection Suite: Currency, Account Isolation & Contender I
       const target = accounts.find(a => a.accountNumber === '342186831');
       if (target) {
         expect(target.profileUsername).toBe('zzZEMZzz');
-        expect(target.accountHolderName).toBe('zzZEMZzz');
         expect(target.currency).toBe('USD');
         expect(target.userId).toBe('u_zzzemzzz');
       }

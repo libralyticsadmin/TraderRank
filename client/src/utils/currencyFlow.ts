@@ -17,13 +17,11 @@ export type DisplayCurrencyPreference = 'AUTO' | 'USD' | 'JPY';
 export const resolveBrokerCurrency = (
   broker?: string | null,
   serverName?: string | null,
-  explicitCurrency?: string | null,
-  accountNumber?: string | null
+  explicitCurrency?: string | null
 ): string => {
   const b = (broker || '').toUpperCase();
   const s = (serverName || '').toUpperCase();
   const c = (explicitCurrency || '').trim().toUpperCase();
-  const acc = String(accountNumber || '').replace(/^TraderRank-/i, '').trim();
 
   // 1. Explicit currency from broker / MetaApi always takes priority
   if (c === 'JPY' || c === '¥') {
@@ -38,13 +36,12 @@ export const resolveBrokerCurrency = (
     b === 'XMTRADING' ||
     s.includes('XMTRADING') ||
     s.includes('JAPAN') ||
-    s.includes('JPY') ||
-    acc === '72423906'
+    s.includes('JPY')
   ) {
     return 'JPY';
   }
 
-  if (b === 'XM' || b.includes('XMGLOBAL') || s.includes('XMGLOBAL') || acc === '342186831') {
+  if (b === 'XM' || b.includes('XMGLOBAL') || s.includes('XMGLOBAL')) {
     return 'USD';
   }
 

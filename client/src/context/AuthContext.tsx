@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Broker } from '../../../shared/src/types.ts';
-import { getRandomTraderAvatar, DEFAULT_TRADER_AVATARS } from '../components/avatarCatalog.ts';
+import { getRandomTraderAvatar } from '../components/avatarCatalog.ts';
 import { fetchCanonicalStats } from '../hooks/useTraderStats.ts';
 
 export interface UserProfile {
@@ -97,41 +97,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (parsed.xp === 13500 || parsed.xp === 13275 || parsed.level === 3) {
           parsed.xp = 0;
           parsed.level = 1;
-        }
-
-        // Guaranteed real user profile alignment: sanitize cached user to canonical identities
-        const isHomies =
-          parsed.username === 'HomiesPlant' ||
-          parsed.username === 'homiesplant.th' ||
-          parsed.username?.toLowerCase().includes('homies') ||
-          parsed.id === 'u_homiesplant_th' ||
-          parsed.id === 'u_homiesplant' ||
-          parsed.id === 'usr_meta_72423906' ||
-          parsed.accountNumber === '72423906' ||
-          parsed.accountNumber === '411407722';
-
-        if (isHomies) {
-          parsed.id = 'u_homiesplant_th';
-          parsed.username = parsed.username === 'HomiesPlant' ? 'HomiesPlant' : 'homiesplant.th';
-          parsed.avatarSymbol = 'bear_emerald';
-          parsed.avatarUrl = parsed.avatarUrl || DEFAULT_TRADER_AVATARS['72423906'] || DEFAULT_TRADER_AVATARS['342186831'];
-          parsed.primaryBroker = parsed.accountNumber === '72423906' ? 'XMTrading' : 'XM';
-          parsed.accountNumber = parsed.accountNumber || '411407722';
-          parsed.currency = parsed.accountNumber === '72423906' ? 'JPY' : 'USD';
-        } else if (
-          parsed.username === 'zzZEMZzz' ||
-          parsed.username?.toLowerCase() === 'zzzemzzz' ||
-          parsed.id === 'u_zzzemzzz' ||
-          parsed.accountNumber === '342186831' ||
-          parsed.id?.includes('342186831')
-        ) {
-          parsed.id = 'u_zzzemzzz';
-          parsed.username = 'zzZEMZzz';
-          parsed.avatarSymbol = 'bear_emerald';
-          parsed.avatarUrl = parsed.avatarUrl || DEFAULT_TRADER_AVATARS['342186831'];
-          parsed.primaryBroker = 'XM';
-          parsed.accountNumber = '342186831';
-          parsed.currency = 'USD';
         }
 
         try {
@@ -239,11 +204,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
         if (!data.user.avatarUrl) {
-          const isZem =
-            data.user.id === 'u_zzzemzzz' ||
-            data.user.accountNumber === '342186831' ||
-            data.user.username === 'zzZEMZzz';
-          data.user.avatarUrl = isZem ? (DEFAULT_TRADER_AVATARS['342186831'] || DEFAULT_TRADER_AVATARS['zzZEMZzz']) : getRandomTraderAvatar().url;
+          data.user.avatarUrl = getRandomTraderAvatar().url;
         }
         setUser(data.user);
         return { success: true };

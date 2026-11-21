@@ -53,16 +53,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       const rawAcc = trader.accountNumber
         ? String(trader.accountNumber).replace(/^TraderRank-/i, '').trim()
         : (String(trader.username || '').match(/(\d{6,})/)?.[1] || '');
-      const isHomies =
-        rawAcc === '72423906' ||
-        trader.userId === 'u_homiesplant_th' ||
-        trader.userId === 'usr_meta_72423906' ||
-        trader.username === 'HomiesPlant' ||
-        trader.username === 'homiesplant.th' ||
-        String(trader.username || '').toLowerCase().includes('homies') ||
-        String(trader.username || '').toLowerCase().includes('emanuel007') ||
-        (trader.accountNumber && String(trader.accountNumber).includes('72423906'));
-      const cleanAcc = isHomies ? '72423906' : rawAcc;
+      const cleanAcc = rawAcc;
 
       const real = getTraderStats({
         accountNumber: cleanAcc,
@@ -87,24 +78,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       const winRate = real ? real.winRate : trader.winRate ?? 0;
       const xp = real ? real.xp : tradesCount > 0 ? tradesCount * 25 : trader.xp || 0;
       const gamification = calculateTraderGamification(xp);
-      const broker = isHomies ? 'XMTrading' : ((real?.broker || trader.broker || trader.brokers?.[0] || 'XM') as any);
+      const broker = ((real?.broker || trader.broker || trader.brokers?.[0] || 'XM') as any);
       const identity = resolveTraderIdentity({
-        username: isHomies ? 'HomiesPlant' : trader.username,
-        profileName: isHomies ? 'HomiesPlant' : trader.profileName,
-        accountHolderName: isHomies ? 'HomiesPlant' : real?.profileName,
+        username: trader.username,
+        profileName: trader.profileName,
+        accountHolderName: real?.profileName,
         accountNumber: cleanAcc,
-        userId: isHomies ? 'u_homiesplant_th' : trader.userId,
+        userId: trader.userId,
         avatarUrl: trader.avatarUrl,
       });
-      const currency = isHomies || broker === 'XMTrading' ? 'JPY' : resolveBrokerCurrency(
+      const currency = resolveBrokerCurrency(
         broker,
-        cleanAcc === '72423906' ? 'XMTrading-MT5' : undefined,
-        real?.currency || (trader as any).currency,
-        cleanAcc
+        undefined,
+        real?.currency || (trader as any).currency
       );
 
       return {
-        userId: isHomies ? 'u_homiesplant_th' : trader.userId,
+        userId: trader.userId,
         username: identity.profileName || trader.username,
         profileName: identity.profileName,
         accountTag: identity.accountTag,
@@ -119,7 +109,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           trader.avatarUrl,
         broker,
         currency,
-        avatarSymbol: isHomies ? 'bear_emerald' : (trader.avatarSymbol || 'zap'),
+        avatarSymbol: (trader.avatarSymbol || 'zap'),
         pips,
         profit: profitNative,
         profitUsd,

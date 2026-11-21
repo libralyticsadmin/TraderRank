@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { AccountConnectorService } from '../src/connector/accountConnector.js';
 import { LeaderboardService } from '../src/services/leaderboardService.js';
 import { r2Storage } from '../src/services/r2StorageService.js';
+import { runLegacyIdentityMigration } from '../src/services/legacyIdentityMigration.js';
 
 describe('Dual-Layer Persistence Flow (Account Ownership, Subscriptions, Daily Champions)', () => {
   const connector = AccountConnectorService.getInstance();
@@ -62,7 +63,9 @@ describe('Dual-Layer Persistence Flow (Account Ownership, Subscriptions, Daily C
     }
   });
 
-  it('should guarantee canonical verified account 342186831 ownership is always persisted', async () => {
+  it('persists the migrated owner record for legacy account 342186831', async () => {
+    // Ownership is data written by the legacy identity migration (unique marker so reruns apply it).
+    await runLegacyIdentityMigration({ markerKey: `migrations/test-persistence-${Date.now()}-${Math.random()}.json` });
     await connector.loadAccountOwnersFromR2();
     const owner = connector.getAccountOwner('342186831');
     expect(owner).toBeDefined();

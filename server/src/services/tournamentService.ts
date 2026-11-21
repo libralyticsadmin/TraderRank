@@ -10,6 +10,7 @@ import {
   CanonicalTrade,
 } from '../../../shared/src/types.js';
 import { RiskGovernor } from './riskGovernor.js';
+import { ensureLegacyIdentityMigration } from './legacyIdentityMigration.js';
 import { r2Storage } from './r2StorageService.js';
 
 export class TournamentService {
@@ -34,6 +35,7 @@ export class TournamentService {
 
   private async loadStateFromR2(): Promise<void> {
     try {
+      await ensureLegacyIdentityMigration();
       const saved = await r2Storage.getJson<Record<string, { standings: TournamentStanding[]; status?: 'ACTIVE' | 'UPCOMING' | 'COMPLETED' }>>(
         TournamentService.STATE_R2_KEY
       );
@@ -41,9 +43,7 @@ export class TournamentService {
       for (const [tournId, state] of Object.entries(saved)) {
         const t = this.tournaments.get(tournId);
         if (!t || !state || !Array.isArray(state.standings)) continue;
-        const cleanStandings = state.standings.filter(
-          s => s && s.userId && s.userId !== 'u_homiesplant_th' && s.userId !== 'usr_meta_72423906'
-        );
+        const cleanStandings = state.standings.filter(s => s && s.userId);
         t.standings = cleanStandings.map((s, idx) => ({ ...s, rank: idx + 1 }));
         t.participantCount = t.standings.length;
         const minReq = t.minParticipantsToStart ?? 50;
