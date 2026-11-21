@@ -816,7 +816,15 @@ export function createServer() {
             errorCode: 'INVALID_CREDENTIALS',
           });
         }
-        return res.json({ success: true, pendingBrokerVerification: true });
+        return res.json({
+          success: true,
+          pendingBrokerVerification: true,
+          accountDetails: {
+            accountNumber: String(c.login).trim(),
+            server: String(c.serverName || '').trim(),
+            platform: c.platform || 'MT5',
+          },
+        });
       }
 
       const result = await connector.validateCredentials(broker, credentials);

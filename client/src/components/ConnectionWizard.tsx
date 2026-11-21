@@ -318,7 +318,17 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
       });
 
       const data = await res.json();
-      if (!res.ok || !data.account) {
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to connect account');
+      }
+
+      if (data.onboardingId) {
+        if (data.onboarding) applyOnboardingUpdate(data.onboarding);
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!data.account) {
         throw new Error(data.error || 'Failed to connect account');
       }
 
@@ -647,7 +657,11 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                 {(() => {
                   const serverPresets: Record<string, string[]> = {
                     IC_MARKETS: ['ICMarketsSC-Live01', 'ICMarketsSC-Live02', 'ICMarkets-Live 01', 'ICMarketsGlobal-Live01', 'ICTrading-Live01'],
-                    XM: ['XMGlobal-MT5 10', 'XMGlobal-Real 55', 'XMGlobal-Real 1', 'XMGlobal-MT5', 'XMTrading-MT5 (JPY)'],
+                    XM: [
+                      'XMGlobal-MT5', 'XMGlobal-MT5 2', 'XMGlobal-MT5 3', 'XMGlobal-MT5 4', 'XMGlobal-MT5 5',
+                      'XMGlobal-MT5 6', 'XMGlobal-MT5 7', 'XMGlobal-MT5 8', 'XMGlobal-MT5 9', 'XMGlobal-MT5 10',
+                      'XMGlobal-MT5 16', 'XMGlobal-Real 1', 'XMGlobal-Real 21', 'XMGlobal-Real 55', 'XMTrading-MT5 (JPY)'
+                    ],
                     XMTrading: ['XMTrading-MT5', 'XMTrading-MT5 2', 'XMTrading-Real 1', 'XMTrading-Real 21', 'XMTrading-Real 50', 'XMTrading-Demo'],
                     Exness: ['Exness-MT5Real', 'Exness-MT5Real2', 'Exness-MT5Real3', 'Exness-MT5Real9', 'Exness-Real1', 'Exness-Real2', 'Exness-Real9', 'Exness-Real10'],
                     Axiory: ['Axiory-Live 01', 'Axiory-Live 02', 'AxioryAsia-Live'],
@@ -725,6 +739,9 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                   <span className="form-tip">
                     <ShieldCheck size={14} color="#0abab5" /> {t.connector.neverMasterPassword}
                   </span>
+                  <div style={{ marginTop: '8px', fontSize: '12px', color: '#94a3b8', background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    💡 <strong>Where to find this:</strong> In MT4/MT5, right-click your account → <em>Change Password</em> → select <em>Change Investor (read-only) Password</em>. Do not use your broker website login password.
+                  </div>
                 </div>
               </div>
             ) : (
@@ -801,8 +818,13 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                   <p style={{ fontSize: '14px', color: '#81d8d0', fontWeight: 600 }}>
                     {onboarding?.status === 'PROVISIONING'
                       ? '1/2 Registering your account with the secure read-only broker bridge...'
-                      : `2/2 Logging in to ${onboarding?.serverName} with your investor password...`}
+                      : `2/2 Logging in to ${onboarding?.serverName || serverName} with your investor password...`}
                   </p>
+                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '10px 16px', fontSize: '12px', color: 'var(--text-muted)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', textAlign: 'left', width: '100%', maxWidth: '360px' }}>
+                    <div>Account: <strong style={{ color: '#fff' }}>{login || onboarding?.login}</strong></div>
+                    <div>Broker: <strong style={{ color: '#fff' }}>{selectedBroker}</strong></div>
+                    <div style={{ gridColumn: 'span 2' }}>Server: <strong style={{ color: '#00f0ff' }}>{serverName || onboarding?.serverName}</strong></div>
+                  </div>
                   <span style={{ fontSize: '12px', color: 'var(--text-muted)', maxWidth: '440px', lineHeight: 1.5 }}>
                     New broker connections can take a few minutes. You can close this window. We keep
                     connecting in the background and your account shows as "Connecting" in your accounts list.
@@ -821,7 +843,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                     Enterprise SSL • Read-Only Zero-Write Bridge
                   </span>
                 </div>
-              ) : validationResult?.success ? (
+              ) : (validationResult?.success && validationResult.accountDetails && typeof validationResult.accountDetails.balance === 'number' && !validationResult.pendingBrokerVerification) ? (
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--accent-green)', marginBottom: '14px' }}>
                     <CheckCircle2 size={24} />
@@ -830,17 +852,17 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '13px' }}>
                     <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.brokerLabel}</span> <strong>{selectedBroker}</strong></div>
                     <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.integrationLabel}</span> <strong>{selectedPath === 'mt_gateway' ? 'MT Gateway' : 'Exness Native'}</strong></div>
-                    <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.accountLabel}</span> <span className="tabular">{validationResult.accountDetails?.accountNumber}</span></div>
+                    <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.accountLabel}</span> <span className="tabular">{validationResult.accountDetails.accountNumber}</span></div>
                     {(() => {
-                      const cur = (validationResult.accountDetails?.currency || 'USD').toUpperCase();
+                      const cur = (validationResult.accountDetails.currency || 'USD').toUpperCase();
                       const isJpy = cur === 'JPY';
                       const curSym = isJpy ? '¥' : cur === 'EUR' ? '€' : cur === 'GBP' ? '£' : '$';
                       const balStr = isJpy
-                        ? `${curSym}${Math.round(validationResult.accountDetails?.balance || 0).toLocaleString()} JPY`
-                        : `${curSym}${(validationResult.accountDetails?.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${cur}`;
+                        ? `${curSym}${Math.round(validationResult.accountDetails.balance || 0).toLocaleString()} JPY`
+                        : `${curSym}${(validationResult.accountDetails.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${cur}`;
                       const eqStr = isJpy
-                        ? `${curSym}${Math.round(validationResult.accountDetails?.equity || 0).toLocaleString()}`
-                        : `${curSym}${(validationResult.accountDetails?.equity || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                        ? `${curSym}${Math.round(validationResult.accountDetails.equity || 0).toLocaleString()}`
+                        : `${curSym}${(validationResult.accountDetails.equity || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
                       return (
                         <>
@@ -849,8 +871,8 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                         </>
                       );
                     })()}
-                    <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.leverageLabel}</span> <span className="tabular">1:{validationResult.accountDetails?.leverage}</span></div>
-                    {validationResult.accountDetails?.metaApiAccountId && (
+                    <div><span style={{ color: 'var(--text-muted)' }}>{t.connector.leverageLabel}</span> <span className="tabular">1:{validationResult.accountDetails.leverage}</span></div>
+                    {validationResult.accountDetails.metaApiAccountId && (
                       <div style={{ gridColumn: 'span 2', marginTop: '4px' }}>
                         <span style={{
                           background: 'rgba(10,186,181,0.15)',
@@ -876,9 +898,17 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                     <AlertCircle size={24} />
                     <strong style={{ fontSize: '16px' }}>{t.connector.connectionFailedTitle}</strong>
                   </div>
-                  <p style={{ fontSize: '13px', color: '#fca5a5', lineHeight: 1.4 }}>
-                    {errorMessage || 'Broker server rejected connection credentials.'}
+                  <p style={{ fontSize: '13px', color: '#fca5a5', lineHeight: 1.5, marginBottom: '12px' }}>
+                    {errorMessage || 'Broker server rejected connection credentials. Please verify your exact server name and investor password.'}
                   </p>
+                  <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '8px', padding: '10px 14px', fontSize: '12px', color: '#fca5a5' }}>
+                    <strong>Common fixes:</strong>
+                    <ul style={{ margin: '6px 0 0 16px', padding: 0 }}>
+                      <li>Verify your <strong>Server Name</strong> in your broker welcome email (e.g. XMGlobal-MT5, XMGlobal-MT5 2, XMGlobal-Real 55, etc.).</li>
+                      <li>Ensure you are using the <strong>Investor (read-only) Password</strong>, not your broker website portal password.</li>
+                      <li>Confirm whether your account is <strong>MT4</strong> or <strong>MT5</strong>.</li>
+                    </ul>
+                  </div>
                 </div>
               )}
             </div>
@@ -895,7 +925,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                 <button className="btn-secondary" onClick={onClose}>
                   Continue in background
                 </button>
-              ) : validationResult?.success && (
+              ) : (validationResult?.success && validationResult.accountDetails && typeof validationResult.accountDetails.balance === 'number' && !validationResult.pendingBrokerVerification) && (
                 <button
                   className="btn-primary"
                   onClick={handleFinalConnect}
