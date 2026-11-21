@@ -97,6 +97,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
 
   // Partner Affiliate helper state
   const [showSubAccountGuide, setShowSubAccountGuide] = useState(false);
+  const [showAllServers, setShowAllServers] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
 
   // Keyboard escape route
@@ -369,7 +370,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
         </div>
 
         {/* Stepper */}
-        <div className="stepper-header">
+        <div className="stepper-header" style={{ marginBottom: '16px' }}>
           <div className="stepper-step">
             <div className={`step-bubble ${step === 1 ? 'active' : step > 1 ? 'completed' : ''}`}>1</div>
             <span className="step-label">{t.connector.stepBroker}</span>
@@ -473,7 +474,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
               </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '28px' }}>
+            <div className="modal-sticky-footer">
               <button className="btn-secondary" onClick={() => setStep(1)}>
                 <ArrowLeft size={16} /> {t.connector.backStep}
               </button>
@@ -487,13 +488,13 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
         {/* Step 3: Credential Entry */}
         {step === 3 && (
           <div>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '6px' }}>{t.connector.credentialsTitle}</h2>
+            <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '6px' }}>{t.connector.credentialsTitle}</h2>
             
             {/* Security Guarantee Notice */}
-            <div className="security-callout">
-              <Lock size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+            <div className="security-callout" style={{ padding: '8px 12px', marginBottom: '10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Lock size={15} color="#00f0ff" style={{ flexShrink: 0 }} />
               <div>
-                <strong>{t.connector.securityCalloutTitle}:</strong> {t.connector.securityCalloutDesc}
+                <strong>{t.connector.securityCalloutTitle}:</strong> Read-only access. Investor passwords cannot trade. AES-256-GCM encrypted.
               </div>
             </div>
 
@@ -505,52 +506,52 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                   style={{
                     background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.08) 0%, rgba(14, 20, 31, 0.95) 100%)',
                     border: '1px solid rgba(0, 240, 255, 0.25)',
-                    borderRadius: '14px',
-                    padding: '18px 20px',
-                    marginBottom: '20px',
+                    borderRadius: '10px',
+                    padding: '8px 12px',
+                    marginBottom: '12px',
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '10px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Gift size={16} color="#00F0FF" />
-                      <span style={{ fontSize: '13px', fontWeight: 800, color: '#FFFFFF' }}>
-                        Need an Official {partner.displayName} Account?
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Gift size={14} color="#00F0FF" />
+                      <span style={{ fontSize: '12px', fontWeight: 800, color: '#FFFFFF' }}>
+                        Need a {partner.displayName} Account?
                       </span>
                       <span
                         style={{
-                          fontSize: '10px',
+                          fontSize: '9px',
                           fontWeight: 700,
-                          padding: '2px 8px',
-                          borderRadius: '10px',
+                          padding: '1px 6px',
+                          borderRadius: '8px',
                           background: 'rgba(0, 218, 198, 0.15)',
                           border: '1px solid #00DAC6',
                           color: '#00DAC6',
                         }}
                       >
-                        +500 XP Welcome Bonus
+                        +500 XP
                       </span>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <a
                         href={partner.affiliateUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
-                          padding: '6px 14px',
-                          borderRadius: '8px',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
                           background: 'linear-gradient(90deg, #00F0FF 0%, #00DAC6 100%)',
                           color: '#080E14',
                           fontWeight: 800,
-                          fontSize: '12px',
+                          fontSize: '11px',
                           textDecoration: 'none',
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '6px',
+                          gap: '4px',
                         }}
                       >
-                        <span>Open Partner Account</span>
-                        <ExternalLink size={12} />
+                        <span>Open Account</span>
+                        <ExternalLink size={10} />
                       </a>
 
                       <button
@@ -561,27 +562,27 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                           setTimeout(() => setCopiedCode(false), 2000);
                         }}
                         style={{
-                          padding: '6px 12px',
-                          borderRadius: '8px',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
                           background: 'rgba(255, 255, 255, 0.05)',
                           border: '1px solid rgba(255, 255, 255, 0.15)',
                           color: copiedCode ? '#00DAC6' : '#FFFFFF',
-                          fontSize: '12px',
+                          fontSize: '11px',
                           fontWeight: 700,
                           cursor: 'pointer',
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '6px',
+                          gap: '4px',
                         }}
                       >
-                        {copiedCode ? <Check size={12} /> : <Copy size={12} />}
+                        {copiedCode ? <Check size={10} /> : <Copy size={10} />}
                         <span>Code: {partner.partnerCode}</span>
                       </button>
                     </div>
                   </div>
 
                   {/* Sub-Account Accordion Toggle for Existing Users */}
-                  <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '10px', marginTop: '10px' }}>
+                  <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '6px', marginTop: '6px' }}>
                     <button
                       type="button"
                       onClick={() => setShowSubAccountGuide(!showSubAccountGuide)}
@@ -589,37 +590,37 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                         background: 'none',
                         border: 'none',
                         color: '#848E9C',
-                        fontSize: '12px',
+                        fontSize: '11px',
                         fontWeight: 600,
                         cursor: 'pointer',
                         padding: 0,
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px',
+                        gap: '4px',
                       }}
                     >
-                      <span>Already have an account? Create a 30-sec sub-account under our partner code</span>
-                      {showSubAccountGuide ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      <span>Already have an account? Create a 30s sub-account with code</span>
+                      {showSubAccountGuide ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                     </button>
 
                     {showSubAccountGuide && (
                       <div
                         style={{
-                          marginTop: '10px',
-                          padding: '12px 14px',
-                          borderRadius: '8px',
+                          marginTop: '6px',
+                          padding: '8px 10px',
+                          borderRadius: '6px',
                           background: 'rgba(0, 0, 0, 0.3)',
                           border: '1px solid rgba(255, 255, 255, 0.08)',
-                          fontSize: '12px',
+                          fontSize: '11px',
                           color: '#CBD5E1',
                         }}
                       >
-                        <ol style={{ margin: '0 0 8px 18px', padding: 0, lineHeight: 1.6 }}>
+                        <ol style={{ margin: '0 0 6px 14px', padding: 0, lineHeight: 1.5 }}>
                           {partner.subAccountGuide.steps.map((st, i) => (
                             <li key={i}>{st}</li>
                           ))}
                         </ol>
-                        <div style={{ fontSize: '11px', color: '#848E9C', fontStyle: 'italic' }}>
+                        <div style={{ fontSize: '10px', color: '#848E9C', fontStyle: 'italic' }}>
                           💡 {partner.subAccountGuide.note}
                         </div>
                       </div>
@@ -631,7 +632,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
 
             {selectedPath === 'mt_gateway' ? (
               <div>
-                <div className="form-group" style={{ display: 'flex', gap: '12px' }}>
+                <div className="form-group" style={{ display: 'flex', gap: '12px', marginBottom: '10px' }}>
                   <div style={{ flex: 1 }}>
                     <label className="form-label">{t.connector.platform}</label>
                     <select
@@ -671,13 +672,33 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                   const currentPresets = serverPresets[selectedBroker];
                   if (!currentPresets) return null;
 
+                  const visiblePresets = showAllServers ? currentPresets : currentPresets.slice(0, 6);
+
                   return (
-                    <div style={{ marginBottom: '14px', marginTop: '-4px' }}>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px' }}>
-                        {t.connector.popularServers} ({selectedBroker}):
+                    <div style={{ marginBottom: '10px', marginTop: '-4px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          {t.connector.popularServers} ({selectedBroker}):
+                        </span>
+                        {currentPresets.length > 6 && (
+                          <button
+                            type="button"
+                            onClick={() => setShowAllServers(!showAllServers)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: '#0abab5',
+                              fontSize: '11px',
+                              cursor: 'pointer',
+                              padding: '0 2px',
+                            }}
+                          >
+                            {showAllServers ? 'Show less' : `+${currentPresets.length - 6} more`}
+                          </button>
+                        )}
                       </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                        {currentPresets.map(srv => (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                        {visiblePresets.map(srv => (
                           <button
                             key={srv}
                             type="button"
@@ -687,12 +708,12 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                               else if (srv.toLowerCase().includes('real') && !srv.toLowerCase().includes('mt5')) setPlatform('MT4');
                             }}
                             style={{
-                              padding: '3px 8px',
-                              borderRadius: '5px',
+                              padding: '2px 7px',
+                              borderRadius: '4px',
                               background: serverName === srv ? 'rgba(10, 186, 181, 0.25)' : 'rgba(255, 255, 255, 0.04)',
                               border: `1px solid ${serverName === srv ? '#0abab5' : 'var(--border-subtle)'}`,
                               color: serverName === srv ? '#81d8d0' : 'var(--text-muted)',
-                              fontSize: '11px',
+                              fontSize: '10.5px',
                               fontFamily: 'monospace',
                               cursor: 'pointer',
                             }}
@@ -702,7 +723,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                         ))}
                       </div>
                       {selectedBroker === 'IC_MARKETS' && (
-                        <div style={{ fontSize: '11px', marginTop: '6px' }}>
+                        <div style={{ fontSize: '11px', marginTop: '4px' }}>
                           <a
                             href="https://www.ic.com/en/?camp=57406"
                             target="_blank"
@@ -717,7 +738,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                   );
                 })()}
 
-                <div className="form-group">
+                <div className="form-group" style={{ marginBottom: '10px' }}>
                   <label className="form-label">{t.connector.accountLoginNumber}</label>
                   <input
                     className="form-input tabular"
@@ -731,7 +752,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                   />
                 </div>
 
-                <div className="form-group">
+                <div className="form-group" style={{ marginBottom: '10px' }}>
                   <label className="form-label">{t.connector.investorPassword}</label>
                   <input
                     type="password"
@@ -741,17 +762,15 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                     placeholder="Investor password only"
                     autoComplete="new-password"
                   />
-                  <span className="form-tip">
-                    <ShieldCheck size={14} color="#0abab5" /> {t.connector.neverMasterPassword}
-                  </span>
-                  <div style={{ marginTop: '8px', fontSize: '12px', color: '#94a3b8', background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    💡 <strong>Where to find this:</strong> In MT4/MT5, right-click your account → <em>Change Password</em> → select <em>Change Investor (read-only) Password</em>. Do not use your broker website login password.
+                  <div style={{ marginTop: '6px', fontSize: '11px', color: '#94a3b8', background: 'rgba(255,255,255,0.03)', padding: '6px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <ShieldCheck size={14} color="#0abab5" style={{ flexShrink: 0 }} />
+                    <span><strong>Investor Password only:</strong> In MT4/MT5, right-click account → <em>Change Password</em> → select <em>Investor Password</em>. Never enter master password.</span>
                   </div>
                 </div>
               </div>
             ) : (
               <div>
-                <div className="form-group">
+                <div className="form-group" style={{ marginBottom: '10px' }}>
                   <label className="form-label">{t.connector.exnessAccountId}</label>
                   <input
                     className="form-input tabular"
@@ -761,7 +780,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                     autoComplete="off"
                   />
                 </div>
-                <div className="form-group">
+                <div className="form-group" style={{ marginBottom: '10px' }}>
                   <label className="form-label">{t.connector.exnessApiKey}</label>
                   <input
                     className="form-input tabular"
@@ -771,7 +790,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                     autoComplete="off"
                   />
                 </div>
-                <div className="form-group">
+                <div className="form-group" style={{ marginBottom: '10px' }}>
                   <label className="form-label">{t.connector.exnessApiSecret}</label>
                   <input
                     type="password"
@@ -788,7 +807,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
               </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '24px' }}>
+            <div className="modal-sticky-footer">
               <button className="btn-secondary" onClick={() => setStep(2)}>
                 <ArrowLeft size={16} /> {t.connector.backStep}
               </button>
@@ -921,7 +940,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
               )}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div className="modal-sticky-footer">
               <button className="btn-secondary" onClick={() => { stopPolling(); setOnboarding(null); setConnectedAccount(null); setStep(3); }}>
                 <ArrowLeft size={16} /> {t.connector.editCredentials}
               </button>

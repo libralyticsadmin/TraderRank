@@ -418,13 +418,14 @@ body {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.82);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
   padding: 20px;
+  overflow-y: auto;
 }
 
 .modal-content {
@@ -433,9 +434,48 @@ body {
   border-radius: 20px;
   width: 100%;
   max-width: 620px;
-  padding: 32px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 28px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
   position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: rgba(129, 216, 208, 0.25);
+  border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(129, 216, 208, 0.45);
+}
+
+.modal-sticky-footer {
+  position: sticky;
+  bottom: -28px;
+  margin: 20px -28px -28px -28px;
+  padding: 14px 28px;
+  background: rgba(9, 24, 29, 0.95);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(129, 216, 208, 0.15);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
 }
 
 .modal-close {
@@ -1650,6 +1690,14 @@ html, body {
   .modal-close {
     top: 16px;
     right: 16px;
+  }
+
+  .modal-sticky-footer {
+    bottom: -20px;
+    margin: 16px -14px -20px -14px;
+    padding: 12px 14px;
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
   }
 
   /* Stepper */
