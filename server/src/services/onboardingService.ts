@@ -26,7 +26,8 @@ export type OnboardingFailureReason =
   | 'BROKER_UNREACHABLE'
   | 'TIMEOUT'
   | 'QUOTA_EXCEEDED'
-  | 'INTEGRATION_ERROR';
+  | 'INTEGRATION_ERROR'
+  | 'RATE_LIMITED';
 
 export interface OnboardingJob {
   id: string;
@@ -67,6 +68,7 @@ export const ONBOARDING_FAILURE_MESSAGES: Record<OnboardingFailureReason, string
   TIMEOUT: 'We could not log in to the broker in time. This usually means the investor password or server name is wrong. Please re-enter them.',
   QUOTA_EXCEEDED: 'Our broker connection capacity is temporarily full. Our team has been notified — please try again later.',
   INTEGRATION_ERROR: 'A temporary problem on our side prevented the connection. Our team has been notified — please try again shortly.',
+  RATE_LIMITED: 'Login attempts for this account were rejected too many times recently. The broker has placed the account on a temporary cooldown (~15 minutes). Please wait before retrying with your verified MT5 password.',
 };
 
 export class OnboardingService {
@@ -460,6 +462,9 @@ export class OnboardingService {
    * createOrGetAccount/update throw messages containing "(<status>)".
    */
   public static classifyError(message: string): OnboardingFailureReason | null {
+    if (/rejected too many times|TooManyRequestsError|cooldown/i.test(message)) {
+      return 'RATE_LIMITED';
+    }
     const status = Number(message.match(/\((\d{3})\)/)?.[1] || 0);
     if (/slot|quota|subscription|limit exceeded|too many accounts/i.test(message) && status >= 400 && status < 500 && status !== 429) {
       return 'QUOTA_EXCEEDED';
