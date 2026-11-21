@@ -34,6 +34,7 @@ import { onboardingService } from '../services/onboardingService.js';
 import { accountHealthService } from '../services/accountHealthService.js';
 import { startServiceHealthMonitor, getServiceStatus } from '../services/serviceHealthMonitor.js';
 import { getMetricsSnapshot } from '../utils/externalCall.js';
+import { marketDataSource } from '../market/marketDataSource.js';
 import { isSimulatedDataAllowed } from '../core/dataPolicy.js';
 import { getCachedCanonicalStats, getBulletinFeed, invalidateCanonicalStatsCache } from '../services/canonicalStatsService.js';
 import { getStreakStatus, getEffectiveClaimedDays, isStreakBroken, XP_RULES, calculateTraderGamification } from '../../../shared/src/gamification.js';
@@ -1580,6 +1581,10 @@ export function createServer() {
   });
 
   // 15. Real-Time Market Feed Status & MetaApi Gateway Telemetry
+  app.get('/api/market/source', (_req: Request, res: Response) => {
+    res.json({ success: true, ...marketDataSource.getStatus() });
+  });
+
   app.get('/api/market/alltick/status', (_req: Request, res: Response) => {
     const adapter = marketFeed.getAllTickAdapter();
     res.json({

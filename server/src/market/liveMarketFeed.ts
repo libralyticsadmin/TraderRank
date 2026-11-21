@@ -1,4 +1,5 @@
 import { MarketSimulator } from '../workers/marketSimulator.js';
+import { marketDataSource } from './marketDataSource.js';
 import { instrumentedFetch } from '../utils/externalCall.js';
 import { AllTickAdapter } from './alltickAdapter.js';
 import { TradingViewAdapter } from './tradingViewAdapter.js';
@@ -139,12 +140,12 @@ export class LiveMarketFeedService {
       // 2. MetaApi Live Broker Feed (calibrated & anchored to TradingView updated price)
       if (this.metaApiClient.hasToken()) {
         try {
-          const accounts = await this.metaApiClient.listProvisionedAccounts();
-          const activeAcc = accounts.find(a => a.connectionStatus === 'CONNECTED') || accounts[0];
-          if (activeAcc) {
+          // Dedicated platform account only — never a user's broker account
+          const marketAccountId = await marketDataSource.getConnectedAccountId();
+          if (marketAccountId) {
             const symbols = ['USDJPY', 'EURUSD', 'GBPUSD', 'AUDUSD', 'USDCAD', 'XAUUSD', 'BTCUSD', 'MCL1!', 'US30'];
             for (const sym of symbols) {
-              const quote = await this.metaApiClient.getCurrentPrice(activeAcc.id, sym);
+              const quote = await this.metaApiClient.getCurrentPrice(marketAccountId, sym);
               if (quote && quote.bid > 0) {
                 const isJpy = sym.includes('JPY');
                 const isTwoDec = sym === 'BTCUSD' || sym === 'XAUUSD' || sym === 'GOLD' || sym === 'MCL1!' || sym === 'USOIL' || sym === 'US30';
@@ -373,11 +374,11 @@ export class LiveMarketFeedService {
           '1M': '1mn',
         };
         const metaTf = tfMap[String(timeframe)] || '1m';
-        const accounts = await this.metaApiClient.listProvisionedAccounts();
-        const activeAcc = accounts.find(a => a.connectionStatus === 'CONNECTED') || accounts[0];
-        const accountId = activeAcc?.id || process.env.META_API_ACCOUNT_ID || 'c3fb9213-c550-4038-b1cd-9f400705f759';
-
-        const metaCandles = await this.metaApiClient.getCandles(accountId, symbol, metaTf, count);
+        // Dedicated platform account only — never a user's broker account
+        const marketAccountId = await marketDataSource.getConnectedAccountId();
+        const metaCandles = marketAccountId
+          ? await this.metaApiClient.getCandles(marketAccountId, symbol, metaTf, count)
+          : [];
         if (metaCandles && metaCandles.length > 0) {
           const bars: CandlestickBar[] = metaCandles.map(c => ({
             timestamp: Math.floor(new Date(c.time).getTime() / 1000),
