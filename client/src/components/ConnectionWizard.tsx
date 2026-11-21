@@ -131,9 +131,14 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
           accountId,
         } as ExnessNativeCredentials);
 
+    // Hard client-side ceiling so the preflight spinner can never hang indefinitely
+    const abortController = new AbortController();
+    const abortTimer = setTimeout(() => abortController.abort(), 45000);
+
     try {
       const token = localStorage.getItem('traderank_auth_token_v1');
       const res = await fetch('/api/connector/validate', {
+        signal: abortController.signal,
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -144,15 +149,26 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
           credentials: payloadCreds,
         }),
       });
-      const data: ValidationResult = await res.json();
+      let data: ValidationResult;
+      try {
+        data = await res.json();
+      } catch {
+        // Upstream proxy/gateway timeouts return HTML, not JSON
+        throw new Error(`Broker validation service unavailable (HTTP ${res.status}). Please try again.`);
+      }
       setValidationResult(data);
 
       if (!data.success) {
         setErrorMessage(data.error || 'Connection validation failed');
       }
     } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : 'Network error during validation');
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setErrorMessage('Broker server did not respond in time. MetaApi may still be connecting your account — please retry in a minute.');
+      } else {
+        setErrorMessage(err instanceof Error ? err.message : 'Network error during validation');
+      }
     } finally {
+      clearTimeout(abortTimer);
       clearTimeout(timer1);
       clearTimeout(timer2);
       setIsValidating(false);

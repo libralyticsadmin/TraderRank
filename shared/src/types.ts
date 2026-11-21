@@ -78,6 +78,8 @@ export interface ValidationResult {
     server?: string;
     balance: number;
     equity: number;
+    margin?: number;
+    freeMargin?: number;
     currency: string;
     leverage: number;
     metaApiAccountId?: string;

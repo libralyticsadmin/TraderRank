@@ -196,9 +196,12 @@ export class AccountConnectorService {
     const platform: Platform = creds.type === 'mt_gateway' ? creds.platform : 'NATIVE';
     const serverName = creds.type === 'mt_gateway' ? creds.serverName : undefined;
 
-    const sLower = (serverName || '').toLowerCase();
-    const isJpy = broker === 'XMTrading' || sLower.includes('xmtrading') || sLower.includes('japan') || sLower.includes('jpy');
-    const accountCurrency = validation.accountDetails?.currency || (isJpy ? 'JPY' : 'USD');
+    // All financial figures come from the broker-verified validation result (no placeholders).
+    const details = validation.accountDetails;
+    if (!details) {
+      throw new Error('Broker did not return account details; account was not connected.');
+    }
+    const accountMargin = details.margin ?? 0;
     const resolvedProfileUsername =
       username && !username.startsWith('TraderRank-')
         ? username
@@ -221,12 +224,12 @@ export class AccountConnectorService {
       platform,
       serverName,
       connectionStatus: 'CONNECTED',
-      balance: validation.accountDetails?.balance || (isJpy ? 1500000 : 10000),
-      equity: validation.accountDetails?.equity || (isJpy ? 1500000 : 10000),
-      margin: isJpy ? 36000 : 120,
-      freeMargin: isJpy ? 1464000 : 9880,
-      currency: accountCurrency,
-      leverage: validation.accountDetails?.leverage || 100,
+      balance: details.balance,
+      equity: details.equity,
+      margin: accountMargin,
+      freeMargin: details.freeMargin ?? details.equity - accountMargin,
+      currency: details.currency,
+      leverage: details.leverage,
       vaultSecretRef,
       metaApiAccountId: validation.accountDetails?.metaApiAccountId,
       lastSyncedAt: new Date().toISOString(),
@@ -867,7 +870,12 @@ export class AccountConnectorService {
           privateLegalName = isZemAccount ? 'zzZEMZzz' : isHomiesAccount ? 'HomiesPlant' : profileUsername;
         }
 
-        const effectiveCurrency = isZemAccount ? 'USD' : isHomiesAccount ? 'USD' : (info?.currency ?? (isJpy ? 'JPY' : defaultCurrency));
+        // Broker-reported currency always wins; fall back only to previously synced values.
+        const effectiveCurrency =
+          info?.currency ??
+          existingAcc?.currency ??
+          ((isZemAccount || isHomiesAccount) ? 'USD' : isJpy ? 'JPY' : defaultCurrency);
+        const isLiveConnected = p.connectionStatus === 'CONNECTED' && Boolean(info);
         const effectiveBroker: Broker = isZemAccount ? 'XM' : isHomiesAccount ? 'XM' : brokerName;
 
         const tradingAccount: TradingAccount = {
@@ -881,13 +889,22 @@ export class AccountConnectorService {
           integrationType: 'mt_gateway',
           platform: (p.platform?.toUpperCase() === 'MT4' ? 'MT4' : 'MT5') as Platform,
           serverName: p.server,
-          connectionStatus: p.connectionStatus === 'CONNECTED' || p.state === 'DEPLOYED' ? 'CONNECTED' : 'SYNCING',
-          balance: info?.balance ?? (isJpy ? 1500000 : 3817),
-          equity: info?.equity ?? (isJpy ? 1500000 : 3817),
-          margin: info?.margin ?? 0,
-          freeMargin: info?.freeMargin ?? (isJpy ? 1500000 : 3817),
+          // Reflect the real broker link: DEPLOYED alone does not mean the broker login succeeded.
+          connectionStatus: isLiveConnected
+            ? 'CONNECTED'
+            : p.connectionStatus === 'DISCONNECTED' ? 'DISCONNECTED' : 'SYNCING',
+          lastError: isLiveConnected
+            ? undefined
+            : p.connectionStatus === 'DISCONNECTED'
+              ? 'Broker login failed or was lost. Re-enter the investor password and verify the server name.'
+              : undefined,
+          // Only broker-reported figures; if the broker is unreachable keep the last real snapshot.
+          balance: info?.balance ?? existingAcc?.balance ?? 0,
+          equity: info?.equity ?? existingAcc?.equity ?? 0,
+          margin: info?.margin ?? existingAcc?.margin ?? 0,
+          freeMargin: info?.freeMargin ?? existingAcc?.freeMargin ?? 0,
           currency: effectiveCurrency,
-          leverage: info?.leverage ?? 1000,
+          leverage: info?.leverage ?? existingAcc?.leverage ?? 0,
           vaultSecretRef: `ref_meta_${p.id}`,
           metaApiAccountId: p.id,
           lastSyncedAt: new Date().toISOString(),

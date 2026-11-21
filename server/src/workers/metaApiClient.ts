@@ -4,6 +4,15 @@
  * via MetaApi's enterprise cloud infrastructure.
  */
 
+import { isSimulatedDataAllowed } from '../core/dataPolicy.js';
+
+type ProvisionProbeResult =
+  | { status: 'connected'; id: string; info: MetaApiAccountInfo }
+  | { status: 'not_connected'; id: string; connectionStatus?: string }
+  | { status: 'rejected'; error: string }
+  | { status: 'error'; id?: string; error: string }
+  | { status: 'timeout' };
+
 export interface MetaApiAccountInfo {
   platform: 'MT4' | 'MT5';
   broker: string;
@@ -138,6 +147,7 @@ export class MetaApiClient {
           'auth-token': this.token,
           'Accept': 'application/json',
         },
+        signal: AbortSignal.timeout(10000),
       });
       if (!res.ok) return [];
       const data = await res.json() as any[];
@@ -220,6 +230,7 @@ export class MetaApiClient {
         magic: 0,
         quoteStreamingIntervalInSeconds: 2.5,
       }),
+      signal: AbortSignal.timeout(30000),
     });
 
     if (!res.ok) {
@@ -301,6 +312,7 @@ export class MetaApiClient {
         headers: {
           'auth-token': this.token,
         },
+        signal: AbortSignal.timeout(10000),
       });
       return res.ok;
     } catch {
@@ -380,8 +392,68 @@ export class MetaApiClient {
     }
   }
 
+  /** Hard upper bound for the synchronous cloud phase of preflight validation. */
+  private static get VALIDATION_BUDGET_MS(): number {
+    const fromEnv = Number(process.env.METAAPI_VALIDATION_BUDGET_MS);
+    return Number.isFinite(fromEnv) && fromEnv > 0 ? fromEnv : 20000;
+  }
+
   /**
-   * Validates investor credentials against MetaApi Cloud Provisioning
+   * Provisions/redeploys the MetaApi account and polls until CONNECTED or the deadline passes.
+   * Never throws. Work started here (deploy/redeploy) keeps progressing on MetaApi's side
+   * after the deadline, so a retry a minute later usually succeeds for slow-connecting brokers.
+   */
+  private async provisionAndProbe(
+    server: string,
+    login: string,
+    investorPassword: string,
+    platform: 'MT4' | 'MT5',
+    deadline: number
+  ): Promise<ProvisionProbeResult> {
+    try {
+      const { id, state } = await this.createOrGetAccount(server, login, investorPassword, platform);
+      if (!id) {
+        return { status: 'error', error: 'MetaApi did not return an account id for this login.' };
+      }
+
+      // Auto-deploy if needed so broker connection initiates
+      if (state === 'DRAFT' || state === 'UNDEPLOYED') {
+        await this.deployAccount(id);
+      }
+
+      // Poll until MetaApi reports CONNECTED or the budget runs out
+      let accState = await this.getAccountState(id);
+      while (accState?.connectionStatus !== 'CONNECTED' && Date.now() + 2000 < deadline) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        accState = await this.getAccountState(id);
+      }
+
+      if (accState?.connectionStatus !== 'CONNECTED') {
+        return { status: 'not_connected', id, connectionStatus: accState?.connectionStatus };
+      }
+      const info = await this.getAccountInformation(id);
+      if (!info) {
+        return { status: 'error', id, error: 'Broker connection is up but account information could not be read yet.' };
+      }
+      return { status: 'connected', id, info };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.warn(`[MetaApiClient] Cloud provisioning failed for ${login}@${server}:`, message);
+      // createOrGetAccount throws "(4xx)" on MetaApi client errors. 401/403/429 concern our API token
+      // or rate limits, not the trader's credentials, so they are reported as integration errors.
+      const code = Number(message.match(/\((4\d\d)\)/)?.[1] || 0);
+      const rejected = code >= 400 && code < 500 && ![401, 403, 429].includes(code);
+      return { status: rejected ? 'rejected' : 'error', error: message };
+    }
+  }
+
+  /**
+   * Validates investor credentials against MetaApi Cloud Provisioning.
+   *
+   * Live mode: succeeds ONLY when MetaApi is logged in to the broker and real account
+   * information has been read. Any other outcome is reported as a failure — no placeholder
+   * balances are ever returned. Simulated results are limited to tests / offline local dev
+   * (see core/dataPolicy.ts).
    */
   public async validateAccount(
     server: string,
@@ -397,7 +469,20 @@ export class MetaApiClient {
       };
     }
 
-    // Pre-flight check for simulated/test mock passwords
+    const simulationAllowed = isSimulatedDataAllowed();
+
+    if (!simulationAllowed) {
+      if (!this.hasToken()) {
+        return {
+          success: false,
+          error: 'Broker integration is not configured on the server (META_API_TOKEN missing). Please contact support.',
+          errorCode: 'UNKNOWN',
+        };
+      }
+      return this.validateAccountLive(server, login, investorPassword, platform);
+    }
+
+    // ---- Simulation mode only (automated tests / offline local development) ----
     if (investorPassword.toLowerCase().includes('wrong')) {
       return {
         success: false,
@@ -415,42 +500,6 @@ export class MetaApiClient {
     }
 
     const isMockAccount = server.toLowerCase().includes('mock') || login.startsWith('mock_');
-
-    // When real token is configured and not a mock test account, attempt live cloud provisioning first
-    if (this.hasToken() && !isMockAccount && !this.isTestRuntime()) {
-      try {
-        const { id, state } = await this.createOrGetAccount(server, login, investorPassword, platform);
-
-        // Auto-deploy if needed so broker connection initiates
-        if (state === 'DRAFT' || state === 'UNDEPLOYED') {
-          await this.deployAccount(id);
-        }
-
-        // Poll fast provisioning state (~300ms each) until MetaApi reports CONNECTED
-        let accState = await this.getAccountState(id);
-        for (let attempt = 0; attempt < 4 && accState?.connectionStatus !== 'CONNECTED'; attempt++) {
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          accState = await this.getAccountState(id);
-        }
-
-        const liveInfo =
-          accState?.connectionStatus === 'CONNECTED'
-            ? await this.getAccountInformation(id)
-            : null;
-
-        if (liveInfo) {
-          return {
-            success: true,
-            metaApiAccountId: id,
-            accountInfo: liveInfo,
-          };
-        }
-      } catch (err: unknown) {
-        console.warn(`[MetaApiClient] Cloud container provisioning skipped or unsupported for server ${server}:`, err instanceof Error ? err.message : String(err));
-      }
-    }
-
-    // Baseline validation for offline/mock mode
     const knownServers = ['XMGlobal', 'XMTrading', 'Axiory', 'VantageFX', 'Vanguard', 'ICMarkets', 'Exness', 'MetaQuotes'];
     const matchesKnown = knownServers.some(s => server.toLowerCase().includes(s.toLowerCase()));
     const sLower = server.toLowerCase();
@@ -471,6 +520,58 @@ export class MetaApiClient {
         leverage: 100,
       },
     };
+  }
+
+  /**
+   * Live broker validation through MetaApi, bounded by VALIDATION_BUDGET_MS so the
+   * preflight HTTP request can never hang.
+   */
+  private async validateAccountLive(
+    server: string,
+    login: string,
+    investorPassword: string,
+    platform: 'MT4' | 'MT5'
+  ): Promise<{ success: boolean; accountInfo?: MetaApiAccountInfo; metaApiAccountId?: string; error?: string; errorCode?: string }> {
+    const budgetMs = MetaApiClient.VALIDATION_BUDGET_MS;
+    const deadline = Date.now() + budgetMs;
+    let budgetTimer: ReturnType<typeof setTimeout> | undefined;
+    const budgetExpired = new Promise<ProvisionProbeResult>(resolve => {
+      budgetTimer = setTimeout(() => resolve({ status: 'timeout' }), budgetMs);
+    });
+
+    const result = await Promise.race([
+      this.provisionAndProbe(server, login, investorPassword, platform, deadline),
+      budgetExpired,
+    ]);
+    clearTimeout(budgetTimer);
+
+    switch (result.status) {
+      case 'connected':
+        return { success: true, metaApiAccountId: result.id, accountInfo: result.info };
+      case 'rejected':
+        return {
+          success: false,
+          error: `The broker integration rejected these credentials for account ${login} on '${server}'. ` +
+            `Check the investor (read-only) password and the exact server name. (${result.error.slice(0, 160)})`,
+          errorCode: 'INVALID_CREDENTIALS',
+        };
+      case 'not_connected':
+      case 'timeout':
+        console.warn(`[MetaApiClient] ${login}@${server} not CONNECTED within ${budgetMs}ms (status: ${result.status === 'not_connected' ? result.connectionStatus : 'timeout'})`);
+        return {
+          success: false,
+          error: `Could not log in to broker server '${server}' with account ${login} yet. ` +
+            `If this is a new connection it can take up to a minute — retry shortly. ` +
+            `If it keeps failing, verify the investor password and the exact server name from your broker.`,
+          errorCode: 'SERVER_UNREACHABLE',
+        };
+      default:
+        return {
+          success: false,
+          error: `Broker connection could not be verified: ${result.error}`,
+          errorCode: 'UNKNOWN',
+        };
+    }
   }
 
   /**

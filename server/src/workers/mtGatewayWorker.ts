@@ -18,6 +18,7 @@ import {
   DealListener,
   HealthListener,
 } from './baseWorker.js';
+import { isSimulatedDataAllowed } from '../core/dataPolicy.js';
 import { MarketSimulator } from './marketSimulator.js';
 import { MetaApiClient } from './metaApiClient.js';
 import { BrokerDirectory } from '../connector/brokerDirectory.js';
@@ -50,6 +51,8 @@ export class MTGatewayWorker implements IBrokerWorker {
     // Listen to market ticks to update open position prices and emit stream events
     this.cleanupTickSubscription = this.marketSim.onTick((symbol, price) => {
       for (const [accountId, data] of this.activeAccounts.entries()) {
+        // Live MetaApi accounts get prices/P&L from the broker, not the simulator
+        if (data.metaApiAccountId && !data.metaApiAccountId.startsWith('mock_')) continue;
         let hasChanges = false;
 
         data.positions.forEach(pos => {
@@ -94,22 +97,33 @@ export class MTGatewayWorker implements IBrokerWorker {
       gatewayCreds.platform || 'MT5'
     );
 
-    if (res.success) {
+    if (res.success && res.accountInfo) {
       return {
         success: true,
         accountDetails: {
           accountNumber: gatewayCreds.login,
           server: gatewayCreds.serverName,
-          balance: res.accountInfo?.balance ?? 10000.00,
-          equity: res.accountInfo?.equity ?? 10420.50,
-          currency: res.accountInfo?.currency ?? 'USD',
-          leverage: res.accountInfo?.leverage ?? 100,
+          balance: res.accountInfo.balance,
+          equity: res.accountInfo.equity,
+          margin: res.accountInfo.margin,
+          freeMargin: res.accountInfo.freeMargin,
+          currency: res.accountInfo.currency,
+          leverage: res.accountInfo.leverage,
           metaApiAccountId: res.metaApiAccountId,
         },
       };
     }
 
-    // Comprehensive fallback to BrokerDirectory verification for all brokers (IC Markets, XM, Axiory, Vantage, Vanguard, etc.)
+    // Live mode: the broker's answer is final — never override a failure with a synthetic pass.
+    if (!isSimulatedDataAllowed()) {
+      return {
+        success: false,
+        error: res.error || 'Broker connection could not be verified.',
+        errorCode: (res.errorCode as ValidationResult['errorCode']) || 'UNKNOWN',
+      };
+    }
+
+    // Simulation mode only: BrokerDirectory offline verification (IC Markets, XM, Axiory, Vantage, Vanguard, etc.)
     const dirResult = await BrokerDirectory.getInstance().validateInvestorCredentials({
       login: gatewayCreds.login,
       investorPassword: gatewayCreds.investorPassword,
@@ -163,8 +177,8 @@ export class MTGatewayWorker implements IBrokerWorker {
       }
     }
 
-    // If no live positions found or in simulated mode, populate initial simulated positions
-    if (positions.length === 0) {
+    // Offline simulation only: seed demo positions. Live accounts show exactly what the broker reports.
+    if (positions.length === 0 && isSimulatedDataAllowed()) {
       positions = this.marketSim.generateInitialPositions(accountId, gatewayCreds.broker);
     }
 
@@ -221,6 +235,7 @@ export class MTGatewayWorker implements IBrokerWorker {
         return [];
       }
     }
+    if (!isSimulatedDataAllowed()) return [];
     return this.marketSim.generateHistoricalDeals(accountId, this.broker);
   }
 

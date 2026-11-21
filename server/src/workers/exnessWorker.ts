@@ -18,6 +18,7 @@ import {
   DealListener,
   HealthListener,
 } from './baseWorker.js';
+import { isSimulatedDataAllowed } from '../core/dataPolicy.js';
 import { MarketSimulator } from './marketSimulator.js';
 import { ExnessApiClient } from './exnessApiClient.js';
 
@@ -69,6 +70,15 @@ export class ExnessWorker implements IBrokerWorker {
    */
   public async validateConnection(creds: unknown): Promise<ValidationResult> {
     const exnessCreds = creds as ExnessNativeCredentials;
+    // Positions and trade history for the native Exness path are not wired to a real broker feed yet,
+    // so live mode refuses it rather than showing simulated data.
+    if (!isSimulatedDataAllowed()) {
+      return {
+        success: false,
+        error: 'Direct Exness API sync is not available yet. Please connect your Exness account with the MT4/MT5 investor password option.',
+        errorCode: 'UNKNOWN',
+      };
+    }
     return this.exnessApiClient.validateCredentials(
       exnessCreds.apiKey,
       exnessCreds.apiSecret,
