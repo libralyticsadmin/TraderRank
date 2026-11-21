@@ -256,13 +256,25 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
       setErrorMessage(data.error || `Could not start broker connection (HTTP ${res.status}).`);
       return;
     }
+    if (data.token) {
+      try {
+        localStorage.setItem('traderank_auth_token_v1', data.token);
+      } catch {
+        // ignore
+      }
+    }
     applyOnboardingUpdate(data.onboarding);
 
     stopPolling();
     pollRef.current = setInterval(async () => {
       try {
-        const r = await fetch(`/api/connector/onboarding/${data.onboardingId}`, {
-          headers,
+        const curToken = localStorage.getItem('traderank_auth_token_v1');
+        const pollHeaders: Record<string, string> = {
+          'Content-Type': 'application/json',
+          ...(curToken ? { Authorization: `Bearer ${curToken}` } : {}),
+        };
+        const r = await fetch(`/api/connector/onboarding/${data.onboardingId}?userId=${encodeURIComponent(user.id)}`, {
+          headers: pollHeaders,
           signal: AbortSignal.timeout(15000),
         });
         if (!r.ok) return;

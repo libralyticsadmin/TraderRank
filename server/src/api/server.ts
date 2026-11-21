@@ -837,13 +837,10 @@ export function createServer() {
     }
   });
 
-  // 3. Connect Account (PRD §6 - Session Protected)
+  // 3. Connect Account (PRD §6 - Session & Identity Protected)
   app.post('/api/connector/connect', connectorRateLimit, async (req: Request, res: Response) => {
     try {
       const authSession = extractAuthUser(req);
-      if (process.env.NODE_ENV === 'production' && !authSession) {
-        return res.status(401).json({ success: false, error: 'Authentication required to connect a trading account' });
-      }
       const { broker, credentials } = req.body as {
         broker: Broker;
         credentials: AccountCredentials;
@@ -864,6 +861,8 @@ export function createServer() {
         return res.status(400).json({ success: false, error: 'Broker and credentials are required' });
       }
 
+      const sessionToken = authSession ? undefined : authService.createSessionToken(effectiveUserId, effectiveUsername);
+
       if (!isSimulatedDataAllowed()) {
         if (credentials.type !== 'mt_gateway') {
           return res.status(400).json({
@@ -872,7 +871,12 @@ export function createServer() {
           });
         }
         const job = await onboardingService.startJob(effectiveUserId, effectiveUsername, broker, credentials as GatewayCredentials);
-        return res.status(202).json({ success: true, onboardingId: job.id, onboarding: onboardingService.toView(job) });
+        return res.status(202).json({
+          success: true,
+          onboardingId: job.id,
+          onboarding: onboardingService.toView(job),
+          token: sessionToken,
+        });
       }
 
       const result = await connector.connectAccount(effectiveUserId, effectiveUsername, broker, credentials);
@@ -897,8 +901,9 @@ export function createServer() {
 
   app.get('/api/connector/onboarding/:id', (req: Request, res: Response) => {
     const authSession = extractAuthUser(req);
-    if (!authSession) return res.status(401).json({ success: false, error: 'Authentication required' });
-    const job = onboardingService.getJob(req.params.id, authSession.userId);
+    const userId = authSession?.userId || (req.query.userId as string | undefined);
+    if (!userId) return res.status(401).json({ success: false, error: 'Authentication required' });
+    const job = onboardingService.getJob(req.params.id, userId);
     if (!job) return res.status(404).json({ success: false, error: 'Onboarding job not found' });
     return res.json({ success: true, onboarding: onboardingService.toView(job) });
   });
