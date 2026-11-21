@@ -32,6 +32,8 @@ import { TournamentService } from '../services/tournamentService.js';
 import { authService, SessionPayload } from '../services/authService.js';
 import { onboardingService } from '../services/onboardingService.js';
 import { accountHealthService } from '../services/accountHealthService.js';
+import { startServiceHealthMonitor, getServiceStatus } from '../services/serviceHealthMonitor.js';
+import { getMetricsSnapshot } from '../utils/externalCall.js';
 import { isSimulatedDataAllowed } from '../core/dataPolicy.js';
 import { getCachedCanonicalStats, getBulletinFeed, invalidateCanonicalStatsCache } from '../services/canonicalStatsService.js';
 import { getStreakStatus, getEffectiveClaimedDays, isStreakBroken, XP_RULES, calculateTraderGamification } from '../../../shared/src/gamification.js';
@@ -197,6 +199,7 @@ export function createServer() {
   if (!process.env.VITEST && process.env.NODE_ENV !== 'test') {
     onboardingService.start();
     accountHealthService.start();
+    startServiceHealthMonitor();
   }
 
   // Automatically sync provisioned cloud broker accounts on startup
@@ -786,8 +789,11 @@ export function createServer() {
 
   // 1. Health & Telemetry
   app.get('/api/health', (_req: Request, res: Response) => {
+    // Always HTTP 200 (Render health check); degradation is reported in the body
+    const metaApi = getServiceStatus('metaapi');
     res.json({
-      status: 'HEALTHY',
+      status: metaApi.status === 'degraded' ? 'DEGRADED' : 'HEALTHY',
+      metaApi,
       timestamp: new Date().toISOString(),
       activeWsClients: clients.size,
       services: {
@@ -1429,6 +1435,10 @@ export function createServer() {
   });
 
   // 9. Secrets Vault Audit Logs (Infrastructure Design §6)
+  app.get('/api/admin/metrics', requireAdminAuth, (_req: Request, res: Response) => {
+    res.json({ success: true, metrics: getMetricsSnapshot() });
+  });
+
   app.get('/api/admin/broker-health', requireAdminAuth, (_req: Request, res: Response) => {
     res.json({ success: true, health: accountHealthService.getSummary() });
   });

@@ -5,6 +5,7 @@
  * Provides the authoritative live price reference matching retail and institutional brokers.
  */
 
+import { instrumentedFetch } from '../utils/externalCall.js';
 import { CandlestickBar, CandlestickTimeframe, MarketCandlestickResponse } from '../../../shared/src/types.js';
 
 export interface TradingViewQuote {
@@ -77,7 +78,7 @@ export class TradingViewAdapter {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 4000);
 
-      const res = await fetch(url, {
+      const res = await instrumentedFetch('tradingview', url, {
         method: 'POST',
         signal: controller.signal,
         headers: {
@@ -168,7 +169,7 @@ export class TradingViewAdapter {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 5000);
 
-        const res = await fetch(url, {
+        const res = await instrumentedFetch('tradingview', url, {
           method: 'POST',
           signal: controller.signal,
           headers: {

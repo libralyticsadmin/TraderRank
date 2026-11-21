@@ -1,4 +1,5 @@
 import { MarketSimulator } from '../workers/marketSimulator.js';
+import { instrumentedFetch } from '../utils/externalCall.js';
 import { AllTickAdapter } from './alltickAdapter.js';
 import { TradingViewAdapter } from './tradingViewAdapter.js';
 import { MetaApiClient } from '../workers/metaApiClient.js';
@@ -171,7 +172,7 @@ export class LiveMarketFeedService {
         try {
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 4000);
-          const fxRes = await fetch('https://open.er-api.com/v6/latest/USD', {
+          const fxRes = await instrumentedFetch('fxrates', 'https://open.er-api.com/v6/latest/USD', {
             signal: controller.signal,
             headers: { 'Accept': 'application/json' },
           });
@@ -215,7 +216,7 @@ export class LiveMarketFeedService {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 4000);
 
-      const res = await fetch('https://api.coincap.io/v2/assets/bitcoin', {
+      const res = await instrumentedFetch('crypto', 'https://api.coincap.io/v2/assets/bitcoin', {
         signal: controller.signal,
       }).catch(() => null);
 
@@ -230,7 +231,7 @@ export class LiveMarketFeedService {
         }
       }
 
-      const secondaryRes = await fetch('https://api.coinbase.com/v2/prices/BTC-USD/spot', { signal: AbortSignal.timeout(5000) }).catch(() => null);
+      const secondaryRes = await instrumentedFetch('crypto', 'https://api.coinbase.com/v2/prices/BTC-USD/spot', { signal: AbortSignal.timeout(5000) }).catch(() => null);
       if (secondaryRes && secondaryRes.ok) {
         const data = (await secondaryRes.json()) as { data?: { amount?: string } };
         if (data.data?.amount) {

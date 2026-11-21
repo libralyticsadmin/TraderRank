@@ -4,6 +4,7 @@
  * via MetaApi's enterprise cloud infrastructure.
  */
 
+import { instrumentedFetch } from '../utils/externalCall.js';
 import { isSimulatedDataAllowed } from '../core/dataPolicy.js';
 
 type ProvisionProbeResult =
@@ -115,7 +116,7 @@ export class MetaApiClient {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 2500);
-      const res = await fetch(`${this.provisioningBaseUrl}/users/current/accounts?limit=1`, {
+      const res = await instrumentedFetch('metaapi', `${this.provisioningBaseUrl}/users/current/accounts?limit=1`, {
         signal: controller.signal,
         headers: {
           'auth-token': this.token,
@@ -142,7 +143,7 @@ export class MetaApiClient {
   public async listProvisionedAccounts(): Promise<MetaApiProvisionedAccount[]> {
     if (!this.hasToken()) return [];
     try {
-      const res = await fetch(`${this.provisioningBaseUrl}/users/current/accounts`, {
+      const res = await instrumentedFetch('metaapi', `${this.provisioningBaseUrl}/users/current/accounts`, {
         headers: {
           'auth-token': this.token,
           'Accept': 'application/json',
@@ -214,7 +215,7 @@ export class MetaApiClient {
     }
 
     // 2. Provision new account in MetaApi
-    const res = await fetch(`${this.provisioningBaseUrl}/users/current/accounts`, {
+    const res = await instrumentedFetch('metaapi', `${this.provisioningBaseUrl}/users/current/accounts`, {
       method: 'POST',
       headers: {
         'auth-token': this.token,
@@ -259,7 +260,7 @@ export class MetaApiClient {
       return { ok: true };
     }
     try {
-      const res = await fetch(`${this.provisioningBaseUrl}/users/current/accounts/${metaApiAccountId}`, {
+      const res = await instrumentedFetch('metaapi', `${this.provisioningBaseUrl}/users/current/accounts/${metaApiAccountId}`, {
         method: 'PUT',
         headers: {
           'auth-token': this.token,
@@ -288,7 +289,7 @@ export class MetaApiClient {
   public async redeployAccount(metaApiAccountId: string): Promise<boolean> {
     if (!this.hasToken() || !metaApiAccountId || typeof metaApiAccountId !== 'string' || metaApiAccountId.startsWith('mock_')) return true;
     try {
-      const res = await fetch(`${this.provisioningBaseUrl}/users/current/accounts/${metaApiAccountId}/redeploy`, {
+      const res = await instrumentedFetch('metaapi', `${this.provisioningBaseUrl}/users/current/accounts/${metaApiAccountId}/redeploy`, {
         method: 'POST',
         headers: {
           'auth-token': this.token,
@@ -307,7 +308,7 @@ export class MetaApiClient {
   public async deployAccount(metaApiAccountId: string): Promise<boolean> {
     if (!this.hasToken() || !metaApiAccountId || typeof metaApiAccountId !== 'string' || metaApiAccountId.startsWith('mock_')) return true;
     try {
-      const res = await fetch(`${this.provisioningBaseUrl}/users/current/accounts/${metaApiAccountId}/deploy`, {
+      const res = await instrumentedFetch('metaapi', `${this.provisioningBaseUrl}/users/current/accounts/${metaApiAccountId}/deploy`, {
         method: 'POST',
         headers: {
           'auth-token': this.token,
@@ -326,7 +327,7 @@ export class MetaApiClient {
   public async undeployAccount(metaApiAccountId: string): Promise<boolean> {
     if (!this.hasToken() || !metaApiAccountId || metaApiAccountId.startsWith('mock_')) return true;
     try {
-      const res = await fetch(`${this.provisioningBaseUrl}/users/current/accounts/${metaApiAccountId}/undeploy`, {
+      const res = await instrumentedFetch('metaapi', `${this.provisioningBaseUrl}/users/current/accounts/${metaApiAccountId}/undeploy`, {
         method: 'POST',
         headers: { 'auth-token': this.token },
         signal: AbortSignal.timeout(10000),
@@ -345,7 +346,7 @@ export class MetaApiClient {
       return { state: 'DEPLOYED', connectionStatus: 'CONNECTED' };
     }
     try {
-      const res = await fetch(`${this.provisioningBaseUrl}/users/current/accounts/${metaApiAccountId}`, {
+      const res = await instrumentedFetch('metaapi', `${this.provisioningBaseUrl}/users/current/accounts/${metaApiAccountId}`, {
         headers: {
           'auth-token': this.token,
           'Accept': 'application/json',
@@ -385,7 +386,7 @@ export class MetaApiClient {
 
     try {
       const clientUrl = this.getClientBaseUrl(metaApiAccountId);
-      const res = await fetch(`${clientUrl}/users/current/accounts/${metaApiAccountId}/account-information`, {
+      const res = await instrumentedFetch('metaapi', `${clientUrl}/users/current/accounts/${metaApiAccountId}/account-information`, {
         headers: {
           'auth-token': this.token,
           'Accept': 'application/json',
@@ -626,7 +627,7 @@ export class MetaApiClient {
     const promise = (async (): Promise<MetaApiPosition[]> => {
       try {
         const clientUrl = this.getClientBaseUrl(metaApiAccountId);
-        const res = await fetch(`${clientUrl}/users/current/accounts/${metaApiAccountId}/positions`, {
+        const res = await instrumentedFetch('metaapi', `${clientUrl}/users/current/accounts/${metaApiAccountId}/positions`, {
           headers: {
             'auth-token': this.token,
             'Accept': 'application/json',
@@ -692,7 +693,7 @@ export class MetaApiClient {
       for (let page = 0; page < maxPages; page++) {
         const offset = page * limit;
         const url = `${clientUrl}/users/current/accounts/${metaApiAccountId}/history-deals/time/${startEncoded}/${endEncoded}?offset=${offset}&limit=${limit}`;
-        const res = await fetch(url, {
+        const res = await instrumentedFetch('metaapi', url, {
           headers: {
             'auth-token': this.token,
             'Accept': 'application/json',
@@ -748,7 +749,7 @@ export class MetaApiClient {
     if (!this.hasToken() || !metaApiAccountId || typeof metaApiAccountId !== 'string' || metaApiAccountId.startsWith('mock_')) return null;
 
     try {
-      const res = await fetch(`${this.metaStatsBaseUrl}/users/current/accounts/${metaApiAccountId}/metrics`, {
+      const res = await instrumentedFetch('metastats', `${this.metaStatsBaseUrl}/users/current/accounts/${metaApiAccountId}/metrics`, {
         headers: {
           'auth-token': this.token,
           'Accept': 'application/json',
@@ -825,7 +826,7 @@ export class MetaApiClient {
         const encodedSymbol = encodeURIComponent(sym);
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 2000);
-        const res = await fetch(
+        const res = await instrumentedFetch('metaapi', 
           `${marketUrl}/users/current/accounts/${metaApiAccountId}/historical-market-data/symbols/${encodedSymbol}/timeframes/${timeframe}/candles?limit=${limit}`,
           {
             signal: controller.signal,
@@ -878,7 +879,7 @@ export class MetaApiClient {
     for (const sym of candidates) {
       try {
         const encodedSymbol = encodeURIComponent(sym);
-        const res = await fetch(`${clientUrl}/users/current/accounts/${metaApiAccountId}/symbols/${encodedSymbol}/current-price`, {
+        const res = await instrumentedFetch('metaapi', `${clientUrl}/users/current/accounts/${metaApiAccountId}/symbols/${encodedSymbol}/current-price`, {
           headers: {
             'auth-token': this.token,
             'Accept': 'application/json',

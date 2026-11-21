@@ -4,6 +4,7 @@
  * Reference: https://github.com/AllTick-Official/alltick-realtime-forex-crypto-stock-tick-finance-websocket-api.git
  */
 
+import { instrumentedFetch } from '../utils/externalCall.js';
 import WebSocket from 'ws';
 import { CandlestickBar, CandlestickTimeframe, MarketCandlestickResponse } from '../../../shared/src/types.js';
 
@@ -152,7 +153,7 @@ export class AllTickAdapter {
 
       const requestUrl = `${this.restKlineUrl}?token=${encodeURIComponent(this.token)}&query=${encodeURIComponent(JSON.stringify(queryObj))}`;
 
-      const response = await fetch(requestUrl, {
+      const response = await instrumentedFetch('alltick', requestUrl, {
         method: 'GET',
         headers: {
           'User-Agent': 'TraderRank-Server/1.0',
@@ -370,7 +371,7 @@ export class AllTickAdapter {
 
       const requestUrl = `${this.restQuoteUrl}?token=${encodeURIComponent(this.token)}&query=${encodeURIComponent(JSON.stringify(payload))}`;
 
-      const response = await fetch(requestUrl, {
+      const response = await instrumentedFetch('alltick', requestUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

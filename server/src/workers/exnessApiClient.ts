@@ -4,6 +4,7 @@
  * with HMAC-SHA256 signature generation and pre-flight validation.
  */
 
+import { instrumentedFetch } from '../utils/externalCall.js';
 import { createHmac } from 'crypto';
 import { ValidationResult } from '../../../shared/src/types.js';
 
@@ -71,7 +72,7 @@ export class ExnessApiClient {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 4000);
 
-      const res = await fetch(`${this.baseUrl}/v1/time`, {
+      const res = await instrumentedFetch('exness', `${this.baseUrl}/v1/time`, {
         signal: controller.signal,
         headers: { 'Accept': 'application/json' },
       }).catch(() => null);
@@ -136,7 +137,7 @@ export class ExnessApiClient {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 5000);
 
-        const res = await fetch(`${this.baseUrl}${path}`, {
+        const res = await instrumentedFetch('exness', `${this.baseUrl}${path}`, {
           headers,
           signal: controller.signal,
         });

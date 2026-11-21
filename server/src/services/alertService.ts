@@ -1,3 +1,4 @@
+import { instrumentedFetch } from '../utils/externalCall.js';
 /**
  * Operator alerting (email).
  *
@@ -31,7 +32,7 @@ class ResendTransport implements AlertTransport {
 
   async send(subject: string, text: string): Promise<boolean> {
     try {
-      const res = await fetch('https://api.resend.com/emails', {
+      const res = await instrumentedFetch('resend', 'https://api.resend.com/emails', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${this.apiKey}`,

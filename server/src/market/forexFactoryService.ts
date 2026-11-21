@@ -4,6 +4,7 @@
  * Reference: https://github.com/EPSOFT/Scrape-ForexFactory.git & https://www.forexfactory.com
  */
 
+import { instrumentedFetch } from '../utils/externalCall.js';
 import {
   EconomicCalendarResponse,
   ForexFactoryEvent,
@@ -102,7 +103,7 @@ export class ForexFactoryService {
    * Fetch live JSON feed from FairEconomy / ForexFactory
    */
   private async fetchLiveFeed(): Promise<ForexFactoryEvent[]> {
-    const res = await fetch(this.primaryFeedUrl, {
+    const res = await instrumentedFetch('forexfactory', this.primaryFeedUrl, {
       headers: {
         'User-Agent': 'TraderRank-ForexFactory-Sync/1.0',
         Accept: 'application/json',
