@@ -724,6 +724,10 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                     value={login}
                     onChange={e => setLogin(e.target.value)}
                     placeholder="e.g. 10982341"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
                   />
                 </div>
 
@@ -735,6 +739,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                     value={investorPassword}
                     onChange={e => setInvestorPassword(e.target.value)}
                     placeholder="Investor password only"
+                    autoComplete="new-password"
                   />
                   <span className="form-tip">
                     <ShieldCheck size={14} color="#0abab5" /> {t.connector.neverMasterPassword}
@@ -753,6 +758,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                     value={accountId}
                     onChange={e => setAccountId(e.target.value)}
                     placeholder="e.g. EXN-8812903"
+                    autoComplete="off"
                   />
                 </div>
                 <div className="form-group">
@@ -762,6 +768,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                     value={apiKey}
                     onChange={e => setApiKey(e.target.value)}
                     placeholder="Generated from Exness Personal Area"
+                    autoComplete="off"
                   />
                 </div>
                 <div className="form-group">
@@ -772,6 +779,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                     value={apiSecret}
                     onChange={e => setApiSecret(e.target.value)}
                     placeholder="Secret Key"
+                    autoComplete="new-password"
                   />
                   <span className="form-tip">
                     <Key size={14} color="#81d8d0" /> {t.connector.exnessApiHint}
