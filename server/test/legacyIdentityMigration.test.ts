@@ -260,3 +260,21 @@ describe('Migrated identities through live cloud sync (stubbed MetaApi)', () => 
     expect(ownAccounts.find((a: { accountNumber: string }) => a.accountNumber === '342186831')?.accountHolderName).toBe(LEGAL_NAME);
   });
 });
+
+describe('legacy identity migration — storage failure safety', () => {
+  it('aborts without writing anything when a store cannot be read', async () => {
+    const uploads: string[] = [];
+    const storage = {
+      getJson: async () => null,
+      getJsonStrict: async (key: string) => {
+        if (key === 'profiles/account_owners.json') throw new Error('Storage read failed: ECONNRESET');
+        return null;
+      },
+      uploadJson: async (key: string) => { uploads.push(key); return {}; },
+    };
+    await expect(
+      runLegacyIdentityMigration({ storage, markerKey: `migrations/test-failure-${Date.now()}.json` })
+    ).rejects.toThrow(/ECONNRESET/);
+    expect(uploads).toEqual([]); // no store overwritten, no marker written (retries next startup)
+  });
+});

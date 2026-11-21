@@ -289,6 +289,42 @@ export class R2StorageService {
     return null;
   }
 
+  /**
+   * Like getJson, but distinguishes "does not exist" (null) from "could not be read" (throws).
+   * Use before any read-modify-write of a whole store, so a transient R2/disk failure is never
+   * mistaken for an empty store and overwritten.
+   */
+  public async getJsonStrict<T>(key: string): Promise<T | null> {
+    if (this.client) {
+      try {
+        const res = await this.client.send(new GetObjectCommand({ Bucket: this.config.bucketName, Key: key }));
+        if (!res.Body) throw new Error(`R2 returned no body for ${key}`);
+        const bodyStr = await res.Body.transformToString();
+        const parsed = JSON.parse(bodyStr) as T; // throws on corrupt data
+        this.saveToLocalDisk(key, bodyStr);
+        this.inMemoryFallback.set(key, bodyStr);
+        return parsed;
+      } catch (err) {
+        const e = err as { name?: string; Code?: string; $metadata?: { httpStatusCode?: number } };
+        const notFound = e?.name === 'NoSuchKey' || e?.Code === 'NoSuchKey' || e?.$metadata?.httpStatusCode === 404;
+        if (!notFound) {
+          throw new Error(`Storage read failed for ${key}: ${err instanceof Error ? err.message : String(err)}`);
+        }
+        return null; // R2 is the source of truth when configured
+      }
+    }
+
+    const filePath = this.getLocalFilePath(key);
+    if (fs.existsSync(filePath)) {
+      const diskStr = fs.readFileSync(filePath, 'utf-8'); // throws on I/O error
+      const parsed = JSON.parse(diskStr) as T; // throws on corrupt data
+      this.inMemoryFallback.set(key, diskStr);
+      return parsed;
+    }
+    const mem = this.inMemoryFallback.get(key);
+    return mem ? (JSON.parse(mem) as T) : null;
+  }
+
   public async saveLeaderboardSnapshot(tournamentId: string, standings: unknown): Promise<R2UploadResult> {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const key = `leaderboards/${tournamentId}/snapshot_${timestamp}.json`;

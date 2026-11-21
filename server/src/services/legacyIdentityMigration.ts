@@ -30,6 +30,8 @@ export const IDENTITY_STORE_KEYS = {
 
 export interface IdentityStorage {
   getJson<T>(key: string): Promise<T | null>;
+  /** Preferred: null only when the key does not exist; throws when it cannot be read. */
+  getJsonStrict?<T>(key: string): Promise<T | null>;
   uploadJson(key: string, data: unknown, metadata?: Record<string, string>): Promise<unknown>;
 }
 
@@ -95,18 +97,23 @@ export async function runLegacyIdentityMigration(
   const markerKey = opts.markerKey ?? LEGACY_IDENTITY_MARKER_KEY;
   const nowIso = (opts.now ?? (() => new Date()))().toISOString();
 
-  const marker = await storage.getJson<Json>(markerKey);
+  // Strict reads: a transient storage failure must abort the migration, never be treated as
+  // an empty store (which would overwrite every other user's records with legacy-only data).
+  const read = <T>(key: string): Promise<T | null> =>
+    storage.getJsonStrict ? storage.getJsonStrict<T>(key) : storage.getJson<T>(key);
+
+  const marker = await read<Json>(markerKey);
   if (marker && typeof marker === 'object') {
     return { status: 'already-applied', changes: [], writtenKeys: [] };
   }
 
   const loaded = {
-    owners: await storage.getJson<Json>(IDENTITY_STORE_KEYS.owners),
-    usernames: await storage.getJson<Json>(IDENTITY_STORE_KEYS.usernames),
-    avatars: await storage.getJson<Json>(IDENTITY_STORE_KEYS.avatars),
-    profiles: await storage.getJson<Json>(IDENTITY_STORE_KEYS.profiles),
-    credentials: await storage.getJson<Json>(IDENTITY_STORE_KEYS.credentials),
-    tournaments: await storage.getJson<Json>(IDENTITY_STORE_KEYS.tournaments),
+    owners: await read<Json>(IDENTITY_STORE_KEYS.owners),
+    usernames: await read<Json>(IDENTITY_STORE_KEYS.usernames),
+    avatars: await read<Json>(IDENTITY_STORE_KEYS.avatars),
+    profiles: await read<Json>(IDENTITY_STORE_KEYS.profiles),
+    credentials: await read<Json>(IDENTITY_STORE_KEYS.credentials),
+    tournaments: await read<Json>(IDENTITY_STORE_KEYS.tournaments),
   };
   const owners = asObject(loaded.owners);
   const usernames = asObject(loaded.usernames);
