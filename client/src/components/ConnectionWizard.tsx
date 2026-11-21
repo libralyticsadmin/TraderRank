@@ -164,6 +164,12 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
     setIsSubmitting(true);
     setErrorMessage(null);
 
+    if (!user) {
+      setErrorMessage('Authentication required: Please sign in or create an account to connect your trading account.');
+      setIsSubmitting(false);
+      return;
+    }
+
     const payloadCreds = selectedPath === 'mt_gateway'
       ? ({
           type: 'mt_gateway',

@@ -672,7 +672,13 @@ export const App: React.FC = () => {
 
           {/* User Profile & Navigation Menu */}
           <UserNavMenu
-            onOpenConnectWizard={() => setIsWizardOpen(true)}
+            onOpenConnectWizard={() => {
+              if (!isAuthenticated) {
+                openAuthModal('signin');
+                return;
+              }
+              setIsWizardOpen(true);
+            }}
             onOpenAffiliateModal={() => setIsAffiliateModalOpen(true)}
             onOpenMyDashboard={handleOpenMyDashboard}
           />
@@ -948,7 +954,13 @@ export const App: React.FC = () => {
               <AccountsList
                 accounts={accounts}
                 onDisconnect={handleDisconnect}
-                onOpenWizard={() => setIsWizardOpen(true)}
+                onOpenWizard={() => {
+                  if (!isAuthenticated) {
+                    openAuthModal('signin');
+                    return;
+                  }
+                  setIsWizardOpen(true);
+                }}
                 onSyncAccount={handleSyncAccount}
                 onOpenSecurityVault={() => setActiveTab('security')}
               />
@@ -1001,7 +1013,15 @@ export const App: React.FC = () => {
       {/* Tab 3: Tournament Battle Arena */}
       {activeTab === 'tournaments' && (
         <div style={{ maxWidth: '1080px', margin: '0 auto', width: '100%' }}>
-          <TournamentArena onOpenConnectWizard={() => setIsWizardOpen(true)} />
+          <TournamentArena
+            onOpenConnectWizard={() => {
+              if (!isAuthenticated) {
+                openAuthModal('signin');
+                return;
+              }
+              setIsWizardOpen(true);
+            }}
+          />
         </div>
       )}
 
@@ -1016,7 +1036,13 @@ export const App: React.FC = () => {
       {activeTab === 'community' && (
         <div style={{ maxWidth: '980px', margin: '0 auto', width: '100%' }}>
           <CommunityFeed
-            onOpenConnectWizard={() => setIsWizardOpen(true)}
+            onOpenConnectWizard={() => {
+              if (!isAuthenticated) {
+                openAuthModal('signin');
+                return;
+              }
+              setIsWizardOpen(true);
+            }}
             onSelectTrader={handleSelectTrader}
           />
         </div>

@@ -20,6 +20,7 @@ import {
 } from './baseWorker.js';
 import { MarketSimulator } from './marketSimulator.js';
 import { MetaApiClient } from './metaApiClient.js';
+import { BrokerDirectory } from '../connector/brokerDirectory.js';
 
 export class MTGatewayWorker implements IBrokerWorker {
   public readonly broker: Broker;
@@ -93,11 +94,34 @@ export class MTGatewayWorker implements IBrokerWorker {
       gatewayCreds.platform || 'MT5'
     );
 
-    if (!res.success) {
+    if (res.success) {
+      return {
+        success: true,
+        accountDetails: {
+          accountNumber: gatewayCreds.login,
+          server: gatewayCreds.serverName,
+          balance: res.accountInfo?.balance ?? 10000.00,
+          equity: res.accountInfo?.equity ?? 10420.50,
+          currency: res.accountInfo?.currency ?? 'USD',
+          leverage: res.accountInfo?.leverage ?? 100,
+          metaApiAccountId: res.metaApiAccountId,
+        },
+      };
+    }
+
+    // Comprehensive fallback to BrokerDirectory verification for all brokers (IC Markets, XM, Axiory, Vantage, Vanguard, etc.)
+    const dirResult = await BrokerDirectory.getInstance().validateInvestorCredentials({
+      login: gatewayCreds.login,
+      investorPassword: gatewayCreds.investorPassword,
+      serverName: gatewayCreds.serverName,
+      platform: gatewayCreds.platform || 'MT5',
+    });
+
+    if (!dirResult.valid) {
       return {
         success: false,
-        error: res.error || 'Connection failed',
-        errorCode: (res.errorCode as ValidationResult['errorCode']) || 'INVALID_CREDENTIALS',
+        error: dirResult.error || res.error || 'Connection failed',
+        errorCode: (dirResult.errorCode as ValidationResult['errorCode']) || (res.errorCode as ValidationResult['errorCode']) || 'INVALID_CREDENTIALS',
       };
     }
 
@@ -106,11 +130,10 @@ export class MTGatewayWorker implements IBrokerWorker {
       accountDetails: {
         accountNumber: gatewayCreds.login,
         server: gatewayCreds.serverName,
-        balance: res.accountInfo?.balance ?? 10000.00,
-        equity: res.accountInfo?.equity ?? 10420.50,
-        currency: res.accountInfo?.currency ?? 'USD',
-        leverage: res.accountInfo?.leverage ?? 100,
-        metaApiAccountId: res.metaApiAccountId,
+        balance: dirResult.accountDetails?.balance ?? 10000.00,
+        equity: dirResult.accountDetails?.equity ?? 10420.50,
+        currency: dirResult.accountDetails?.currency ?? 'USD',
+        leverage: dirResult.accountDetails?.leverage ?? 100,
       },
     };
   }

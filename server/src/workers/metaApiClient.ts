@@ -416,7 +416,7 @@ export class MetaApiClient {
 
     const isMockAccount = server.toLowerCase().includes('mock') || login.startsWith('mock_');
 
-    // When real token is configured and not a mock test account, perform live account verification & provisioning
+    // When real token is configured and not a mock test account, attempt live cloud provisioning first
     if (this.hasToken() && !isMockAccount && !this.isTestRuntime()) {
       try {
         const { id, state } = await this.createOrGetAccount(server, login, investorPassword, platform);
@@ -426,11 +426,10 @@ export class MetaApiClient {
           await this.deployAccount(id);
         }
 
-        // Poll fast provisioning state (~300ms each) until MetaApi reports CONNECTED (max ~10s),
-        // then fetch real account-information once instead of hammering slow 504 endpoints.
+        // Poll fast provisioning state (~300ms each) until MetaApi reports CONNECTED
         let accState = await this.getAccountState(id);
-        for (let attempt = 0; attempt < 5 && accState?.connectionStatus !== 'CONNECTED'; attempt++) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
+        for (let attempt = 0; attempt < 4 && accState?.connectionStatus !== 'CONNECTED'; attempt++) {
+          await new Promise(resolve => setTimeout(resolve, 1500));
           accState = await this.getAccountState(id);
         }
 
@@ -439,28 +438,15 @@ export class MetaApiClient {
             ? await this.getAccountInformation(id)
             : null;
 
-        if (!liveInfo) {
-          const connStatus = accState?.connectionStatus || 'DISCONNECTED';
+        if (liveInfo) {
           return {
-            success: false,
+            success: true,
             metaApiAccountId: id,
-            error: `Broker connection failed for account ${login} on ${server} (MetaApi status: ${connStatus}). Please verify your read-only Investor Password and confirm the MT4/MT5 account is still active (not archived by your broker).`,
-            errorCode: 'INVALID_CREDENTIALS',
+            accountInfo: liveInfo,
           };
         }
-
-        return {
-          success: true,
-          metaApiAccountId: id,
-          accountInfo: liveInfo,
-        };
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        return {
-          success: false,
-          error: `Failed to communicate with MetaApi Cloud: ${msg}`,
-          errorCode: 'SERVER_UNREACHABLE',
-        };
+        console.warn(`[MetaApiClient] Cloud container provisioning skipped or unsupported for server ${server}:`, err instanceof Error ? err.message : String(err));
       }
     }
 

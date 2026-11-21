@@ -203,7 +203,7 @@ export class BrokerDirectory {
         valid: false,
         broker: this.resolveBroker(serverName),
         serverProfile: { broker: this.resolveBroker(serverName), serverName, platform, isDemo: false },
-        error: `Broker server '${serverName}' is currently unreachable or undergoing maintenance.`,
+        error: `Unable to reach broker server: '${serverName}' is currently unreachable or undergoing maintenance.`,
         errorCode: 'SERVER_UNREACHABLE',
       };
     }

@@ -181,7 +181,7 @@ export class AccountConnectorService {
     if (accountNumber !== 'NATIVE-ACC') {
       const persistedOwner = this.accountOwners.get(accountNumber);
       const currentOwnerId = existingAcc?.userId || persistedOwner?.userId;
-      if (currentOwnerId && currentOwnerId !== userId) {
+      if (currentOwnerId && !AccountConnectorService.isSameOwner(currentOwnerId, userId)) {
         const err = new Error('This broker account is already connected to another TraderRank user');
         (err as Error & { code?: string }).code = 'ACCOUNT_OWNED_BY_OTHER';
         throw err;

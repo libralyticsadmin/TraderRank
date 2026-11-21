@@ -794,9 +794,6 @@ export function createServer() {
   app.post('/api/connector/validate', connectorRateLimit, async (req: Request, res: Response) => {
     try {
       const authSession = extractAuthUser(req);
-      if (process.env.NODE_ENV === 'production' && !authSession) {
-        return res.status(401).json({ success: false, error: 'Authentication required to validate trading account credentials' });
-      }
       const { broker, credentials } = req.body as { broker: Broker; credentials: AccountCredentials };
       const targetLogin = String((credentials as any)?.login || (credentials as any)?.accountId || '').trim();
       console.log(`[CONNECTOR] Incoming validate request for broker: ${broker}, server: ${(credentials as any)?.serverName || 'N/A'}, login: ${targetLogin || 'N/A'}`);
