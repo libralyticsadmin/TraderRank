@@ -259,7 +259,7 @@ export class AccountConnectorService {
     };
     this.accountOwners.set(accountNumber, ownerRecord);
     this.accountOwners.set(accountId, ownerRecord);
-    this.persistAccountOwnersToR2().catch(() => {});
+    await this.persistAccountOwnersToR2();
 
     this.leaderboard.registerAccountMapping(accountId, userId, resolvedProfileUsername, broker, resolvedProfileUsername, accountNumber);
 
@@ -682,7 +682,7 @@ export class AccountConnectorService {
             connectedAt: new Date().toISOString(),
             status: 'CONNECTED',
           });
-          this.persistAccountOwnersToR2().catch(() => {});
+          await this.persistAccountOwnersToR2();
         }
 
         this.leaderboard.registerAccountMapping(
@@ -1242,7 +1242,7 @@ export class AccountConnectorService {
         existingOwner.status = 'DISCONNECTED';
         this.accountOwners.set(cleanAcc, existingOwner);
       }
-      this.persistAccountOwnersToR2().catch(() => {});
+      await this.persistAccountOwnersToR2();
     }
 
     await this.eventBus.publish('stream:account.events', 'account.disconnected', accountId, {
