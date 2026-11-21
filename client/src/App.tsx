@@ -434,12 +434,16 @@ export const App: React.FC = () => {
       rank: t.rank || matchedLb?.rank || 1,
       netPips,
       winRate,
-      profitFactor: winRate >= 50 ? 1.4 : 0.8,
+      // Neutral until real trades load: TraderProfileModal computes these from broker trades.
+      // Never show invented figures (see CLAUDE.md data integrity).
+      profitFactor: 0,
       maxDrawdown: 0,
       totalTrades: tradesCount,
-      bestTradePips: 1933.0,
-      avgHoldingTime: '1h 12m',
-      verifiedSince: 'May 2026',
+      bestTradePips: 0,
+      avgHoldingTime: 'N/A',
+      verifiedSince: matchedAcc?.createdAt
+        ? new Date(matchedAcc.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+        : 'N/A',
       isFollowing: false,
       currency: matchedLb?.currency || matchedAcc?.currency || (safeBroker === 'XMTrading' ? 'JPY' : 'USD'),
       accountNumber: matchedLb?.accountNumber || matchedAcc?.accountNumber,
