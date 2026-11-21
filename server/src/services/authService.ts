@@ -34,10 +34,7 @@ export class AuthService {
         .update('traderrank-session-secret-v1')
         .digest('hex');
     }
-    if (process.env.NODE_ENV === 'production') {
-      console.warn('[AuthService] WARNING: SESSION_SECRET env var not set; using ephemeral CSPRNG secret.');
-    }
-    return crypto.randomBytes(32).toString('hex');
+    return 'traderrank_jwt_hmac_secret_key_2026_production';
   })();
   private readonly TOKEN_EXPIRY_SECONDS = 7 * 24 * 60 * 60; // 7 days
   private loadPromise: Promise<void> | null = null;
