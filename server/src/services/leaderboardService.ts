@@ -50,6 +50,8 @@ export class LeaderboardService {
   private static instance: LeaderboardService;
   private traders = new Map<string, TraderAggregate>();
   private accountToUser = new Map<string, string>();
+  /** Broker link health per accountId (set by AccountHealthService). Missing = ACTIVE. */
+  private accountHealth = new Map<string, { state: 'ACTIVE' | 'STALE' | 'REMOVED'; since: string }>();
   private eventBus = RedisStreamsBus.getInstance();
   private updateListeners: ((entries: LeaderboardEntry[]) => void)[] = [];
   private dailyUpdateListeners: ((result: DailyLeaderboardResult) => void)[] = [];
@@ -219,6 +221,41 @@ export class LeaderboardService {
     }
   }
 
+  /**
+   * Marks an account's broker link health. STALE: rank frozen, no new scoring.
+   * REMOVED: excluded from active leaderboards. ACTIVE: normal.
+   */
+  public setAccountHealth(accountId: string, state: 'ACTIVE' | 'STALE' | 'REMOVED'): void {
+    const prev = this.accountHealth.get(accountId);
+    if (state === 'ACTIVE') {
+      if (!prev) return;
+      this.accountHealth.delete(accountId);
+    } else {
+      if (prev?.state === state) return;
+      this.accountHealth.set(accountId, { state, since: prev?.since || new Date().toISOString() });
+    }
+    this.emitLeaderboardUpdate();
+  }
+
+  public getAccountHealth(accountId: string): 'ACTIVE' | 'STALE' | 'REMOVED' {
+    return this.accountHealth.get(accountId)?.state || 'ACTIVE';
+  }
+
+  /** Worst health across a trader's accounts: ACTIVE if any account is active. */
+  private getTraderHealth(userId: string): { state: 'ACTIVE' | 'STALE' | 'REMOVED'; since?: string } {
+    const accountIds = Array.from(this.accountToUser.entries()).filter(([, u]) => u === userId).map(([a]) => a);
+    if (accountIds.length === 0) return { state: 'ACTIVE' };
+    const states = accountIds.map(a => this.accountHealth.get(a));
+    if (states.some(h => !h)) return { state: 'ACTIVE' };
+    if (states.every(h => h!.state === 'REMOVED')) return { state: 'REMOVED', since: states[0]!.since };
+    const stale = states.filter(h => h!.state === 'STALE').map(h => h!.since).sort();
+    return { state: 'STALE', since: stale[0] || states[0]!.since };
+  }
+
+  private isScoringPaused(accountId: string): boolean {
+    return this.accountHealth.has(accountId);
+  }
+
   private initEventConsumers(): void {
     // 1. Live position updates (floating pips)
     this.eventBus.subscribe<CanonicalPosition[]>(
@@ -226,6 +263,7 @@ export class LeaderboardService {
       'group:leaderboard_live',
       'lb-consumer-1',
       envelope => {
+        if (this.isScoringPaused(envelope.accountId)) return; // disconnected: rank frozen
         const userId = this.accountToUser.get(envelope.accountId);
         if (!userId) return;
 
@@ -250,6 +288,7 @@ export class LeaderboardService {
       'group:leaderboard_trades',
       'lb-consumer-1',
       envelope => {
+        if (this.isScoringPaused(envelope.accountId)) return; // disconnected: rank frozen
         const userId = this.accountToUser.get(envelope.accountId);
         if (!userId) return;
 
@@ -336,8 +375,9 @@ export class LeaderboardService {
       dailyRankMap.set(d.userId, { dailyRank: d.rank, dailyPips: d.dailyTotalPips });
     });
 
-    const list = Array.from(this.traders.values()).map(t => {
+    const list = Array.from(this.traders.values()).filter(t => this.getTraderHealth(t.userId).state !== 'REMOVED').map(t => {
       this.checkDateRollover(t);
+      const health = this.getTraderHealth(t.userId);
       const totalPips = Number((t.closedPips + t.floatingPips).toFixed(1));
       const winRate = t.totalTrades > 0 ? Math.round((t.winningTrades / t.totalTrades) * 100) : 0;
       const dailyInfo = dailyRankMap.get(t.userId) || { dailyRank: 99, dailyPips: 0 };
@@ -397,6 +437,8 @@ export class LeaderboardService {
         level: t.level,
         badges: Array.from(t.badges),
         lastUpdated: t.lastUpdated,
+        stale: health.state === 'STALE' ? true : undefined,
+        staleSince: health.state === 'STALE' ? health.since : undefined,
       };
     });
 
@@ -421,7 +463,7 @@ export class LeaderboardService {
   public getDailyLeaderboard(): DailyLeaderboardResult {
     const today = this.getTodayUTC();
 
-    const standings: DailyTraderStats[] = Array.from(this.traders.values()).map(t => {
+    const standings: DailyTraderStats[] = Array.from(this.traders.values()).filter(t => this.getTraderHealth(t.userId).state === 'ACTIVE').map(t => {
       this.checkDateRollover(t);
       const dailyTotal = Number((t.dailyClosedPips + t.dailyFloatingPips).toFixed(1));
       const dailyWinRate = t.dailyTotalTrades > 0

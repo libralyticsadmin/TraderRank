@@ -186,6 +186,7 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
               accountTag: identity.accountTag,
               avatarSeed: identity.avatarSeed,
               avatarUrl: liveAvatarUrl || identity.avatarUrl,
+              stale: e.stale === true,
               broker: primaryBroker,
               currency: accCurrency,
               avatarSymbol: isHomies ? 'bear_emerald' : e.avatarSymbol,
@@ -777,6 +778,14 @@ export const LiveLeaderboard: React.FC<LiveLeaderboardProps> = ({
                           </span>
                         )}
                         <BrokerSymbol broker={trader.broker} />
+                        {(trader as { stale?: boolean }).stale && (
+                          <span
+                            title="Broker connection lost. Rank is frozen until the account reconnects."
+                            style={{ fontSize: '10px', fontWeight: 600, color: '#f0b90b', background: 'rgba(240, 185, 11, 0.1)', border: '1px solid rgba(240, 185, 11, 0.3)', padding: '1px 6px', borderRadius: '4px', whiteSpace: 'nowrap' }}
+                          >
+                            Stale
+                          </span>
+                        )}
                         <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>• {trader.tier}</span>
                       </div>
                       <div style={{ display: 'flex', gap: '10px', fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px' }}>

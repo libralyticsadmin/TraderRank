@@ -256,6 +256,8 @@ export class AccountConnectorService {
     };
 
     this.accounts.set(accountId, account);
+    // A freshly verified connection lifts any stale/removed state from a previous disconnect
+    this.leaderboard.setAccountHealth(accountId, 'ACTIVE');
 
     // Persist account ownership mapping across server restarts (multi-tenant boundary)
     const ownerRecord: AccountOwnerRecord = {
@@ -350,6 +352,11 @@ export class AccountConnectorService {
       }
     }
     return null;
+  }
+
+  /** All account records, unfiltered (for background services such as health monitoring). */
+  public getAllAccountRecords(): TradingAccount[] {
+    return Array.from(this.accounts.values());
   }
 
   public getAccounts(userId?: string): TradingAccount[] {
@@ -923,6 +930,8 @@ export class AccountConnectorService {
           freeMargin: info?.freeMargin ?? existingAcc?.freeMargin ?? 0,
           currency: effectiveCurrency,
           leverage: info?.leverage ?? existingAcc?.leverage ?? 0,
+          lastConnectedAt: isLiveConnected ? new Date().toISOString() : existingAcc?.lastConnectedAt,
+          disconnectedSince: isLiveConnected ? undefined : existingAcc?.disconnectedSince,
           vaultSecretRef: `ref_meta_${p.id}`,
           metaApiAccountId: p.id,
           lastSyncedAt: new Date().toISOString(),
@@ -984,7 +993,9 @@ export class AccountConnectorService {
             await this.eventBus.publish('stream:trade.closed.normalized', 'trade.closed.normalized', accountId, trade);
           }
 
-          // Update stats only for tournaments this user has actually joined (window-filtered, real equity/drawdown)
+          // Update stats only for tournaments this user has actually joined (window-filtered, real equity/drawdown).
+          // Disconnected (stale/removed) accounts earn no tournament points until they reconnect.
+          if (this.leaderboard.getAccountHealth(accountId) !== 'ACTIVE') continue;
           const tournamentService = TournamentService.getInstance();
           const balance = Number(tradingAccount.balance || 0);
           const equity = Number(tradingAccount.equity ?? balance);

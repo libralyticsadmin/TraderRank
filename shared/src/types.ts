@@ -31,6 +31,10 @@ export interface TradingAccount {
   serverName?: string; // MT4/MT5 server (e.g. XMGlobal-Real 55, VantageFX-Live 2)
   connectionStatus: ConnectionStatus;
   lastError?: string;
+  /** Last time the broker link was confirmed CONNECTED (set by health monitoring). */
+  lastConnectedAt?: string;
+  /** When the broker link was first seen disconnected in the current incident. */
+  disconnectedSince?: string;
   balance: number;
   equity: number;
   margin: number;
@@ -163,6 +167,9 @@ export interface LeaderboardEntry {
   level: number;
   badges: string[];
   lastUpdated: string;
+  /** Broker link lost: rank frozen, no new scoring until the account reconnects. */
+  stale?: boolean;
+  staleSince?: string;
 }
 
 /**

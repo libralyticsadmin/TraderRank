@@ -6,6 +6,8 @@ import { alertService } from '../src/services/alertService.js';
 import { GatewayCredentials } from '../../shared/src/types.js';
 
 const TOKEN = 'live_token_1234567890abcdef';
+// Test storage persists across runs (os.tmpdir); use run-unique logins
+const RUN = String(Date.now()).slice(-5);
 
 function enterLiveMode() {
   vi.stubEnv('VITEST', '');
@@ -28,7 +30,7 @@ function stubFetch(handler: Handler) {
 }
 
 const creds = (login: string): GatewayCredentials => ({
-  type: 'mt_gateway', broker: 'XM', platform: 'MT5', serverName: 'XMGlobal-MT5 10', login, investorPassword: 'investorPass',
+  type: 'mt_gateway', broker: 'XM', platform: 'MT5', serverName: 'XMGlobal-MT5 10', login: `${login}${RUN}`, investorPassword: 'investorPass',
 });
 
 const liveInfo = { platform: 'mt5', broker: 'XM', currency: 'USD', server: 'XMGlobal-MT5 10', balance: 812.34, equity: 799.1, margin: 12.5, freeMargin: 786.6, leverage: 1000 };

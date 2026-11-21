@@ -31,6 +31,7 @@ import { DailyIntelService } from '../market/dailyIntelService.js';
 import { TournamentService } from '../services/tournamentService.js';
 import { authService, SessionPayload } from '../services/authService.js';
 import { onboardingService } from '../services/onboardingService.js';
+import { accountHealthService } from '../services/accountHealthService.js';
 import { isSimulatedDataAllowed } from '../core/dataPolicy.js';
 import { getCachedCanonicalStats, getBulletinFeed, invalidateCanonicalStatsCache } from '../services/canonicalStatsService.js';
 import { getStreakStatus, getEffectiveClaimedDays, isStreakBroken, XP_RULES, calculateTraderGamification } from '../../../shared/src/gamification.js';
@@ -195,6 +196,7 @@ export function createServer() {
   // Background broker onboarding loop (live mode)
   if (!process.env.VITEST && process.env.NODE_ENV !== 'test') {
     onboardingService.start();
+    accountHealthService.start();
   }
 
   // Automatically sync provisioned cloud broker accounts on startup
@@ -1427,6 +1429,10 @@ export function createServer() {
   });
 
   // 9. Secrets Vault Audit Logs (Infrastructure Design §6)
+  app.get('/api/admin/broker-health', requireAdminAuth, (_req: Request, res: Response) => {
+    res.json({ success: true, health: accountHealthService.getSummary() });
+  });
+
   app.get('/api/vault/audit', requireAdminAuth, (_req: Request, res: Response) => {
     const rawLogs = vault.getAuditLogs();
     const sanitizedLogs = rawLogs.map(log => ({
