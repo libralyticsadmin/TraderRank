@@ -233,18 +233,26 @@ export class MetaApiClient {
         );
         if (!updated.ok) {
           console.warn(`[MetaApiClient] Credential update warning for ${found.id}: ${updated.error}`);
-          if (updated.status && updated.status >= 400 && updated.status < 500) {
+          // If the existing account was rejected or rate-limited with HTTP 429 (TooManyRequestsError),
+          // its container is locked in cooldown. Delete it so we can provision clean below.
+          if (updated.status === 429 || (updated.status && updated.status >= 400 && updated.status < 500)) {
+            console.log(`[MetaApiClient] Deleting locked/rate-limited account ${found.id} to recreate clean...`);
+            await this.deleteAccount(found.id);
+          } else {
             throw new Error(`MetaApi rejected credentials (${updated.status}): ${updated.error}`);
           }
-        }
-        if (found.state === 'DRAFT' || found.state === 'UNDEPLOYED') {
-          await this.deployAccount(found.id);
         } else {
-          await this.redeployAccount(found.id);
+          if (found.state === 'DRAFT' || found.state === 'UNDEPLOYED') {
+            await this.deployAccount(found.id);
+          } else {
+            await this.redeployAccount(found.id);
+          }
+          this.positionsBackoff.delete(found.id);
+          return { id: found.id, isNew: false, state: found.state };
         }
-        this.positionsBackoff.delete(found.id);
+      } else {
+        return { id: found.id, isNew: false, state: found.state };
       }
-      return { id: found.id, isNew: false, state: found.state };
     }
 
     // 2. Provision new account in MetaApi
@@ -366,6 +374,24 @@ export class MetaApiClient {
         headers: { 'auth-token': this.token },
         signal: AbortSignal.timeout(10000),
       });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Deletes a MetaApi account completely (frees slot, removes bad state/cooldown locks)
+   */
+  public async deleteAccount(metaApiAccountId: string): Promise<boolean> {
+    if (!this.hasToken() || !metaApiAccountId || metaApiAccountId.startsWith('mock_')) return true;
+    try {
+      const res = await instrumentedFetch('metaapi', `${this.provisioningBaseUrl}/users/current/accounts/${metaApiAccountId}`, {
+        method: 'DELETE',
+        headers: { 'auth-token': this.token },
+        signal: AbortSignal.timeout(15000),
+      });
+      this.invalidateAccountListCache();
       return res.ok;
     } catch {
       return false;

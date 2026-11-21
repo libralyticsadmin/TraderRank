@@ -947,21 +947,46 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                 </div>
               ) : (
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--accent-red)', marginBottom: '10px' }}>
-                    <AlertCircle size={24} />
-                    <strong style={{ fontSize: '16px' }}>{t.connector.connectionFailedTitle}</strong>
-                  </div>
-                  <p style={{ fontSize: '13px', color: '#fca5a5', lineHeight: 1.5, marginBottom: '12px' }}>
-                    {errorMessage || 'Broker server rejected connection credentials. Please verify your exact server name and investor password.'}
-                  </p>
-                  <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '8px', padding: '10px 14px', fontSize: '12px', color: '#fca5a5' }}>
-                    <strong>Common fixes:</strong>
-                    <ul style={{ margin: '6px 0 0 16px', padding: 0 }}>
-                      <li>Verify your <strong>Server Name</strong> in your broker welcome email (e.g. XMGlobal-MT5, XMGlobal-MT5 2, XMGlobal-Real 55, etc.).</li>
-                      <li>Ensure you are using the <strong>Investor (read-only) Password</strong>, not your broker website portal password.</li>
-                      <li>Confirm whether your account is <strong>MT4</strong> or <strong>MT5</strong>.</li>
-                    </ul>
-                  </div>
+                  {errorMessage?.toLowerCase().includes('cooldown') || errorMessage?.toLowerCase().includes('too many') || errorMessage?.toLowerCase().includes('rate') ? (
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#fbbf24', marginBottom: '10px' }}>
+                        <AlertCircle size={24} />
+                        <strong style={{ fontSize: '16px' }}>Broker Cooldown in Progress</strong>
+                      </div>
+                      <p style={{ fontSize: '13px', color: '#fef3c7', lineHeight: 1.5, marginBottom: '12px' }}>
+                        {errorMessage}
+                      </p>
+                      <div style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)', borderRadius: '8px', padding: '12px 14px', fontSize: '12px', color: '#fbbf24' }}>
+                        <strong>How to resolve:</strong>
+                        <ul style={{ margin: '6px 0 0 16px', padding: 0, lineHeight: 1.6 }}>
+                          <li>The stale connection attempt has been purged from our bridge.</li>
+                          <li>Confirm your <strong>Investor (read-only) Password</strong> in MT5 (not your broker web portal password).</li>
+                          <li>Wait ~1–2 minutes for the broker cooldown to reset before retrying.</li>
+                        </ul>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--accent-red)', marginBottom: '10px' }}>
+                        <AlertCircle size={24} />
+                        <strong style={{ fontSize: '16px' }}>{t.connector.connectionFailedTitle}</strong>
+                      </div>
+                      <p style={{ fontSize: '13px', color: '#fca5a5', lineHeight: 1.5, marginBottom: '12px' }}>
+                        {errorMessage || 'Broker server rejected connection credentials. Please verify your exact server name and investor password.'}
+                      </p>
+                      <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '8px', padding: '12px 14px', fontSize: '12px', color: '#fca5a5' }}>
+                        <strong>Common fixes:</strong>
+                        <ul style={{ margin: '6px 0 0 16px', padding: 0, lineHeight: 1.6 }}>
+                          <li>Verify your <strong>Server Name</strong> matches your MT4/MT5 terminal (e.g. <code>XMGlobal-MT5 10</code>).</li>
+                          <li>Ensure you enter the <strong>Investor (read-only) Password</strong>, <em>never</em> your broker website/member area portal password.</li>
+                          {selectedBroker === 'XM' && (
+                            <li><strong>XM Global Accounts:</strong> XM does not set an investor password automatically. In MT5: <em>Tools → Options → Server → Change Password → Change Investor Password</em>.</li>
+                          )}
+                          <li>Confirm whether your account is <strong>MT4</strong> or <strong>MT5</strong>.</li>
+                        </ul>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -395,6 +395,11 @@ export class OnboardingService {
       await this.metaApi.undeployAccount(job.metaApiAccountId).catch(() => false);
     }
 
+    // Clean up rejected or rate-limited accounts so no contaminated cooldown state persists in MetaApi
+    if (job.metaApiAccountId && (reason === 'INVALID_CREDENTIALS' || reason === 'RATE_LIMITED')) {
+      await this.metaApi.deleteAccount(job.metaApiAccountId).catch(() => false);
+    }
+
     if (reason === 'INTEGRATION_ERROR' || reason === 'QUOTA_EXCEEDED') {
       await alertService.sendOperatorAlert({
         severity: 'critical',

@@ -1,0 +1,11 @@
+{
+  "migration": "legacy-identities-v1",
+  "appliedAt": "2026-11-21T15:08:13.029Z",
+  "writtenKeys": [
+    "profiles/account_owners.json",
+    "profiles/account_usernames.json",
+    "profiles/account_avatars.json",
+    "profiles/user_profiles.json"
+  ],
+  "changeCount": 12
+}
