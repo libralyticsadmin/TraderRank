@@ -218,8 +218,8 @@ export class MetaApiClient {
       return { id: `mock_meta_${login}`, isNew: true, state: 'DEPLOYED' };
     }
 
-    // 1. Check if already provisioned (strict: an outage must not look like "not found")
-    const existing = await this.listProvisionedAccountsStrict();
+    // 1. Check if already provisioned (strict: force refresh to guarantee live view)
+    const existing = await this.listProvisionedAccountsStrict(true);
     const found = existing.find(a => a.login === login && a.server.toLowerCase() === server.toLowerCase());
     if (found) {
       // Only update credentials & redeploy if the account is NOT currently connected,
