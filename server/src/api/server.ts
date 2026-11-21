@@ -201,6 +201,11 @@ export function createServer() {
     onboardingService.start();
     accountHealthService.start();
     startServiceHealthMonitor();
+    // Background cloud sync (request handlers read the store; they don't force syncs)
+    const cloudSyncTimer = setInterval(() => {
+      connector.syncCloudProvisionedAccounts().catch(err => console.warn('[CloudSync] periodic sync warning:', err));
+    }, 5 * 60 * 1000);
+    cloudSyncTimer.unref?.();
   }
 
   // Automatically sync provisioned cloud broker accounts on startup
@@ -1042,7 +1047,7 @@ export function createServer() {
 
   // 4c. Trigger live cloud accounts sync (Protected by Admin Auth)
   app.post('/api/accounts/sync-cloud', requireAdminAuth, async (_req: Request, res: Response) => {
-    const accounts = await connector.syncCloudProvisionedAccounts();
+    const accounts = await connector.syncCloudProvisionedAccounts(true);
     res.json({
       success: true,
       count: accounts.length,

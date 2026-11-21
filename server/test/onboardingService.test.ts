@@ -39,7 +39,9 @@ async function drive(service: OnboardingService, job: OnboardingJob, maxSteps = 
   for (let i = 0; i < maxSteps && (job.status === 'PROVISIONING' || job.status === 'CONNECTING'); i++) {
     job.nextCheckAt = 0;
     await service.processDueJobs();
+    await service.waitForIdle();
   }
+  await service.waitForIdle();
 }
 
 describe('OnboardingService — background broker onboarding (live mode)', () => {

@@ -791,21 +791,54 @@ export class AccountConnectorService {
    * Syncs real live accounts provisioned in MetaApi Cloud
    * Queries real broker balance, equity, leverage, open positions, and 100% real closed deals.
    */
-  public async syncCloudProvisionedAccounts(): Promise<TradingAccount[]> {
+  private cloudSyncInFlight: Promise<TradingAccount[]> | null = null;
+  private lastCloudSyncAt = 0;
+  private static readonly CLOUD_SYNC_MIN_INTERVAL_MS = 30_000;
+
+  /**
+   * Syncs MetaApi-provisioned accounts into the store. Single-flight, and at most once per
+   * 30s; callers inside that window get the current store. Run on startup and a background
+   * schedule. Request handlers should read the store instead of forcing a sync.
+   */
+  public async syncCloudProvisionedAccounts(force = false): Promise<TradingAccount[]> {
     if (!this.metaApiClient.hasToken()) {
       return this.getAccounts();
     }
+    if (this.cloudSyncInFlight) return this.cloudSyncInFlight;
+    if (!force && Date.now() - this.lastCloudSyncAt < AccountConnectorService.CLOUD_SYNC_MIN_INTERVAL_MS) {
+      return this.getAccounts();
+    }
+    this.cloudSyncInFlight = this.runCloudSync().finally(() => {
+      this.lastCloudSyncAt = Date.now();
+      this.cloudSyncInFlight = null;
+    });
+    return this.cloudSyncInFlight;
+  }
+
+  private async runCloudSync(): Promise<TradingAccount[]> {
 
     await this.loadTraderUsernamesFromR2();
     await this.loadTraderAvatarsFromR2();
     await this.loadAccountOwnersFromR2();
 
     try {
-      const provisionedList = await this.metaApiClient.listProvisionedAccounts();
+      const provisionedList = await this.metaApiClient.listProvisionedAccountsStrict(true);
+
+      // Read account information only for CONNECTED accounts (disconnected ones time out),
+      // with bounded concurrency instead of one-by-one.
+      const infoById = new Map<string, Awaited<ReturnType<MetaApiClient['getAccountInformation']>>>();
+      const infoQueue = provisionedList.filter(p => p.id && p.connectionStatus === 'CONNECTED');
+      await Promise.all(Array.from({ length: Math.min(5, infoQueue.length) }, async () => {
+        while (infoQueue.length) {
+          const p = infoQueue.shift()!;
+          infoById.set(p.id, await this.metaApiClient.getAccountInformation(p.id).catch(() => null));
+        }
+      }));
+
       for (const p of provisionedList) {
         if (!p.id || p.state === 'FAILED') continue;
 
-        const info = await this.metaApiClient.getAccountInformation(p.id);
+        const info = infoById.get(p.id) ?? null;
         const serverLower = (p.server || '').toLowerCase();
         const brokerName: Broker = (
           serverLower.includes('xmtrading') ? 'XMTrading' :

@@ -141,8 +141,31 @@ export class MetaApiClient {
    * Lists all MT4/MT5 accounts provisioned in MetaApi cloud
    */
   public async listProvisionedAccounts(): Promise<MetaApiProvisionedAccount[]> {
-    if (!this.hasToken()) return [];
     try {
+      return await this.listProvisionedAccountsStrict();
+    } catch {
+      return [];
+    }
+  }
+
+  private accountListCache: { at: number; accounts: MetaApiProvisionedAccount[] } | null = null;
+  private accountListInFlight: Promise<MetaApiProvisionedAccount[]> | null = null;
+  private static readonly ACCOUNT_LIST_TTL_MS = 30_000;
+
+  /**
+   * Lists provisioned accounts, cached for 30s with a single in-flight request.
+   * Throws on failure so callers never mistake an outage for "account does not exist"
+   * (which previously risked creating duplicate, paid MetaApi accounts).
+   */
+  public async listProvisionedAccountsStrict(forceRefresh = false): Promise<MetaApiProvisionedAccount[]> {
+    if (!this.hasToken()) return [];
+    const cached = this.accountListCache;
+    if (!forceRefresh && cached && Date.now() - cached.at < MetaApiClient.ACCOUNT_LIST_TTL_MS) {
+      return cached.accounts;
+    }
+    if (this.accountListInFlight) return this.accountListInFlight;
+
+    this.accountListInFlight = (async () => {
       const res = await instrumentedFetch('metaapi', `${this.provisioningBaseUrl}/users/current/accounts`, {
         headers: {
           'auth-token': this.token,
@@ -150,9 +173,11 @@ export class MetaApiClient {
         },
         signal: AbortSignal.timeout(10000),
       });
-      if (!res.ok) return [];
+      if (!res.ok) {
+        throw new Error(`MetaApi account list failed (${res.status})`);
+      }
       const data = await res.json() as any[];
-      return data.map(acc => {
+      const accounts: MetaApiProvisionedAccount[] = (Array.isArray(data) ? data : []).map(acc => {
         const id = String(acc._id || acc.id);
         const region = String(acc.region || 'london');
         this.accountRegions.set(id, region);
@@ -167,9 +192,17 @@ export class MetaApiClient {
           connectionStatus: acc.connectionStatus,
         };
       });
-    } catch {
-      return [];
-    }
+      this.accountListCache = { at: Date.now(), accounts };
+      return accounts;
+    })().finally(() => {
+      this.accountListInFlight = null;
+    });
+    return this.accountListInFlight;
+  }
+
+  /** Drops the cached account list (after create/update/deploy). */
+  public invalidateAccountListCache(): void {
+    this.accountListCache = null;
   }
 
   /**
@@ -185,8 +218,8 @@ export class MetaApiClient {
       return { id: `mock_meta_${login}`, isNew: true, state: 'DEPLOYED' };
     }
 
-    // 1. Check if already provisioned
-    const existing = await this.listProvisionedAccounts();
+    // 1. Check if already provisioned (strict: an outage must not look like "not found")
+    const existing = await this.listProvisionedAccountsStrict();
     const found = existing.find(a => a.login === login && a.server.toLowerCase() === server.toLowerCase());
     if (found) {
       // Only update credentials & redeploy if the account is NOT currently connected,
@@ -239,6 +272,7 @@ export class MetaApiClient {
       throw new Error(`MetaApi provisioning failed (${res.status}): ${text}`);
     }
 
+    this.invalidateAccountListCache();
     const created = await res.json() as any;
     const id = created ? String(created.id || created._id || '') : '';
     if (id && created?.region) {

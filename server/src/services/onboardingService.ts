@@ -74,6 +74,7 @@ export class OnboardingService {
 
   private readonly jobs = new Map<string, OnboardingJob>();
   private readonly inFlight = new Set<string>();
+  private readonly running = new Set<Promise<void>>();
   private timer: ReturnType<typeof setInterval> | null = null;
   private loadPromise: Promise<void> | null = null;
   private persistTimer: ReturnType<typeof setTimeout> | null = null;
@@ -224,6 +225,11 @@ export class OnboardingService {
     return { ...rest, account: safeAccount };
   }
 
+  /** Resolves when no job step is running. Test hook. */
+  public async waitForIdle(): Promise<void> {
+    while (this.running.size) await Promise.allSettled(Array.from(this.running));
+  }
+
   /** Advances every due job (bounded concurrency). Exposed for tests. */
   public async processDueJobs(): Promise<void> {
     await this.ensureLoaded();
@@ -235,7 +241,13 @@ export class OnboardingService {
     await Promise.all(due.map(j => this.runJob(j.id)));
   }
 
-  private async runJob(id: string): Promise<void> {
+  private runJob(id: string): Promise<void> {
+    const p = this.runJobInner(id);
+    this.running.add(p);
+    return p.finally(() => this.running.delete(p));
+  }
+
+  private async runJobInner(id: string): Promise<void> {
     const job = this.jobs.get(id);
     if (!job || this.inFlight.has(id)) return;
     if (job.status !== 'PROVISIONING' && job.status !== 'CONNECTING') return;
