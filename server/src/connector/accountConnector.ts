@@ -168,6 +168,24 @@ export class AccountConnectorService {
     if (!validation.success) {
       throw new Error(validation.error || 'Connection validation failed');
     }
+    return this.registerVerifiedAccount(userId, username, broker, creds, validation);
+  }
+
+  /**
+   * Registers an account whose credentials were already verified against the broker
+   * (synchronously via connectAccount, or asynchronously by OnboardingService).
+   * All financial figures are taken from `validation.accountDetails`.
+   */
+  public async registerVerifiedAccount(
+    userId: string,
+    username: string,
+    broker: Broker,
+    creds: AccountCredentials,
+    validation: ValidationResult
+  ): Promise<{ account: TradingAccount; validation: ValidationResult }> {
+    if (!validation.success) {
+      throw new Error(validation.error || 'Connection validation failed');
+    }
 
     const accountNumber = validation.accountDetails?.accountNumber || (creds.type === 'mt_gateway' ? creds.login : 'NATIVE-ACC');
     const existingAcc = Array.from(this.accounts.values()).find(

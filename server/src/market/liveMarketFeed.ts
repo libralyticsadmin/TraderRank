@@ -230,7 +230,7 @@ export class LiveMarketFeedService {
         }
       }
 
-      const secondaryRes = await fetch('https://api.coinbase.com/v2/prices/BTC-USD/spot').catch(() => null);
+      const secondaryRes = await fetch('https://api.coinbase.com/v2/prices/BTC-USD/spot', { signal: AbortSignal.timeout(5000) }).catch(() => null);
       if (secondaryRes && secondaryRes.ok) {
         const data = (await secondaryRes.json()) as { data?: { amount?: string } };
         if (data.data?.amount) {

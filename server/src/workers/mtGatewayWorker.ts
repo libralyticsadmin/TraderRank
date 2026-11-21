@@ -144,8 +144,9 @@ export class MTGatewayWorker implements IBrokerWorker {
       accountDetails: {
         accountNumber: gatewayCreds.login,
         server: gatewayCreds.serverName,
-        balance: dirResult.accountDetails?.balance ?? 10000.00,
-        equity: dirResult.accountDetails?.equity ?? 10420.50,
+        // Simulation mode only (live mode returned above). BrokerDirectory always supplies details on success.
+        balance: dirResult.accountDetails?.balance ?? 0,
+        equity: dirResult.accountDetails?.equity ?? 0,
         currency: dirResult.accountDetails?.currency ?? 'USD',
         leverage: dirResult.accountDetails?.leverage ?? 100,
       },

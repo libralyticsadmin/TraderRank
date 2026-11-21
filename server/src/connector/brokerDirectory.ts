@@ -4,6 +4,8 @@
  * across Exness, XM, Axiory, Vantage, and generic MT4/MT5.
  */
 
+import { isSimulatedDataAllowed } from '../core/dataPolicy.js';
+
 import { Broker, Platform } from '../../../shared/src/types.js';
 
 export interface BrokerServerProfile {
@@ -219,6 +221,16 @@ export class BrokerDirectory {
       };
     }
 
+    // guard:simulation-only — offline demo verification. Live mode never reaches this (see mtGatewayWorker).
+    if (!isSimulatedDataAllowed()) {
+      return {
+        valid: false,
+        broker: this.resolveBroker(serverName),
+        serverProfile: { broker: this.resolveBroker(serverName), serverName, platform, isDemo: false },
+        error: 'Offline credential verification is disabled in live mode.',
+        errorCode: 'UNSUPPORTED_BROKER',
+      };
+    }
     const broker = this.resolveBroker(serverName);
     const sLower = serverName.toLowerCase();
     const isJpyAccount = broker === 'XMTrading' || sLower.includes('xmtrading') || sLower.includes('japan') || sLower.includes('jpy');

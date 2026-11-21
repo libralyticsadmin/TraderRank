@@ -19,7 +19,7 @@ import { SecretsVault } from '../vault/secretsVault.js';
 import { LiveMarketFeedService } from '../market/liveMarketFeed.js';
 import { MetaApiClient } from '../workers/metaApiClient.js';
 import { ExnessApiClient } from '../workers/exnessApiClient.js';
-import { Broker, AccountCredentials, CanonicalTrade, EventBusEnvelope } from '../../../shared/src/types.js';
+import { Broker, AccountCredentials, GatewayCredentials, CanonicalTrade, EventBusEnvelope } from '../../../shared/src/types.js';
 import { RedisStreamsBus } from '../eventbus/redisStreamsBus.js';
 
 import { BrokerDirectory } from '../connector/brokerDirectory.js';
@@ -30,6 +30,8 @@ import { ForexFactoryService } from '../market/forexFactoryService.js';
 import { DailyIntelService } from '../market/dailyIntelService.js';
 import { TournamentService } from '../services/tournamentService.js';
 import { authService, SessionPayload } from '../services/authService.js';
+import { onboardingService } from '../services/onboardingService.js';
+import { isSimulatedDataAllowed } from '../core/dataPolicy.js';
 import { getCachedCanonicalStats, getBulletinFeed, invalidateCanonicalStatsCache } from '../services/canonicalStatsService.js';
 import { getStreakStatus, getEffectiveClaimedDays, isStreakBroken, XP_RULES, calculateTraderGamification } from '../../../shared/src/gamification.js';
 
@@ -189,6 +191,11 @@ export function createServer() {
   const dailyIntel = DailyIntelService.getInstance();
   const tournamentService = TournamentService.getInstance();
   const eventBus = RedisStreamsBus.getInstance();
+
+  // Background broker onboarding loop (live mode)
+  if (!process.env.VITEST && process.env.NODE_ENV !== 'test') {
+    onboardingService.start();
+  }
 
   // Automatically sync provisioned cloud broker accounts on startup
   if (process.env.NODE_ENV !== 'test') {
@@ -813,6 +820,34 @@ export function createServer() {
         }
       }
 
+      // Live mode: quick input check only. Broker verification happens in the background
+      // onboarding job (MetaApi deploy/connect can take minutes — never block this request).
+      if (!isSimulatedDataAllowed()) {
+        if (credentials.type !== 'mt_gateway') {
+          return res.json({
+            success: false,
+            error: 'Direct Exness API sync is not available yet. Please connect your Exness account with the MT4/MT5 investor password option.',
+            errorCode: 'UNKNOWN',
+          });
+        }
+        const c = credentials as GatewayCredentials;
+        if (!String(c.serverName || '').trim() || !String(c.login || '').trim() || !c.investorPassword) {
+          return res.json({
+            success: false,
+            error: 'Server name, account login, and investor password are required.',
+            errorCode: 'INVALID_CREDENTIALS',
+          });
+        }
+        if (!/^\d{4,12}$/.test(String(c.login).trim())) {
+          return res.json({
+            success: false,
+            error: 'The account login should be the numeric MT4/MT5 account number.',
+            errorCode: 'INVALID_CREDENTIALS',
+          });
+        }
+        return res.json({ success: true, pendingBrokerVerification: true });
+      }
+
       const result = await connector.validateCredentials(broker, credentials);
       console.log(`[CONNECTOR] Validation result:`, result.success ? 'PASSED' : `FAILED (${result.error})`);
       return res.json(result);
@@ -850,6 +885,17 @@ export function createServer() {
         return res.status(400).json({ success: false, error: 'Broker and credentials are required' });
       }
 
+      if (!isSimulatedDataAllowed()) {
+        if (credentials.type !== 'mt_gateway') {
+          return res.status(400).json({
+            success: false,
+            error: 'Direct Exness API sync is not available yet. Please connect your Exness account with the MT4/MT5 investor password option.',
+          });
+        }
+        const job = await onboardingService.startJob(effectiveUserId, effectiveUsername, broker, credentials as GatewayCredentials);
+        return res.status(202).json({ success: true, onboardingId: job.id, onboarding: onboardingService.toView(job) });
+      }
+
       const result = await connector.connectAccount(effectiveUserId, effectiveUsername, broker, credentials);
       return res.status(201).json({
         ...result,
@@ -860,6 +906,29 @@ export function createServer() {
       const code = err instanceof Error ? (err as Error & { code?: string }).code : undefined;
       return res.status(code === 'ACCOUNT_OWNED_BY_OTHER' ? 409 : 400).json({ success: false, error: msg });
     }
+  });
+
+  // 3b. Background onboarding status (owner only)
+  app.get('/api/connector/onboarding', (req: Request, res: Response) => {
+    const authSession = extractAuthUser(req);
+    if (!authSession) return res.status(401).json({ success: false, error: 'Authentication required' });
+    const jobs = onboardingService.listJobsForUser(authSession.userId).map(j => onboardingService.toView(j));
+    return res.json({ success: true, jobs });
+  });
+
+  app.get('/api/connector/onboarding/:id', (req: Request, res: Response) => {
+    const authSession = extractAuthUser(req);
+    if (!authSession) return res.status(401).json({ success: false, error: 'Authentication required' });
+    const job = onboardingService.getJob(req.params.id, authSession.userId);
+    if (!job) return res.status(404).json({ success: false, error: 'Onboarding job not found' });
+    return res.json({ success: true, onboarding: onboardingService.toView(job) });
+  });
+
+  app.delete('/api/connector/onboarding/:id', (req: Request, res: Response) => {
+    const authSession = extractAuthUser(req);
+    if (!authSession) return res.status(401).json({ success: false, error: 'Authentication required' });
+    const ok = onboardingService.dismissJob(req.params.id, authSession.userId);
+    return res.status(ok ? 200 : 404).json({ success: ok });
   });
 
   // 4. List Accounts (Multi-Tenant Isolated)

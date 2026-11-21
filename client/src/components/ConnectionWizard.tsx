@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Broker,
   IntegrationType,
@@ -33,6 +33,16 @@ import { LanguageSelector } from './LanguageSelector.tsx';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
 import { BROKER_PARTNERS } from '../../../shared/src/config/brokerPartners.ts';
+
+interface OnboardingJobView {
+  id: string;
+  status: 'PROVISIONING' | 'CONNECTING' | 'CONNECTED' | 'FAILED';
+  reason?: string;
+  error?: string;
+  login: string;
+  serverName: string;
+  account?: TradingAccount;
+}
 
 interface ConnectionWizardProps {
   onClose: () => void;
@@ -74,6 +84,16 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Live mode: broker verification runs as a background onboarding job on the server
+  const [onboarding, setOnboarding] = useState<OnboardingJobView | null>(null);
+  const [connectedAccount, setConnectedAccount] = useState<TradingAccount | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stopPolling = () => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    pollRef.current = null;
+  };
+  useEffect(() => stopPolling, []);
 
   // Partner Affiliate helper state
   const [showSubAccountGuide, setShowSubAccountGuide] = useState(false);
@@ -156,6 +176,11 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
         // Upstream proxy/gateway timeouts return HTML, not JSON
         throw new Error(`Broker validation service unavailable (HTTP ${res.status}). Please try again.`);
       }
+      if (data.success && data.pendingBrokerVerification) {
+        // Live mode: start the background onboarding job and track it here
+        await startOnboarding(payloadCreds);
+        return;
+      }
       setValidationResult(data);
 
       if (!data.success) {
@@ -175,6 +200,79 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
       setValidationStage(0);
     }
   };
+
+  const applyOnboardingUpdate = (job: OnboardingJobView) => {
+    setOnboarding(job);
+    if (job.status === 'CONNECTED' && job.account) {
+      stopPolling();
+      const acc = job.account;
+      setConnectedAccount(acc);
+      setValidationResult({
+        success: true,
+        accountDetails: {
+          accountNumber: acc.accountNumber,
+          server: acc.serverName,
+          balance: acc.balance,
+          equity: acc.equity,
+          currency: acc.currency,
+          leverage: acc.leverage,
+        },
+      });
+      onSuccess(acc);
+    } else if (job.status === 'FAILED') {
+      stopPolling();
+      setValidationResult({ success: false, error: job.error });
+      setErrorMessage(job.error || 'Broker connection failed');
+    }
+  };
+
+  const startOnboarding = async (payloadCreds: GatewayCredentials | ExnessNativeCredentials) => {
+    if (!user) {
+      setValidationResult({ success: false });
+      setErrorMessage('Authentication required: Please sign in or create an account to connect your trading account.');
+      return;
+    }
+    const token = localStorage.getItem('traderank_auth_token_v1');
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+    const res = await fetch('/api/connector/connect', {
+      method: 'POST',
+      headers,
+      signal: AbortSignal.timeout(20000),
+      body: JSON.stringify({
+        userId: user.id,
+        username: user.username,
+        broker: selectedBroker,
+        credentials: payloadCreds,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.onboardingId) {
+      setValidationResult({ success: false });
+      setErrorMessage(data.error || `Could not start broker connection (HTTP ${res.status}).`);
+      return;
+    }
+    applyOnboardingUpdate(data.onboarding);
+
+    stopPolling();
+    pollRef.current = setInterval(async () => {
+      try {
+        const r = await fetch(`/api/connector/onboarding/${data.onboardingId}`, {
+          headers,
+          signal: AbortSignal.timeout(10000),
+        });
+        if (!r.ok) return;
+        const body = await r.json();
+        if (body.onboarding) applyOnboardingUpdate(body.onboarding);
+      } catch {
+        // transient network error; keep polling
+      }
+    }, 3000);
+  };
+
+  const isOnboardingActive = onboarding?.status === 'PROVISIONING' || onboarding?.status === 'CONNECTING';
 
   const handleFinalConnect = async () => {
     setIsSubmitting(true);
@@ -697,7 +795,20 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
               border: '1px solid var(--border-subtle)',
               marginBottom: '20px',
             }}>
-              {isValidating ? (
+              {isOnboardingActive ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 0', gap: '12px', textAlign: 'center' }}>
+                  <Loader2 size={36} color="#0abab5" className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
+                  <p style={{ fontSize: '14px', color: '#81d8d0', fontWeight: 600 }}>
+                    {onboarding?.status === 'PROVISIONING'
+                      ? '1/2 Registering your account with the secure read-only broker bridge...'
+                      : `2/2 Logging in to ${onboarding?.serverName} with your investor password...`}
+                  </p>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)', maxWidth: '440px', lineHeight: 1.5 }}>
+                    New broker connections can take a few minutes. You can close this window. We keep
+                    connecting in the background and your account shows as "Connecting" in your accounts list.
+                  </span>
+                </div>
+              ) : isValidating ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 0', gap: '12px' }}>
                   <Loader2 size={36} color="#0abab5" className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
                   <p style={{ fontSize: '14px', color: '#81d8d0', fontWeight: 600 }}>
@@ -773,10 +884,18 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <button className="btn-secondary" onClick={() => setStep(3)}>
+              <button className="btn-secondary" onClick={() => { stopPolling(); setOnboarding(null); setConnectedAccount(null); setStep(3); }}>
                 <ArrowLeft size={16} /> {t.connector.editCredentials}
               </button>
-              {validationResult?.success && (
+              {connectedAccount ? (
+                <button className="btn-primary" onClick={onClose}>
+                  <CheckCircle2 size={16} /> Done
+                </button>
+              ) : isOnboardingActive ? (
+                <button className="btn-secondary" onClick={onClose}>
+                  Continue in background
+                </button>
+              ) : validationResult?.success && (
                 <button
                   className="btn-primary"
                   onClick={handleFinalConnect}

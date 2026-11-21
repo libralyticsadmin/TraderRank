@@ -158,6 +158,7 @@ export class AllTickAdapter {
           'User-Agent': 'TraderRank-Server/1.0',
           'X-API-Key': this.token,
         },
+        signal: AbortSignal.timeout(8000),
       });
 
       if (response.ok) {
@@ -375,6 +376,7 @@ export class AllTickAdapter {
           'Content-Type': 'application/json',
           'X-API-Key': this.token,
         },
+        signal: AbortSignal.timeout(8000),
       });
 
       const body = (await response.json()) as { ret?: number; msg?: string; data?: { tick_list?: AllTickTickData[] } };

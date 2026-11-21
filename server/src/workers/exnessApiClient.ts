@@ -172,7 +172,7 @@ export class ExnessApiClient {
       }
     }
 
-    // Standard pre-flight check passing
+    // guard:simulation-only — reachable only when ExnessWorker allows simulated data
     return {
       success: true,
       accountDetails: {

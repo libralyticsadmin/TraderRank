@@ -321,6 +321,23 @@ export class MetaApiClient {
   }
 
   /**
+   * Undeploys an account (stops broker connection, frees the paid MetaApi slot; record is kept)
+   */
+  public async undeployAccount(metaApiAccountId: string): Promise<boolean> {
+    if (!this.hasToken() || !metaApiAccountId || metaApiAccountId.startsWith('mock_')) return true;
+    try {
+      const res = await fetch(`${this.provisioningBaseUrl}/users/current/accounts/${metaApiAccountId}/undeploy`, {
+        method: 'POST',
+        headers: { 'auth-token': this.token },
+        signal: AbortSignal.timeout(10000),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Fetches account deployment and connection state
    */
   public async getAccountState(metaApiAccountId: string): Promise<{ state: string; connectionStatus?: string } | null> {
@@ -351,6 +368,8 @@ export class MetaApiClient {
    */
   public async getAccountInformation(metaApiAccountId: string): Promise<MetaApiAccountInfo | null> {
     if (!this.hasToken() || !metaApiAccountId || typeof metaApiAccountId !== 'string' || metaApiAccountId.startsWith('mock_')) {
+      if (!isSimulatedDataAllowed()) return null;
+      // guard:simulation-only
       return {
         platform: 'MT5',
         broker: 'MetaApi-Cloud',
@@ -499,6 +518,7 @@ export class MetaApiClient {
       };
     }
 
+    // guard:simulation-only
     const isMockAccount = server.toLowerCase().includes('mock') || login.startsWith('mock_');
     const knownServers = ['XMGlobal', 'XMTrading', 'Axiory', 'VantageFX', 'Vanguard', 'ICMarkets', 'Exness', 'MetaQuotes'];
     const matchesKnown = knownServers.some(s => server.toLowerCase().includes(s.toLowerCase()));
@@ -677,6 +697,7 @@ export class MetaApiClient {
             'auth-token': this.token,
             'Accept': 'application/json',
           },
+          signal: AbortSignal.timeout(15000),
         });
 
         if (!res.ok) break;
@@ -732,6 +753,7 @@ export class MetaApiClient {
           'auth-token': this.token,
           'Accept': 'application/json',
         },
+        signal: AbortSignal.timeout(10000),
       });
       if (!res.ok) return null;
       const m = await res.json() as any;
@@ -861,6 +883,7 @@ export class MetaApiClient {
             'auth-token': this.token,
             'Accept': 'application/json',
           },
+          signal: AbortSignal.timeout(5000),
         });
 
         if (res.ok) {

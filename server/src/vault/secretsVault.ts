@@ -43,6 +43,7 @@ export class SecretsVault implements ISecretsVault {
     'MTGatewayWorker',
     'ExnessWorker',
     'WorkerOrchestrator',
+    'OnboardingService',
     'TestHarness',
   ]);
 

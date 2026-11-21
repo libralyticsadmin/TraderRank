@@ -73,6 +73,8 @@ export interface ValidationResult {
   success: boolean;
   error?: string;
   errorCode?: 'INVALID_CREDENTIALS' | 'INVESTOR_PASSWORD_DISABLED' | 'SERVER_UNREACHABLE' | 'UNVERIFIED_KYC' | 'UNKNOWN';
+  /** Live mode: input looks valid; broker verification continues in a background onboarding job. */
+  pendingBrokerVerification?: boolean;
   accountDetails?: {
     accountNumber: string;
     server?: string;

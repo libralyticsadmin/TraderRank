@@ -107,6 +107,7 @@ export class ForexFactoryService {
         'User-Agent': 'TraderRank-ForexFactory-Sync/1.0',
         Accept: 'application/json',
       },
+      signal: AbortSignal.timeout(10000),
     });
 
     if (!res.ok) {

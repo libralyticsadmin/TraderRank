@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TradingAccount } from '../../../shared/src/types.ts';
-import { Shield, Trash2, Server, Zap, RefreshCw, CheckCircle2, Lock } from 'lucide-react';
+import { Shield, Trash2, Server, Zap, RefreshCw, CheckCircle2, Lock, Loader2, AlertTriangle, X } from 'lucide-react';
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
@@ -18,6 +18,50 @@ export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconne
   const { user } = useAuth();
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [syncedId, setSyncedId] = useState<string | null>(null);
+
+  // Background broker onboarding jobs (live mode) — "Connecting" rows and failure banners
+  const [onboardingJobs, setOnboardingJobs] = useState<Array<{
+    id: string; status: 'PROVISIONING' | 'CONNECTING' | 'CONNECTED' | 'FAILED';
+    login: string; serverName: string; error?: string;
+  }>>([]);
+  const hasActiveJob = onboardingJobs.some(j => j.status === 'PROVISIONING' || j.status === 'CONNECTING');
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    const token = localStorage.getItem('traderank_auth_token_v1');
+    if (!token) return;
+    const load = async () => {
+      try {
+        const res = await fetch('/api/connector/onboarding', {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: AbortSignal.timeout(10000),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && Array.isArray(data.jobs)) setOnboardingJobs(data.jobs);
+      } catch {
+        // ignore transient errors
+      }
+    };
+    load();
+    const timer = setInterval(load, hasActiveJob ? 5000 : 30000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [user, hasActiveJob, accounts.length]);
+
+  const dismissJob = async (id: string) => {
+    const token = localStorage.getItem('traderank_auth_token_v1');
+    setOnboardingJobs(prev => prev.filter(j => j.id !== id));
+    await fetch(`/api/connector/onboarding/${id}`, {
+      method: 'DELETE',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      signal: AbortSignal.timeout(10000),
+    }).catch(() => {});
+  };
+
 
   // Multi-tenant privacy safeguard: each player only sees their own accounts (strict immutable userId matching)
   const visibleAccounts = accounts.filter(acc => {
@@ -38,6 +82,16 @@ export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconne
       (isZemUser && isZemAcc)
     );
   });
+
+  const pendingJobs = onboardingJobs.filter(
+    j => j.status !== 'CONNECTED' && !visibleAccountsHasLogin(j.login)
+  );
+  function visibleAccountsHasLogin(login: string) {
+    return accounts.some(a => String(a.accountNumber).trim() === String(login).trim() && a.connectionStatus === 'CONNECTED');
+  }
+  const disconnectedAccounts = visibleAccounts.filter(
+    a => a.connectionStatus === 'DISCONNECTED' || a.connectionStatus === 'ERROR'
+  );
 
   const handleSyncClick = async (id: string) => {
     if (!onSyncAccount || syncingId) return;
@@ -82,6 +136,48 @@ export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconne
           {t.accounts.addAccount.trim().startsWith('+') ? t.accounts.addAccount : `+ ${t.accounts.addAccount}`}
         </button>
       </div>
+
+      {(pendingJobs.length > 0 || disconnectedAccounts.length > 0) && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
+          {pendingJobs.map(job => job.status === 'FAILED' ? (
+            <div key={job.id} role="alert" style={{ background: 'rgba(246, 70, 93, 0.08)', border: '1px solid rgba(246, 70, 93, 0.35)', borderRadius: '10px', padding: '12px 14px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+              <AlertTriangle size={18} color="#f6465d" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div style={{ flex: 1, fontSize: '13px', lineHeight: 1.45 }}>
+                <strong>Account {job.login} ({job.serverName}) could not be connected.</strong>
+                <div style={{ color: '#fca5a5', marginTop: '2px' }}>{job.error}</div>
+                <button className="btn-secondary" onClick={onOpenWizard} style={{ marginTop: '8px', padding: '4px 10px', fontSize: '12px' }}>
+                  Re-enter investor password
+                </button>
+              </div>
+              <button onClick={() => dismissJob(job.id)} aria-label="Dismiss" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                <X size={16} />
+              </button>
+            </div>
+          ) : (
+            <div key={job.id} style={{ background: 'rgba(10, 186, 181, 0.06)', border: '1px solid rgba(10, 186, 181, 0.3)', borderRadius: '10px', padding: '12px 14px', display: 'flex', gap: '12px', alignItems: 'center', fontSize: '13px' }}>
+              <Loader2 size={18} color="#0abab5" style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
+              <div>
+                <strong>Connecting account {job.login}</strong> on {job.serverName}…
+                <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Verifying with your broker. This can take a few minutes.</div>
+              </div>
+            </div>
+          ))}
+          {disconnectedAccounts.map(acc => (
+            <div key={`disc_${acc.id}`} role="alert" style={{ background: 'rgba(240, 185, 11, 0.08)', border: '1px solid rgba(240, 185, 11, 0.35)', borderRadius: '10px', padding: '12px 14px', display: 'flex', gap: '12px', alignItems: 'flex-start', fontSize: '13px', lineHeight: 1.45 }}>
+              <AlertTriangle size={18} color="#f0b90b" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div style={{ flex: 1 }}>
+                <strong>Account {acc.accountNumber} is disconnected from your broker.</strong>
+                <div style={{ color: 'var(--text-muted)' }}>
+                  {acc.lastError || 'We can no longer read this account.'} Your rank is frozen and no new points are earned until it reconnects.
+                </div>
+                <button className="btn-secondary" onClick={onOpenWizard} style={{ marginTop: '8px', padding: '4px 10px', fontSize: '12px' }}>
+                  Re-enter investor password
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {visibleAccounts.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--text-muted)' }}>
