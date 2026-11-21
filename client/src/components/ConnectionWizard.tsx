@@ -99,6 +99,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
   const [showSubAccountGuide, setShowSubAccountGuide] = useState(false);
   const [showAllServers, setShowAllServers] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [onboardingSeconds, setOnboardingSeconds] = useState(0);
 
   // Keyboard escape route
   useEffect(() => {
@@ -241,7 +242,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
     const res = await fetch('/api/connector/connect', {
       method: 'POST',
       headers,
-      signal: AbortSignal.timeout(20000),
+      signal: AbortSignal.timeout(60000),
       body: JSON.stringify({
         userId: user.id,
         username: user.username,
@@ -262,7 +263,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
       try {
         const r = await fetch(`/api/connector/onboarding/${data.onboardingId}`, {
           headers,
-          signal: AbortSignal.timeout(10000),
+          signal: AbortSignal.timeout(15000),
         });
         if (!r.ok) return;
         const body = await r.json();
@@ -274,6 +275,15 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
   };
 
   const isOnboardingActive = onboarding?.status === 'PROVISIONING' || onboarding?.status === 'CONNECTING';
+
+  useEffect(() => {
+    if (!isOnboardingActive) {
+      setOnboardingSeconds(0);
+      return;
+    }
+    const t = setInterval(() => setOnboardingSeconds(s => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [isOnboardingActive]);
 
   const handleFinalConnect = async () => {
     setIsSubmitting(true);
@@ -843,18 +853,22 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 0', gap: '12px', textAlign: 'center' }}>
                   <Loader2 size={36} color="#0abab5" className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
                   <p style={{ fontSize: '14px', color: '#81d8d0', fontWeight: 600 }}>
-                    {onboarding?.status === 'PROVISIONING'
-                      ? '1/2 Registering your account with the secure read-only broker bridge...'
-                      : `2/2 Logging in to ${onboarding?.serverName || serverName} with your investor password...`}
+                    {onboarding?.status === 'PROVISIONING' || onboardingSeconds < 20
+                      ? `1/2 Registering account with broker bridge (${onboardingSeconds}s)...`
+                      : `2/2 Authenticating with ${onboarding?.serverName || serverName} (${onboardingSeconds}s)...`}
                   </p>
                   <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '10px 16px', fontSize: '12px', color: 'var(--text-muted)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', textAlign: 'left', width: '100%', maxWidth: '360px' }}>
                     <div>Account: <strong style={{ color: '#fff' }}>{login || onboarding?.login}</strong></div>
                     <div>Broker: <strong style={{ color: '#fff' }}>{selectedBroker}</strong></div>
                     <div style={{ gridColumn: 'span 2' }}>Server: <strong style={{ color: '#00f0ff' }}>{serverName || onboarding?.serverName}</strong></div>
                   </div>
-                  <span style={{ fontSize: '12px', color: 'var(--text-muted)', maxWidth: '440px', lineHeight: 1.5 }}>
-                    New broker connections can take a few minutes. You can close this window. We keep
-                    connecting in the background and your account shows as "Connecting" in your accounts list.
+                  {onboardingSeconds > 40 && (
+                    <div style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)', borderRadius: '8px', padding: '8px 12px', fontSize: '11px', color: '#fbbf24', maxWidth: '420px', textAlign: 'left' }}>
+                      ⏳ <strong>Taking longer than expected:</strong> Broker servers usually respond in 15–30 seconds. If this persists, verify that your <strong>Investor (read-only) Password</strong> is set in MT5 (Tools &gt; Options &gt; Server &gt; Change Password &gt; Change Investor Password).
+                    </div>
+                  )}
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', maxWidth: '440px', lineHeight: 1.4 }}>
+                    Connecting securely via read-only bridge. You can close this window and monitor status under "Connected Accounts".
                   </span>
                 </div>
               ) : isValidating ? (

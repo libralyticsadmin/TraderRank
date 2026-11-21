@@ -306,7 +306,34 @@ export class OnboardingService {
       return;
     }
     const state = await this.metaApi.getAccountState(id);
-    if (state?.connectionStatus !== 'CONNECTED') {
+    console.log(`[Onboarding] ${job.id} (${job.login}@${job.serverName}) state: ${state?.state}, connection: ${state?.connectionStatus}, reason: ${state?.disconnectedReason || 'none'}, attempt: ${job.attempts}`);
+
+    if (!state) {
+      this.reschedule(job);
+      return;
+    }
+
+    if (state.connectionStatus === 'DISCONNECTED') {
+      if (state.disconnectedReason) {
+        const reason = OnboardingService.classifyDisconnectedReason(state.disconnectedReason);
+        if (reason) {
+          await this.fail(job, reason, `Broker rejected connection: ${state.disconnectedReason}`);
+          return;
+        }
+      }
+      // If disconnected after 4 attempts and not currently deploying, broker rejected the credentials
+      if (job.attempts >= 4 && state.state !== 'DEPLOYING') {
+        await this.fail(job, 'INVALID_CREDENTIALS', 'Broker rejected login credentials or investor password.');
+        return;
+      }
+    }
+
+    if (state.state === 'FAILED') {
+      await this.fail(job, 'BROKER_UNREACHABLE', 'MetaApi account deployment failed');
+      return;
+    }
+
+    if (state.connectionStatus !== 'CONNECTED') {
       this.reschedule(job);
       return;
     }
@@ -409,6 +436,23 @@ export class OnboardingService {
         .catch(err => console.warn('[Onboarding] persist failed:', err instanceof Error ? err.message : String(err)));
     }, 500);
     this.persistTimer.unref?.();
+  }
+
+  /**
+   * Maps MetaApi disconnectedReason to an onboarding failure reason.
+   */
+  public static classifyDisconnectedReason(reasonStr: string): OnboardingFailureReason | null {
+    const r = String(reasonStr || '').toLowerCase();
+    if (/cred|auth|password|login|disabled|not_found|account_not_found|err_invalid_credentials/i.test(r)) {
+      return 'INVALID_CREDENTIALS';
+    }
+    if (/srv|server|host|unknown_server|e_srv_not_found/i.test(r)) {
+      return 'SERVER_NOT_FOUND';
+    }
+    if (/unreach|cannot_connect|network|e_connect/i.test(r)) {
+      return 'BROKER_UNREACHABLE';
+    }
+    return null;
   }
 
   /**

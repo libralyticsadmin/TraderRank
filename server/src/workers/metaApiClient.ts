@@ -375,7 +375,7 @@ export class MetaApiClient {
   /**
    * Fetches account deployment and connection state
    */
-  public async getAccountState(metaApiAccountId: string): Promise<{ state: string; connectionStatus?: string } | null> {
+  public async getAccountState(metaApiAccountId: string): Promise<{ state: string; connectionStatus?: string; disconnectedReason?: string } | null> {
     if (!this.hasToken() || !metaApiAccountId || typeof metaApiAccountId !== 'string' || metaApiAccountId.startsWith('mock_')) {
       return { state: 'DEPLOYED', connectionStatus: 'CONNECTED' };
     }
@@ -385,14 +385,18 @@ export class MetaApiClient {
           'auth-token': this.token,
           'Accept': 'application/json',
         },
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(20000),
       });
       if (!res.ok) return null;
       const data = await res.json() as any;
       if (data?.region) {
         this.accountRegions.set(metaApiAccountId, String(data.region));
       }
-      return { state: data.state, connectionStatus: data.connectionStatus };
+      return {
+        state: data.state,
+        connectionStatus: data.connectionStatus,
+        disconnectedReason: data.disconnectedReason || (data.connectionStatus === 'DISCONNECTED' ? data.disconnectReason : undefined),
+      };
     } catch {
       return null;
     }
@@ -425,7 +429,7 @@ export class MetaApiClient {
           'auth-token': this.token,
           'Accept': 'application/json',
         },
-        signal: AbortSignal.timeout(6000),
+        signal: AbortSignal.timeout(20000),
       });
       if (!res.ok) return null;
       const info = await res.json() as any;
