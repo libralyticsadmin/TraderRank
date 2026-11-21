@@ -136,21 +136,25 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
     const timer1 = setTimeout(() => setValidationStage(2), 2000);
     const timer2 = setTimeout(() => setValidationStage(3), 5000);
 
+    const cleanServer = serverName.trim();
+    const cleanLogin = login.trim();
+    const cleanPassword = investorPassword.trim();
+
     const payloadCreds = selectedPath === 'mt_gateway'
       ? ({
           type: 'mt_gateway',
           broker: selectedBroker,
           platform: platform as 'MT4' | 'MT5',
-          serverName,
-          login,
-          investorPassword,
+          serverName: cleanServer,
+          login: cleanLogin,
+          investorPassword: cleanPassword,
         } as GatewayCredentials)
       : ({
           type: 'exness_native',
           broker: 'Exness',
-          apiKey,
-          apiSecret,
-          accountId,
+          apiKey: apiKey.trim(),
+          apiSecret: apiSecret.trim(),
+          accountId: accountId.trim(),
         } as ExnessNativeCredentials);
 
     // Hard client-side ceiling so the preflight spinner can never hang indefinitely
@@ -307,21 +311,25 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
       return;
     }
 
+    const cleanServer = serverName.trim();
+    const cleanLogin = login.trim();
+    const cleanPassword = investorPassword.trim();
+
     const payloadCreds = selectedPath === 'mt_gateway'
       ? ({
           type: 'mt_gateway',
           broker: selectedBroker,
           platform: platform as 'MT4' | 'MT5',
-          serverName,
-          login,
-          investorPassword,
+          serverName: cleanServer,
+          login: cleanLogin,
+          investorPassword: cleanPassword,
         } as GatewayCredentials)
       : ({
           type: 'exness_native',
           broker: 'Exness',
-          apiKey,
-          apiSecret,
-          accountId,
+          apiKey: apiKey.trim(),
+          apiSecret: apiSecret.trim(),
+          accountId: accountId.trim(),
         } as ExnessNativeCredentials);
 
     try {
@@ -700,7 +708,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                     <div style={{ marginBottom: '10px', marginTop: '-4px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                         <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                          {t.connector.popularServers} ({selectedBroker}):
+                          {t.connector.popularServers} ({selectedBroker === 'IC_MARKETS' ? 'IC Markets' : selectedBroker}):
                         </span>
                         {currentPresets.length > 6 && (
                           <button
@@ -784,9 +792,14 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                     placeholder="Investor password only"
                     autoComplete="new-password"
                   />
-                  <div style={{ marginTop: '6px', fontSize: '11px', color: '#94a3b8', background: 'rgba(255,255,255,0.03)', padding: '6px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <ShieldCheck size={14} color="#0abab5" style={{ flexShrink: 0 }} />
-                    <span><strong>Investor Password only:</strong> In MT4/MT5, right-click account → <em>Change Password</em> → select <em>Investor Password</em>. Never enter master password.</span>
+                  <div style={{ marginTop: '6px', fontSize: '11px', color: '#94a3b8', background: 'rgba(255,255,255,0.03)', padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <ShieldCheck size={14} color="#0abab5" style={{ flexShrink: 0 }} />
+                      <span><strong>Read-Only Protection:</strong> TraderRank only syncs trade history and balance. It cannot place or modify trades.</span>
+                    </div>
+                    <span style={{ fontSize: '10.5px', color: '#64748b' }}>
+                      Use your MT4/MT5 Investor (read-only) password, or your MT5 account password if an investor password is not set. <em>Do not use your broker website/member area portal password.</em>
+                    </span>
                   </div>
                 </div>
               </div>
@@ -977,10 +990,10 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                       <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '8px', padding: '12px 14px', fontSize: '12px', color: '#fca5a5' }}>
                         <strong>Common fixes:</strong>
                         <ul style={{ margin: '6px 0 0 16px', padding: 0, lineHeight: 1.6 }}>
-                          <li>Verify your <strong>Server Name</strong> matches your MT4/MT5 terminal (e.g. <code>XMGlobal-MT5 10</code>).</li>
-                          <li>Ensure you enter the <strong>Investor (read-only) Password</strong>, <em>never</em> your broker website/member area portal password.</li>
+                          <li>Verify your <strong>Server Name</strong> from your broker welcome email or MT4/MT5 terminal (e.g. <code>XMGlobal-MT5</code>, <code>XMGlobal-MT5 2</code>, etc.).</li>
+                          <li>Ensure you enter your <strong>MT4/MT5 trading password</strong> or <strong>Investor password</strong> — <em>never</em> your broker website / member area portal password.</li>
                           {selectedBroker === 'XM' && (
-                            <li><strong>XM Global Accounts:</strong> XM does not set an investor password automatically. In MT5: <em>Tools → Options → Server → Change Password → Change Investor Password</em>.</li>
+                            <li><strong>XM Global Accounts:</strong> XM accounts do not have an investor password by default. Use your MT5 account trading password, or set an investor password in MT5 desktop (<em>Tools → Options → Server → Change Password → Change Investor Password</em>).</li>
                           )}
                           <li>Confirm whether your account is <strong>MT4</strong> or <strong>MT5</strong>.</li>
                         </ul>
