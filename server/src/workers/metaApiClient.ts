@@ -277,7 +277,13 @@ export class MetaApiClient {
 
     this.invalidateAccountListCache();
     const created = await res.json() as any;
+    if (res.status === 202 || created?.error === 'AcceptedError') {
+      throw new Error(`MetaApi account validation is in progress (202): ${created?.message || 'validating with broker'}`);
+    }
     const id = created ? String(created.id || created._id || '') : '';
+    if (!id || (/^\d{1,6}$/.test(id) && created?.error)) {
+      throw new Error(`MetaApi provisioning error (${created?.error || 'INVALID_RESPONSE'}): ${created?.message || 'Failed to create account'}`);
+    }
     if (id && created?.region) {
       this.accountRegions.set(id, String(created.region));
     }

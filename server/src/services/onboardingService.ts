@@ -506,7 +506,7 @@ export class OnboardingService {
       return 'QUOTA_EXCEEDED';
     }
     if (status === 401 || status === 403) return 'INTEGRATION_ERROR';
-    if (status === 429 || status === 0 || status >= 500) return null;
+    if (status === 429 || status === 202 || status === 0 || status >= 500 || /validation is in progress|AcceptedError/i.test(message)) return null;
     if (status === 404 || /server.*(not found|unknown|invalid)|E_SRV_NOT_FOUND|failed to find server/i.test(message)) {
       return 'SERVER_NOT_FOUND';
     }
