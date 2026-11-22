@@ -19,7 +19,7 @@ services:
       - key: META_API_TOKEN
         sync: false # Set securely in Render dashboard
       - key: ALLTICK_API_TOKEN
-        value: 4554c41c6fc5298fb839ca4530639663-c-app
+        sync: false
       - key: VAULT_MASTER_KEY
         generateValue: true
       # Operator email alerts (AlertService). Set in the Render dashboard.

@@ -341,7 +341,7 @@ export class OnboardingService {
       return;
     }
 
-    if (state.connectionStatus === 'DISCONNECTED') {
+    if (state.connectionStatus === 'DISCONNECTED' || state.connectionStatus === 'DISCONNECTED_FROM_BROKER') {
       if (state.disconnectedReason) {
         const reason = OnboardingService.classifyDisconnectedReason(state.disconnectedReason);
         if (reason) {
@@ -349,7 +349,13 @@ export class OnboardingService {
           return;
         }
       }
-      // Note: Do NOT assume invalid credentials purely based on attempt count or DISCONNECTED status,
+      // If the terminal explicitly reports DISCONNECTED_FROM_BROKER after repeated checks,
+      // the broker server has actively rejected the credentials or closed the socket.
+      if (state.connectionStatus === 'DISCONNECTED_FROM_BROKER' && job.attempts >= 4) {
+        await this.fail(job, 'INVALID_CREDENTIALS', 'Broker rejected login credentials or account number.');
+        return;
+      }
+      // Note: Do NOT assume invalid credentials purely based on attempt count or initial DISCONNECTED status,
       // as MetaTrader 4/5 cloud containers take 30-60+ seconds to complete broker handshakes.
       // MetaApi populates disconnectedReason when credentials or server are actually rejected by the broker.
       // If no reason is reported, connection check retries until deadlineAt.

@@ -19,9 +19,10 @@ function stubFetch(route: Route) {
   const fetchMock = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
     const url = String(input);
     const hit = route(url, init) || { status: 404, body: { message: 'not found' } };
-    return new Response(JSON.stringify(hit.body), {
+    const isNoContent = hit.status === 204 || hit.status === 205 || hit.status === 304;
+    return new Response(isNoContent ? null : JSON.stringify(hit.body), {
       status: hit.status,
-      headers: { 'Content-Type': 'application/json' },
+      headers: isNoContent ? {} : { 'Content-Type': 'application/json' },
     });
   });
   vi.stubGlobal('fetch', fetchMock);

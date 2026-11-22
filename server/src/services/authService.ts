@@ -23,18 +23,25 @@ export class AuthService {
   private credentials = new Map<string, StoredCredential>(); // keyed by userId, email.toLowerCase(), username.toLowerCase()
   private readonly CREDENTIALS_KEY = 'auth/credentials.json';
   private readonly SESSION_SECRET = (() => {
-    if (process.env.SESSION_SECRET) return process.env.SESSION_SECRET;
+    if (process.env.SESSION_SECRET && process.env.SESSION_SECRET.trim().length >= 16) {
+      return process.env.SESSION_SECRET.trim();
+    }
     const stableSeed =
       process.env.VAULT_MASTER_KEY ||
       process.env.ADMIN_API_KEY ||
       process.env.R2_SECRET_ACCESS_KEY;
-    if (stableSeed) {
+    if (stableSeed && stableSeed.trim().length >= 8) {
       return crypto
-        .createHmac('sha256', stableSeed)
+        .createHmac('sha256', stableSeed.trim())
         .update('traderrank-session-secret-v1')
         .digest('hex');
     }
-    return 'traderrank_jwt_hmac_secret_key_2026_production';
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        '[FATAL] Production session secret is unconfigured. Set SESSION_SECRET, VAULT_MASTER_KEY, or ADMIN_API_KEY in environment.'
+      );
+    }
+    return 'traderrank_jwt_hmac_secret_key_2026_dev_fallback';
   })();
   private readonly TOKEN_EXPIRY_SECONDS = 7 * 24 * 60 * 60; // 7 days
   private loadPromise: Promise<void> | null = null;
@@ -111,8 +118,19 @@ export class AuthService {
       const payload: SessionPayload = JSON.parse(payloadStr);
 
       const now = Math.floor(Date.now() / 1000);
-      if (payload.exp && payload.exp < now) {
-        return null; // Expired
+      if (
+        !payload ||
+        typeof payload !== 'object' ||
+        typeof payload.userId !== 'string' ||
+        !payload.userId.trim() ||
+        typeof payload.username !== 'string' ||
+        !payload.username.trim() ||
+        typeof payload.exp !== 'number' ||
+        !Number.isFinite(payload.exp) ||
+        payload.exp < now ||
+        payload.exp > now + 60 * 24 * 60 * 60
+      ) {
+        return null;
       }
       return payload;
     } catch {
@@ -123,7 +141,7 @@ export class AuthService {
   public async loadCredentials(): Promise<void> {
     try {
       await ensureLegacyIdentityMigration();
-      const saved = await r2Storage.getJson<Record<string, StoredCredential>>(this.CREDENTIALS_KEY);
+      const saved = await r2Storage.getJsonStrict<Record<string, StoredCredential>>(this.CREDENTIALS_KEY);
       if (saved && typeof saved === 'object') {
         for (const [k, v] of Object.entries(saved)) {
           if (v && v.userId && v.hash && v.salt) {
@@ -134,9 +152,9 @@ export class AuthService {
           }
         }
       }
-
     } catch (err) {
-      console.warn('[AuthService] Could not load credentials:', err);
+      console.error('[AuthService] Fatal: Could not safely load credentials from storage:', err);
+      throw err;
     }
   }
 
@@ -147,19 +165,15 @@ export class AuthService {
   }
 
   public async persistCredentials(): Promise<void> {
-    try {
-      const records: Record<string, StoredCredential> = {};
-      const seen = new Set<string>();
-      for (const cred of this.credentials.values()) {
-        if (!seen.has(cred.userId)) {
-          seen.add(cred.userId);
-          records[cred.userId] = cred;
-        }
+    const records: Record<string, StoredCredential> = {};
+    const seen = new Set<string>();
+    for (const cred of this.credentials.values()) {
+      if (!seen.has(cred.userId)) {
+        seen.add(cred.userId);
+        records[cred.userId] = cred;
       }
-      await r2Storage.uploadJson(this.CREDENTIALS_KEY, records, { 'x-traderrank-type': 'auth_credentials' });
-    } catch (err) {
-      console.warn('[AuthService] Could not persist credentials:', err);
     }
+    await r2Storage.uploadJson(this.CREDENTIALS_KEY, records, { 'x-traderrank-type': 'auth_credentials' });
   }
 
   public getCredential(emailOrUserOrId: string): StoredCredential | null {
@@ -207,20 +221,44 @@ export class AuthService {
     };
 
     this.saveCredential(cred);
-    await this.persistCredentials();
-    return { success: true };
+    try {
+      await this.persistCredentials();
+      return { success: true };
+    } catch (err) {
+      // Roll back in-memory credentials on durability failure to prevent inconsistent states
+      this.credentials.delete(cred.userId);
+      this.credentials.delete(cleanUser.toLowerCase());
+      this.credentials.delete(cleanEmail);
+      console.error('[AuthService] Registration durability failure:', err);
+      return { success: false, error: 'User registration could not be saved to durable storage. Please try again.' };
+    }
   }
 
   public async setPasswordForUser(userId: string, passwordPlain: string): Promise<boolean> {
     const cred = this.credentials.get(userId);
     if (!cred) return false;
 
+    const previousSalt = cred.salt;
+    const previousHash = cred.hash;
+    const previousUpdatedAt = cred.updatedAt;
+
     cred.salt = this.generateSalt();
     cred.hash = this.hashPassword(passwordPlain, cred.salt);
     cred.updatedAt = new Date().toISOString();
     this.saveCredential(cred);
-    await this.persistCredentials();
-    return true;
+
+    try {
+      await this.persistCredentials();
+      return true;
+    } catch (err) {
+      // Rollback memory on persistence failure
+      cred.salt = previousSalt;
+      cred.hash = previousHash;
+      cred.updatedAt = previousUpdatedAt;
+      this.saveCredential(cred);
+      console.error('[AuthService] Password update durability failure:', err);
+      return false;
+    }
   }
 }
 

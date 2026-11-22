@@ -112,24 +112,34 @@ export class R2StorageService {
     return this.localBaseDir;
   }
 
+  public isLocalDiskWritable(): boolean {
+    try {
+      if (!fs.existsSync(this.localBaseDir)) {
+        fs.mkdirSync(this.localBaseDir, { recursive: true });
+      }
+      const testFile = path.join(this.localBaseDir, `.health_probe_${process.pid}`);
+      fs.writeFileSync(testFile, 'ok', 'utf-8');
+      fs.unlinkSync(testFile);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   private getLocalFilePath(key: string): string {
     const safeKey = key.replace(/\.\./g, '').replace(/^\/+/, '');
     return path.join(this.localBaseDir, safeKey);
   }
 
   private saveToLocalDisk(key: string, dataStr: string): void {
-    try {
-      const filePath = this.getLocalFilePath(key);
-      const dir = path.dirname(filePath);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-      const tmpPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
-      fs.writeFileSync(tmpPath, dataStr, 'utf-8');
-      fs.renameSync(tmpPath, filePath);
-    } catch (err) {
-      console.warn(`[R2StorageService] Local disk write warning for ${key}:`, err);
+    const filePath = this.getLocalFilePath(key);
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
     }
+    const tmpPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
+    fs.writeFileSync(tmpPath, dataStr, 'utf-8');
+    fs.renameSync(tmpPath, filePath);
   }
 
   private readFromLocalDisk(key: string): string | null {
@@ -189,15 +199,36 @@ export class R2StorageService {
     metadata?: Record<string, string>
   ): Promise<R2UploadResult> {
     const bodyStr = JSON.stringify(data, null, 2);
-    // 1. Always write atomically to local disk & memory immediately
-    this.saveToLocalDisk(key, bodyStr);
-    this.inMemoryFallback.set(key, bodyStr);
+    let localSaved = false;
+    let localError: Error | null = null;
+    try {
+      this.saveToLocalDisk(key, bodyStr);
+      this.inMemoryFallback.set(key, bodyStr);
+      localSaved = true;
+    } catch (err) {
+      localError = err instanceof Error ? err : new Error(String(err));
+      console.warn(`[R2StorageService] Local disk write failed for ${key}:`, err);
+    }
 
     // 2. Serialize async R2 cloud uploads per key
     const prev = this.writeQueues.get(key) || Promise.resolve();
     const next = prev
       .catch(() => {})
-      .then(() => this.performCloudUpload(key, bodyStr, metadata));
+      .then(async () => {
+        try {
+          return await this.performCloudUpload(key, bodyStr, metadata);
+        } catch (cloudErr) {
+          if (!localSaved) {
+            throw new Error(`Dual storage failure for ${key}: cloud upload failed (${cloudErr instanceof Error ? cloudErr.message : String(cloudErr)}) and local write failed (${localError?.message || 'unknown error'})`);
+          }
+          return {
+            key,
+            sizeBytes: Buffer.byteLength(bodyStr, 'utf-8'),
+            uploadedAt: new Date().toISOString(),
+            storage: 'LOCAL_FALLBACK' as const,
+          };
+        }
+      });
     this.writeQueues.set(key, next);
     return next;
   }
@@ -210,32 +241,23 @@ export class R2StorageService {
     const sizeBytes = Buffer.byteLength(bodyStr, 'utf-8');
     const uploadedAt = new Date().toISOString();
 
-    // 2. Sync to Cloudflare R2 Cloud
+    // Sync to Cloudflare R2 Cloud
     if (this.client) {
-      try {
-        const cmd = new PutObjectCommand({
-          Bucket: this.config.bucketName,
-          Key: key,
-          Body: bodyStr,
-          ContentType: 'application/json',
-          Metadata: metadata,
-        });
-        const res = await this.client.send(cmd);
-        return {
-          key,
-          sizeBytes,
-          etag: res.ETag,
-          uploadedAt,
-          storage: 'R2_CLOUD',
-        };
-      } catch {
-        return {
-          key,
-          sizeBytes,
-          uploadedAt,
-          storage: 'LOCAL_FALLBACK',
-        };
-      }
+      const cmd = new PutObjectCommand({
+        Bucket: this.config.bucketName,
+        Key: key,
+        Body: bodyStr,
+        ContentType: 'application/json',
+        Metadata: metadata,
+      });
+      const res = await this.client.send(cmd);
+      return {
+        key,
+        sizeBytes,
+        etag: res.ETag,
+        uploadedAt,
+        storage: 'R2_CLOUD',
+      };
     }
 
     return {
@@ -247,6 +269,14 @@ export class R2StorageService {
   }
 
   public async getJson<T>(key: string): Promise<T | null> {
+    const localFilePath = this.getLocalFilePath(key);
+    let localMtime = 0;
+    try {
+      if (fs.existsSync(localFilePath)) {
+        localMtime = fs.statSync(localFilePath).mtimeMs;
+      }
+    } catch {}
+
     // 1. Try Cloudflare R2 first
     if (this.client) {
       try {
@@ -256,6 +286,14 @@ export class R2StorageService {
         });
         const res = await this.client.send(cmd);
         if (res.Body) {
+          const r2Mtime = res.LastModified ? res.LastModified.getTime() : 0;
+          if (localMtime && r2Mtime && localMtime > r2Mtime + 1000) {
+            const diskStr = this.readFromLocalDisk(key);
+            if (diskStr) {
+              this.uploadJson(key, JSON.parse(diskStr)).catch(() => {});
+              return JSON.parse(diskStr) as T;
+            }
+          }
           const bodyStr = await res.Body.transformToString();
           this.saveToLocalDisk(key, bodyStr);
           this.inMemoryFallback.set(key, bodyStr);
@@ -295,10 +333,25 @@ export class R2StorageService {
    * mistaken for an empty store and overwritten.
    */
   public async getJsonStrict<T>(key: string): Promise<T | null> {
+    const localFilePath = this.getLocalFilePath(key);
+    let localMtime = 0;
+    try {
+      if (fs.existsSync(localFilePath)) {
+        localMtime = fs.statSync(localFilePath).mtimeMs;
+      }
+    } catch {}
+
     if (this.client) {
       try {
         const res = await this.client.send(new GetObjectCommand({ Bucket: this.config.bucketName, Key: key }));
         if (!res.Body) throw new Error(`R2 returned no body for ${key}`);
+        const r2Mtime = res.LastModified ? res.LastModified.getTime() : 0;
+        if (localMtime && r2Mtime && localMtime > r2Mtime + 1000) {
+          const diskStr = fs.readFileSync(localFilePath, 'utf-8');
+          const parsed = JSON.parse(diskStr) as T;
+          this.uploadJson(key, parsed).catch(() => {});
+          return parsed;
+        }
         const bodyStr = await res.Body.transformToString();
         const parsed = JSON.parse(bodyStr) as T; // throws on corrupt data
         this.saveToLocalDisk(key, bodyStr);
@@ -308,15 +361,26 @@ export class R2StorageService {
         const e = err as { name?: string; Code?: string; $metadata?: { httpStatusCode?: number } };
         const notFound = e?.name === 'NoSuchKey' || e?.Code === 'NoSuchKey' || e?.$metadata?.httpStatusCode === 404;
         if (!notFound) {
+          if (fs.existsSync(localFilePath)) {
+            const diskStr = fs.readFileSync(localFilePath, 'utf-8');
+            const parsed = JSON.parse(diskStr) as T;
+            this.inMemoryFallback.set(key, diskStr);
+            return parsed;
+          }
           throw new Error(`Storage read failed for ${key}: ${err instanceof Error ? err.message : String(err)}`);
+        }
+        if (fs.existsSync(localFilePath)) {
+          const diskStr = fs.readFileSync(localFilePath, 'utf-8');
+          const parsed = JSON.parse(diskStr) as T;
+          this.inMemoryFallback.set(key, diskStr);
+          return parsed;
         }
         return null; // R2 is the source of truth when configured
       }
     }
 
-    const filePath = this.getLocalFilePath(key);
-    if (fs.existsSync(filePath)) {
-      const diskStr = fs.readFileSync(filePath, 'utf-8'); // throws on I/O error
+    if (fs.existsSync(localFilePath)) {
+      const diskStr = fs.readFileSync(localFilePath, 'utf-8'); // throws on I/O error
       const parsed = JSON.parse(diskStr) as T; // throws on corrupt data
       this.inMemoryFallback.set(key, diskStr);
       return parsed;

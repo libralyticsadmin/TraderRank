@@ -454,15 +454,11 @@ export function createServer() {
   );
 
   const persistUserProfilesToR2 = async () => {
-    try {
-      const records: Record<string, any> = {};
-      for (const [k, v] of userProfiles.entries()) {
-        records[k] = v;
-      }
-      await r2Storage.uploadJson(USER_PROFILES_R2_KEY, records, { 'x-traderrank-type': 'user_profiles' });
-    } catch (err) {
-      console.warn('[server] Warning: Could not persist user profiles to R2:', err);
+    const records: Record<string, any> = {};
+    for (const [k, v] of userProfiles.entries()) {
+      records[k] = v;
     }
+    await r2Storage.uploadJson(USER_PROFILES_R2_KEY, records, { 'x-traderrank-type': 'user_profiles' });
   };
 
   function extractAuthUser(req: Request): SessionPayload | null {
@@ -582,7 +578,13 @@ export function createServer() {
       rank: 99,
     };
     userProfiles.set(cleanId, newUser);
-    await persistUserProfilesToR2();
+    try {
+      await persistUserProfilesToR2();
+    } catch (err) {
+      userProfiles.delete(cleanId);
+      console.error('[server] Registration profile persistence failed:', err);
+      return res.status(500).json({ success: false, error: 'Registration failed due to durable storage failure. Please try again.' });
+    }
 
     const token = authService.createSessionToken(cleanId, cleanUsername);
     return res.status(201).json({ success: true, token, user: newUser });
@@ -661,9 +663,16 @@ export function createServer() {
     if (typeof profile.instagramHandle === 'string') safeUpdates.instagramHandle = profile.instagramHandle;
     if (profile.methodology && typeof profile.methodology === 'object') safeUpdates.methodology = profile.methodology;
 
+    const previousProfile = existing ? { ...existing } : undefined;
     const updated = { ...existing, ...safeUpdates, id: profile.id };
     userProfiles.set(profile.id, updated);
-    await persistUserProfilesToR2();
+    try {
+      await persistUserProfilesToR2();
+    } catch (err) {
+      if (previousProfile) userProfiles.set(profile.id, previousProfile);
+      else userProfiles.delete(profile.id);
+      return res.status(500).json({ success: false, error: 'Could not persist profile changes to storage. Please try again.' });
+    }
 
     if (safeUpdates.username || safeUpdates.avatarUrl || safeUpdates.avatarSymbol || safeUpdates.primaryBroker) {
       connector.updateUserAccountsName(
@@ -754,9 +763,13 @@ export function createServer() {
   app.get('/api/health', (_req: Request, res: Response) => {
     // Always HTTP 200 (Render health check); degradation is reported in the body
     const metaApi = getServiceStatus('metaapi');
+    const diskWritable = r2Storage.isLocalDiskWritable();
+    const isDegraded = metaApi.status === 'degraded' || !diskWritable;
     res.json({
-      status: metaApi.status === 'degraded' ? 'DEGRADED' : 'HEALTHY',
+      status: isDegraded ? 'DEGRADED' : 'HEALTHY',
       metaApi,
+      diskWritable,
+      storageMode: r2Storage.isConfigured() ? 'R2_CLOUD' : 'LOCAL_DISK',
       timestamp: new Date().toISOString(),
       activeWsClients: clients.size,
       services: {
@@ -764,6 +777,7 @@ export function createServer() {
         eventBus: 'OPERATIONAL',
         normalization: 'OPERATIONAL',
         leaderboard: 'OPERATIONAL',
+        storage: diskWritable ? 'OPERATIONAL' : 'DEGRADED',
       },
     });
   });

@@ -218,8 +218,8 @@ export class MetaApiClient {
       return { id: `mock_meta_${login}`, isNew: true, state: 'DEPLOYED' };
     }
 
-    // 1. Check if already provisioned (strict: force refresh to guarantee live view)
-    const existing = await this.listProvisionedAccountsStrict(true);
+    // 1. Check if already provisioned (strict: check single-flight cache and TTL)
+    const existing = await this.listProvisionedAccountsStrict(false);
     const found = existing.find(a => a.login === login && a.server.toLowerCase() === server.toLowerCase());
     if (found) {
       // Only update credentials & redeploy if the account is NOT currently connected,
@@ -233,14 +233,9 @@ export class MetaApiClient {
         );
         if (!updated.ok) {
           console.warn(`[MetaApiClient] Credential update warning for ${found.id}: ${updated.error}`);
-          // If the existing account was rejected or rate-limited with HTTP 429 (TooManyRequestsError),
-          // its container is locked in cooldown. Delete it so we can provision clean below.
-          if (updated.status === 429 || (updated.status && updated.status >= 400 && updated.status < 500)) {
-            console.log(`[MetaApiClient] Deleting locked/rate-limited account ${found.id} to recreate clean...`);
-            await this.deleteAccount(found.id);
-          } else {
-            throw new Error(`MetaApi rejected credentials (${updated.status}): ${updated.error}`);
-          }
+          // TR-05: Preserve existing account identity on 429 or ordinary credential errors;
+          // honor retry guidance with bounded backoff. Never delete/recreate accounts on credential updates.
+          throw new Error(`MetaApi credential update failed (${updated.status || 0}): ${updated.error || 'rejected'}`);
         } else {
           if (found.state === 'DRAFT' || found.state === 'UNDEPLOYED') {
             await this.deployAccount(found.id);

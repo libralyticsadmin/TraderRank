@@ -15,3 +15,21 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`[STREAM] Redis Streams Normalization: Active`);
   console.log(`====================================================`);
 });
+
+const shutdown = async (signal: string) => {
+  console.log(`[CORE] Received ${signal}. Starting graceful shutdown...`);
+  server.close(() => {
+    console.log('[CORE] HTTP & WebSocket server closed.');
+  });
+  try {
+    const { onboardingService } = await import('./services/onboardingService.js');
+    onboardingService.stop();
+  } catch {}
+  setTimeout(() => {
+    console.log('[CORE] Graceful shutdown complete.');
+    process.exit(0);
+  }, 1000).unref();
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
