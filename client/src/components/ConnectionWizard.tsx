@@ -119,7 +119,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
     } else {
       setSelectedPath('mt_gateway');
       if (broker === 'IC_MARKETS') setServerName('ICMarketsSC-Live01');
-      if (broker === 'XM') setServerName('XMGlobal-MT5 10');
+      if (broker === 'XM') setServerName('XMGlobal-MT5');
       if (broker === 'Axiory') setServerName('Axiory-Live 01');
       if (broker === 'Vantage') setServerName('VantageFX-Live 2');
       if (broker === 'OTHER') setServerName('MetaQuotes-Demo');
@@ -680,7 +680,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                       className="form-input"
                       value={serverName}
                       onChange={e => setServerName(e.target.value)}
-                      placeholder={selectedBroker === 'IC_MARKETS' ? 'e.g. ICMarketsSC-Live01' : 'e.g. XMGlobal-Real 55'}
+                      placeholder={selectedBroker === 'IC_MARKETS' ? 'e.g. ICMarketsSC-Live01' : (selectedBroker === 'XM' ? 'e.g. XMGlobal-MT5' : 'e.g. XMGlobal-Real 55')}
                     />
                   </div>
                 </div>

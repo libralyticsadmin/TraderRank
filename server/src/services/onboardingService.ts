@@ -172,7 +172,24 @@ export class OnboardingService {
       j => j.userId === userId && j.login === login && j.serverName.toLowerCase() === serverName.toLowerCase() &&
         (j.status === 'PROVISIONING' || j.status === 'CONNECTING')
     );
-    if (existing) return existing;
+    if (existing) {
+      // Re-submission: update credentials in vault, reset state and restart provisioning
+      await this.revokeCreds(existing);
+      existing.vaultSecretRef = await this.vault.storeSecret(VAULT_CALLER, { ...creds, login, serverName });
+      existing.status = 'PROVISIONING';
+      existing.attempts = 0;
+      existing.error = undefined;
+      existing.reason = undefined;
+      existing.deadlineAt = Date.now() + this.timeoutMs;
+      existing.nextCheckAt = Date.now();
+      if (existing.metaApiAccountId) {
+        await this.metaApi.deleteAccount(existing.metaApiAccountId).catch(() => false);
+        existing.metaApiAccountId = undefined;
+      }
+      this.schedulePersist();
+      this.runJob(existing.id).catch(() => {});
+      return existing;
+    }
 
     const vaultSecretRef = await this.vault.storeSecret(VAULT_CALLER, { ...creds, login, serverName });
     const now = Date.now();
@@ -212,9 +229,17 @@ export class OnboardingService {
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
 
-  public dismissJob(id: string, userId: string): boolean {
+  public async dismissJob(id: string, userId: string): Promise<boolean> {
     const job = this.getJob(id, userId);
-    if (!job || job.status === 'PROVISIONING' || job.status === 'CONNECTING') return false;
+    if (!job) return false;
+    if (job.status === 'PROVISIONING' || job.status === 'CONNECTING') {
+      if (job.metaApiAccountId) {
+        await this.metaApi.deleteAccount(job.metaApiAccountId).catch(() => false);
+      }
+      await this.revokeCreds(job);
+      job.status = 'FAILED';
+      job.reason = 'TIMEOUT';
+    }
     job.dismissed = true;
     this.schedulePersist();
     return true;
@@ -395,8 +420,8 @@ export class OnboardingService {
       await this.metaApi.undeployAccount(job.metaApiAccountId).catch(() => false);
     }
 
-    // Clean up rejected or rate-limited accounts so no contaminated cooldown state persists in MetaApi
-    if (job.metaApiAccountId && (reason === 'INVALID_CREDENTIALS' || reason === 'RATE_LIMITED')) {
+    // Clean up rejected, rate-limited, unreachable, or timed-out accounts so no contaminated zombie state persists in MetaApi
+    if (job.metaApiAccountId && (reason === 'INVALID_CREDENTIALS' || reason === 'RATE_LIMITED' || reason === 'TIMEOUT' || reason === 'SERVER_NOT_FOUND' || reason === 'BROKER_UNREACHABLE')) {
       await this.metaApi.deleteAccount(job.metaApiAccountId).catch(() => false);
     }
 

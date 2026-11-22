@@ -908,10 +908,10 @@ export function createServer() {
     return res.json({ success: true, onboarding: onboardingService.toView(job) });
   });
 
-  app.delete('/api/connector/onboarding/:id', (req: Request, res: Response) => {
+  app.delete('/api/connector/onboarding/:id', async (req: Request, res: Response) => {
     const authSession = extractAuthUser(req);
     if (!authSession) return res.status(401).json({ success: false, error: 'Authentication required' });
-    const ok = onboardingService.dismissJob(req.params.id, authSession.userId);
+    const ok = await onboardingService.dismissJob(req.params.id, authSession.userId);
     return res.status(ok ? 200 : 404).json({ success: ok });
   });
 
