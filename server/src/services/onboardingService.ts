@@ -168,8 +168,12 @@ export class OnboardingService {
       throw err;
     }
 
+    const targetLogin = String(login || '').trim();
+    const targetServer = String(serverName || '').trim().toLowerCase();
     const existing = Array.from(this.jobs.values()).find(
-      j => j.userId === userId && j.login === login && j.serverName.toLowerCase() === serverName.toLowerCase() &&
+      j => AccountConnectorService.isSameOwner(j.userId, userId) &&
+        String(j.login).trim() === targetLogin &&
+        String(j.serverName).trim().toLowerCase() === targetServer &&
         (j.status === 'PROVISIONING' || j.status === 'CONNECTING')
     );
     if (existing) {

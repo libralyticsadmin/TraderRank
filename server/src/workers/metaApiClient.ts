@@ -183,9 +183,9 @@ export class MetaApiClient {
         this.accountRegions.set(id, region);
         return {
           id,
-          name: acc.name,
-          login: acc.login,
-          server: acc.server,
+          name: String(acc.name || ''),
+          login: String(acc.login ?? '').trim(),
+          server: String(acc.server ?? '').trim(),
           platform: acc.platform,
           type: acc.type,
           state: acc.state,
@@ -220,7 +220,11 @@ export class MetaApiClient {
 
     // 1. Check if already provisioned (strict: check single-flight cache and TTL)
     const existing = await this.listProvisionedAccountsStrict(false);
-    const found = existing.find(a => a.login === login && a.server.toLowerCase() === server.toLowerCase());
+    const targetLogin = String(login || '').trim();
+    const targetServer = String(server || '').trim().toLowerCase();
+    const found = existing.find(
+      a => String(a.login || '').trim() === targetLogin && String(a.server || '').trim().toLowerCase() === targetServer
+    );
     if (found) {
       // Only update credentials & redeploy if the account is NOT currently connected,
       // preventing accidental disruption of already-healthy broker connections.
@@ -267,7 +271,7 @@ export class MetaApiClient {
         magic: 0,
         quoteStreamingIntervalInSeconds: 2.5,
       }),
-      signal: AbortSignal.timeout(30000),
+      signal: AbortSignal.timeout(75000),
     });
 
     if (!res.ok) {
