@@ -277,17 +277,8 @@ export class MetaApiClient {
             throw new Error(`MetaApi credential update failed (${updated.status || 0}): ${updated.error || 'rejected'}`);
           }
         }
-        return { id: found.id, isNew: false, state: found.state };
       }
-
-      // If the account is NOT connected (e.g. stale deployment in wrong region or stuck socket),
-      // delete the failed container so a fresh cloud-g2 container in 'london' is provisioned below.
-      if (!this.isTestRuntime()) {
-        console.log(`[MetaApiClient] Purging disconnected/stale container ${found.id} for ${login}@${server} to provision fresh London g2 container`);
-        await this.deleteAccount(found.id).catch(() => false);
-      } else {
-        return { id: found.id, isNew: false, state: found.state };
-      }
+      return { id: found.id, isNew: false, state: found.state };
     }
 
     // 2. Provision new account in MetaApi (London region close to LD4 broker datacenters)
@@ -326,17 +317,24 @@ export class MetaApiClient {
 
     this.invalidateAccountListCache();
     const created = await res.json() as any;
-    if (res.status === 202 || created?.error === 'AcceptedError') {
-      throw new Error(`MetaApi account validation is in progress (202): ${created?.message || 'validating with broker'}`);
+    
+    // Extract account ID (handles both synchronous 200/201 and async 202 Accepted validation)
+    let id = created ? String(created._id || (created.error ? '' : created.id) || '') : '';
+    if (!id && created?.traceId) {
+      id = String(created.traceId);
     }
-    const id = created ? String(created.id || created._id || '') : '';
-    if (!id || (/^\d{1,6}$/.test(id) && created?.error)) {
+    if (!id && created?.message) {
+      const match = String(created.message).match(/\(([a-f0-9]{32})\)/i);
+      if (match) id = match[1];
+    }
+
+    if (!id || (/^\d{1,6}$/.test(id) && created?.error && created?.error !== 'AcceptedError')) {
       throw new Error(`MetaApi provisioning error (${created?.error || 'INVALID_RESPONSE'}): ${created?.message || 'Failed to create account'}`);
     }
     if (id && created?.region) {
       this.accountRegions.set(id, String(created.region));
     }
-    return { id, isNew: true, state: created?.state || 'DRAFT' };
+    return { id, isNew: true, state: created?.state || 'DEPLOYED' };
   }
 
   /**
