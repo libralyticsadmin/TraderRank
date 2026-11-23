@@ -498,7 +498,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                 <div>
                   <strong>{t.connector.brokerAgnosticTitle}</strong>
                   <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    {t.connector.brokerAgnosticDesc}
+                    {t.connector.brokerAgnosticDesc.replace('{broker}', selectedBroker || 'broker')}
                   </p>
                 </div>
               </div>
