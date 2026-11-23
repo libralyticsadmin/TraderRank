@@ -602,7 +602,11 @@ export function createServer() {
     }
 
     const needle = String(emailOrUser).trim().toLowerCase();
-    const cred = authService.getCredential(needle);
+    let cred = authService.getCredential(needle);
+    if (!cred) {
+      await authService.ensureLoaded(true);
+      cred = authService.getCredential(needle);
+    }
 
     if (!cred) {
       return res.status(401).json({ success: false, error: 'Invalid username/email or password' });

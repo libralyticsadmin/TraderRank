@@ -50,10 +50,11 @@ export class AuthService {
     this.loadPromise = this.loadCredentials().catch(() => {});
   }
 
-  public async ensureLoaded(): Promise<void> {
-    if (this.loadPromise) {
-      await this.loadPromise;
+  public async ensureLoaded(force = false): Promise<void> {
+    if (force || !this.loadPromise) {
+      this.loadPromise = this.loadCredentials().catch(() => {});
     }
+    await this.loadPromise;
   }
 
   public static getInstance(): AuthService {
