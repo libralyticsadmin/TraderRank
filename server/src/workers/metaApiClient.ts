@@ -226,35 +226,34 @@ export class MetaApiClient {
       a => String(a.login || '').trim() === targetLogin && String(a.server || '').trim().toLowerCase() === targetServer
     );
     if (found) {
-      // Only update credentials & redeploy if the account is NOT currently connected,
-      // preventing accidental disruption of already-healthy broker connections.
-      if (!this.isTestRuntime() && investorPassword && found.connectionStatus !== 'CONNECTED') {
-        const updated = await this.updateAccountCredentials(
-          found.id,
-          found.name || `TraderRank-${login}`,
-          server,
-          investorPassword
-        );
-        if (!updated.ok) {
-          console.warn(`[MetaApiClient] Credential update warning for ${found.id}: ${updated.error}`);
-          // TR-05: Preserve existing account identity on 429 or ordinary credential errors;
-          // honor retry guidance with bounded backoff. Never delete/recreate accounts on credential updates.
-          throw new Error(`MetaApi credential update failed (${updated.status || 0}): ${updated.error || 'rejected'}`);
-        } else {
-          if (found.state === 'DRAFT' || found.state === 'UNDEPLOYED') {
-            await this.deployAccount(found.id);
-          } else {
-            await this.redeployAccount(found.id);
+      if (found.connectionStatus === 'CONNECTED') {
+        // Healthy connected account: update credentials non-destructively
+        if (!this.isTestRuntime() && investorPassword) {
+          const updated = await this.updateAccountCredentials(
+            found.id,
+            found.name || `TraderRank-${login}`,
+            server,
+            investorPassword
+          );
+          if (!updated.ok) {
+            console.warn(`[MetaApiClient] Credential update warning for ${found.id}: ${updated.error}`);
+            throw new Error(`MetaApi credential update failed (${updated.status || 0}): ${updated.error || 'rejected'}`);
           }
-          this.positionsBackoff.delete(found.id);
-          return { id: found.id, isNew: false, state: found.state };
         }
+        return { id: found.id, isNew: false, state: found.state };
+      }
+
+      // If the account is NOT connected (e.g. stale deployment in wrong region or stuck socket),
+      // delete the failed container so a fresh cloud-g2 container in 'london' is provisioned below.
+      if (!this.isTestRuntime()) {
+        console.log(`[MetaApiClient] Purging disconnected/stale container ${found.id} for ${login}@${server} to provision fresh London g2 container`);
+        await this.deleteAccount(found.id).catch(() => false);
       } else {
         return { id: found.id, isNew: false, state: found.state };
       }
     }
 
-    // 2. Provision new account in MetaApi
+    // 2. Provision new account in MetaApi (London region close to LD4 broker datacenters)
     const res = await instrumentedFetch('metaapi', `${this.provisioningBaseUrl}/users/current/accounts`, {
       method: 'POST',
       headers: {
@@ -263,11 +262,12 @@ export class MetaApiClient {
       },
       body: JSON.stringify({
         name: `TraderRank-${login}`,
-        type: 'cloud',
+        type: 'cloud-g2',
         login,
         server,
         password: investorPassword,
         platform: platform.toLowerCase(),
+        region: 'london',
         magic: 0,
         quoteStreamingIntervalInSeconds: 2.5,
       }),
