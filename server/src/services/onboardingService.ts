@@ -511,6 +511,9 @@ export class OnboardingService {
     }
     if (status === 401 || status === 403) return 'INTEGRATION_ERROR';
     if (status === 429 || status === 202 || status === 0 || status >= 500 || /validation is in progress|AcceptedError/i.test(message)) return null;
+    if (/not able to connect to your broker using credentials provided|invalid credentials|invalid account or password|err_invalid_credentials/i.test(message)) {
+      return 'INVALID_CREDENTIALS';
+    }
     if (status === 404 || /server.*(not found|unknown|invalid)|E_SRV_NOT_FOUND|failed to find server/i.test(message)) {
       return 'SERVER_NOT_FOUND';
     }
