@@ -104,6 +104,43 @@ export class MetaApiClient {
     this.token = token;
   }
 
+  private cachedProfileId: string | null = null;
+
+  /**
+   * Discovers active provisioning profiles (e.g. uploaded servers.dat profiles) from MetaApi cloud.
+   */
+  public async getXmMt5ProvisioningProfileId(): Promise<string | undefined> {
+    if (process.env.METAAPI_XM_MT5_PROFILE_ID) {
+      return process.env.METAAPI_XM_MT5_PROFILE_ID;
+    }
+    if (this.cachedProfileId) {
+      return this.cachedProfileId;
+    }
+    if (!this.hasToken()) return undefined;
+
+    try {
+      const res = await instrumentedFetch('metaapi', `${this.provisioningBaseUrl}/users/current/provisioning-profiles`, {
+        headers: {
+          'auth-token': this.token,
+          'Accept': 'application/json',
+        },
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) return undefined;
+      const profiles = await res.json() as any[];
+      const found = Array.isArray(profiles) && profiles.find(p =>
+        p.status === 'active' && (p.version === 5 || String(p.name || '').toLowerCase().includes('xm'))
+      );
+      if (found && (found.id || found._id)) {
+        this.cachedProfileId = String(found.id || found._id);
+        return this.cachedProfileId;
+      }
+    } catch {
+      return undefined;
+    }
+    return undefined;
+  }
+
   /**
    * Health & latency check against MetaApi Cloud REST Gateway
    */
@@ -254,23 +291,31 @@ export class MetaApiClient {
     }
 
     // 2. Provision new account in MetaApi (London region close to LD4 broker datacenters)
+    const isXmMt5 = platform.toUpperCase() === 'MT5' && /xm/i.test(server);
+    const provisioningProfileId = isXmMt5 ? await this.getXmMt5ProvisioningProfileId() : undefined;
+
+    const accountPayload: Record<string, any> = {
+      name: `TraderRank-${login}`,
+      type: 'cloud-g2',
+      login,
+      server,
+      password: investorPassword,
+      platform: platform.toLowerCase(),
+      region: 'london',
+      magic: 0,
+      quoteStreamingIntervalInSeconds: 2.5,
+    };
+    if (provisioningProfileId) {
+      accountPayload.provisioningProfileId = provisioningProfileId;
+    }
+
     const res = await instrumentedFetch('metaapi', `${this.provisioningBaseUrl}/users/current/accounts`, {
       method: 'POST',
       headers: {
         'auth-token': this.token,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        name: `TraderRank-${login}`,
-        type: 'cloud-g2',
-        login,
-        server,
-        password: investorPassword,
-        platform: platform.toLowerCase(),
-        region: 'london',
-        magic: 0,
-        quoteStreamingIntervalInSeconds: 2.5,
-      }),
+      body: JSON.stringify(accountPayload),
       signal: AbortSignal.timeout(75000),
     });
 
@@ -307,6 +352,9 @@ export class MetaApiClient {
       return { ok: true };
     }
     try {
+      const isXmMt5 = /xm/i.test(server);
+      const provisioningProfileId = isXmMt5 ? await this.getXmMt5ProvisioningProfileId() : undefined;
+
       const res = await instrumentedFetch('metaapi', `${this.provisioningBaseUrl}/users/current/accounts/${metaApiAccountId}`, {
         method: 'PUT',
         headers: {
@@ -317,6 +365,7 @@ export class MetaApiClient {
           name,
           server,
           password: investorPassword,
+          ...(provisioningProfileId ? { provisioningProfileId } : {}),
         }),
         signal: AbortSignal.timeout(35000),
       });
