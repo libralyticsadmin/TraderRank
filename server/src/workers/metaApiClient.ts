@@ -315,22 +315,43 @@ export class MetaApiClient {
       throw new Error(`MetaApi provisioning failed (${res.status}): ${text}`);
     }
 
-    this.invalidateAccountListCache();
-    const created = await res.json() as any;
-    
-    // Extract account ID (handles both synchronous 200/201 and async 202 Accepted validation)
-    let id = created ? String(created._id || (created.error ? '' : created.id) || '') : '';
-    if (!id && created?.traceId) {
-      id = String(created.traceId);
-    }
-    if (!id && created?.message) {
-      const match = String(created.message).match(/\(([a-f0-9]{32})\)/i);
-      if (match) id = match[1];
+    let created = await res.json() as any;
+
+    // Handle MetaApi async 202 Accepted validation lifecycle
+    if (res.status === 202 || created?.error === 'AcceptedError') {
+      const recommended = created?.metadata?.recommendedRetryTime;
+      const delayMs = Math.max(5000, Math.min(70000, recommended ? Date.parse(recommended) - Date.now() + 2000 : 62000));
+      console.log(`[MetaApiClient] 202 Accepted received for ${login}@${server}. Broker validation in progress; waiting ${Math.round(delayMs / 1000)}s before finalizing...`);
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+
+      const retryRes = await instrumentedFetch('metaapi', `${this.provisioningBaseUrl}/users/current/accounts`, {
+        method: 'POST',
+        headers: {
+          'auth-token': this.token,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(accountPayload),
+        signal: AbortSignal.timeout(30000),
+      });
+
+      if (!retryRes.ok) {
+        const text = await retryRes.text();
+        throw new Error(`MetaApi provisioning failed (${retryRes.status}): ${text}`);
+      }
+      created = await retryRes.json() as any;
     }
 
-    if (!id || (/^\d{1,6}$/.test(id) && created?.error && created?.error !== 'AcceptedError')) {
-      throw new Error(`MetaApi provisioning error (${created?.error || 'INVALID_RESPONSE'}): ${created?.message || 'Failed to create account'}`);
+    this.invalidateAccountListCache();
+
+    if (created?.error && created.error !== 'AcceptedError') {
+      throw new Error(`MetaApi provisioning rejected (${created.error}): ${created.message || 'Validation failed'}`);
     }
+
+    const id = String(created?._id || created?.id || '');
+    if (!id || /^\d{1,6}$/.test(id)) {
+      throw new Error(`MetaApi did not return a valid account ID: ${JSON.stringify(created)}`);
+    }
+
     if (id && created?.region) {
       this.accountRegions.set(id, String(created.region));
     }
