@@ -550,7 +550,7 @@ export function createServer() {
     const cleanEmail = String(email).trim().toLowerCase();
     const cleanId = `u_${cleanUsername.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
 
-    if (userProfiles.has(cleanId)) {
+    if (userProfiles.has(cleanId) && authService.getCredential(cleanId)) {
       return res.status(400).json({ success: false, error: 'Username is already taken' });
     }
 
@@ -559,23 +559,25 @@ export function createServer() {
       return res.status(400).json({ success: false, error: regResult.error || 'Registration failed' });
     }
 
+    const existingProfile = userProfiles.get(cleanId);
     const newUser = {
+      ...(existingProfile || {}),
       id: cleanId,
       username: cleanUsername,
       email: cleanEmail,
-      avatarSymbol: 'zap',
-      avatarUrl: avatarUrl || undefined,
-      traderTitle: 'Verified Market Trader',
-      bio: '',
-      tradingStyle: tradingStyle || 'SCALPER',
-      primaryBroker: primaryBroker || 'Exness',
-      accountNumber: undefined,
-      country: 'Global',
-      joinedAt: 'Today',
-      registeredAt: new Date().toISOString(),
-      level: 1,
-      xp: 0,
-      rank: 99,
+      avatarSymbol: existingProfile?.avatarSymbol || 'zap',
+      avatarUrl: avatarUrl || existingProfile?.avatarUrl || undefined,
+      traderTitle: existingProfile?.traderTitle || 'Verified Market Trader',
+      bio: existingProfile?.bio || '',
+      tradingStyle: existingProfile?.tradingStyle || tradingStyle || 'SCALPER',
+      primaryBroker: existingProfile?.primaryBroker || primaryBroker || 'Exness',
+      accountNumber: existingProfile?.accountNumber || undefined,
+      country: existingProfile?.country || 'Global',
+      joinedAt: existingProfile?.joinedAt || 'Today',
+      registeredAt: existingProfile?.registeredAt || new Date().toISOString(),
+      level: existingProfile?.level || 1,
+      xp: existingProfile?.xp || 0,
+      rank: existingProfile?.rank || 99,
     };
     userProfiles.set(cleanId, newUser);
     try {
@@ -609,12 +611,15 @@ export function createServer() {
     }
 
     if (!cred) {
+      console.warn(`[AUTH_LOGIN_FAIL] No credentials found for needle: "${needle}"`);
       return res.status(401).json({ success: false, error: 'Invalid username/email or password' });
     }
     const isValid = authService.verifyPassword(String(password), cred.salt, cred.hash);
     if (!isValid) {
+      console.warn(`[AUTH_LOGIN_FAIL] Password mismatch for user: "${cred.username}" (${cred.userId})`);
       return res.status(401).json({ success: false, error: 'Invalid username/email or password' });
     }
+    console.log(`[AUTH_LOGIN_SUCCESS] User logged in: "${cred.username}" (${cred.userId})`);
 
     const targetUserId = cred.userId;
     const user = userProfiles.get(targetUserId);

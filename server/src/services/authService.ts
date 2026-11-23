@@ -146,8 +146,8 @@ export class AuthService {
       if (saved && typeof saved === 'object') {
         for (const [k, v] of Object.entries(saved)) {
           if (v && v.userId && v.hash && v.salt) {
-            this.credentials.set(k, v);
-            this.credentials.set(v.userId, v);
+            this.credentials.set(k.toLowerCase(), v);
+            this.credentials.set(v.userId.toLowerCase(), v);
             this.credentials.set(v.email.toLowerCase(), v);
             this.credentials.set(v.username.toLowerCase(), v);
           }
