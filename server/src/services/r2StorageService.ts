@@ -286,14 +286,6 @@ export class R2StorageService {
         });
         const res = await this.client.send(cmd);
         if (res.Body) {
-          const r2Mtime = res.LastModified ? res.LastModified.getTime() : 0;
-          if (localMtime && r2Mtime && localMtime > r2Mtime + 1000) {
-            const diskStr = this.readFromLocalDisk(key);
-            if (diskStr) {
-              this.uploadJson(key, JSON.parse(diskStr)).catch(() => {});
-              return JSON.parse(diskStr) as T;
-            }
-          }
           const bodyStr = await res.Body.transformToString();
           this.saveToLocalDisk(key, bodyStr);
           this.inMemoryFallback.set(key, bodyStr);
@@ -345,13 +337,6 @@ export class R2StorageService {
       try {
         const res = await this.client.send(new GetObjectCommand({ Bucket: this.config.bucketName, Key: key }));
         if (!res.Body) throw new Error(`R2 returned no body for ${key}`);
-        const r2Mtime = res.LastModified ? res.LastModified.getTime() : 0;
-        if (localMtime && r2Mtime && localMtime > r2Mtime + 1000) {
-          const diskStr = fs.readFileSync(localFilePath, 'utf-8');
-          const parsed = JSON.parse(diskStr) as T;
-          this.uploadJson(key, parsed).catch(() => {});
-          return parsed;
-        }
         const bodyStr = await res.Body.transformToString();
         const parsed = JSON.parse(bodyStr) as T; // throws on corrupt data
         this.saveToLocalDisk(key, bodyStr);
