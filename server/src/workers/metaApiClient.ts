@@ -113,31 +113,10 @@ export class MetaApiClient {
     if (process.env.METAAPI_XM_MT5_PROFILE_ID) {
       return process.env.METAAPI_XM_MT5_PROFILE_ID;
     }
-    if (this.cachedProfileId) {
-      return this.cachedProfileId;
-    }
-    if (!this.hasToken()) return undefined;
-
-    try {
-      const res = await instrumentedFetch('metaapi', `${this.provisioningBaseUrl}/users/current/provisioning-profiles`, {
-        headers: {
-          'auth-token': this.token,
-          'Accept': 'application/json',
-        },
-        signal: AbortSignal.timeout(10000),
-      });
-      if (!res.ok) return undefined;
-      const profiles = await res.json() as any[];
-      const found = Array.isArray(profiles) && profiles.find(p =>
-        p.status === 'active' && (p.version === 5 || String(p.name || '').toLowerCase().includes('xm'))
-      );
-      if (found && (found.id || found._id)) {
-        this.cachedProfileId = String(found.id || found._id);
-        return this.cachedProfileId;
-      }
-    } catch {
-      return undefined;
-    }
+    // Do not automatically attach a custom provisioning profile unless explicitly configured.
+    // MetaApi natively contains verified server definitions for XM Global (e.g. XMGlobal-MT5 10).
+    // Auto-binding an arbitrary custom profile restricts server lookup to its uploaded servers.dat
+    // and causes MetaApi to reject valid broker servers with "servers.dat ... server name" errors.
     return undefined;
   }
 
