@@ -1753,8 +1753,8 @@ export const translations: Record<Language, TranslationDictionary> = {
     },
     landing: {
       badge: '認証済、複数ブローカー対応のトレーダーコミュニティ',
-      heroTitlePrefix: '世界中のトレーダーが安全に利用できる',
-      heroTitleAccent: '公式トレーダーランキングサイト・トレーダーランク',
+      heroTitlePrefix: 'あなたの実力を証明せよ！\n',
+      heroTitleAccent: '次世代トレーダーランキングサイト\nトレーダーランク (TradeRank)',
       heroTitleSuffix: '',
       heroSubtitle: 'トレーダーランクは全ユーザーのブローカー口座を安全に接続・連携、検証し、公式に有益なトレード履歴や戦略を公開、そして全プロトレーダーにリワード報酬獲得の機会を提供します。',
       enterArenaBtn: 'トレーディングアリーナに入る',

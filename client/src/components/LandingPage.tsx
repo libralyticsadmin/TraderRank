@@ -261,6 +261,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               letterSpacing: '-1.2px',
               margin: '0 0 16px',
               color: '#FFFFFF',
+              whiteSpace: 'pre-line',
             }}
           >
             {t.landing.heroTitlePrefix}
