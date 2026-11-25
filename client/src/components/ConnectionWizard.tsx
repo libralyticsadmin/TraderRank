@@ -799,7 +799,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                               padding: '0 2px',
                             }}
                           >
-                            {showAllServers ? 'Show less' : `+${currentPresets.length - 6} more`}
+                            {showAllServers ? (t.connector.showLess || 'Show less') : `+${currentPresets.length - 6} ${t.connector.moreServers || 'more'}`}
                           </button>
                         )}
                       </div>
@@ -871,10 +871,10 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                   <div style={{ marginTop: '6px', fontSize: '11px', color: '#94a3b8', background: 'rgba(255,255,255,0.03)', padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <ShieldCheck size={14} color="#0abab5" style={{ flexShrink: 0 }} />
-                      <span><strong>Read-Only Protection:</strong> TraderRank only syncs trade history and balance. It cannot place or modify trades.</span>
+                      <span><strong>{t.connector.readOnlyProtectionTitle || 'Read-Only Protection:'}</strong> {t.connector.readOnlyProtectionDesc || 'TraderRank only syncs trade history and balance. It cannot place or modify trades.'}</span>
                     </div>
                     <span style={{ fontSize: '10.5px', color: '#64748b' }}>
-                      Use your MT4/MT5 Investor (read-only) password, or your MT5 account password if an investor password is not set. <em>Do not use your broker website/member area portal password.</em>
+                      {t.connector.passwordBoxHint || 'Use your MT4/MT5 Investor (read-only) password, or your MT5 account password if an investor password is not set. Do not use your broker website/member area portal password.'}
                     </span>
                   </div>
                 </div>
@@ -982,7 +982,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                     {validationStage === 0 && (t.connector.pingingBroker || 'Pinging broker server & testing read permissions...')}
                   </p>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    Enterprise SSL • Read-Only Zero-Write Bridge
+                    {t.connector.enterpriseSslBridge || 'Enterprise SSL • Read-Only Zero-Write Bridge'}
                   </span>
                 </div>
               ) : (validationResult?.success && validationResult.accountDetails && typeof validationResult.accountDetails.balance === 'number' && !validationResult.pendingBrokerVerification) ? (
@@ -1028,7 +1028,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                           alignItems: 'center',
                           gap: '6px',
                         }}>
-                          <Zap size={13} color="#0abab5" /> MetaApi Cloud Bridge Active (Encrypted)
+                          <Zap size={13} color="#0abab5" /> {t.connector.metaApiBridgeActive || 'MetaApi Cloud Bridge Active (Encrypted)'}
                         </span>
                       </div>
                     )}

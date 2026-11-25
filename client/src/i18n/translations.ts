@@ -373,6 +373,13 @@ export interface TranslationDictionary {
     stage1: string;
     stage2: string;
     stage3: string;
+    readOnlyProtectionTitle: string;
+    readOnlyProtectionDesc: string;
+    passwordBoxHint: string;
+    enterpriseSslBridge: string;
+    metaApiBridgeActive: string;
+    showLess: string;
+    moreServers: string;
   };
 
   // Daily Best Trader Card
@@ -1270,6 +1277,13 @@ export const translations: Record<Language, TranslationDictionary> = {
       stage1: '1/3 Connecting to broker gateway...',
       stage2: '2/3 Pinging broker server & verifying Investor Password...',
       stage3: '3/3 Testing read-only zero-write permissions & balance...',
+      readOnlyProtectionTitle: 'Read-Only Protection:',
+      readOnlyProtectionDesc: 'TraderRank only syncs trade history and balance. It cannot place or modify trades.',
+      passwordBoxHint: 'Use your MT4/MT5 Investor (read-only) password, or your MT5 account password if an investor password is not set. Do not use your broker website/member area portal password.',
+      enterpriseSslBridge: 'Enterprise SSL • Read-Only Zero-Write Bridge',
+      metaApiBridgeActive: 'MetaApi Cloud Bridge Active (Encrypted)',
+      showLess: 'Show less',
+      moreServers: 'more',
     },
     dailyBest: {
       spotlight: 'Daily Winning Pips Spotlight',
@@ -2133,6 +2147,13 @@ export const translations: Record<Language, TranslationDictionary> = {
       stage1: '1/3 ブローカーゲートウェイに接続中...',
       stage2: '2/3 サーバー通信 & インベスターパスワードを検証中...',
       stage3: '3/3 閲覧専用権限 & 残高を検証中...',
+      readOnlyProtectionTitle: '閲覧専用セキュリティ:',
+      readOnlyProtectionDesc: 'TraderRankは取引履歴と残高のみを同期します。発注や決済を行う権限はありません。',
+      passwordBoxHint: 'MT4/MT5のインベスター（閲覧専用）パスワード、またはインベスターパスワード未設定の場合はMT5取引口座パスワードを入力してください（※ブローカーの会員マイページログイン用パスワードではありません）。',
+      enterpriseSslBridge: 'Enterprise SSL • 閲覧専用ゼロライト保護ブリッジ',
+      metaApiBridgeActive: 'MetaApi クラウドブリッジ稼働中（暗号化通信）',
+      showLess: '閉じる',
+      moreServers: '件表示',
     },
     dailyBest: {
       spotlight: '本日のトップ獲得pips',
@@ -2996,6 +3017,13 @@ export const translations: Record<Language, TranslationDictionary> = {
       stage1: '1/3 正在连接经纪商网关...',
       stage2: '2/3 正在测试服务器延迟与投资人密码...',
       stage3: '3/3 正在验证只读权限与余额...',
+      readOnlyProtectionTitle: '只读防护安全声明：',
+      readOnlyProtectionDesc: 'TraderRank 仅同步历史交易与净值数据，绝无交易下单或修改仓位权限。',
+      passwordBoxHint: '请使用 MT4/MT5 只读投资人密码；若未单独设置，可使用 MT5 交易密码。（切勿输入官网会员中心密码）。',
+      enterpriseSslBridge: '企业级 SSL • 只读零写入防护网桥',
+      metaApiBridgeActive: 'MetaApi 云网桥运行中（加密通信）',
+      showLess: '收起',
+      moreServers: '个更多',
     },
     dailyBest: {
       spotlight: '每日点数之星・实盘焦点',
