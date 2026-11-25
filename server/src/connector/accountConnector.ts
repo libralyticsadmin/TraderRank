@@ -335,10 +335,12 @@ export class AccountConnectorService {
     const clean = String(login || '').replace(/^TraderRank-/i, '').trim();
     if (!clean) return null;
     const ownerRec = this.accountOwners.get(clean);
-    if (ownerRec?.userId) return ownerRec.userId;
+    if (ownerRec?.userId && !AccountConnectorService.isSyntheticOwnerId(ownerRec.userId)) {
+      return ownerRec.userId;
+    }
     for (const acc of this.accounts.values()) {
       const accNum = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
-      if (accNum === clean && acc.userId) {
+      if (accNum === clean && acc.userId && !AccountConnectorService.isSyntheticOwnerId(acc.userId)) {
         return acc.userId;
       }
     }
@@ -1273,5 +1275,32 @@ export class AccountConnectorService {
       await this.persistAccountOwnersToR2();
     }
     return count;
+  }
+
+  public async purgeAccountByLogin(login: string): Promise<boolean> {
+    const clean = String(login || '').replace(/^TraderRank-/i, '').trim();
+    if (!clean) return false;
+    let changed = false;
+    for (const [key, owner] of Array.from(this.accountOwners.entries())) {
+      if (
+        key === clean ||
+        key === `acc_meta_${clean}` ||
+        String(owner?.accountNumber || '').trim() === clean
+      ) {
+        this.accountOwners.delete(key);
+        changed = true;
+      }
+    }
+    for (const [accId, acc] of Array.from(this.accounts.entries())) {
+      const accNum = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
+      if (accNum === clean || accId === `acc_meta_${clean}`) {
+        this.accounts.delete(accId);
+        changed = true;
+      }
+    }
+    if (changed) {
+      await this.persistAccountOwnersToR2();
+    }
+    return changed;
   }
 }

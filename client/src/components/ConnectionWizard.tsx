@@ -113,6 +113,9 @@ export function localizeErrorMessage(msg: string | null | undefined, lang: strin
     if (lower.includes('authentication required')) {
       return '認証が必要です。口座を連携するにはログインしてください。';
     }
+    if (lower.includes('already bound to another') || lower.includes('already connected to another') || lower.includes('account_owned_by_other')) {
+      return 'この取引口座は既に他のTradeRankプレイヤーに連携されています。';
+    }
   } else if (lang === 'zh') {
     if (lower.includes('server name was not') || lower.includes('server_not_found') || lower.includes('server xmglobal') || lower.includes('.dat file for server')) {
       return '未识别经纪商服务器名称。请从经纪商欢迎邮件或 MT4/MT5 终端复制完全一致的服务器名。';
@@ -137,6 +140,9 @@ export function localizeErrorMessage(msg: string | null | undefined, lang: strin
     }
     if (lower.includes('authentication required')) {
       return '需要登录验证，请先登录账户。';
+    }
+    if (lower.includes('already bound to another') || lower.includes('already connected to another') || lower.includes('account_owned_by_other')) {
+      return '该交易账户已绑定至另一位 TradeRank 玩家。';
     }
   }
   return text;

@@ -17,7 +17,7 @@
 import { r2Storage } from './r2StorageService.js';
 import { EMERALD_BEAR_AVATAR_URL } from '../core/avatarPresets.js';
 
-export const LEGACY_IDENTITY_MARKER_KEY = 'migrations/legacy-identities-v2.json';
+export const LEGACY_IDENTITY_MARKER_KEY = 'migrations/legacy-identities-v3.json';
 
 export const PURGED_LEGACY_IDENTITIES = [
   'u_homiesplant_th',
@@ -26,6 +26,7 @@ export const PURGED_LEGACY_IDENTITIES = [
   'u_homeisplant',
   'homeisplant',
   'usr_meta_72423906',
+  'usr_meta_411407722',
 ] as const;
 
 export const PURGED_LEGACY_LOGINS = [
@@ -146,9 +147,19 @@ export async function runLegacyIdentityMigration(
     }
   }
   for (const login of PURGED_LEGACY_LOGINS) {
-    if (login in owners) {
-      delete owners[login];
-      changes.push({ store: 'owners', key: login, action: 'delete', detail: 'purged legacy account' });
+    const cleanLogin = String(login).trim();
+    for (const [key, val] of Object.entries(owners)) {
+      const valLogin = String(val?.accountNumber || '').trim();
+      const valUserId = String(val?.userId || '').trim().toLowerCase();
+      if (
+        key === cleanLogin ||
+        key === `acc_meta_${cleanLogin}` ||
+        valLogin === cleanLogin ||
+        PURGED_LEGACY_IDENTITIES.some(pid => pid.toLowerCase() === valUserId)
+      ) {
+        delete owners[key];
+        changes.push({ store: 'owners', key, action: 'delete', detail: 'purged legacy account' });
+      }
     }
     if (login in usernames) {
       delete usernames[login];

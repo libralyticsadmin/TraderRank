@@ -849,11 +849,18 @@ export function createServer() {
       if (authSession && targetLogin) {
         const existingOwnerId = connector.findOwnerUserIdByLogin(targetLogin);
         if (existingOwnerId && !AccountConnectorService.isSameOwner(existingOwnerId, authSession.userId)) {
-          return res.status(409).json({
-            success: false,
-            error: `Trading account ${targetLogin} is already bound to another TradeRank player.`,
-            errorCode: 'ACCOUNT_OWNED_BY_OTHER',
-          });
+          const existingUser = await authService.findUserById(existingOwnerId);
+          if (existingUser) {
+            return res.status(409).json({
+              success: false,
+              error: `Trading account ${targetLogin} is already bound to another TradeRank player.`,
+              errorCode: 'ACCOUNT_OWNED_BY_OTHER',
+            });
+          } else {
+            // Former owner was deleted/purged from the platform; release orphaned binding
+            console.log(`[CONNECTOR] Releasing orphaned account ${targetLogin} previously held by deleted user ${existingOwnerId}`);
+            await connector.purgeAccountByLogin(targetLogin);
+          }
         }
       }
 

@@ -16,6 +16,7 @@ import { Broker, GatewayCredentials, TradingAccount } from '../../../shared/src/
 import { MetaApiClient, normalizeServerName } from '../workers/metaApiClient.js';
 import { SecretsVault } from '../vault/secretsVault.js';
 import { AccountConnectorService } from '../connector/accountConnector.js';
+import { AuthService } from './authService.js';
 import { r2Storage } from './r2StorageService.js';
 import { alertService } from './alertService.js';
 
@@ -163,9 +164,15 @@ export class OnboardingService {
     const connector = AccountConnectorService.getInstance();
     const ownerId = connector.findOwnerUserIdByLogin(login);
     if (ownerId && !AccountConnectorService.isSameOwner(ownerId, userId)) {
-      const err = new Error('This broker account is already connected to another TraderRank user');
-      (err as Error & { code?: string }).code = 'ACCOUNT_OWNED_BY_OTHER';
-      throw err;
+      const authService = AuthService.getInstance();
+      const existingUser = await authService.findUserById(ownerId);
+      if (existingUser) {
+        const err = new Error('This broker account is already connected to another TraderRank user');
+        (err as Error & { code?: string }).code = 'ACCOUNT_OWNED_BY_OTHER';
+        throw err;
+      } else {
+        await connector.purgeAccountByLogin(login);
+      }
     }
 
     const targetLogin = String(login || '').trim();
