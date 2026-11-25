@@ -4,6 +4,7 @@ import { Shield, Trash2, Server, Zap, RefreshCw, CheckCircle2, Lock, Loader2, Al
 import { BrokerSymbol } from './BrokerSymbol.tsx';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
+import { localizeErrorMessage } from './ConnectionWizard.tsx';
 
 interface AccountsListProps {
   accounts: TradingAccount[];
@@ -14,7 +15,7 @@ interface AccountsListProps {
 }
 
 export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconnect, onOpenWizard, onSyncAccount, onOpenSecurityVault }) => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { user } = useAuth();
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [syncedId, setSyncedId] = useState<string | null>(null);
@@ -135,10 +136,10 @@ export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconne
             <div key={job.id} role="alert" style={{ background: 'rgba(246, 70, 93, 0.08)', border: '1px solid rgba(246, 70, 93, 0.35)', borderRadius: '10px', padding: '12px 14px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
               <AlertTriangle size={18} color="#f6465d" style={{ flexShrink: 0, marginTop: '2px' }} />
               <div style={{ flex: 1, fontSize: '13px', lineHeight: 1.45 }}>
-                <strong>Account {job.login} ({job.serverName}) could not be connected.</strong>
-                <div style={{ color: '#fca5a5', marginTop: '2px' }}>{job.error}</div>
+                <strong>{(t.accounts.accountCouldNotConnect || 'Account {login} ({server}) could not be connected.').replace('{login}', job.login).replace('{server}', job.serverName)}</strong>
+                <div style={{ color: '#fca5a5', marginTop: '2px' }}>{localizeErrorMessage(job.error, language)}</div>
                 <button className="btn-secondary" onClick={onOpenWizard} style={{ marginTop: '8px', padding: '4px 10px', fontSize: '12px' }}>
-                  Re-enter investor password
+                  {t.accounts.reenterInvestorPassword || 'Re-enter investor password'}
                 </button>
               </div>
               <button onClick={() => dismissJob(job.id)} aria-label="Dismiss" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
@@ -149,8 +150,8 @@ export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconne
             <div key={job.id} style={{ background: 'rgba(10, 186, 181, 0.06)', border: '1px solid rgba(10, 186, 181, 0.3)', borderRadius: '10px', padding: '12px 14px', display: 'flex', gap: '12px', alignItems: 'center', fontSize: '13px' }}>
               <Loader2 size={18} color="#0abab5" style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
               <div>
-                <strong>Connecting account {job.login}</strong> on {job.serverName}…
-                <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Verifying with your broker. This can take a few minutes.</div>
+                <strong>{(t.accounts.connectingAccount || 'Connecting account {login} on {server}…').replace('{login}', job.login).replace('{server}', job.serverName)}</strong>
+                <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{t.accounts.verifyingBrokerWait || 'Verifying with your broker. This can take a few minutes.'}</div>
               </div>
             </div>
           ))}
@@ -158,12 +159,12 @@ export const AccountsList: React.FC<AccountsListProps> = ({ accounts, onDisconne
             <div key={`disc_${acc.id}`} role="alert" style={{ background: 'rgba(240, 185, 11, 0.08)', border: '1px solid rgba(240, 185, 11, 0.35)', borderRadius: '10px', padding: '12px 14px', display: 'flex', gap: '12px', alignItems: 'flex-start', fontSize: '13px', lineHeight: 1.45 }}>
               <AlertTriangle size={18} color="#f0b90b" style={{ flexShrink: 0, marginTop: '2px' }} />
               <div style={{ flex: 1 }}>
-                <strong>Account {acc.accountNumber} is disconnected from your broker.</strong>
+                <strong>{(t.accounts.accountDisconnectedAlert || 'Account {account} is disconnected from your broker.').replace('{account}', acc.accountNumber)}</strong>
                 <div style={{ color: 'var(--text-muted)' }}>
-                  {acc.lastError || 'We can no longer read this account.'} Your rank is frozen and no new points are earned until it reconnects.
+                  {(t.accounts.accountDisconnectedDesc || '{error} Your rank is frozen and no new points are earned until it reconnects.').replace('{error}', localizeErrorMessage(acc.lastError, language) || '')}
                 </div>
                 <button className="btn-secondary" onClick={onOpenWizard} style={{ marginTop: '8px', padding: '4px 10px', fontSize: '12px' }}>
-                  Re-enter investor password
+                  {t.accounts.reenterInvestorPassword || 'Re-enter investor password'}
                 </button>
               </div>
             </div>

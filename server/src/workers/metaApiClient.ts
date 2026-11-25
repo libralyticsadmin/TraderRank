@@ -74,6 +74,28 @@ export interface MetaStatsMetrics {
   pips: number;
 }
 
+export function normalizeServerName(server: string): string {
+  let s = String(server || '').trim();
+  // XM MT5 typos: XMGlobal-MT10 -> XMGlobal-MT5 10
+  s = s.replace(/^XMGlobal[-_\s]*MT(?!4$|5$)(\d+)$/i, 'XMGlobal-MT5 $1');
+  // XMGlobal-MT5-10 or XMGlobal-MT5_10 or XMGlobalMT5 10 -> XMGlobal-MT5 10
+  s = s.replace(/^XMGlobal[-_\s]*MT5[-_\s]+(\d+)$/i, 'XMGlobal-MT5 $1');
+  s = s.replace(/^XMGlobal[-_\s]*MT5-(\d+)$/i, 'XMGlobal-MT5 $1');
+  // XMGlobal MT5 -> XMGlobal-MT5
+  s = s.replace(/^XMGlobal\s+MT5$/i, 'XMGlobal-MT5');
+  s = s.replace(/^XMGlobal\s+MT5\s+(\d+)$/i, 'XMGlobal-MT5 $1');
+  // XMGlobal-Real-55 -> XMGlobal-Real 55
+  s = s.replace(/^XMGlobal[-_\s]*Real[-_\s]+(\d+)$/i, 'XMGlobal-Real $1');
+  s = s.replace(/^XMGlobal[-_\s]*Real-(\d+)$/i, 'XMGlobal-Real $1');
+  // XMTrading MT5 / MT4
+  s = s.replace(/^XMTrading[-_\s]*MT(?!4$|5$)(\d+)$/i, 'XMTrading-MT5 $1');
+  s = s.replace(/^XMTrading[-_\s]*MT5[-_\s]+(\d+)$/i, 'XMTrading-MT5 $1');
+  s = s.replace(/^XMTrading[-_\s]*MT5-(\d+)$/i, 'XMTrading-MT5 $1');
+  s = s.replace(/^XMTrading[-_\s]*Real[-_\s]+(\d+)$/i, 'XMTrading-Real $1');
+  s = s.replace(/^XMTrading[-_\s]*Real-(\d+)$/i, 'XMTrading-Real $1');
+  return s;
+}
+
 export class MetaApiClient {
   private token: string;
   private provisioningBaseUrl = 'https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai';
@@ -230,6 +252,7 @@ export class MetaApiClient {
     investorPassword: string,
     platform: 'MT4' | 'MT5' = 'MT5'
   ): Promise<{ id: string; isNew: boolean; state: string }> {
+    server = normalizeServerName(server);
     if (!this.hasToken()) {
       return { id: `mock_meta_${login}`, isNew: true, state: 'DEPLOYED' };
     }
@@ -254,6 +277,23 @@ export class MetaApiClient {
           if (!updated.ok) {
             console.warn(`[MetaApiClient] Credential update warning for ${found.id}: ${updated.error}`);
             throw new Error(`MetaApi credential update failed (${updated.status || 0}): ${updated.error || 'rejected'}`);
+          }
+        }
+      } else {
+        // Account exists on MetaApi but is NOT CONNECTED. Update credentials and redeploy.
+        if (!this.isTestRuntime() && investorPassword) {
+          const updated = await this.updateAccountCredentials(
+            found.id,
+            found.name || `TraderRank-${login}`,
+            server,
+            investorPassword
+          );
+          if (!updated.ok) {
+            console.warn(`[MetaApiClient] Credential update failed on ${found.id}, purging stale account: ${updated.error}`);
+            await this.deleteAccount(found.id).catch(() => {});
+          } else {
+            await this.deployAccount(found.id).catch(() => {});
+            return { id: found.id, isNew: false, state: 'DEPLOYING' };
           }
         }
       }
@@ -600,6 +640,7 @@ export class MetaApiClient {
     investorPassword: string,
     platform: 'MT4' | 'MT5' = 'MT5'
   ): Promise<{ success: boolean; accountInfo?: MetaApiAccountInfo; metaApiAccountId?: string; error?: string; errorCode?: string }> {
+    server = normalizeServerName(server);
     if (!server || !login || !investorPassword) {
       return {
         success: false,

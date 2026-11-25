@@ -60,8 +60,84 @@ const BROKERS: { id: Broker; name: string; tag: string; desc: string; url?: stri
   { id: 'OTHER', name: 'Other MT4/MT5 Broker', tag: 'Universal', desc: 'Any MetaTrader server globally' },
 ];
 
+export function normalizeServerName(server: string): string {
+  let s = String(server || '').trim();
+  // XM MT5 typos: XMGlobal-MT10 -> XMGlobal-MT5 10
+  s = s.replace(/^XMGlobal[-_\s]*MT(?!4$|5$)(\d+)$/i, 'XMGlobal-MT5 $1');
+  // XMGlobal-MT5-10 or XMGlobal-MT5_10 or XMGlobalMT5 10 -> XMGlobal-MT5 10
+  s = s.replace(/^XMGlobal[-_\s]*MT5[-_\s]+(\d+)$/i, 'XMGlobal-MT5 $1');
+  s = s.replace(/^XMGlobal[-_\s]*MT5-(\d+)$/i, 'XMGlobal-MT5 $1');
+  // XMGlobal MT5 -> XMGlobal-MT5
+  s = s.replace(/^XMGlobal\s+MT5$/i, 'XMGlobal-MT5');
+  s = s.replace(/^XMGlobal\s+MT5\s+(\d+)$/i, 'XMGlobal-MT5 $1');
+  // XMGlobal-Real-55 -> XMGlobal-Real 55
+  s = s.replace(/^XMGlobal[-_\s]*Real[-_\s]+(\d+)$/i, 'XMGlobal-Real $1');
+  s = s.replace(/^XMGlobal[-_\s]*Real-(\d+)$/i, 'XMGlobal-Real $1');
+  // XMTrading MT5 / MT4
+  s = s.replace(/^XMTrading[-_\s]*MT(?!4$|5$)(\d+)$/i, 'XMTrading-MT5 $1');
+  s = s.replace(/^XMTrading[-_\s]*MT5[-_\s]+(\d+)$/i, 'XMTrading-MT5 $1');
+  s = s.replace(/^XMTrading[-_\s]*MT5-(\d+)$/i, 'XMTrading-MT5 $1');
+  s = s.replace(/^XMTrading[-_\s]*Real[-_\s]+(\d+)$/i, 'XMTrading-Real $1');
+  s = s.replace(/^XMTrading[-_\s]*Real-(\d+)$/i, 'XMTrading-Real $1');
+  return s;
+}
+
+export function localizeErrorMessage(msg: string | null | undefined, lang: string): string {
+  if (!msg) return '';
+  const text = msg.trim();
+  if (lang === 'ja') {
+    if (text.includes('broker server name was not recognised') || text.includes('server XMGlobal') || text.includes('.dat file for server')) {
+      return 'ブローカーサーバー名が認識されませんでした。ブローカーからの登録完了メールまたはMT4/MT5アプリに表示されている正確なサーバー名を入力してください。';
+    }
+    if (text.includes('broker rejected the login') || text.includes('INVALID_CREDENTIALS')) {
+      return 'ブローカーによってログインが拒否されました。口座番号とインベスター（閲覧専用）パスワードをご確認ください。';
+    }
+    if (text.includes('not log in to the broker in time') || text.includes('TIMEOUT')) {
+      return '制限時間内にブローカーへログインできませんでした。インベスターパスワードまたはサーバー名が誤っている可能性があります。再入力してください。';
+    }
+    if (text.includes('could not be reached') || text.includes('BROKER_UNREACHABLE')) {
+      return 'ブローカーサーバーに接続できませんでした。メンテナンス中の可能性があるため、時間をおいて再度お試しください。';
+    }
+    if (text.includes('quota') || text.includes('QUOTA_EXCEEDED')) {
+      return 'ブローカー接続枠が一時的に上限に達しています。時間をおいて再度お試しください。';
+    }
+    if (text.includes('rejected too many times') || text.includes('cooldown') || text.includes('RATE_LIMITED')) {
+      return 'ログイン試行が短時間に連続して失敗したため、ブローカー側で一時的なクールダウン（約15分間）が適用されています。時間をおいてから正しいMT5パスワードで再試行してください。';
+    }
+    if (text.includes('temporary problem on our side') || text.includes('INTEGRATION_ERROR')) {
+      return '一時的なシステムエラーが発生しました。しばらくしてから再度お試しください。';
+    }
+    if (text.includes('Authentication required')) {
+      return '認証が必要です。口座を連携するにはログインしてください。';
+    }
+    if (text.includes('Network error during validation')) {
+      return 'ネットワークエラーが発生しました。インターネット接続をご確認の上、再試行してください。';
+    }
+  } else if (lang === 'zh') {
+    if (text.includes('broker server name was not recognised') || text.includes('server XMGlobal') || text.includes('.dat file for server')) {
+      return '未识别经纪商服务器名称。请从经纪商欢迎邮件或 MT4/MT5 终端复制完全一致的服务器名。';
+    }
+    if (text.includes('broker rejected the login') || text.includes('INVALID_CREDENTIALS')) {
+      return '经纪商拒绝了登录。请检查账号与只读（投资人）密码。';
+    }
+    if (text.includes('not log in to the broker in time') || text.includes('TIMEOUT')) {
+      return '未能及时登录经纪商服务器。通常意味着密码或服务器名称有误，请重新输入。';
+    }
+    if (text.includes('could not be reached') || text.includes('BROKER_UNREACHABLE')) {
+      return '无法连接经纪商服务器。可能处于维护中，请稍后再试。';
+    }
+    if (text.includes('quota') || text.includes('QUOTA_EXCEEDED')) {
+      return '经纪商连接配额暂时已满，请稍后再试。';
+    }
+    if (text.includes('rejected too many times') || text.includes('cooldown') || text.includes('RATE_LIMITED')) {
+      return '近期登录失败次数过多，经纪商已触发临时冷却保护（约15分钟）。请等待后使用正确的 MT5 密码重试。';
+    }
+  }
+  return text;
+}
+
 export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onSuccess }) => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { user } = useAuth();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [selectedBroker, setSelectedBroker] = useState<Broker>('IC_MARKETS');
@@ -136,7 +212,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
     const timer1 = setTimeout(() => setValidationStage(2), 2000);
     const timer2 = setTimeout(() => setValidationStage(3), 5000);
 
-    const cleanServer = serverName.trim();
+    const cleanServer = normalizeServerName(serverName.trim());
     const cleanLogin = login.trim();
     const cleanPassword = investorPassword.trim();
 
@@ -311,7 +387,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
       return;
     }
 
-    const cleanServer = serverName.trim();
+    const cleanServer = normalizeServerName(serverName.trim());
     const cleanLogin = login.trim();
     const cleanPassword = investorPassword.trim();
 
@@ -879,30 +955,30 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                   <Loader2 size={36} color="#0abab5" className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
                   <p style={{ fontSize: '14px', color: '#81d8d0', fontWeight: 600 }}>
                     {onboarding?.status === 'PROVISIONING'
-                      ? `1/2 Registering account with broker bridge (${onboardingSeconds}s)...`
-                      : `2/2 Authenticating with ${onboarding?.serverName || serverName} (${onboardingSeconds}s)...`}
+                      ? `${t.connector.registeringBridge} (${onboardingSeconds}s)...`
+                      : `${t.connector.authenticatingWith} ${onboarding?.serverName || serverName} (${onboardingSeconds}s)...`}
                   </p>
                   <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '10px 16px', fontSize: '12px', color: 'var(--text-muted)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', textAlign: 'left', width: '100%', maxWidth: '360px' }}>
-                    <div>Account: <strong style={{ color: '#fff' }}>{login || onboarding?.login}</strong></div>
-                    <div>Broker: <strong style={{ color: '#fff' }}>{selectedBroker}</strong></div>
-                    <div style={{ gridColumn: 'span 2' }}>Server: <strong style={{ color: '#00f0ff' }}>{serverName || onboarding?.serverName}</strong></div>
+                    <div>{t.connector.accountLabel} <strong style={{ color: '#fff' }}>{login || onboarding?.login}</strong></div>
+                    <div>{t.connector.brokerLabel} <strong style={{ color: '#fff' }}>{selectedBroker}</strong></div>
+                    <div style={{ gridColumn: 'span 2' }}>{t.accounts.serverLabel} <strong style={{ color: '#00f0ff' }}>{serverName || onboarding?.serverName}</strong></div>
                   </div>
                   {onboardingSeconds > 40 && (
                     <div style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)', borderRadius: '8px', padding: '8px 12px', fontSize: '11px', color: '#fbbf24', maxWidth: '420px', textAlign: 'left' }}>
-                      ⏳ <strong>Taking longer than expected:</strong> Broker servers usually respond in 15–30 seconds. If this persists, verify that your <strong>Investor (read-only) Password</strong> is set in MT5 (Tools &gt; Options &gt; Server &gt; Change Password &gt; Change Investor Password).
+                      ⏳ <strong>{t.connector.takingLonger}</strong> {t.connector.takingLongerDesc}
                     </div>
                   )}
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)', maxWidth: '440px', lineHeight: 1.4 }}>
-                    Connecting securely via read-only bridge. You can close this window and monitor status under "Connected Accounts".
+                    {t.connector.secureReadBridgeNote}
                   </span>
                 </div>
               ) : isValidating ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 0', gap: '12px' }}>
                   <Loader2 size={36} color="#0abab5" className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
                   <p style={{ fontSize: '14px', color: '#81d8d0', fontWeight: 600 }}>
-                    {validationStage === 1 && '1/3 Connecting to broker gateway...'}
-                    {validationStage === 2 && '2/3 Pinging broker server & verifying Investor Password...'}
-                    {validationStage >= 3 && '3/3 Testing read-only zero-write permissions & balance...'}
+                    {validationStage === 1 && (t.connector.stage1 || '1/3 Connecting to broker gateway...')}
+                    {validationStage === 2 && (t.connector.stage2 || '2/3 Pinging broker server & verifying Investor Password...')}
+                    {validationStage >= 3 && (t.connector.stage3 || '3/3 Testing read-only zero-write permissions & balance...')}
                     {validationStage === 0 && (t.connector.pingingBroker || 'Pinging broker server & testing read permissions...')}
                   </p>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
@@ -964,17 +1040,17 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#fbbf24', marginBottom: '10px' }}>
                         <AlertCircle size={24} />
-                        <strong style={{ fontSize: '16px' }}>Broker Cooldown in Progress</strong>
+                        <strong style={{ fontSize: '16px' }}>{t.connector.cooldownTitle}</strong>
                       </div>
                       <p style={{ fontSize: '13px', color: '#fef3c7', lineHeight: 1.5, marginBottom: '12px' }}>
-                        {errorMessage}
+                        {localizeErrorMessage(errorMessage, language)}
                       </p>
                       <div style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)', borderRadius: '8px', padding: '12px 14px', fontSize: '12px', color: '#fbbf24' }}>
-                        <strong>How to resolve:</strong>
+                        <strong>{t.connector.howToResolve}</strong>
                         <ul style={{ margin: '6px 0 0 16px', padding: 0, lineHeight: 1.6 }}>
-                          <li>The stale connection attempt has been purged from our bridge.</li>
-                          <li>Confirm your <strong>Investor (read-only) Password</strong> in MT5 (not your broker web portal password).</li>
-                          <li>Wait ~1–2 minutes for the broker cooldown to reset before retrying.</li>
+                          <li>{t.connector.cooldownStep1}</li>
+                          <li>{t.connector.cooldownStep2}</li>
+                          <li>{t.connector.cooldownStep3}</li>
                         </ul>
                       </div>
                     </div>
@@ -985,17 +1061,17 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                         <strong style={{ fontSize: '16px' }}>{t.connector.connectionFailedTitle}</strong>
                       </div>
                       <p style={{ fontSize: '13px', color: '#fca5a5', lineHeight: 1.5, marginBottom: '12px' }}>
-                        {errorMessage || 'Broker server rejected connection credentials. Please verify your exact server name and investor password.'}
+                        {localizeErrorMessage(errorMessage, language) || (language === 'ja' ? 'ブローカーサーバーによって接続が拒否されました。正確なサーバー名とインベスターパスワードをご確認ください。' : 'Broker server rejected connection credentials. Please verify your exact server name and investor password.')}
                       </p>
                       <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '8px', padding: '12px 14px', fontSize: '12px', color: '#fca5a5' }}>
-                        <strong>Common fixes:</strong>
+                        <strong>{t.connector.commonFixesTitle}</strong>
                         <ul style={{ margin: '6px 0 0 16px', padding: 0, lineHeight: 1.6 }}>
-                          <li>Verify your <strong>Server Name</strong> from your broker welcome email or MT4/MT5 terminal (e.g. <code>XMGlobal-MT5</code>, <code>XMGlobal-MT5 2</code>, etc.).</li>
-                          <li>Ensure you enter your <strong>MT4/MT5 trading password</strong> or <strong>Investor password</strong> — <em>never</em> your broker website / member area portal password.</li>
+                          <li>{t.connector.commonFixesServer}</li>
+                          <li>{t.connector.commonFixesPassword}</li>
                           {selectedBroker === 'XM' && (
-                            <li><strong>XM Global Accounts:</strong> XM accounts do not have an investor password by default. Use your MT5 account trading password, or set an investor password in MT5 desktop (<em>Tools → Options → Server → Change Password → Change Investor Password</em>).</li>
+                            <li>{t.connector.commonFixesXm}</li>
                           )}
-                          <li>Confirm whether your account is <strong>MT4</strong> or <strong>MT5</strong>.</li>
+                          <li>{t.connector.commonFixesPlatform}</li>
                         </ul>
                       </div>
                     </div>
@@ -1010,11 +1086,11 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
               </button>
               {connectedAccount ? (
                 <button className="btn-primary" onClick={onClose}>
-                  <CheckCircle2 size={16} /> Done
+                  <CheckCircle2 size={16} /> {t.connector.doneBtn}
                 </button>
               ) : isOnboardingActive ? (
                 <button className="btn-secondary" onClick={onClose}>
-                  Continue in background
+                  {t.connector.continueInBackground}
                 </button>
               ) : (validationResult?.success && validationResult.accountDetails && typeof validationResult.accountDetails.balance === 'number' && !validationResult.pendingBrokerVerification) && (
                 <button

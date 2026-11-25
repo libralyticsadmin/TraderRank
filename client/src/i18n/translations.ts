@@ -353,6 +353,26 @@ export interface TranslationDictionary {
     stepComplete: string;
     nextStep: string;
     backStep: string;
+    commonFixesTitle: string;
+    commonFixesServer: string;
+    commonFixesPassword: string;
+    commonFixesXm: string;
+    commonFixesPlatform: string;
+    cooldownTitle: string;
+    howToResolve: string;
+    cooldownStep1: string;
+    cooldownStep2: string;
+    cooldownStep3: string;
+    continueInBackground: string;
+    doneBtn: string;
+    takingLonger: string;
+    takingLongerDesc: string;
+    registeringBridge: string;
+    authenticatingWith: string;
+    secureReadBridgeNote: string;
+    stage1: string;
+    stage2: string;
+    stage3: string;
   };
 
   // Daily Best Trader Card
@@ -596,6 +616,12 @@ export interface TranslationDictionary {
     viewOnly: string;
     syncing: string;
     disconnectConfirm: string;
+    accountCouldNotConnect: string;
+    reenterInvestorPassword: string;
+    connectingAccount: string;
+    verifyingBrokerWait: string;
+    accountDisconnectedAlert: string;
+    accountDisconnectedDesc: string;
   };
 
   // Active Positions
@@ -1224,6 +1250,26 @@ export const translations: Record<Language, TranslationDictionary> = {
       stepComplete: '4. Connected',
       nextStep: 'Next: Credentials →',
       backStep: 'Back',
+      commonFixesTitle: 'Common fixes:',
+      commonFixesServer: 'Verify your Server Name from your broker welcome email or MT4/MT5 terminal (e.g. XMGlobal-MT5, XMGlobal-MT5 10, etc.).',
+      commonFixesPassword: 'Ensure you enter your MT4/MT5 trading password or Investor password — never your broker website / member area portal password.',
+      commonFixesXm: 'XM Global Accounts: XM accounts do not have an investor password by default. Use your MT5 account trading password, or set an investor password in MT5 desktop (Tools → Options → Server → Change Password → Change Investor Password).',
+      commonFixesPlatform: 'Confirm whether your account is MT4 or MT5.',
+      cooldownTitle: 'Broker Cooldown in Progress',
+      howToResolve: 'How to resolve:',
+      cooldownStep1: 'The stale connection attempt has been purged from our bridge.',
+      cooldownStep2: 'Confirm your Investor (read-only) Password in MT5 (not your broker web portal password).',
+      cooldownStep3: 'Wait ~1–2 minutes for the broker cooldown to reset before retrying.',
+      continueInBackground: 'Continue in background',
+      doneBtn: 'Done',
+      takingLonger: 'Taking longer than expected:',
+      takingLongerDesc: 'Broker servers usually respond in 15–30 seconds. If this persists, verify that your Investor (read-only) Password is set in MT5 (Tools > Options > Server > Change Password > Change Investor Password).',
+      registeringBridge: '1/2 Registering account with broker bridge',
+      authenticatingWith: '2/2 Authenticating with',
+      secureReadBridgeNote: 'Connecting securely via read-only bridge. You can close this window and monitor status under "Connected Accounts".',
+      stage1: '1/3 Connecting to broker gateway...',
+      stage2: '2/3 Pinging broker server & verifying Investor Password...',
+      stage3: '3/3 Testing read-only zero-write permissions & balance...',
     },
     dailyBest: {
       spotlight: 'Daily Winning Pips Spotlight',
@@ -1455,6 +1501,12 @@ export const translations: Record<Language, TranslationDictionary> = {
       viewOnly: 'Read-Only Feed',
       syncing: 'Syncing...',
       disconnectConfirm: 'Disconnect this account from TraderRank?',
+      accountCouldNotConnect: 'Account {login} ({server}) could not be connected.',
+      reenterInvestorPassword: 'Re-enter investor password',
+      connectingAccount: 'Connecting account {login} on {server}…',
+      verifyingBrokerWait: 'Verifying with your broker. This can take a few minutes.',
+      accountDisconnectedAlert: 'Account {account} is disconnected from your broker.',
+      accountDisconnectedDesc: '{error} Your rank is frozen and no new points are earned until it reconnects.',
     },
     positions: {
       title: 'Live Position Ingestion Feed',
@@ -2061,6 +2113,26 @@ export const translations: Record<Language, TranslationDictionary> = {
       stepComplete: '4. 完了',
       nextStep: '次へ: 認証情報入力 →',
       backStep: '戻る',
+      commonFixesTitle: '主な確認事項:',
+      commonFixesServer: 'ブローカーからの登録案内メールまたはMT4/MT5アプリの表示を確認し、サーバー名を正確に入力してください（例: XMGlobal-MT5、XMGlobal-MT5 10 など）。',
+      commonFixesPassword: 'MT4/MT5の取引口座パスワードまたはインベスター（閲覧専用）パスワードを入力してください（※ブローカーの会員マイページ・ウェブサイトログイン用パスワードではありません）。',
+      commonFixesXm: 'XM Global 口座について: XM口座には初期状態でインベスターパスワードが設定されていません。MT5取引口座パスワードをご利用いただくか、MT5デスクトップ版（ツール → オプション → サーバー → パスワード変更 → インベスターパスワード変更）にて設定してください。',
+      commonFixesPlatform: 'ご利用の口座種別が MT4 か MT5 かをご確認ください。',
+      cooldownTitle: 'ブローカーのクールダウン待機中',
+      howToResolve: '対処方法:',
+      cooldownStep1: '過去の接続試行キャッシュはブリッジからクリアされました。',
+      cooldownStep2: 'MT5のインベスター（閲覧専用）パスワード（会員サイト用ではなくMT5アプリ用）をご確認ください。',
+      cooldownStep3: 'ブローカー側のクールダウンが解除されるまで、約1〜2分お待ちいただいてから再試行してください。',
+      continueInBackground: 'バックグラウンドで続行',
+      doneBtn: '完了',
+      takingLonger: '通常より時間がかかっています:',
+      takingLongerDesc: 'ブローカーサーバーからの応答は通常15〜30秒程度です。長時間続く場合は、MT5にてインベスター（閲覧専用）パスワードが正しく設定されているかご確認ください（ツール > オプション > サーバー > パスワード変更）。',
+      registeringBridge: '1/2 ブローカーブリッジに口座を登録中',
+      authenticatingWith: '2/2 認証中:',
+      secureReadBridgeNote: '閲覧専用ブリッジを介して安全に接続しています。この画面を閉じて「連携済み口座一覧」から状態を確認できます。',
+      stage1: '1/3 ブローカーゲートウェイに接続中...',
+      stage2: '2/3 サーバー通信 & インベスターパスワードを検証中...',
+      stage3: '3/3 閲覧専用権限 & 残高を検証中...',
     },
     dailyBest: {
       spotlight: '本日のトップ獲得pips',
@@ -2292,6 +2364,12 @@ export const translations: Record<Language, TranslationDictionary> = {
       viewOnly: '閲覧専用フィード',
       syncing: '同期中...',
       disconnectConfirm: 'この口座の連携を解除しますか？',
+      accountCouldNotConnect: '口座 {login} ({server}) を連携できませんでした。',
+      reenterInvestorPassword: '認証情報を再編集',
+      connectingAccount: '口座 {login} ({server}) に接続中…',
+      verifyingBrokerWait: 'ブローカーと接続検証中です。完了まで1〜2分程度かかる場合があります。',
+      accountDisconnectedAlert: '口座 {account} のブローカー接続が切断されました。',
+      accountDisconnectedDesc: '{error} 口座が再接続されるまでランキングは一時停止され、新しいポイントは加算されません。',
     },
     positions: {
       title: 'ライブ保有ポジション監視',
@@ -2898,6 +2976,26 @@ export const translations: Record<Language, TranslationDictionary> = {
       stepComplete: '4. 完成绑定',
       nextStep: '下一步: 填写凭证 →',
       backStep: '返回',
+      commonFixesTitle: '常见排错步骤：',
+      commonFixesServer: '核对经纪商欢迎邮件或 MT4/MT5 终端，确认服务器名称完全正确（如 XMGlobal-MT5、XMGlobal-MT5 10 等）。',
+      commonFixesPassword: '请确保输入 MT4/MT5 交易密码或只读投资人密码 — 切勿输入官网会员中心密码。',
+      commonFixesXm: 'XM Global 账户说明：XM 账户默认未设置投资人密码。请使用您的 MT5 账户交易密码，或在 MT5 电脑端设置投资人密码（工具 → 选项 → 服务器 → 变更密码 → 变更投资人密码）。',
+      commonFixesPlatform: '请确认您的实盘账户类型是 MT4 还是 MT5。',
+      cooldownTitle: '经纪商连接处于冷却保护中',
+      howToResolve: '解决方案：',
+      cooldownStep1: '旧的连接尝试记录已从网桥中完全清除。',
+      cooldownStep2: '请在 MT5 终端中核对只读投资人密码（非官网账户密码）。',
+      cooldownStep3: '请等待约 1–2 分钟待经纪商服务器重置冷却后再试。',
+      continueInBackground: '后台继续',
+      doneBtn: '完成',
+      takingLonger: '连接用时超出预期：',
+      takingLongerDesc: '经纪商服务器通常在 15–30 秒内响应。如果持续等待，请确认已在 MT5 设置只读投资人密码（工具 > 选项 > 服务器 > 变更密码）。',
+      registeringBridge: '1/2 正在向经纪商网桥注册账户',
+      authenticatingWith: '2/2 正在验证：',
+      secureReadBridgeNote: '通过只读加密网桥安全连接。您可以关闭此弹窗并在“已绑定账户”中查看最新进度。',
+      stage1: '1/3 正在连接经纪商网关...',
+      stage2: '2/3 正在测试服务器延迟与投资人密码...',
+      stage3: '3/3 正在验证只读权限与余额...',
     },
     dailyBest: {
       spotlight: '每日点数之星・实盘焦点',
@@ -3129,6 +3227,12 @@ export const translations: Record<Language, TranslationDictionary> = {
       viewOnly: '只读数据流',
       syncing: '同步中...',
       disconnectConfirm: '确认从 TraderRank 解除此账户绑定？',
+      accountCouldNotConnect: '账户 {login} ({server}) 无法连接。',
+      reenterInvestorPassword: '重新编辑凭证',
+      connectingAccount: '正在连接账户 {login} ({server})…',
+      verifyingBrokerWait: '正在与经纪商验证，通常需要 1–2 分钟。',
+      accountDisconnectedAlert: '账户 {account} 与经纪商的连接已断开。',
+      accountDisconnectedDesc: '{error} 在重新连接前，排行榜排名将冻结且不计新积分。',
     },
     positions: {
       title: '实时持仓监控流',

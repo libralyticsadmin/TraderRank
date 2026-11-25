@@ -13,7 +13,7 @@
 
 import crypto from 'crypto';
 import { Broker, GatewayCredentials, TradingAccount } from '../../../shared/src/types.js';
-import { MetaApiClient } from '../workers/metaApiClient.js';
+import { MetaApiClient, normalizeServerName } from '../workers/metaApiClient.js';
 import { SecretsVault } from '../vault/secretsVault.js';
 import { AccountConnectorService } from '../connector/accountConnector.js';
 import { r2Storage } from './r2StorageService.js';
@@ -155,7 +155,7 @@ export class OnboardingService {
   public async startJob(userId: string, username: string, broker: Broker, creds: GatewayCredentials): Promise<OnboardingJob> {
     await this.ensureLoaded();
     const login = String(creds.login || '').trim();
-    const serverName = String(creds.serverName || '').trim();
+    const serverName = normalizeServerName(String(creds.serverName || '').trim());
     if (!login || !serverName || !creds.investorPassword) {
       throw new Error('Server name, account login, and investor password are required.');
     }
