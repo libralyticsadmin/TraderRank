@@ -1117,7 +1117,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                         <strong style={{ fontSize: '16px' }}>{t.connector.connectionFailedTitle}</strong>
                       </div>
                       <p style={{ fontSize: '13px', color: '#fca5a5', lineHeight: 1.5, marginBottom: '12px' }}>
-                        {localizeErrorMessage(errorMessage, language) || (language === 'ja' ? 'ブローカーサーバーによって接続が拒否されました。正確なサーバー名とインベスターパスワードをご確認ください。' : 'Broker server rejected connection credentials. Please verify your exact server name and investor password.')}
+                        {localizeErrorMessage(errorMessage, language) || (language === 'ja' ? 'ブローカーサーバーによって接続が拒否されました。正確なサーバー名とインベスターパスワードをご確認ください。' : language === 'zh' ? '经纪商服务器拒绝了连接请求。请核对准确的服务器名称与只读投资人密码。' : 'Broker server rejected connection credentials. Please verify your exact server name and investor password.')}
                       </p>
                       <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '8px', padding: '12px 14px', fontSize: '12px', color: '#fca5a5' }}>
                         <strong>{t.connector.commonFixesTitle}</strong>
