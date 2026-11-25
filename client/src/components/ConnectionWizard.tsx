@@ -87,52 +87,56 @@ export function normalizeServerName(server: string): string {
 export function localizeErrorMessage(msg: string | null | undefined, lang: string): string {
   if (!msg) return '';
   const text = msg.trim();
+  const lower = text.toLowerCase();
   if (lang === 'ja') {
-    if (text.includes('broker server name was not recognised') || text.includes('server XMGlobal') || text.includes('.dat file for server')) {
+    if (lower.includes('server name was not') || lower.includes('server_not_found') || lower.includes('server xmglobal') || lower.includes('.dat file for server')) {
       return 'ブローカーサーバー名が認識されませんでした。ブローカーからの登録完了メールまたはMT4/MT5アプリに表示されている正確なサーバー名を入力してください。';
     }
-    if (text.includes('broker rejected the login') || text.includes('INVALID_CREDENTIALS')) {
+    if (lower.includes('rejected the login') || lower.includes('invalid_credentials') || (lower.includes('password') && lower.includes('wrong'))) {
       return 'ブローカーによってログインが拒否されました。口座番号とインベスター（閲覧専用）パスワードをご確認ください。';
     }
-    if (text.includes('not log in to the broker in time') || text.includes('TIMEOUT')) {
+    if (lower.includes('not log in to the broker in time') || lower.includes('timeout') || lower.includes('did not respond in time')) {
       return '制限時間内にブローカーへログインできませんでした。インベスターパスワードまたはサーバー名が誤っている可能性があります。再入力してください。';
     }
-    if (text.includes('could not be reached') || text.includes('BROKER_UNREACHABLE')) {
+    if (lower.includes('could not be reached') || lower.includes('broker_unreachable') || lower.includes('network error')) {
       return 'ブローカーサーバーに接続できませんでした。メンテナンス中の可能性があるため、時間をおいて再度お試しください。';
     }
-    if (text.includes('quota') || text.includes('QUOTA_EXCEEDED')) {
+    if (lower.includes('quota') || lower.includes('quota_exceeded')) {
       return 'ブローカー接続枠が一時的に上限に達しています。時間をおいて再度お試しください。';
     }
-    if (text.includes('rejected too many times') || text.includes('cooldown') || text.includes('RATE_LIMITED')) {
+    if (lower.includes('rejected too many times') || lower.includes('cooldown') || lower.includes('rate_limited')) {
       return 'ログイン試行が短時間に連続して失敗したため、ブローカー側で一時的なクールダウン（約15分間）が適用されています。時間をおいてから正しいMT5パスワードで再試行してください。';
     }
-    if (text.includes('temporary problem on our side') || text.includes('INTEGRATION_ERROR')) {
+    if (lower.includes('temporary problem on our side') || lower.includes('integration_error') || lower.includes('service unavailable')) {
       return '一時的なシステムエラーが発生しました。しばらくしてから再度お試しください。';
     }
-    if (text.includes('Authentication required')) {
+    if (lower.includes('authentication required')) {
       return '認証が必要です。口座を連携するにはログインしてください。';
     }
-    if (text.includes('Network error during validation')) {
-      return 'ネットワークエラーが発生しました。インターネット接続をご確認の上、再試行してください。';
-    }
   } else if (lang === 'zh') {
-    if (text.includes('broker server name was not recognised') || text.includes('server XMGlobal') || text.includes('.dat file for server')) {
+    if (lower.includes('server name was not') || lower.includes('server_not_found') || lower.includes('server xmglobal') || lower.includes('.dat file for server')) {
       return '未识别经纪商服务器名称。请从经纪商欢迎邮件或 MT4/MT5 终端复制完全一致的服务器名。';
     }
-    if (text.includes('broker rejected the login') || text.includes('INVALID_CREDENTIALS')) {
+    if (lower.includes('rejected the login') || lower.includes('invalid_credentials') || (lower.includes('password') && lower.includes('wrong'))) {
       return '经纪商拒绝了登录。请检查账号与只读（投资人）密码。';
     }
-    if (text.includes('not log in to the broker in time') || text.includes('TIMEOUT')) {
+    if (lower.includes('not log in to the broker in time') || lower.includes('timeout') || lower.includes('did not respond in time')) {
       return '未能及时登录经纪商服务器。通常意味着密码或服务器名称有误，请重新输入。';
     }
-    if (text.includes('could not be reached') || text.includes('BROKER_UNREACHABLE')) {
+    if (lower.includes('could not be reached') || lower.includes('broker_unreachable') || lower.includes('network error')) {
       return '无法连接经纪商服务器。可能处于维护中，请稍后再试。';
     }
-    if (text.includes('quota') || text.includes('QUOTA_EXCEEDED')) {
+    if (lower.includes('quota') || lower.includes('quota_exceeded')) {
       return '经纪商连接配额暂时已满，请稍后再试。';
     }
-    if (text.includes('rejected too many times') || text.includes('cooldown') || text.includes('RATE_LIMITED')) {
+    if (lower.includes('rejected too many times') || lower.includes('cooldown') || lower.includes('rate_limited')) {
       return '近期登录失败次数过多，经纪商已触发临时冷却保护（约15分钟）。请等待后使用正确的 MT5 密码重试。';
+    }
+    if (lower.includes('temporary problem on our side') || lower.includes('integration_error') || lower.includes('service unavailable')) {
+      return '系统发生临时错误，请稍后再试。';
+    }
+    if (lower.includes('authentication required')) {
+      return '需要登录验证，请先登录账户。';
     }
   }
   return text;
