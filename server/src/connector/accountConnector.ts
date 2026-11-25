@@ -1257,16 +1257,32 @@ export class AccountConnectorService {
   }
 
   public async purgeUser(userId: string): Promise<number> {
-    const userAccs = this.getAccounts(userId);
+    const cleanUser = userId.toLowerCase();
+    const cleanNoU = cleanUser.replace(/^u_/, '');
+
+    const userAccs = Array.from(this.accounts.values()).filter(acc =>
+      AccountConnectorService.isSameOwner(acc.userId, userId) ||
+      acc.userId?.toLowerCase() === cleanUser ||
+      acc.userId?.toLowerCase() === `u_${cleanNoU}` ||
+      acc.userId?.toLowerCase() === cleanNoU ||
+      acc.profileUsername?.toLowerCase() === cleanNoU
+    );
     let count = 0;
     for (const acc of userAccs) {
       await this.disconnectAccount(acc.id, true);
       count++;
     }
     let ownersChanged = false;
-    const cleanUser = userId.toLowerCase();
     for (const [key, owner] of Array.from(this.accountOwners.entries())) {
-      if (owner.userId === userId || owner.userId.toLowerCase() === cleanUser) {
+      const ownerUid = (owner.userId || '').toLowerCase();
+      const ownerUname = (owner.username || '').toLowerCase();
+      if (
+        ownerUid === cleanUser ||
+        ownerUid === `u_${cleanNoU}` ||
+        ownerUid === cleanNoU ||
+        ownerUname === cleanNoU ||
+        AccountConnectorService.isSameOwner(owner.userId, userId)
+      ) {
         this.accountOwners.delete(key);
         ownersChanged = true;
       }
@@ -1274,6 +1290,18 @@ export class AccountConnectorService {
     if (ownersChanged) {
       await this.persistAccountOwnersToR2();
     }
+
+    this.traderUsernames.delete(userId);
+    this.traderUsernames.delete(cleanUser);
+    this.traderUsernames.delete(cleanNoU);
+    this.traderAvatars.delete(userId);
+    this.traderAvatars.delete(cleanUser);
+    this.traderAvatars.delete(cleanNoU);
+    await Promise.all([
+      this.persistTraderUsernamesToR2().catch(() => {}),
+      this.persistTraderAvatarsToR2().catch(() => {}),
+    ]);
+
     return count;
   }
 

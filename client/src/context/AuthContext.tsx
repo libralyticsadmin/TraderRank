@@ -302,6 +302,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       localStorage.removeItem(TOKEN_STORAGE_KEY);
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem('traderank_account_usernames_v1');
+      localStorage.removeItem('traderank_account_avatars_v1');
+      localStorage.removeItem('traderank_referral_count_v2');
     } catch {
       // ignore
     }

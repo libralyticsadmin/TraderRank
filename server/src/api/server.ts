@@ -522,6 +522,17 @@ export function createServer() {
         }
         invalidateCanonicalStatsCache();
       }
+
+      // Auto-scrub orphaned accounts whose owner profile or credentials don't exist
+      for (const acc of connector.getAllAccountRecords()) {
+        if (acc.userId && !AccountConnectorService.isSyntheticOwnerId(acc.userId)) {
+          const ownerExists = userProfiles.has(acc.userId) || authService.getCredential(acc.userId);
+          if (!ownerExists) {
+            console.log(`[BOOT] Purging orphaned account ${acc.id} (${acc.accountNumber}) with deleted owner ${acc.userId}`);
+            await connector.purgeAccountByLogin(acc.accountNumber);
+          }
+        }
+      }
     } catch (err) {
       console.warn('[server] Warning: Could not load user profiles from R2:', err);
     }
@@ -559,25 +570,25 @@ export function createServer() {
       return res.status(400).json({ success: false, error: regResult.error || 'Registration failed' });
     }
 
-    const existingProfile = userProfiles.get(cleanId);
+    // Clean registration: purge any stale accounts/owners from previous registrations under this id
+    await connector.purgeUser(cleanId);
+
     const newUser = {
-      ...(existingProfile || {}),
       id: cleanId,
       username: cleanUsername,
       email: cleanEmail,
-      avatarSymbol: existingProfile?.avatarSymbol || 'zap',
-      avatarUrl: avatarUrl || existingProfile?.avatarUrl || undefined,
-      traderTitle: existingProfile?.traderTitle || 'Verified Market Trader',
-      bio: existingProfile?.bio || '',
-      tradingStyle: existingProfile?.tradingStyle || tradingStyle || 'SCALPER',
-      primaryBroker: existingProfile?.primaryBroker || primaryBroker || 'Exness',
-      accountNumber: existingProfile?.accountNumber || undefined,
-      country: existingProfile?.country || 'Global',
-      joinedAt: existingProfile?.joinedAt || 'Today',
-      registeredAt: existingProfile?.registeredAt || new Date().toISOString(),
-      level: existingProfile?.level || 1,
-      xp: existingProfile?.xp || 0,
-      rank: existingProfile?.rank || 99,
+      avatarSymbol: 'zap',
+      avatarUrl: avatarUrl || undefined,
+      traderTitle: 'Verified Market Trader',
+      bio: '',
+      tradingStyle: tradingStyle || 'SCALPER',
+      primaryBroker: primaryBroker || 'Exness',
+      country: 'Global',
+      joinedAt: 'Today',
+      registeredAt: new Date().toISOString(),
+      level: 1,
+      xp: 0,
+      rank: 99,
     };
     userProfiles.set(cleanId, newUser);
     try {
@@ -755,8 +766,11 @@ export function createServer() {
       }
 
       // 3. Delete user profile and persist
+      const cleanNoU = targetUserId.toLowerCase().replace(/^u_/, '');
       userProfiles.delete(targetUserId);
       userProfiles.delete(targetUserId.toLowerCase());
+      userProfiles.delete(cleanNoU);
+      userProfiles.delete(`u_${cleanNoU}`);
       await persistUserProfilesToR2();
 
       // 4. Delete user credentials from auth storage

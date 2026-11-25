@@ -17,12 +17,13 @@
 import { r2Storage } from './r2StorageService.js';
 import { EMERALD_BEAR_AVATAR_URL } from '../core/avatarPresets.js';
 
-export const LEGACY_IDENTITY_MARKER_KEY = 'migrations/legacy-identities-v3.json';
+export const LEGACY_IDENTITY_MARKER_KEY = 'migrations/legacy-identities-v4.json';
 
 export const PURGED_LEGACY_IDENTITIES = [
   'u_homiesplant_th',
   'u_homiesplant',
   'homiesplant',
+  'HomiesPlant',
   'u_homeisplant',
   'homeisplant',
   'usr_meta_72423906',
@@ -129,38 +130,54 @@ export async function runLegacyIdentityMigration(
 
   // Purge removed legacy identities so the user can register fresh with their username/email
   for (const id of PURGED_LEGACY_IDENTITIES) {
-    if (id in profiles) {
-      delete profiles[id];
-      changes.push({ store: 'profiles', key: id, action: 'delete', detail: 'purged legacy identity' });
-    }
-    if (id in credentials) {
-      delete credentials[id];
-      changes.push({ store: 'credentials', key: id, action: 'delete', detail: 'purged legacy identity' });
-    }
-    if (id in usernames) {
-      delete usernames[id];
-      changes.push({ store: 'usernames', key: id, action: 'delete', detail: 'purged legacy identity' });
-    }
-    if (id in avatars) {
-      delete avatars[id];
-      changes.push({ store: 'avatars', key: id, action: 'delete', detail: 'purged legacy identity' });
-    }
-  }
-  for (const login of PURGED_LEGACY_LOGINS) {
-    const cleanLogin = String(login).trim();
-    for (const [key, val] of Object.entries(owners)) {
-      const valLogin = String(val?.accountNumber || '').trim();
-      const valUserId = String(val?.userId || '').trim().toLowerCase();
-      if (
-        key === cleanLogin ||
-        key === `acc_meta_${cleanLogin}` ||
-        valLogin === cleanLogin ||
-        PURGED_LEGACY_IDENTITIES.some(pid => pid.toLowerCase() === valUserId)
-      ) {
-        delete owners[key];
-        changes.push({ store: 'owners', key, action: 'delete', detail: 'purged legacy account' });
+    const cleanId = id.toLowerCase();
+    const cleanIdNoU = cleanId.replace(/^u_/, '');
+    for (const k of Object.keys(profiles)) {
+      const kNorm = k.toLowerCase().replace(/^u_/, '');
+      if (kNorm === cleanIdNoU) {
+        delete profiles[k];
+        changes.push({ store: 'profiles', key: k, action: 'delete', detail: 'purged legacy identity' });
       }
     }
+    for (const k of Object.keys(credentials)) {
+      const kNorm = k.toLowerCase().replace(/^u_/, '');
+      if (kNorm === cleanIdNoU) {
+        delete credentials[k];
+        changes.push({ store: 'credentials', key: k, action: 'delete', detail: 'purged legacy identity' });
+      }
+    }
+    for (const k of Object.keys(usernames)) {
+      const kNorm = k.toLowerCase().replace(/^u_/, '');
+      if (kNorm === cleanIdNoU) {
+        delete usernames[k];
+        changes.push({ store: 'usernames', key: k, action: 'delete', detail: 'purged legacy identity' });
+      }
+    }
+    for (const k of Object.keys(avatars)) {
+      const kNorm = k.toLowerCase().replace(/^u_/, '');
+      if (kNorm === cleanIdNoU) {
+        delete avatars[k];
+        changes.push({ store: 'avatars', key: k, action: 'delete', detail: 'purged legacy identity' });
+      }
+    }
+  }
+
+  for (const [key, val] of Object.entries(owners)) {
+    const valLogin = String(val?.accountNumber || '').trim();
+    const valUserId = String(val?.userId || '').trim().toLowerCase();
+    const valUsername = String(val?.username || '').trim().toLowerCase();
+    const isPurgedLogin = PURGED_LEGACY_LOGINS.some(l => l === valLogin || key === l || key === `acc_meta_${l}`);
+    const isPurgedIdentity = PURGED_LEGACY_IDENTITIES.some(pid => {
+      const pClean = pid.toLowerCase().replace(/^u_/, '');
+      return valUserId.replace(/^u_/, '') === pClean || valUsername === pClean || key.toLowerCase().replace(/^u_/, '') === pClean;
+    });
+    if (isPurgedLogin || isPurgedIdentity) {
+      delete owners[key];
+      changes.push({ store: 'owners', key, action: 'delete', detail: 'purged legacy account' });
+    }
+  }
+
+  for (const login of PURGED_LEGACY_LOGINS) {
     if (login in usernames) {
       delete usernames[login];
       changes.push({ store: 'usernames', key: login, action: 'delete', detail: 'purged legacy account' });
