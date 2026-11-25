@@ -1253,4 +1253,25 @@ export class AccountConnectorService {
 
     return true;
   }
+
+  public async purgeUser(userId: string): Promise<number> {
+    const userAccs = this.getAccounts(userId);
+    let count = 0;
+    for (const acc of userAccs) {
+      await this.disconnectAccount(acc.id, true);
+      count++;
+    }
+    let ownersChanged = false;
+    const cleanUser = userId.toLowerCase();
+    for (const [key, owner] of Array.from(this.accountOwners.entries())) {
+      if (owner.userId === userId || owner.userId.toLowerCase() === cleanUser) {
+        this.accountOwners.delete(key);
+        ownersChanged = true;
+      }
+    }
+    if (ownersChanged) {
+      await this.persistAccountOwnersToR2();
+    }
+    return count;
+  }
 }

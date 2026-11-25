@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Check, Save, User, ShieldCheck, Camera, Upload, Instagram, Trash2, Dice5 } from 'lucide-react';
+import { X, Check, Save, User, ShieldCheck, Camera, Upload, Instagram, Trash2, Dice5, AlertTriangle, Loader2 } from 'lucide-react';
 import { useAuth, UserProfile } from '../context/AuthContext.tsx';
 import { Broker } from '../../../shared/src/types.ts';
 import {
@@ -41,7 +41,7 @@ const ANIMAL_CREST_I18N: Record<string, { ja: { label: string; badge: string }; 
 };
 
 export const ProfileEditModal: React.FC = () => {
-  const { user, isProfileModalOpen, closeProfileModal, updateProfile } = useAuth();
+  const { user, isProfileModalOpen, closeProfileModal, updateProfile, deleteAccount } = useAuth();
   const { language } = useTranslation();
 
   const [username, setUsername] = useState(user?.username || '');
@@ -62,6 +62,9 @@ export const ProfileEditModal: React.FC = () => {
   const [intuitionRatio, setIntuitionRatio] = useState(user?.methodology?.intuition ?? 50);
   const [customUrlInput, setCustomUrlInput] = useState('');
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -1208,6 +1211,139 @@ export const ProfileEditModal: React.FC = () => {
                 />
               </div>
             </div>
+          </div>
+
+          {/* Danger Zone: Account Deletion */}
+          <div
+            style={{
+              marginTop: '20px',
+              padding: '16px',
+              borderRadius: '10px',
+              background: 'rgba(239, 68, 68, 0.05)',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ef4444', fontWeight: 800, fontSize: '13px' }}>
+                  <AlertTriangle size={16} />
+                  <span>{language === 'ja' ? 'アカウントの削除' : language === 'zh' ? '注销并删除账户' : 'Delete Account'}</span>
+                </div>
+                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#94a3b8', lineHeight: 1.4 }}>
+                  {language === 'ja'
+                    ? 'プロフィール、連携ブローカー口座、取引履歴を完全に削除します。この操作は取り消せません。'
+                    : language === 'zh'
+                    ? '彻底注销您的 TradeRank 账户，清除个人资料、所有绑定的经纪商账户及交易记录。此操作不可逆。'
+                    : 'Permanently delete your TradeRank profile, all linked broker accounts, and trade history. This cannot be undone.'}
+                </p>
+              </div>
+
+              {!showDeleteConfirm ? (
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '6px',
+                    background: 'rgba(239, 68, 68, 0.12)',
+                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                    color: '#f87171',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <Trash2 size={14} />
+                  {language === 'ja' ? 'アカウント削除...' : language === 'zh' ? '删除账户...' : 'Delete Account...'}
+                </button>
+              ) : null}
+            </div>
+
+            {showDeleteConfirm && (
+              <div
+                style={{
+                  marginTop: '14px',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  background: 'rgba(239, 68, 68, 0.12)',
+                  border: '1px solid rgba(239, 68, 68, 0.4)',
+                }}
+              >
+                <div style={{ color: '#fca5a5', fontSize: '12px', fontWeight: 700, lineHeight: 1.5, marginBottom: '12px' }}>
+                  {language === 'ja'
+                    ? '本当にアカウントを完全削除しますか？連携中のブローカー口座とすべてのランキング記録が永久に破棄されます。'
+                    : language === 'zh'
+                    ? '确定要永久删除该账户吗？您绑定的所有实盘经纪商账户及天梯排位数据都将被永久抹除。'
+                    : 'Are you sure you want to permanently delete your account? All linked accounts and leaderboard history will be erased.'}
+                </div>
+                {deleteError && (
+                  <div style={{ color: '#f87171', fontSize: '12px', marginBottom: '10px' }}>
+                    {deleteError}
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={() => { setShowDeleteConfirm(false); setDeleteError(''); }}
+                    disabled={isDeleting}
+                    style={{
+                      padding: '7px 14px',
+                      borderRadius: '6px',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      color: '#cbd5e1',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {language === 'ja' ? 'キャンセル' : language === 'zh' ? '取消' : 'Cancel'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setIsDeleting(true);
+                      setDeleteError('');
+                      const res = await deleteAccount();
+                      if (!res.success) {
+                        setDeleteError(res.error || 'Failed to delete account');
+                        setIsDeleting(false);
+                      }
+                    }}
+                    disabled={isDeleting}
+                    style={{
+                      padding: '7px 16px',
+                      borderRadius: '6px',
+                      background: '#ef4444',
+                      border: 'none',
+                      color: '#ffffff',
+                      fontSize: '12px',
+                      fontWeight: 800,
+                      cursor: isDeleting ? 'wait' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    {isDeleting ? (
+                      <>
+                        <Loader2 size={13} className="animate-spin" />
+                        {language === 'ja' ? '削除中...' : language === 'zh' ? '正在删除...' : 'Deleting...'}
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 size={13} />
+                        {language === 'ja' ? 'はい、完全削除します' : language === 'zh' ? '确认完全删除' : 'Yes, Delete Account'}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Action Row */}

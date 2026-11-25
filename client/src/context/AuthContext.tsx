@@ -43,6 +43,7 @@ interface AuthContextType {
     tradingStyle?: UserProfile['tradingStyle'];
   }) => Promise<{ success: boolean; error?: string }>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<{ success: boolean; error?: string }>;
+  deleteAccount: () => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   openAuthModal: (initialTab?: 'signin' | 'register') => void;
   closeAuthModal: () => void;
@@ -308,6 +309,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsProfileModalOpen(false);
   };
 
+  const deleteAccount = async (): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const token = getStoredAuthToken();
+      if (token) {
+        await fetch('/api/auth/account', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }).catch(() => {});
+      }
+      logout();
+      fetchCanonicalStats(true);
+      return { success: true };
+    } catch (err) {
+      logout();
+      return { success: false, error: err instanceof Error ? err.message : 'Error deleting account' };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -316,6 +338,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         register,
         updateProfile,
+        deleteAccount,
         logout,
         openAuthModal,
         closeAuthModal,

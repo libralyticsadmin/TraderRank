@@ -17,7 +17,21 @@
 import { r2Storage } from './r2StorageService.js';
 import { EMERALD_BEAR_AVATAR_URL } from '../core/avatarPresets.js';
 
-export const LEGACY_IDENTITY_MARKER_KEY = 'migrations/legacy-identities-v1.json';
+export const LEGACY_IDENTITY_MARKER_KEY = 'migrations/legacy-identities-v2.json';
+
+export const PURGED_LEGACY_IDENTITIES = [
+  'u_homiesplant_th',
+  'u_homiesplant',
+  'homiesplant',
+  'u_homeisplant',
+  'homeisplant',
+  'usr_meta_72423906',
+] as const;
+
+export const PURGED_LEGACY_LOGINS = [
+  '411407722',
+  '72423906',
+] as const;
 
 export const IDENTITY_STORE_KEYS = {
   owners: 'profiles/account_owners.json',
@@ -48,8 +62,6 @@ export interface LegacyIdentity {
 
 export const LEGACY_IDENTITIES: readonly LegacyIdentity[] = [
   { login: '342186831', userId: 'u_zzzemzzz', username: 'zzZEMZzz', broker: 'XM', serverName: 'XMGlobal-MT5 10', platform: 'MT5', currency: 'USD', avatarUrl: EMERALD_BEAR_AVATAR_URL },
-  { login: '411407722', userId: 'u_homiesplant_th', username: 'HomiesPlant', broker: 'XM', serverName: 'XMGlobal-MT5 16', platform: 'MT5', currency: 'USD', avatarUrl: EMERALD_BEAR_AVATAR_URL },
-  { login: '72423906', userId: 'u_homiesplant_th', username: 'HomiesPlant', broker: 'XMTrading', serverName: 'XMTrading-MT5 3', platform: 'MT5', currency: 'JPY', avatarUrl: EMERALD_BEAR_AVATAR_URL },
 ];
 
 /** Legacy userId aliases (lower-case) -> canonical userId. */
@@ -57,15 +69,6 @@ export const LEGACY_USER_ALIASES: Readonly<Record<string, string>> = {
   zzzemzzz: 'u_zzzemzzz',
   emanuel001: 'u_zzzemzzz',
   u_emanuel001: 'u_zzzemzzz',
-  emanuel007: 'u_homiesplant_th',
-  u_emanuel007: 'u_homiesplant_th',
-  u_homiesplant: 'u_homiesplant_th',
-  homiesplant: 'u_homiesplant_th',
-  'homiesplant.th': 'u_homiesplant_th',
-  homiesplant_th: 'u_homiesplant_th',
-  u_homeisplant: 'u_homiesplant_th',
-  homeisplant: 'u_homiesplant_th',
-  usr_meta_72423906: 'u_homiesplant_th',
 };
 
 export interface MigrationChange {
@@ -122,6 +125,40 @@ export async function runLegacyIdentityMigration(
   const credentials = asObject(loaded.credentials);
   const tournaments = asObject(loaded.tournaments);
   const changes: MigrationChange[] = [];
+
+  // Purge removed legacy identities so the user can register fresh with their username/email
+  for (const id of PURGED_LEGACY_IDENTITIES) {
+    if (id in profiles) {
+      delete profiles[id];
+      changes.push({ store: 'profiles', key: id, action: 'delete', detail: 'purged legacy identity' });
+    }
+    if (id in credentials) {
+      delete credentials[id];
+      changes.push({ store: 'credentials', key: id, action: 'delete', detail: 'purged legacy identity' });
+    }
+    if (id in usernames) {
+      delete usernames[id];
+      changes.push({ store: 'usernames', key: id, action: 'delete', detail: 'purged legacy identity' });
+    }
+    if (id in avatars) {
+      delete avatars[id];
+      changes.push({ store: 'avatars', key: id, action: 'delete', detail: 'purged legacy identity' });
+    }
+  }
+  for (const login of PURGED_LEGACY_LOGINS) {
+    if (login in owners) {
+      delete owners[login];
+      changes.push({ store: 'owners', key: login, action: 'delete', detail: 'purged legacy account' });
+    }
+    if (login in usernames) {
+      delete usernames[login];
+      changes.push({ store: 'usernames', key: login, action: 'delete', detail: 'purged legacy account' });
+    }
+    if (login in avatars) {
+      delete avatars[login];
+      changes.push({ store: 'avatars', key: login, action: 'delete', detail: 'purged legacy account' });
+    }
+  }
 
   // 1. Rewrite legacy userId aliases in stored data.
   for (const [key, rec] of Object.entries(owners)) {

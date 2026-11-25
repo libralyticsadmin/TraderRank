@@ -182,6 +182,32 @@ export class AuthService {
     return this.credentials.get(clean) || null;
   }
 
+  public async deleteUser(userIdOrEmailOrUsername: string): Promise<boolean> {
+    await this.ensureLoaded();
+    const clean = String(userIdOrEmailOrUsername || '').trim().toLowerCase();
+    let cred = this.credentials.get(clean);
+    if (!cred) {
+      for (const c of this.credentials.values()) {
+        if (
+          c.userId.toLowerCase() === clean ||
+          c.email.toLowerCase() === clean ||
+          c.username.toLowerCase() === clean
+        ) {
+          cred = c;
+          break;
+        }
+      }
+    }
+    if (!cred) return false;
+
+    this.credentials.delete(cred.userId);
+    this.credentials.delete(cred.userId.toLowerCase());
+    this.credentials.delete(cred.email.toLowerCase());
+    this.credentials.delete(cred.username.toLowerCase());
+    await this.persistCredentials();
+    return true;
+  }
+
   public async resetAll(): Promise<void> {
     this.credentials.clear();
     await this.persistCredentials();

@@ -44,18 +44,14 @@ describe('Legacy identity migration (data, not code)', () => {
 
     const owners = mem.read(IDENTITY_STORE_KEYS.owners);
     expect(owners['342186831']).toMatchObject({ userId: 'u_zzzemzzz', username: 'zzZEMZzz', broker: 'XM', serverName: 'XMGlobal-MT5 10' });
-    expect(owners['411407722']).toMatchObject({ userId: 'u_homiesplant_th', username: 'HomiesPlant', broker: 'XM', serverName: 'XMGlobal-MT5 16' });
-    expect(owners['72423906']).toMatchObject({ userId: 'u_homiesplant_th', username: 'HomiesPlant', broker: 'XMTrading', serverName: 'XMTrading-MT5 3' });
 
     const usernames = mem.read(IDENTITY_STORE_KEYS.usernames);
     expect(usernames['u_zzzemzzz']).toBe('zzZEMZzz');
-    expect(usernames['72423906']).toBe('HomiesPlant');
     const avatars = mem.read(IDENTITY_STORE_KEYS.avatars);
-    expect(avatars['u_homiesplant_th']).toBe(EMERALD_BEAR_AVATAR_URL);
+    expect(avatars['u_zzzemzzz']).toBe(EMERALD_BEAR_AVATAR_URL);
 
     const profiles = mem.read(IDENTITY_STORE_KEYS.profiles);
     expect(profiles['u_zzzemzzz']).toMatchObject({ id: 'u_zzzemzzz', username: 'zzZEMZzz', avatarUrl: EMERALD_BEAR_AVATAR_URL });
-    expect(profiles['u_homiesplant_th']).toMatchObject({ id: 'u_homiesplant_th', username: 'HomiesPlant' });
     expect(mem.read(LEGACY_IDENTITY_MARKER_KEY)).toMatchObject({ migration: 'legacy-identities-v1' });
   });
 
@@ -92,19 +88,19 @@ describe('Legacy identity migration (data, not code)', () => {
   it('rewrites legacy userId aliases in stored data and keeps unrelated records', async () => {
     const mem = memoryStorage({
       [IDENTITY_STORE_KEYS.owners]: {
-        '72423906': { userId: 'usr_meta_72423906', accountNumber: '72423906', broker: 'XMTrading', connectedAt: '2026-05-01T00:00:00.000Z', status: 'CONNECTED' },
+        '342186831': { userId: 'u_emanuel001', accountNumber: '342186831', broker: 'XM', connectedAt: '2026-05-01T00:00:00.000Z', status: 'CONNECTED' },
         '55500011': { userId: 'u_someone_else', accountNumber: '55500011', broker: 'Exness', connectedAt: '2026-05-01T00:00:00.000Z', status: 'CONNECTED' },
       },
       [IDENTITY_STORE_KEYS.usernames]: { u_emanuel001: 'Emanuel001', '55500011': 'SomeoneElse' },
-      [IDENTITY_STORE_KEYS.profiles]: { u_homiesplant: { id: 'u_homiesplant', username: 'HomiesPlant', bio: 'kept' } },
-      [IDENTITY_STORE_KEYS.credentials]: { u_homiesplant: { userId: 'u_homiesplant', email: 'h@example.com', username: 'HomiesPlant', salt: 's', hash: 'h' } },
-      [IDENTITY_STORE_KEYS.tournaments]: { t1: { standings: [{ userId: 'usr_meta_72423906', rank: 1 }, { userId: 'u_x', rank: 2 }] } },
+      [IDENTITY_STORE_KEYS.profiles]: { u_emanuel001: { id: 'u_emanuel001', username: 'Emanuel001', bio: 'kept' } },
+      [IDENTITY_STORE_KEYS.credentials]: { u_emanuel001: { userId: 'u_emanuel001', email: 'e@example.com', username: 'Emanuel001', salt: 's', hash: 'h' } },
+      [IDENTITY_STORE_KEYS.tournaments]: { t1: { standings: [{ userId: 'u_emanuel001', rank: 1 }, { userId: 'u_x', rank: 2 }] } },
     });
     await runLegacyIdentityMigration({ storage: mem.storage });
 
     const owners = mem.read(IDENTITY_STORE_KEYS.owners);
-    expect(owners['72423906'].userId).toBe('u_homiesplant_th');
-    expect(owners['72423906'].connectedAt).toBe('2026-05-01T00:00:00.000Z');
+    expect(owners['342186831'].userId).toBe('u_zzzemzzz');
+    expect(owners['342186831'].connectedAt).toBe('2026-05-01T00:00:00.000Z');
     expect(owners['55500011'].userId).toBe('u_someone_else');
 
     const usernames = mem.read(IDENTITY_STORE_KEYS.usernames);
@@ -112,26 +108,26 @@ describe('Legacy identity migration (data, not code)', () => {
     expect(usernames['55500011']).toBe('SomeoneElse');
 
     const profiles = mem.read(IDENTITY_STORE_KEYS.profiles);
-    expect(profiles['u_homiesplant']).toBeUndefined();
-    expect(profiles['u_homiesplant_th']).toMatchObject({ id: 'u_homiesplant_th', bio: 'kept' });
+    expect(profiles['u_emanuel001']).toBeUndefined();
+    expect(profiles['u_zzzemzzz']).toMatchObject({ id: 'u_zzzemzzz', bio: 'kept' });
     const creds = mem.read(IDENTITY_STORE_KEYS.credentials);
-    expect(creds['u_homiesplant']).toBeUndefined();
-    expect(creds['u_homiesplant_th']).toMatchObject({ userId: 'u_homiesplant_th', email: 'h@example.com' });
+    expect(creds['u_emanuel001']).toBeUndefined();
+    expect(creds['u_zzzemzzz']).toMatchObject({ userId: 'u_zzzemzzz', email: 'e@example.com' });
 
     const standings = mem.read(IDENTITY_STORE_KEYS.tournaments).t1.standings;
-    expect(standings.map((s: { userId: string }) => s.userId)).toEqual(['u_homiesplant_th', 'u_x']);
+    expect(standings.map((s: { userId: string }) => s.userId)).toEqual(['u_zzzemzzz', 'u_x']);
   });
 
   it('leaves both users untouched (and reports a conflict) when alias and canonical users both exist', async () => {
     const mem = memoryStorage({
       [IDENTITY_STORE_KEYS.profiles]: {
-        u_homiesplant: { id: 'u_homiesplant', username: 'A' },
-        u_homiesplant_th: { id: 'u_homiesplant_th', username: 'B' },
+        u_emanuel001: { id: 'u_emanuel001', username: 'A' },
+        u_zzzemzzz: { id: 'u_zzzemzzz', username: 'B' },
       },
     });
     const res = await runLegacyIdentityMigration({ storage: mem.storage });
-    expect(res.changes.some(c => c.action === 'conflict' && c.key === 'u_homiesplant')).toBe(true);
-    expect(mem.read(IDENTITY_STORE_KEYS.profiles)['u_homiesplant']).toMatchObject({ username: 'A' });
+    expect(res.changes.some(c => c.action === 'conflict' && c.key === 'u_emanuel001')).toBe(true);
+    expect(mem.read(IDENTITY_STORE_KEYS.profiles)['u_emanuel001']).toMatchObject({ username: 'A' });
   });
 });
 
@@ -218,18 +214,10 @@ describe('Migrated identities through live cloud sync (stubbed MetaApi)', () => 
   it('shows migrated users on the leaderboard with their profile usernames and avatars', () => {
     const lb = leaderboard.getLeaderboard(500);
     const zem = lb.find(e => e.userId === 'u_zzzemzzz');
-    const hp = lb.find(e => e.userId === 'u_homiesplant_th');
     expect(zem).toMatchObject({ username: 'zzZEMZzz', profileName: 'zzZEMZzz', avatarUrl: EMERALD_BEAR_AVATAR_URL });
-    expect(hp).toMatchObject({ username: 'HomiesPlant', profileName: 'HomiesPlant', avatarUrl: EMERALD_BEAR_AVATAR_URL });
   });
 
-  it('lists all of an owner\'s accounts, including 72423906 with its broker currency', () => {
-    const hpAccounts = connector.getAccounts('u_homiesplant_th');
-    const byLogin = Object.fromEntries(hpAccounts.map(a => [a.accountNumber, a]));
-    expect(Object.keys(byLogin).sort()).toEqual(['411407722', '72423906']);
-    expect(byLogin['72423906']).toMatchObject({ profileUsername: 'HomiesPlant', currency: 'JPY', broker: 'XMTrading', balance: 1234567 });
-    expect(byLogin['411407722']).toMatchObject({ currency: 'USD', broker: 'XM' });
-
+  it('lists all of an owner\'s accounts with its broker currency', () => {
     const zem = connector.getAccounts('u_zzzemzzz');
     expect(zem.map(a => a.accountNumber)).toEqual(['342186831']);
     expect(zem[0]).toMatchObject({ profileUsername: 'zzZEMZzz', avatarUrl: EMERALD_BEAR_AVATAR_URL, currency: 'USD' });

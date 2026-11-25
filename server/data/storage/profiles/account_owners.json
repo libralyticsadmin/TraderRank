@@ -1,15 +1,4 @@
 {
-  "72423906": {
-    "userId": "u_homiesplant_th",
-    "username": "HomiesPlant",
-    "broker": "XMTrading",
-    "accountNumber": "72423906",
-    "platform": "MT5",
-    "serverName": "XMTrading-MT5 3",
-    "accountId": "acc_meta_72423906",
-    "connectedAt": "2026-11-21T15:08:13.029Z",
-    "status": "CONNECTED"
-  },
   "342186831": {
     "userId": "u_zzzemzzz",
     "username": "zzZEMZzz",
@@ -18,17 +7,6 @@
     "platform": "MT5",
     "serverName": "XMGlobal-MT5 10",
     "accountId": "acc_meta_342186831",
-    "connectedAt": "2026-11-21T15:08:13.029Z",
-    "status": "CONNECTED"
-  },
-  "411407722": {
-    "userId": "u_homiesplant_th",
-    "username": "HomiesPlant",
-    "broker": "XM",
-    "accountNumber": "411407722",
-    "platform": "MT5",
-    "serverName": "XMGlobal-MT5 16",
-    "accountId": "acc_meta_411407722",
     "connectedAt": "2026-11-21T15:08:13.029Z",
     "status": "CONNECTED"
   }

@@ -733,6 +733,49 @@ export function createServer() {
     return res.status(404).json({ success: false, error: 'User profile not found' });
   });
 
+  // Auth: Delete Account (Permanently Purges User, Profiles, Credentials and Broker Accounts)
+  app.delete('/api/auth/account', async (req: Request, res: Response) => {
+    await Promise.all([profilesReadyPromise, authService.ensureLoaded()]);
+    const authSession = extractAuthUser(req);
+    if (!authSession) {
+      return res.status(401).json({ success: false, error: 'Authentication required to delete account' });
+    }
+
+    const targetUserId = authSession.userId;
+    console.log(`[AUTH_DELETE_ACCOUNT] Request to purge user: "${authSession.username}" (${targetUserId})`);
+
+    try {
+      // 1. Purge all linked broker accounts and secrets
+      await connector.purgeUser(targetUserId);
+
+      // 2. Dismiss and cancel any active onboarding jobs
+      const userJobs = onboardingService.listJobsForUser(targetUserId);
+      for (const job of userJobs) {
+        await onboardingService.dismissJob(job.id, targetUserId).catch(() => {});
+      }
+
+      // 3. Delete user profile and persist
+      userProfiles.delete(targetUserId);
+      userProfiles.delete(targetUserId.toLowerCase());
+      await persistUserProfilesToR2();
+
+      // 4. Delete user credentials from auth storage
+      await authService.deleteUser(targetUserId);
+
+      // 5. Invalidate leaderboards and caches
+      leaderboard.updateTraderProfile(targetUserId, {
+        username: 'Deleted User',
+      });
+      invalidateCanonicalStatsCache();
+
+      console.log(`[AUTH_DELETE_ACCOUNT_SUCCESS] User purged: ${targetUserId}`);
+      return res.json({ success: true, message: 'Account and associated data have been permanently deleted.' });
+    } catch (err) {
+      console.error('[AUTH_DELETE_ACCOUNT_ERROR]', err);
+      return res.status(500).json({ success: false, error: 'Failed to delete account. Please try again.' });
+    }
+  });
+
   // Public Community Contenders List (Sanitized: email and account number stripped)
   app.get('/api/users', async (_req: Request, res: Response) => {
     await profilesReadyPromise;
