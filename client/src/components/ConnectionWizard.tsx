@@ -26,6 +26,8 @@ import {
   ChevronDown,
   ChevronUp,
   Gift,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 
 import { BrokerSymbol } from './BrokerSymbol.tsx';
@@ -153,6 +155,10 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
   const [apiKey, setApiKey] = useState('');
   const [apiSecret, setApiSecret] = useState('');
   const [accountId, setAccountId] = useState('');
+
+  // Password visibility
+  const [showPassword, setShowPassword] = useState(false);
+  const [showApiSecret, setShowApiSecret] = useState(false);
 
   // Validation states
   const [isValidating, setIsValidating] = useState(false);
@@ -860,14 +866,37 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
 
                 <div className="form-group" style={{ marginBottom: '10px' }}>
                   <label className="form-label">{t.connector.investorPassword}</label>
-                  <input
-                    type="password"
-                    className="form-input tabular"
-                    value={investorPassword}
-                    onChange={e => setInvestorPassword(e.target.value)}
-                    placeholder="Investor password only"
-                    autoComplete="new-password"
-                  />
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      className="form-input tabular"
+                      value={investorPassword}
+                      onChange={e => setInvestorPassword(e.target.value)}
+                      placeholder="Investor password only"
+                      autoComplete="new-password"
+                      style={{ paddingRight: '38px', width: '100%' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      title={showPassword ? 'Hide password' : 'Show password'}
+                      style={{
+                        position: 'absolute',
+                        right: '8px',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: showPassword ? '#0abab5' : 'var(--text-muted)',
+                      }}
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                   <div style={{ marginTop: '6px', fontSize: '11px', color: '#94a3b8', background: 'rgba(255,255,255,0.03)', padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <ShieldCheck size={14} color="#0abab5" style={{ flexShrink: 0 }} />
@@ -903,14 +932,37 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
                 </div>
                 <div className="form-group" style={{ marginBottom: '10px' }}>
                   <label className="form-label">{t.connector.exnessApiSecret}</label>
-                  <input
-                    type="password"
-                    className="form-input tabular"
-                    value={apiSecret}
-                    onChange={e => setApiSecret(e.target.value)}
-                    placeholder="Secret Key"
-                    autoComplete="new-password"
-                  />
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <input
+                      type={showApiSecret ? 'text' : 'password'}
+                      className="form-input tabular"
+                      value={apiSecret}
+                      onChange={e => setApiSecret(e.target.value)}
+                      placeholder="Secret Key"
+                      autoComplete="new-password"
+                      style={{ paddingRight: '38px', width: '100%' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowApiSecret(!showApiSecret)}
+                      aria-label={showApiSecret ? 'Hide secret key' : 'Show secret key'}
+                      title={showApiSecret ? 'Hide secret key' : 'Show secret key'}
+                      style={{
+                        position: 'absolute',
+                        right: '8px',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: showApiSecret ? '#0abab5' : 'var(--text-muted)',
+                      }}
+                    >
+                      {showApiSecret ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                   <span className="form-tip">
                     <Key size={14} color="#81d8d0" /> {t.connector.exnessApiHint}
                   </span>

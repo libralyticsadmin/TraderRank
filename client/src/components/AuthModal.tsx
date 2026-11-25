@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ShieldCheck, Mail, Lock, User, CheckCircle2, ArrowRight } from 'lucide-react';
+import { X, ShieldCheck, Mail, Lock, User, CheckCircle2, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useTranslation } from '../context/LanguageContext.tsx';
 import { Broker } from '../../../shared/src/types.ts';
@@ -15,6 +15,7 @@ export const AuthModal: React.FC = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showAuthPassword, setShowAuthPassword] = useState(false);
   const [primaryBroker, setPrimaryBroker] = useState<Broker>('Exness');
   const [tradingStyle, setTradingStyle] = useState<'SCALPER' | 'DAY_TRADER' | 'SWING_TRADER' | 'ALGORITHMIC'>('SCALPER');
   const [error, setError] = useState<string | null>(null);
@@ -275,16 +276,16 @@ export const AuthModal: React.FC = () => {
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#94a3b8', marginBottom: '6px' }}>
                 {t.auth.password}
               </label>
-              <div style={{ position: 'relative' }}>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <Lock size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '12px' }} />
                 <input
-                  type="password"
+                  type={showAuthPassword ? 'text' : 'password'}
                   placeholder={t.auth.passwordPlaceholder}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '10px 12px 10px 36px',
+                    padding: '10px 38px 10px 36px',
                     borderRadius: '8px',
                     background: 'rgba(255, 255, 255, 0.05)',
                     border: '1px solid rgba(255, 255, 255, 0.12)',
@@ -294,6 +295,26 @@ export const AuthModal: React.FC = () => {
                     boxSizing: 'border-box',
                   }}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowAuthPassword(!showAuthPassword)}
+                  aria-label={showAuthPassword ? 'Hide password' : 'Show password'}
+                  title={showAuthPassword ? 'Hide password' : 'Show password'}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: showAuthPassword ? '#0abab5' : '#64748b',
+                  }}
+                >
+                  {showAuthPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
             </div>
 
@@ -435,16 +456,16 @@ export const AuthModal: React.FC = () => {
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#94a3b8', marginBottom: '4px' }}>
                 {t.auth.password}
               </label>
-              <div style={{ position: 'relative' }}>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <Lock size={15} color="#64748b" style={{ position: 'absolute', left: '12px', top: '11px' }} />
                 <input
-                  type="password"
+                  type={showAuthPassword ? 'text' : 'password'}
                   placeholder={t.auth.passwordCreatePlaceholder}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '9px 12px 9px 34px',
+                    padding: '9px 38px 9px 34px',
                     borderRadius: '8px',
                     background: 'rgba(255, 255, 255, 0.05)',
                     border: '1px solid rgba(255, 255, 255, 0.12)',
@@ -454,6 +475,26 @@ export const AuthModal: React.FC = () => {
                     boxSizing: 'border-box',
                   }}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowAuthPassword(!showAuthPassword)}
+                  aria-label={showAuthPassword ? 'Hide password' : 'Show password'}
+                  title={showAuthPassword ? 'Hide password' : 'Show password'}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: showAuthPassword ? '#0abab5' : '#64748b',
+                  }}
+                >
+                  {showAuthPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
               </div>
             </div>
 
