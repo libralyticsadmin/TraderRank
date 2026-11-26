@@ -541,7 +541,7 @@ export const TournamentArena: React.FC<TournamentArenaProps> = ({ onOpenConnectW
                   cursor: 'pointer',
                 }}
               >
-                Connect Broker Account
+                {t.nav.connectAccount}
               </button>
             )}
           </div>

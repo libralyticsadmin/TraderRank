@@ -703,7 +703,7 @@ export const App: React.FC = () => {
               }
               setIsWizardOpen(true);
             }}
-            title="Connect MetaTrader 4/5 or Exness broker account"
+            title={t.nav.connectAccount}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -715,7 +715,7 @@ export const App: React.FC = () => {
             }}
           >
             <Plus size={13} />
-            <span>Connect Broker</span>
+            <span>{t.nav.connectAccount}</span>
           </button>
         </div>
       </header>

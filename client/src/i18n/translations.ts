@@ -1804,7 +1804,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       community: 'コミュニティ',
       positions: '保有ポジション',
       securityVault: 'ゼロライト金庫',
-      connectAccount: '+ ブローカー口座を連携する',
+      connectAccount: 'ブローカーを連結する',
       proLeague: 'プロリーグ',
       proSubscriber: 'PRO プラン有効中',
       unlockPro: 'PRO 全機能アクセス',
