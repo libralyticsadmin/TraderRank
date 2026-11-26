@@ -289,12 +289,20 @@ export class MetaApiClient {
             investorPassword
           );
           if (!updated.ok) {
-            console.warn(`[MetaApiClient] Credential update failed on ${found.id}, purging stale account: ${updated.error}`);
-            await this.deleteAccount(found.id).catch(() => {});
+            console.warn(`[MetaApiClient] Credential update failed on ${found.id}: ${updated.error}`);
+            if (updated.status === 404) {
+              this.invalidateAccountListCache();
+              // Account was deleted remotely on MetaApi, proceed to re-provision
+            } else {
+              // Preserve account identity; do not delete on 429 or credential validation failure (TR-05)
+              throw new Error(`MetaApi credential update failed (${updated.status || 0}): ${updated.error || 'rejected'}`);
+            }
           } else {
             await this.deployAccount(found.id).catch(() => {});
             return { id: found.id, isNew: false, state: 'DEPLOYING' };
           }
+        } else {
+          return { id: found.id, isNew: false, state: found.state };
         }
       }
       return { id: found.id, isNew: false, state: found.state };
