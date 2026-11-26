@@ -934,9 +934,9 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
 
       const cf = liveMonthlyCashflows[ym];
       const startingCapital = cf
-        ? Number(Math.max(0.01, cf.activeCapital).toFixed(2))
-        : Number(Math.max(0.01, runningCapital).toFixed(2));
-      const endingCapital = Number(Math.max(0.01, startingCapital + netProfitUsd).toFixed(2));
+        ? Number(Math.max(0, cf.activeCapital).toFixed(2))
+        : Number(Math.max(0, runningCapital).toFixed(2));
+      const endingCapital = Number(Math.max(0, startingCapital + netProfitUsd).toFixed(2));
       const roiPct =
         mTrades.length === 0
           ? 0
@@ -945,7 +945,7 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
           : 0;
 
       // Exact continuous capital into the next month when cashflow record is absent
-      runningCapital = cf ? Number(Math.max(0.01, cf.endBalance).toFixed(2)) : endingCapital;
+      runningCapital = cf ? Number(Math.max(0, cf.endBalance).toFixed(2)) : endingCapital;
 
       // Real rank among connected accounts
       const rank = mTrades.length === 0 ? 0 : Math.min(Math.max(1, trader.rank), liveParticipantsCount);
@@ -993,8 +993,8 @@ export const TraderProfileModal: React.FC<TraderProfileModalProps> = ({ trader, 
     netProfitUsd: 0,
     netPips: 0,
     roiPct: 0,
-    startingCapital: liveAccountBalance ?? 2.8,
-    endingCapital: liveAccountBalance ?? 2.8,
+    startingCapital: liveAccountBalance ?? 0,
+    endingCapital: liveAccountBalance ?? 0,
     tradesCount: 0,
     winCount: 0,
     lossCount: 0,

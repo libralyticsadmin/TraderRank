@@ -96,7 +96,7 @@ export class OnboardingService {
 
   private get timeoutMs(): number {
     const v = Number(process.env.ONBOARDING_TIMEOUT_MS);
-    return Number.isFinite(v) && v > 0 ? v : 5 * 60 * 1000;
+    return Number.isFinite(v) && v > 0 ? v : 10 * 60 * 1000;
   }
 
   /** Test hook. */
@@ -193,10 +193,7 @@ export class OnboardingService {
       existing.reason = undefined;
       existing.deadlineAt = Date.now() + this.timeoutMs;
       existing.nextCheckAt = Date.now();
-      if (existing.metaApiAccountId) {
-        await this.metaApi.deleteAccount(existing.metaApiAccountId).catch(() => false);
-        existing.metaApiAccountId = undefined;
-      }
+      // Preserve existing.metaApiAccountId so credentials update in-place without triggering 202 provisioning cooldowns (TR-05)
       this.schedulePersist();
       this.runJob(existing.id).catch(() => {});
       return existing;
@@ -375,6 +372,7 @@ export class OnboardingService {
     job.status = 'CONNECTING';
     job.error = undefined;
     job.attempts = 0; // Reset attempts so broker connection check has a clean counter
+    job.deadlineAt = Date.now() + this.timeoutMs; // Reset full deadline window for broker connection verification
     job.nextCheckAt = Date.now() + 2000;
   }
 
@@ -402,8 +400,8 @@ export class OnboardingService {
         }
       }
       // If the terminal explicitly reports DISCONNECTED_FROM_BROKER after repeated checks,
-      // the broker server has actively rejected the credentials or closed the socket.
-      if (state.connectionStatus === 'DISCONNECTED_FROM_BROKER' && job.attempts >= 4) {
+      // allow at least 20 attempts (~3-4 minutes) before assuming bad credentials unless an explicit reason is populated.
+      if (state.connectionStatus === 'DISCONNECTED_FROM_BROKER' && job.attempts >= 20) {
         await this.fail(job, 'INVALID_CREDENTIALS', 'Broker rejected login credentials or account number.');
         return;
       }
@@ -478,8 +476,8 @@ export class OnboardingService {
       await this.metaApi.undeployAccount(job.metaApiAccountId).catch(() => false);
     }
 
-    // Clean up rejected, rate-limited, unreachable, or timed-out accounts so no contaminated zombie state persists in MetaApi
-    if (job.metaApiAccountId && (reason === 'INVALID_CREDENTIALS' || reason === 'RATE_LIMITED' || reason === 'TIMEOUT' || reason === 'SERVER_NOT_FOUND' || reason === 'BROKER_UNREACHABLE')) {
+    // Clean up rejected or invalid servers, but preserve account identity on TIMEOUT or ordinary INVALID_CREDENTIALS so retry/edit credentials can succeed without 202 cooldown (TR-05)
+    if (job.metaApiAccountId && (reason === 'SERVER_NOT_FOUND' || reason === 'BROKER_UNREACHABLE')) {
       await this.metaApi.deleteAccount(job.metaApiAccountId).catch(() => false);
     }
 
