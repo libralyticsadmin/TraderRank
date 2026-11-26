@@ -1258,25 +1258,42 @@ const getLocalTraderUsername = (accountNumber?: string | null, userId?: string |
   if (typeof window === 'undefined') return null;
   try {
     const cleanAcc = accountNumber ? String(accountNumber).replace(/^TraderRank-/i, '').trim() : '';
-    const mapRaw = localStorage.getItem('traderank_account_usernames_v1');
-    if (mapRaw) {
-      const map = JSON.parse(mapRaw);
-      if (cleanAcc && map[cleanAcc] && !isRawAccountTag(map[cleanAcc])) {
-        return String(map[cleanAcc]).trim();
-      }
-      if (userId && map[userId] && !isRawAccountTag(map[userId])) {
-        return String(map[userId]).trim();
-      }
-    }
 
+    let activeUsername: string | null = null;
+    let activeUserId: string | null = null;
     const userRaw = localStorage.getItem('traderank_auth_user_v1');
     if (userRaw) {
       const savedUser = JSON.parse(userRaw);
       if (savedUser?.username && !isRawAccountTag(savedUser.username)) {
-        const sName = String(savedUser.username).trim();
-        if (userId && (savedUser.id === userId || userId === 'usr_live_meta')) {
-          return sName;
+        activeUsername = String(savedUser.username).trim();
+      }
+      if (savedUser?.id) {
+        activeUserId = String(savedUser.id).trim();
+      }
+    }
+
+    const mapRaw = localStorage.getItem('traderank_account_usernames_v1');
+    if (mapRaw) {
+      const map = JSON.parse(mapRaw);
+      if (cleanAcc && map[cleanAcc] && !isRawAccountTag(map[cleanAcc])) {
+        const val = String(map[cleanAcc]).trim();
+        if (activeUsername && activeUsername.toLowerCase() === val.toLowerCase()) {
+          return activeUsername;
         }
+        return val;
+      }
+      if (userId && map[userId] && !isRawAccountTag(map[userId])) {
+        const val = String(map[userId]).trim();
+        if (activeUsername && activeUsername.toLowerCase() === val.toLowerCase()) {
+          return activeUsername;
+        }
+        return val;
+      }
+    }
+
+    if (activeUsername && (userId || cleanAcc)) {
+      if (userId && (activeUserId === userId || userId === 'usr_live_meta')) {
+        return activeUsername;
       }
     }
   } catch {
@@ -1360,19 +1377,19 @@ export const resolveTraderIdentity = (params: {
     ? rawUser
     : null;
 
-  // 2. Resolve Trader Profile Username (Priority: local user profile username -> server profile -> default handle)
+  // 2. Resolve Trader Profile Username (Priority: caller/server profile -> local user profile username -> default handle)
   const cleanAcc = accountNumber ? String(accountNumber).replace(/^TraderRank-/i, '').trim() : '';
 
   // Only the public profile username is used; the broker legal name is never shown here.
   let profileName = '';
   const localUsername = getLocalTraderUsername(accountNumber, rawUid);
 
-  if (localUsername) {
-    profileName = localUsername;
-  } else if (!isRawAccountTag(rawProfile)) {
+  if (!isRawAccountTag(rawProfile)) {
     profileName = rawProfile;
   } else if (!isRawAccountTag(rawUser)) {
     profileName = rawUser;
+  } else if (localUsername) {
+    profileName = localUsername;
   } else {
     profileName = getDefaultTraderHandle(accountNumber, accountTag || rawUser || rawUid);
   }

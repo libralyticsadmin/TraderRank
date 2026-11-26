@@ -400,7 +400,9 @@ export const App: React.FC = () => {
   };
 
   const handleSelectTrader = (t: { userId?: string; username: string; broker?: Broker; rank?: number; score?: number; winRate?: number; tradesCount?: number; avatarUrl?: string }) => {
-    const cleanUsername = t.username;
+    const cleanUsername = user && user.username.toLowerCase() === t.username.toLowerCase()
+      ? user.username
+      : t.username;
     const safeBroker: Broker = t.broker || 'Exness';
 
     const matchedLb = leaderboard.find(

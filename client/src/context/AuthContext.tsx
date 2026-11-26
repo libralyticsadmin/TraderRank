@@ -146,6 +146,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       if (user) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+
+        // Reconcile client username cache so case updates (e.g. homiesplant vs HomiesPlant) reflect immediately
+        try {
+          const mapRaw = localStorage.getItem('traderank_account_usernames_v1');
+          if (mapRaw && user.username) {
+            const map = JSON.parse(mapRaw);
+            let changed = false;
+            for (const [k, v] of Object.entries(map)) {
+              if (typeof v === 'string' && v.toLowerCase() === user.username.toLowerCase() && v !== user.username) {
+                map[k] = user.username;
+                changed = true;
+              }
+            }
+            if (changed) {
+              localStorage.setItem('traderank_account_usernames_v1', JSON.stringify(map));
+            }
+          }
+        } catch {
+          // ignore cache reconciliation error
+        }
+
         const token = localStorage.getItem(TOKEN_STORAGE_KEY);
         if (token) {
           fetch('/api/auth/profile', {
