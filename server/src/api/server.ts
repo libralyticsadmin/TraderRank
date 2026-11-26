@@ -777,9 +777,7 @@ export function createServer() {
       await authService.deleteUser(targetUserId);
 
       // 5. Invalidate leaderboards and caches
-      leaderboard.updateTraderProfile(targetUserId, {
-        username: 'Deleted User',
-      });
+      leaderboard.removeTrader(targetUserId);
       invalidateCanonicalStatsCache();
 
       console.log(`[AUTH_DELETE_ACCOUNT_SUCCESS] User purged: ${targetUserId}`);
@@ -864,7 +862,9 @@ export function createServer() {
         const existingOwnerId = connector.findOwnerUserIdByLogin(targetLogin);
         if (existingOwnerId && !AccountConnectorService.isSameOwner(existingOwnerId, authSession.userId)) {
           const existingUser = await authService.findUserById(existingOwnerId);
-          if (existingUser) {
+          const profileExists = userProfiles.has(existingOwnerId);
+          const hasActiveAccounts = connector.getAccounts(existingOwnerId).length > 0;
+          if (existingUser || profileExists || hasActiveAccounts) {
             return res.status(409).json({
               success: false,
               error: `Trading account ${targetLogin} is already bound to another TradeRank player.`,

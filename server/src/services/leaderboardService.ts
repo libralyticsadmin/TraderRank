@@ -332,6 +332,55 @@ export class LeaderboardService {
     }
   }
 
+  public removeTrader(userId: string): void {
+    const cleanUser = String(userId || '').trim().toLowerCase();
+    const cleanNoU = cleanUser.replace(/^u_/, '');
+    let removed = false;
+    for (const [uid, trader] of Array.from(this.traders.entries())) {
+      const tUid = (trader.userId || '').toLowerCase();
+      const tUname = (trader.username || '').toLowerCase();
+      if (
+        uid.toLowerCase() === cleanUser ||
+        uid.toLowerCase() === `u_${cleanNoU}` ||
+        uid.toLowerCase() === cleanNoU ||
+        tUid === cleanUser ||
+        tUid === `u_${cleanNoU}` ||
+        tUid === cleanNoU ||
+        tUname === cleanNoU
+      ) {
+        for (const acc of trader.accounts) {
+          this.accountToUser.delete(acc);
+          this.accountHealth.delete(acc);
+        }
+        this.traders.delete(uid);
+        removed = true;
+      }
+    }
+    if (removed) {
+      this.emitLeaderboardUpdate(true);
+    }
+  }
+
+  public removeAccount(accountId: string, accountNumber?: string): void {
+    this.accountHealth.set(accountId, { state: 'REMOVED', since: new Date().toISOString() });
+    this.accountToUser.delete(accountId);
+    const cleanAcc = accountNumber ? String(accountNumber).replace(/^TraderRank-/i, '').trim() : '';
+
+    let changed = false;
+    for (const [uid, trader] of Array.from(this.traders.entries())) {
+      if (trader.accounts.has(accountId) || (cleanAcc && trader.accountNumber === cleanAcc)) {
+        trader.accounts.delete(accountId);
+        if (trader.accounts.size === 0) {
+          this.traders.delete(uid);
+        }
+        changed = true;
+      }
+    }
+    if (changed) {
+      this.emitLeaderboardUpdate(true);
+    }
+  }
+
   /**
    * Sorts traders by all-time total pips (closed + floating) in descending order.
    */

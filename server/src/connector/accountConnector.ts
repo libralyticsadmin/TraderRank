@@ -1231,6 +1231,7 @@ export class AccountConnectorService {
       this.rawDealsCache.delete(accountId);
       this.lastDealSyncAt.delete(accountId);
       this.lastDealCursorTime.delete(accountId);
+      this.leaderboard.removeAccount(accountId, account.accountNumber);
     }
 
     // Update persistent account ownership status
@@ -1297,6 +1298,10 @@ export class AccountConnectorService {
     this.traderAvatars.delete(userId);
     this.traderAvatars.delete(cleanUser);
     this.traderAvatars.delete(cleanNoU);
+    this.leaderboard.removeTrader(userId);
+    import('../services/onboardingService.js')
+      .then(m => m.OnboardingService.getInstance().purgeJobsForUser(userId))
+      .catch(() => {});
     await Promise.all([
       this.persistTraderUsernamesToR2().catch(() => {}),
       this.persistTraderAvatarsToR2().catch(() => {}),
@@ -1323,9 +1328,16 @@ export class AccountConnectorService {
       const accNum = String(acc.accountNumber || '').replace(/^TraderRank-/i, '').trim();
       if (accNum === clean || accId === `acc_meta_${clean}`) {
         this.accounts.delete(accId);
+        this.tradesStorage.delete(accId);
+        this.rawDealsCache.delete(accId);
+        this.leaderboard.removeAccount(accId, clean);
         changed = true;
       }
     }
+    this.leaderboard.removeAccount(`acc_meta_${clean}`, clean);
+    import('../services/onboardingService.js')
+      .then(m => m.OnboardingService.getInstance().purgeJobsForAccount(clean))
+      .catch(() => {});
     if (changed) {
       await this.persistAccountOwnersToR2();
     }

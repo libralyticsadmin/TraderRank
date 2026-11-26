@@ -147,7 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (user) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
 
-        // Reconcile client username cache so case updates (e.g. homiesplant vs HomiesPlant) reflect immediately
+        // Reconcile client username cache so case updates reflect immediately
         try {
           const mapRaw = localStorage.getItem('traderank_account_usernames_v1');
           if (mapRaw && user.username) {

@@ -256,6 +256,47 @@ export class OnboardingService {
     return true;
   }
 
+  public async purgeJobsForUser(userId: string): Promise<number> {
+    await this.ensureLoaded();
+    let count = 0;
+    for (const [id, job] of Array.from(this.jobs.entries())) {
+      if (AccountConnectorService.isSameOwner(job.userId, userId)) {
+        if (job.metaApiAccountId && (job.status === 'PROVISIONING' || job.status === 'CONNECTING')) {
+          await this.metaApi.deleteAccount(job.metaApiAccountId).catch(() => false);
+        }
+        await this.revokeCreds(job).catch(() => {});
+        this.jobs.delete(id);
+        count++;
+      }
+    }
+    if (count > 0) {
+      this.schedulePersist();
+    }
+    return count;
+  }
+
+  public async purgeJobsForAccount(login: string): Promise<number> {
+    await this.ensureLoaded();
+    const clean = String(login || '').replace(/^TraderRank-/i, '').trim();
+    if (!clean) return 0;
+    let count = 0;
+    for (const [id, job] of Array.from(this.jobs.entries())) {
+      const jobLogin = String(job.login || '').replace(/^TraderRank-/i, '').trim();
+      if (jobLogin === clean) {
+        if (job.metaApiAccountId && (job.status === 'PROVISIONING' || job.status === 'CONNECTING')) {
+          await this.metaApi.deleteAccount(job.metaApiAccountId).catch(() => false);
+        }
+        await this.revokeCreds(job).catch(() => {});
+        this.jobs.delete(id);
+        count++;
+      }
+    }
+    if (count > 0) {
+      this.schedulePersist();
+    }
+    return count;
+  }
+
   public toView(job: OnboardingJob): OnboardingJobView {
     const { vaultSecretRef: _v, metaApiAccountId: _m, createdMetaApiAccount: _c, nextCheckAt: _n, ...rest } = job;
     const account = job.accountId ? AccountConnectorService.getInstance().getAccount(job.accountId) || undefined : undefined;
