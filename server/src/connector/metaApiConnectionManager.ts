@@ -39,6 +39,7 @@ export type StateChangeListener = (newState: ConnectionState, oldState: Connecti
 export class MetaApiConnectionManager {
   private state: ConnectionState = 'DISCONNECTED';
   private stateListeners: Set<StateChangeListener> = new Set();
+  private currentAttempt = 0;
 
   private reconnectAttempts = 0;
   private connectedAt: number | null = null;
@@ -103,13 +104,14 @@ export class MetaApiConnectionManager {
     connectFn: () => Promise<void>,
     syncFn?: () => Promise<void>
   ): Promise<void> {
+    const attempt = ++this.currentAttempt;
     this.isExplicitlyClosed = false;
     this.clearTimers();
     this.transition('CONNECTING');
 
     try {
       await connectFn();
-      if (this.isExplicitlyClosed) return;
+      if (this.isExplicitlyClosed || attempt !== this.currentAttempt) return;
 
       if (syncFn) {
         this.transition('SYNCHRONIZING');
@@ -130,12 +132,13 @@ export class MetaApiConnectionManager {
             syncTimeoutHandle = null;
           }
         }
-        if (this.isExplicitlyClosed) return;
+        if (this.isExplicitlyClosed || attempt !== this.currentAttempt) return;
       }
 
       this.transition('SYNCHRONIZED');
       this.startHeartbeat();
     } catch (err: unknown) {
+      if (this.isExplicitlyClosed || attempt !== this.currentAttempt) return;
       const msg = err instanceof Error ? err.message : String(err);
       this.transition('FAILED', msg);
 
@@ -195,6 +198,7 @@ export class MetaApiConnectionManager {
   }
 
   public async disconnect(): Promise<void> {
+    this.currentAttempt++;
     this.isExplicitlyClosed = true;
     this.clearTimers();
     this.transition('DISCONNECTED');

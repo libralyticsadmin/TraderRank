@@ -23,6 +23,7 @@ export class R2StorageService {
   private config: R2Config;
   private inMemoryFallback = new Map<string, string>();
   private writeQueues = new Map<string, Promise<unknown>>();
+  private dirtyKeys = new Set<string>();
   private localBaseDir: string;
 
   constructor(customConfig?: Partial<R2Config>) {
@@ -201,6 +202,7 @@ export class R2StorageService {
     const bodyStr = JSON.stringify(data, null, 2);
     let localSaved = false;
     let localError: Error | null = null;
+    this.dirtyKeys.add(key);
     try {
       this.saveToLocalDisk(key, bodyStr);
       this.inMemoryFallback.set(key, bodyStr);
@@ -216,7 +218,9 @@ export class R2StorageService {
       .catch(() => {})
       .then(async () => {
         try {
-          return await this.performCloudUpload(key, bodyStr, metadata);
+          const res = await this.performCloudUpload(key, bodyStr, metadata);
+          this.dirtyKeys.delete(key);
+          return res;
         } catch (cloudErr) {
           if (!localSaved) {
             throw new Error(`Dual storage failure for ${key}: cloud upload failed (${cloudErr instanceof Error ? cloudErr.message : String(cloudErr)}) and local write failed (${localError?.message || 'unknown error'})`);
@@ -286,6 +290,18 @@ export class R2StorageService {
         });
         const res = await this.client.send(cmd);
         if (res.Body) {
+          const remoteMtime = res.LastModified ? res.LastModified.getTime() : 0;
+          const isLocalNewer = (localMtime > 0 && remoteMtime > 0 && localMtime > remoteMtime + 1000) || this.dirtyKeys.has(key);
+          if (isLocalNewer) {
+            const diskStr = this.readFromLocalDisk(key);
+            if (diskStr) {
+              try {
+                const parsed = JSON.parse(diskStr) as T;
+                this.inMemoryFallback.set(key, diskStr);
+                return parsed;
+              } catch {}
+            }
+          }
           const bodyStr = await res.Body.transformToString();
           this.saveToLocalDisk(key, bodyStr);
           this.inMemoryFallback.set(key, bodyStr);
@@ -337,6 +353,14 @@ export class R2StorageService {
       try {
         const res = await this.client.send(new GetObjectCommand({ Bucket: this.config.bucketName, Key: key }));
         if (!res.Body) throw new Error(`R2 returned no body for ${key}`);
+        const remoteMtime = res.LastModified ? res.LastModified.getTime() : 0;
+        const isLocalNewer = (localMtime > 0 && remoteMtime > 0 && localMtime > remoteMtime + 1000) || this.dirtyKeys.has(key);
+        if (isLocalNewer && fs.existsSync(localFilePath)) {
+          const diskStr = fs.readFileSync(localFilePath, 'utf-8');
+          const parsed = JSON.parse(diskStr) as T;
+          this.inMemoryFallback.set(key, diskStr);
+          return parsed;
+        }
         const bodyStr = await res.Body.transformToString();
         const parsed = JSON.parse(bodyStr) as T; // throws on corrupt data
         this.saveToLocalDisk(key, bodyStr);
