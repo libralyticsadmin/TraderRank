@@ -545,7 +545,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
         {/* Step 2: Route Selection */}
         {step === 2 && (
           <div>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '6px' }}>{t.connector.routeTitle} ({selectedBroker})</h2>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '6px' }}>{t.connector.routeTitle.replace('{broker}', selectedBroker || 'Broker')}</h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '18px' }}>
               {t.connector.routeDesc}
             </p>
@@ -616,7 +616,7 @@ export const ConnectionWizard: React.FC<ConnectionWizardProps> = ({ onClose, onS
             <div className="security-callout" style={{ padding: '8px 12px', marginBottom: '10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Lock size={15} color="#00f0ff" style={{ flexShrink: 0 }} />
               <div>
-                <strong>{t.connector.securityCalloutTitle}:</strong> Read-only access. Investor passwords cannot trade. AES-256-GCM encrypted.
+                <strong>{t.connector.securityCalloutTitle.replace(/:$/, '')}:</strong> Read-only access. Investor passwords cannot trade. AES-256-GCM encrypted.
               </div>
             </div>
 
