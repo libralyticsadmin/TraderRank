@@ -17,7 +17,7 @@
 import { r2Storage } from './r2StorageService.js';
 import { EMERALD_BEAR_AVATAR_URL } from '../core/avatarPresets.js';
 
-export const LEGACY_IDENTITY_MARKER_KEY = 'migrations/legacy-identities-v4.json';
+export const LEGACY_IDENTITY_MARKER_KEY = 'migrations/legacy-identities-v5.json';
 
 export const PURGED_LEGACY_IDENTITIES = [
   'u_homiesplant_th',
