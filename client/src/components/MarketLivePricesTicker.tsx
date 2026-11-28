@@ -147,6 +147,7 @@ export const MarketLivePricesTicker: React.FC = () => {
   // Fetch live server quotes
   useEffect(() => {
     const fetchQuotes = async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       try {
         const res = await fetch('/api/market/quotes');
         if (res.ok) {

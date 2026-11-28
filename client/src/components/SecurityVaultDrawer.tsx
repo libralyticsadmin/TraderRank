@@ -18,6 +18,7 @@ export const SecurityVaultDrawer: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   const fetchAuditLogs = async () => {
+    if (typeof document !== 'undefined' && document.hidden) return;
     try {
       const res = await fetch('/api/vault/audit');
       if (res.ok) {

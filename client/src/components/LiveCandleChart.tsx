@@ -378,6 +378,7 @@ export const LiveCandleChart: React.FC<LiveCandleChartProps> = ({
   useEffect(() => {
     let isSubscribed = true;
     const fetchLiveQuote = async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       try {
         let res = await fetch('/api/market/quotes');
         let data: any = null;

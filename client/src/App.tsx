@@ -315,10 +315,12 @@ export const App: React.FC = () => {
     };
 
     const leaderboardTimer = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       fetchLeaderboard();
     }, LEADERBOARD_INTERVAL_MS);
 
     const marketTimer = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       fetchMarketQuotes();
     }, 10000);
 
